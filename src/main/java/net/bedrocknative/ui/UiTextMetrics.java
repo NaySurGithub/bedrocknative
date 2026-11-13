@@ -25,8 +25,7 @@ public final class UiTextMetrics implements UiTextMeasurer {
       return this.fonts;
    }
 
-   @Nullable
-   public UiVectorFont vector(UiFont font) {
+   public @Nullable UiVectorFont vector(UiFont font) {
       if ("default".equals(font.type())) {
          UiVectorFont mojangles = this.fonts.defaultFont();
          if (mojangles != null) {
@@ -47,7 +46,7 @@ public final class UiTextMetrics implements UiTextMeasurer {
 
             try {
                cachedModernDefault = stack.read("font/default8.json").isPresent();
-            } catch (RuntimeException var4) {
+            } catch (RuntimeException e) {
                cachedModernDefault = false;
             }
          }
@@ -89,28 +88,28 @@ public final class UiTextMetrics implements UiTextMeasurer {
       UiVectorFont vector = this.vector(font);
       if (vector == null) {
          return this.bitmap.width(text, font);
-      } else {
-         float width = 0.0F;
-         boolean bold = false;
-         int i = 0;
-
-         while (i < text.length()) {
-            int codePoint = text.codePointAt(i);
-            i += Character.charCount(codePoint);
-            if (codePoint == 167 && i < text.length()) {
-               char code = text.charAt(i);
-               i += Character.charCount(text.codePointAt(i));
-               if (code == 'l') {
-                  bold = true;
-               } else if (code == 'r') {
-                  bold = false;
-               }
-            } else {
-               width += this.advance(codePoint, bold, font, vector);
-            }
-         }
-
-         return width;
       }
+
+      float width = 0.0F;
+      boolean bold = false;
+      int i = 0;
+
+      while (i < text.length()) {
+         int codePoint = text.codePointAt(i);
+         i += Character.charCount(codePoint);
+         if (codePoint == 167 && i < text.length()) {
+            char code = text.charAt(i);
+            i += Character.charCount(text.codePointAt(i));
+            if (code == 'l') {
+               bold = true;
+            } else if (code == 'r') {
+               bold = false;
+            }
+         } else {
+            width += this.advance(codePoint, bold, font, vector);
+         }
+      }
+
+      return width;
    }
 }

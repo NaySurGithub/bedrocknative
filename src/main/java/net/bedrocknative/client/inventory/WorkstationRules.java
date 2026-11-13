@@ -24,8 +24,7 @@ public final class WorkstationRules {
    private WorkstationRules() {
    }
 
-   @Nullable
-   public static WorkstationRules.Anvil anvil(ItemData left, ItemData right, @Nullable String name, boolean creative, WorkstationRules.Facts facts) {
+   public static WorkstationRules.@Nullable Anvil anvil(ItemData left, ItemData right, @Nullable String name, boolean creative, WorkstationRules.Facts facts) {
       if (left != null && !left.isNull()) {
          NbtMapBuilder tag = builder(left.getTag());
          int baseCost = repairCost(left) + (right != null && !right.isNull() ? repairCost(right) : 0);
@@ -127,25 +126,25 @@ public final class WorkstationRules {
 
          if (price <= 0) {
             return null;
-         } else {
-            boolean onlyRenaming = renameCost == price;
-            int cost = baseCost + price;
-            if (onlyRenaming && cost >= 40) {
-               cost = 39;
-            }
-
-            if (cost >= 40 && !creative) {
-               return new WorkstationRules.Anvil(null, cost, 0);
-            } else {
-               int repairCost = Math.max(repairCost(left), right != null && !right.isNull() ? repairCost(right) : 0);
-               if (!onlyRenaming) {
-                  repairCost = repairCost * 2 + 1;
-               }
-
-               tag.putInt("RepairCost", repairCost);
-               return new WorkstationRules.Anvil(left.toBuilder().tag(tag.build()).usingNetId(false).netId(0).build(), cost, materialUsed);
-            }
          }
+
+         boolean onlyRenaming = renameCost == price;
+         int cost = baseCost + price;
+         if (onlyRenaming && cost >= 40) {
+            cost = 39;
+         }
+
+         if (cost >= 40 && !creative) {
+            return new WorkstationRules.Anvil(null, cost, 0);
+         }
+
+         int repairCost = Math.max(repairCost(left), right != null && !right.isNull() ? repairCost(right) : 0);
+         if (!onlyRenaming) {
+            repairCost = repairCost * 2 + 1;
+         }
+
+         tag.putInt("RepairCost", repairCost);
+         return new WorkstationRules.Anvil(left.toBuilder().tag(tag.build()).usingNetId(false).netId(0).build(), cost, materialUsed);
       } else {
          return null;
       }
@@ -173,39 +172,40 @@ public final class WorkstationRules {
       return result.build();
    }
 
-   @Nullable
-   public static ItemData grindstone(ItemData input, ItemData additional, WorkstationRules.Facts facts) {
+   public static @Nullable ItemData grindstone(ItemData input, ItemData additional, WorkstationRules.Facts facts) {
       boolean hasInput = input != null && !input.isNull();
       boolean hasAdditional = additional != null && !additional.isNull();
       if ((hasInput || hasAdditional) && (!hasInput || input.getCount() <= 1) && (!hasAdditional || additional.getCount() <= 1)) {
          if (!hasInput || !hasAdditional) {
             ItemData item = hasInput ? input : additional;
             return enchantments(item).isEmpty() ? null : removeNonCurses(item, enchantments(item), builder(item.getTag()), 1, facts);
-         } else if (!sameItem(input, additional)) {
-            return null;
-         } else {
-            int max = Math.max(facts.maxDamage(input), facts.maxDamage(additional));
-            NbtMapBuilder tag = builder(input.getTag());
-            int count = 1;
-            if (max > 0) {
-               int remaining = facts.maxDamage(input) - damage(input) + facts.maxDamage(additional) - damage(additional) + max * 5 / 100;
-               tag.putInt("Damage", Math.max(max - remaining, 0));
-            } else {
-               if (!input.equals(additional)) {
-                  return null;
-               }
+         }
 
-               count = 2;
+         if (!sameItem(input, additional)) {
+            return null;
+         }
+
+         int max = Math.max(facts.maxDamage(input), facts.maxDamage(additional));
+         NbtMapBuilder tag = builder(input.getTag());
+         int count = 1;
+         if (max > 0) {
+            int remaining = facts.maxDamage(input) - damage(input) + facts.maxDamage(additional) - damage(additional) + max * 5 / 100;
+            tag.putInt("Damage", Math.max(max - remaining, 0));
+         } else {
+            if (!input.equals(additional)) {
+               return null;
             }
 
-            Map<Integer, Integer> enchantments = enchantments(input);
-            enchantments(additional).forEach((id, level) -> {
-               if (!facts.isCurse(id) || !enchantments.containsKey(id)) {
-                  enchantments.merge(id, level, Math::max);
-               }
-            });
-            return removeNonCurses(input, enchantments, tag, count, facts);
+            count = 2;
          }
+
+         Map<Integer, Integer> enchantments = enchantments(input);
+         enchantments(additional).forEach((id, level) -> {
+            if (!facts.isCurse(id) || !enchantments.containsKey(id)) {
+               enchantments.merge(id, level, Math::max);
+            }
+         });
+         return removeNonCurses(input, enchantments, tag, count, facts);
       } else {
          return null;
       }
@@ -235,18 +235,17 @@ public final class WorkstationRules {
       return result.build();
    }
 
-   @Nullable
-   public static ItemData loom(ItemData banner, String pattern, int color) {
+   public static @Nullable ItemData loom(ItemData banner, String pattern, int color) {
       if (banner != null && !banner.isNull() && pattern != null) {
          NbtMapBuilder tag = builder(banner.getTag());
          List<NbtMap> patterns = new ArrayList<>(banner.getTag() == null ? List.of() : banner.getTag().getList("Patterns", NbtType.COMPOUND));
          if (patterns.size() >= 6) {
             return null;
-         } else {
-            patterns.add(NbtMap.builder().putInt("Color", color).putString("Pattern", pattern).build());
-            tag.putList("Patterns", NbtType.COMPOUND, patterns);
-            return banner.toBuilder().count(1).tag(tag.build()).usingNetId(false).netId(0).build();
          }
+
+         patterns.add(NbtMap.builder().putInt("Color", color).putString("Pattern", pattern).build());
+         tag.putList("Patterns", NbtType.COMPOUND, patterns);
+         return banner.toBuilder().count(1).tag(tag.build()).usingNetId(false).netId(0).build();
       } else {
          return null;
       }
@@ -294,8 +293,7 @@ public final class WorkstationRules {
       return item.getTag() == null ? 0 : item.getTag().getInt("RepairCost", 0);
    }
 
-   @Nullable
-   public static String customName(ItemData item) {
+   public static @Nullable String customName(ItemData item) {
       NbtMap display = item.getTag() == null ? null : item.getTag().getCompound("display", null);
       String name = display == null ? null : display.getString("Name", null);
       return name != null && !name.isEmpty() ? name : null;
@@ -337,7 +335,6 @@ public final class WorkstationRules {
 
       boolean isCurse(int var1);
 
-      @Nullable
-      ItemDefinition definition(String var1);
+      @Nullable ItemDefinition definition(String var1);
    }
 }

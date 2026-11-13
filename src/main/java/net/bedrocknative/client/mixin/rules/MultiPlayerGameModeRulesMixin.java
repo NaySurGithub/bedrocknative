@@ -9,13 +9,9 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin({MultiPlayerGameMode.class})
+@Mixin(MultiPlayerGameMode.class)
 public abstract class MultiPlayerGameModeRulesMixin {
-   @Inject(
-      method = {"attack"},
-      at = {@At("HEAD")},
-      cancellable = true
-   )
+   @Inject(method = "attack", at = @At("HEAD"), cancellable = true)
    private void bedrocknative$noPvM(Player player, Entity entity, CallbackInfo ci) {
       if (BedrockAdventureSettings.blocksAttack(player, entity)) {
          ci.cancel();

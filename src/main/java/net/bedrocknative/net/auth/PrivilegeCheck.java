@@ -11,10 +11,9 @@ public final class PrivilegeCheck {
    private final long startedAt;
    private final boolean waited;
    private final LongSupplier clock;
-   @Nullable
-   private final XboxAccountStore.Entry account;
+   private final XboxAccountStore.@Nullable Entry account;
 
-   PrivilegeCheck(CompletableFuture<XboxPrivileges.Result> result, long startedAt, boolean waited, LongSupplier clock, @Nullable XboxAccountStore.Entry account) {
+   PrivilegeCheck(CompletableFuture<XboxPrivileges.Result> result, long startedAt, boolean waited, LongSupplier clock, XboxAccountStore.@Nullable Entry account) {
       this.result = result;
       this.startedAt = startedAt;
       this.waited = waited;
@@ -34,8 +33,7 @@ public final class PrivilegeCheck {
       return this.result.isDone();
    }
 
-   @Nullable
-   public XboxPrivileges.Result now() {
+   public XboxPrivileges.@Nullable Result now() {
       return this.result.isDone() ? this.result.join() : null;
    }
 

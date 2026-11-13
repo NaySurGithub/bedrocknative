@@ -41,8 +41,7 @@ public final class OreText {
       return this.scale.px(type.spacingRem());
    }
 
-   @Nullable
-   public OreFont fontFor(OreText.Type type, int codePoint) {
+   public @Nullable OreFont fontFor(OreText.Type type, int codePoint) {
       OreFont font = this.fonts.font(type.family(), type.weight());
       if (font != null && font.has(codePoint)) {
          return font;
@@ -61,29 +60,29 @@ public final class OreText {
       Float cached = this.widths.get(key);
       if (cached != null) {
          return cached;
-      } else {
-         float size = this.sizePx(type);
-         float spacing = this.letterSpacingPx(type);
-         float width = 0.0F;
-         int i = 0;
-
-         while (i < text.length()) {
-            int codePoint = text.codePointAt(i);
-            i += Character.charCount(codePoint);
-            OreFont font = this.fontFor(type, codePoint);
-            width += (font == null ? 0.5F : font.advance(codePoint)) * size + spacing;
-         }
-
-         if (!text.isEmpty()) {
-            width -= spacing;
-         }
-
-         if (this.widths.size() < 4096) {
-            this.widths.put(key, width);
-         }
-
-         return width;
       }
+
+      float size = this.sizePx(type);
+      float spacing = this.letterSpacingPx(type);
+      float width = 0.0F;
+      int i = 0;
+
+      while (i < text.length()) {
+         int codePoint = text.codePointAt(i);
+         i += Character.charCount(codePoint);
+         OreFont font = this.fontFor(type, codePoint);
+         width += (font == null ? 0.5F : font.advance(codePoint)) * size + spacing;
+      }
+
+      if (!text.isEmpty()) {
+         width -= spacing;
+      }
+
+      if (this.widths.size() < 4096) {
+         this.widths.put(key, width);
+      }
+
+      return width;
    }
 
    public List<OreText.Placed> place(OreText.Type type, String text) {
@@ -118,22 +117,22 @@ public final class OreText {
    public String ellipsize(OreText.Type type, String text, float maxWidth) {
       if (this.width(type, text) <= maxWidth + 0.01F) {
          return text;
-      } else {
-         OreFont font = this.fonts.font(type.family(), type.weight());
-         String dots = font != null && font.has(8230) ? "…" : "...";
-         float dotsWidth = this.width(type, dots);
-         int end = text.length();
-
-         while (end > 0) {
-            end = text.offsetByCodePoints(end, -1);
-            String head = text.substring(0, end).stripTrailing();
-            if (this.width(type, head) + dotsWidth <= maxWidth + 0.01F) {
-               return head + dots;
-            }
-         }
-
-         return dotsWidth <= maxWidth ? dots : "";
       }
+
+      OreFont font = this.fonts.font(type.family(), type.weight());
+      String dots = font != null && font.has(8230) ? "…" : "...";
+      float dotsWidth = this.width(type, dots);
+      int end = text.length();
+
+      while (end > 0) {
+         end = text.offsetByCodePoints(end, -1);
+         String head = text.substring(0, end).stripTrailing();
+         if (this.width(type, head) + dotsWidth <= maxWidth + 0.01F) {
+            return head + dots;
+         }
+      }
+
+      return dotsWidth <= maxWidth ? dots : "";
    }
 
    public List<String> wrap(OreText.Type type, String text, float maxWidth, int maxLines) {
@@ -183,17 +182,15 @@ public final class OreText {
    }
 
    public interface Fonts {
-      @Nullable
-      OreFont font(String var1, int var2);
+      @Nullable OreFont font(String var1, int var2);
 
-      @Nullable
-      OreFont fallback();
+      @Nullable OreFont fallback();
    }
 
    public record Placed(int codePoint, float x, OreFont font) {
    }
 
-   public static enum Type {
+   public enum Type {
       HEADER5A("Minecraft Ten v2", 400, 2.0F, 2.4F, 0.04F),
       HEADER4A("Minecraft Ten v2", 400, 2.4F, 2.8F, 0.04F),
       SECTION_HEADER("Minecraft Ten v2", 400, 1.6F, 2.0F, 0.04F),
@@ -212,7 +209,7 @@ public final class OreText {
       private final float line;
       private final float spacing;
 
-      private Type(String family, int weight, float size, float line, float spacing) {
+      Type(String family, int weight, float size, float line, float spacing) {
          this.family = family;
          this.weight = weight;
          this.size = size;

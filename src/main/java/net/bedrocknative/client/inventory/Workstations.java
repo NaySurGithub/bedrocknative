@@ -116,24 +116,16 @@ public final class Workstations {
    private final Map<String, String> trimPatterns = new HashMap<>();
    private final Map<String, String> trimMaterials = new HashMap<>();
    private List<Workstations.StonecutterEntry> stonecutter = List.of();
-   @Nullable
-   private Workstations.Trade trade;
-   @Nullable
-   private Workstations.TradeView tradeView;
-   @Nullable
-   private String anvilName;
+   private Workstations.@Nullable Trade trade;
+   private Workstations.@Nullable TradeView tradeView;
+   private @Nullable String anvilName;
    private int activeOffer = -1;
-   @Nullable
-   private Workstations.StonecutterEntry shownStonecutter;
-   @Nullable
-   private String shownPattern;
-   @Nullable
-   private BeaconMenu shownBeacon;
-   @Nullable
-   private BedrockBeacons.Powers shownPowers;
+   private Workstations.@Nullable StonecutterEntry shownStonecutter;
+   private @Nullable String shownPattern;
+   private @Nullable BeaconMenu shownBeacon;
+   private BedrockBeacons.@Nullable Powers shownPowers;
    private int installedRecipes = -1;
-   @Nullable
-   private ClientPacketListener installedFor;
+   private @Nullable ClientPacketListener installedFor;
 
    public Workstations(
       Minecraft minecraft,
@@ -201,13 +193,13 @@ public final class Workstations {
 
    public static int resultSlot(AbstractContainerMenu menu) {
       return switch (menu) {
-         case AnvilMenu ignored -> 2;
-         case GrindstoneMenu ignoredx -> 2;
-         case StonecutterMenu ignoredxx -> 1;
-         case CartographyTableMenu ignoredxxx -> 2;
-         case LoomMenu ignoredxxxx -> 3;
-         case SmithingMenu ignoredxxxxx -> 3;
-         case MerchantMenu ignoredxxxxxx -> 2;
+         case AnvilMenu _ -> 2;
+         case GrindstoneMenu _ -> 2;
+         case StonecutterMenu _ -> 1;
+         case CartographyTableMenu _ -> 2;
+         case LoomMenu _ -> 3;
+         case SmithingMenu _ -> 3;
+         case MerchantMenu _ -> 2;
          default -> -1;
       };
    }
@@ -282,15 +274,13 @@ public final class Workstations {
       this.anvilName = name;
    }
 
-   @Nullable
-   public EnchantOptionData enchantOption(int index) {
+   public @Nullable EnchantOptionData enchantOption(int index) {
       return index >= 0 && index < this.enchantOptions.size() ? this.enchantOptions.get(index) : null;
    }
 
-   @Nullable
-   private ItemData preview(AbstractContainerMenu menu) {
+   private @Nullable ItemData preview(AbstractContainerMenu menu) {
       return switch (menu) {
-         case GrindstoneMenu ignored -> WorkstationRules.grindstone(
+         case GrindstoneMenu _ -> WorkstationRules.grindstone(
             this.inventory.get(ContainerLayout.GRINDSTONE_INPUT), this.inventory.get(ContainerLayout.GRINDSTONE_ADDITIONAL), this.facts
          );
          case StonecutterMenu cutter -> {
@@ -298,11 +288,11 @@ public final class Workstations {
             yield recipe == null ? null : recipe.getResults().getFirst();
          }
          case LoomMenu loom -> this.loomResult(this.selectedPattern(loom, false));
-         case SmithingMenu ignoredx -> {
+         case SmithingMenu _ -> {
             Workstations.Smithing smithing = this.smithing();
             yield smithing == null ? null : smithing.result();
          }
-         case CartographyTableMenu ignoredxx -> {
+         case CartographyTableMenu _ -> {
             Workstations.Cartography cartography = this.cartography();
             yield cartography == null ? null : cartography.result();
          }
@@ -310,16 +300,16 @@ public final class Workstations {
       };
    }
 
-   @Nullable
-   public Workstations.Craft craftFor(AbstractContainerMenu menu, int made) {
-      switch (menu) {
+   public Workstations.@Nullable Craft craftFor(AbstractContainerMenu menu, int made) {
+      AbstractContainerMenu var3 = menu;
+      switch (var3) {
          case AnvilMenu var23:
-            AnvilMenu ignoredxxxx = (AnvilMenu)menu;
+            AnvilMenu ignored = (AnvilMenu)var3;
             WorkstationRules.Anvil anvil = this.anvil();
             return anvil != null && anvil.result() != null && made == anvil.result().getCount()
                ? anvil(this.anvilFilter(this.inventory.get(ContainerLayout.ANVIL_INPUT)), anvil)
                : null;
-         case GrindstoneMenu ignored: {
+         case GrindstoneMenu _: {
             ItemData input = this.inventory.get(ContainerLayout.GRINDSTONE_INPUT);
             ItemData additional = this.inventory.get(ContainerLayout.GRINDSTONE_ADDITIONAL);
             ItemData result = WorkstationRules.grindstone(input, additional, this.facts);
@@ -337,13 +327,13 @@ public final class Workstations {
             ItemData result = this.loomResult(pattern);
             return result != null && made == result.getCount() ? loom(pattern, result) : null;
          }
-         case SmithingMenu ignoredx:
+         case SmithingMenu _:
             Workstations.Smithing smithing = this.smithing();
             return smithing != null && made == smithing.result().getCount() ? smithing(smithing.netId(), smithing.result()) : null;
-         case CartographyTableMenu ignoredxx:
+         case CartographyTableMenu _:
             Workstations.Cartography cartography = this.cartography();
             return cartography != null && made == cartography.result().getCount() ? cartography(cartography.netId(), cartography.result()) : null;
-         case MerchantMenu ignoredxxx:
+         case MerchantMenu _:
             return this.tradeCraft(made);
          default:
             return null;
@@ -453,7 +443,7 @@ public final class Workstations {
          EnchantOptionData option = i < this.enchantOptions.size() ? this.enchantOptions.get(i) : null;
          EnchantData clue = option == null ? null : firstEnchant(option);
          int clueId = clue != null && registry != null
-            ? BedrockItemTags.enchantment(clue.getType()).flatMap(Reference::unwrapKey).map(registry::getValue).<Integer>map(registry::getId).orElse(-1)
+            ? BedrockItemTags.enchantment(clue.getType()).flatMap(Reference::unwrapKey).map(registry::getValue).map(registry::getId).orElse(-1)
             : -1;
          setData(menu, i, option == null ? 0 : option.getCost(), menu.costs[i]);
          setData(menu, 4 + i, clueId, menu.enchantClue[i]);
@@ -463,8 +453,7 @@ public final class Workstations {
       setData(menu, 3, seed, menu.getEnchantmentSeed());
    }
 
-   @Nullable
-   private static EnchantData firstEnchant(EnchantOptionData option) {
+   private static @Nullable EnchantData firstEnchant(EnchantOptionData option) {
       for (List<EnchantData> list : List.of(option.getEnchants0(), option.getEnchants1(), option.getEnchants2())) {
          if (!list.isEmpty()) {
             return list.getFirst();
@@ -480,21 +469,19 @@ public final class Workstations {
       }
    }
 
-   @Nullable
-   private WorkstationRules.Anvil anvil() {
+   private WorkstationRules.@Nullable Anvil anvil() {
       ItemData left = this.inventory.get(ContainerLayout.ANVIL_INPUT);
       if (left.isNull()) {
          return null;
-      } else {
-         LocalPlayer player = this.minecraft.player;
-         return WorkstationRules.anvil(
-            left, this.inventory.get(ContainerLayout.ANVIL_MATERIAL), this.rename(left), player != null && player.hasInfiniteMaterials(), this.facts
-         );
       }
+
+      LocalPlayer player = this.minecraft.player;
+      return WorkstationRules.anvil(
+         left, this.inventory.get(ContainerLayout.ANVIL_MATERIAL), this.rename(left), player != null && player.hasInfiniteMaterials(), this.facts
+      );
    }
 
-   @Nullable
-   private String rename(ItemData left) {
+   private @Nullable String rename(ItemData left) {
       String name = this.anvilName;
       return name != null && !name.equals(ItemMappings.toJava(left).getHoverName().getString()) ? name : null;
    }
@@ -503,14 +490,13 @@ public final class Workstations {
       String rename = this.rename(left);
       if (rename != null) {
          return rename;
-      } else {
-         String custom = WorkstationRules.customName(left);
-         return custom == null ? "" : custom;
       }
+
+      String custom = WorkstationRules.customName(left);
+      return custom == null ? "" : custom;
    }
 
-   @Nullable
-   private ShapelessRecipeData stonecutterRecipe(StonecutterMenu menu, boolean taking) {
+   private @Nullable ShapelessRecipeData stonecutterRecipe(StonecutterMenu menu, boolean taking) {
       ItemData input = this.inventory.get(ContainerLayout.STONECUTTER_INPUT);
       if (input.isNull()) {
          return null;
@@ -531,21 +517,20 @@ public final class Workstations {
       ShapelessRecipeData recipe = this.stonecutterRecipe(menu, false);
       if (recipe == null) {
          return -1;
-      } else {
-         List<ShapelessRecipeData> server = this.crafting.stonecutter();
-
-         for (int i = 0; i < server.size(); i++) {
-            if (server.get(i) == recipe) {
-               return i;
-            }
-         }
-
-         return -1;
       }
+
+      List<ShapelessRecipeData> server = this.crafting.stonecutter();
+
+      for (int i = 0; i < server.size(); i++) {
+         if (server.get(i) == recipe) {
+            return i;
+         }
+      }
+
+      return -1;
    }
 
-   @Nullable
-   private String selectedPattern(LoomMenu menu, boolean taking) {
+   private @Nullable String selectedPattern(LoomMenu menu, boolean taking) {
       List<Holder<BannerPattern>> patterns = menu.getSelectablePatterns();
       int index = menu.getSelectedBannerPatternIndex();
       if (index >= 0 && index < patterns.size()) {
@@ -556,20 +541,18 @@ public final class Workstations {
       }
    }
 
-   @Nullable
-   private ItemData loomResult(@Nullable String pattern) {
+   private @Nullable ItemData loomResult(@Nullable String pattern) {
       ItemData banner = this.inventory.get(ContainerLayout.LOOM_INPUT);
       ItemData dye = this.inventory.get(ContainerLayout.LOOM_DYE);
       if (!banner.isNull() && !dye.isNull() && pattern != null) {
-         DyeColor color = (DyeColor)ItemMappings.toJava(dye).get(DataComponents.DYE);
+         DyeColor color = ItemMappings.toJava(dye).get(DataComponents.DYE);
          return color == null ? null : WorkstationRules.loom(banner, pattern, 15 - color.getId());
       } else {
          return null;
       }
    }
 
-   @Nullable
-   private Workstations.Smithing smithing() {
+   private Workstations.@Nullable Smithing smithing() {
       ItemData template = this.inventory.get(ContainerLayout.SMITHING_TEMPLATE);
       ItemData base = this.inventory.get(ContainerLayout.SMITHING_INPUT);
       ItemData addition = this.inventory.get(ContainerLayout.SMITHING_MATERIAL);
@@ -582,15 +565,15 @@ public final class Workstations {
             }
          }
 
-         for (SmithingTrimRecipeData recipex : this.crafting.smithingTrims()) {
+         for (SmithingTrimRecipeData recipe : this.crafting.smithingTrims()) {
             String pattern = this.trimPatterns.get(template.getDefinition().getIdentifier());
             String material = this.trimMaterials.get(addition.getDefinition().getIdentifier());
             if (pattern != null
                && material != null
-               && this.fits(recipex.getTemplate().getDescriptor(), template)
-               && this.fits(recipex.getBase().getDescriptor(), base)
-               && this.fits(recipex.getAddition().getDescriptor(), addition)) {
-               return new Workstations.Smithing(recipex.getNetId(), WorkstationRules.smithingTrim(base, pattern, material));
+               && this.fits(recipe.getTemplate().getDescriptor(), template)
+               && this.fits(recipe.getBase().getDescriptor(), base)
+               && this.fits(recipe.getAddition().getDescriptor(), addition)) {
+               return new Workstations.Smithing(recipe.getNetId(), WorkstationRules.smithingTrim(base, pattern, material));
             }
          }
 
@@ -604,15 +587,13 @@ public final class Workstations {
       return this.crafting.matches(descriptor, item);
    }
 
-   @Nullable
-   private Workstations.Cartography cartography() {
+   private Workstations.@Nullable Cartography cartography() {
       ItemData map = this.inventory.get(ContainerLayout.CARTOGRAPHY_INPUT);
       ItemData additional = this.inventory.get(ContainerLayout.CARTOGRAPHY_ADDITIONAL);
       if (!map.isNull() && !additional.isNull() && map.getDefinition().getIdentifier().equals("minecraft:filled_map")) {
          Builder result = map.toBuilder().count(1).usingNetId(false).netId(0);
-         String netId = additional.getDefinition().getIdentifier();
          UUID recipe;
-         switch (netId) {
+         switch (additional.getDefinition().getIdentifier()) {
             case "minecraft:paper":
                recipe = MAP_EXTENDING;
                break;
@@ -684,8 +665,7 @@ public final class Workstations {
       }
    }
 
-   @Nullable
-   public Workstations.TradeView tradeView() {
+   public Workstations.@Nullable TradeView tradeView() {
       return this.tradeView;
    }
 
@@ -720,8 +700,7 @@ public final class Workstations {
       return item.getShort("Damage", (short)0) == 32767 ? item.toBuilder().putShort("Damage", (short)0).build() : item;
    }
 
-   @Nullable
-   private Workstations.Craft tradeCraft(int made) {
+   private Workstations.@Nullable Craft tradeCraft(int made) {
       Workstations.Trade open = this.trade;
       if (open != null && this.activeOffer >= 0 && this.activeOffer < open.shown().size()) {
          TradeOffer offer = open.shown().get(this.activeOffer);
@@ -770,8 +749,8 @@ public final class Workstations {
                Ingredient ingredient = Ingredient.of(input);
                entries.add(new Workstations.StonecutterEntry(ingredient, recipe));
                java.add(
-                  new SingleInputEntry(
-                     ingredient, new SelectableRecipe(new ItemStackSlotDisplay(ItemStackTemplate.fromNonEmptyStack(result)), Optional.empty())
+                  new SingleInputEntry<>(
+                     ingredient, new SelectableRecipe<>(new ItemStackSlotDisplay(ItemStackTemplate.fromNonEmptyStack(result)), Optional.empty())
                   )
                );
             }
@@ -788,7 +767,7 @@ public final class Workstations {
          sets.put(RecipePropertySet.CAMPFIRE_INPUT, this.stationSet("campfire"));
          sets.put(RecipePropertySet.BREWING_INPUTS, brewingSet(this.crafting.brewingInputs()));
          sets.put(RecipePropertySet.BREWING_REAGENTS, brewingSet(this.crafting.brewingReagents()));
-         connection.handleUpdateRecipes(new ClientboundUpdateRecipesPacket(sets, new SingleInputSet(java)));
+         connection.handleUpdateRecipes(new ClientboundUpdateRecipesPacket(sets, new SingleInputSet<>(java)));
          BedrockNative.LOGGER
             .info(
                "Workstation recipes: {} stonecutter, {} smithing upgrades, {} smithing trims",
@@ -872,8 +851,7 @@ public final class Workstations {
       }
    }
 
-   @Nullable
-   private static Item javaItem(ItemDescriptor descriptor) {
+   private static @Nullable Item javaItem(ItemDescriptor descriptor) {
       if (descriptor instanceof DefaultDescriptor exact && exact.getItemId() != null) {
          ItemMappings.Resolution resolution = ItemMappings.resolve(
             exact.getItemId().getIdentifier(), Math.max(0, exact.getAuxValue() == 32767 ? 0 : exact.getAuxValue()), null
@@ -935,24 +913,24 @@ public final class Workstations {
 
       @Override
       public int maxLevel(int enchantment) {
-         return BedrockItemTags.enchantment(enchantment).map(holder -> ((Enchantment)holder.value()).getMaxLevel()).orElse(1);
+         return BedrockItemTags.enchantment(enchantment).map(holder -> holder.value().getMaxLevel()).orElse(1);
       }
 
       @Override
       public int anvilCost(int enchantment) {
-         return BedrockItemTags.enchantment(enchantment).map(holder -> ((Enchantment)holder.value()).getAnvilCost()).orElse(1);
+         return BedrockItemTags.enchantment(enchantment).map(holder -> holder.value().getAnvilCost()).orElse(1);
       }
 
       @Override
       public boolean canEnchant(int enchantment, ItemData item) {
-         return BedrockItemTags.enchantment(enchantment).map(holder -> ((Enchantment)holder.value()).canEnchant(ItemMappings.toJava(item))).orElse(false);
+         return BedrockItemTags.enchantment(enchantment).map(holder -> holder.value().canEnchant(ItemMappings.toJava(item))).orElse(false);
       }
 
       @Override
       public boolean compatible(int first, int second) {
          Optional<Reference<Enchantment>> a = BedrockItemTags.enchantment(first);
          Optional<Reference<Enchantment>> b = BedrockItemTags.enchantment(second);
-         return a.isEmpty() || b.isEmpty() || Enchantment.areCompatible((Holder)a.get(), (Holder)b.get());
+         return a.isEmpty() || b.isEmpty() || Enchantment.areCompatible(a.get(), b.get());
       }
 
       @Override
@@ -960,14 +938,13 @@ public final class Workstations {
          return BedrockItemTags.enchantment(enchantment).map(holder -> holder.is(EnchantmentTags.CURSE)).orElse(false);
       }
 
-      @Nullable
       @Override
-      public ItemDefinition definition(String identifier) {
+      public @Nullable ItemDefinition definition(String identifier) {
          return this.definitions.apply(identifier);
       }
    }
 
-   private static enum Slot {
+   private enum Slot {
       TEMPLATE,
       BASE,
       ADDITION;

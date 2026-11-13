@@ -44,8 +44,7 @@ public final class ActorState {
    private static final int PLAYER_X_ROTATION = MolangNames.id("player_x_rotation");
    private static final int HAS_TARGET = MolangNames.id("has_target");
    private static final long SAME_FRAME_NANOS = 100000000L;
-   @Nullable
-   private static final String TRACE = System.getProperty("bedrocknative.traceActor");
+   private static final @Nullable String TRACE = System.getProperty("bedrocknative.traceActor");
    private static final long TRACE_NANOS = 2000000000L;
    private static final Set<String> TRACED_SCRIPTS = ConcurrentHashMap.newKeySet();
    private static final int LEATHER = -6265536;
@@ -63,29 +62,18 @@ public final class ActorState {
    private final ClientActorView view;
    private final ActorSnapshot[] snapshots = new ActorSnapshot[]{new ActorSnapshot(), new ActorSnapshot()};
    private final long created = System.nanoTime();
-   @Nullable
-   private final MobEngineState mob;
-   @Nullable
-   private final PlayerRuntime player;
-   @Nullable
-   private ActorInstance instance;
-   @Nullable
-   private ActorEffects effects;
-   @Nullable
-   private ActorEffects playerEffects;
-   @Nullable
-   private ActorEffects overlayEffects;
-   @Nullable
-   private RuntimeEquipment equipment;
-   @Nullable
-   private ModelRegistry mobRegistry;
-   @Nullable
-   private ModelRegistry bindAttempt;
-   @Nullable
-   private float[] bounds;
+   private final @Nullable MobEngineState mob;
+   private final @Nullable PlayerRuntime player;
+   private @Nullable ActorInstance instance;
+   private @Nullable ActorEffects effects;
+   private @Nullable ActorEffects playerEffects;
+   private @Nullable ActorEffects overlayEffects;
+   private @Nullable RuntimeEquipment equipment;
+   private @Nullable ModelRegistry mobRegistry;
+   private @Nullable ModelRegistry bindAttempt;
+   private float @Nullable [] bounds;
    private final double[] worldBounds = new double[6];
-   @Nullable
-   private ActorSnapshot last;
+   private @Nullable ActorSnapshot last;
    private int next;
    private long lastFrame = -1L;
    private long lastNanos;
@@ -94,16 +82,12 @@ public final class ActorState {
    private boolean failed;
    private float lastBodyYaw;
    private long uniqueId;
-   @Nullable
-   private BodyRotation.Tracker bodyTracker;
+   private BodyRotation.@Nullable Tracker bodyTracker;
    private boolean facingLogged;
-   @Nullable
-   private ActorInstance overlay;
-   @Nullable
-   private ModelRegistry overlayRegistry;
+   private @Nullable ActorInstance overlay;
+   private @Nullable ModelRegistry overlayRegistry;
    private final ActorSnapshot[] overlaySnapshots = new ActorSnapshot[]{new ActorSnapshot(), new ActorSnapshot()};
-   @Nullable
-   private ActorSnapshot overlayLast;
+   private @Nullable ActorSnapshot overlayLast;
    private int overlayNext;
    private long overlayFrame = -1L;
    private long overlayNanos;
@@ -147,8 +131,7 @@ public final class ActorState {
       return this.bodyTracker;
    }
 
-   @Nullable
-   BodyRotation.Tracker existingBodyTracker() {
+   BodyRotation.@Nullable Tracker existingBodyTracker() {
       return this.bodyTracker;
    }
 
@@ -156,8 +139,7 @@ public final class ActorState {
       this.uniqueId = id;
    }
 
-   @Nullable
-   PlayerRuntime player() {
+   @Nullable PlayerRuntime player() {
       return this.player;
    }
 
@@ -193,13 +175,11 @@ public final class ActorState {
       return this.mob != null;
    }
 
-   @Nullable
-   public ActorInstance instance() {
+   public @Nullable ActorInstance instance() {
       return this.instance;
    }
 
-   @Nullable
-   public RuntimeEquipment equipment() {
+   public @Nullable RuntimeEquipment equipment() {
       return this.equipment;
    }
 
@@ -235,8 +215,8 @@ public final class ActorState {
                this.mobRegistry = registry;
                this.equipment = new RuntimeEquipment(registry, created);
             }
-         } catch (RuntimeException var6) {
-            BedrockNative.LOGGER.warn("Couldn't set up the Bedrock model of {}", definition.identifier(), var6);
+         } catch (RuntimeException e) {
+            BedrockNative.LOGGER.warn("Couldn't set up the Bedrock model of {}", definition.identifier(), e);
          }
       }
    }
@@ -291,13 +271,13 @@ public final class ActorState {
    private static ActorEffects effectsFor(@Nullable ActorEffects current, ClientEntityDef definition, Entity entity) {
       if (current != null && current.definition() == definition && current.entity() == entity) {
          return current;
-      } else {
-         if (current != null) {
-            current.close();
-         }
-
-         return new ActorEffects(definition, entity);
       }
+
+      if (current != null) {
+         current.close();
+      }
+
+      return new ActorEffects(definition, entity);
    }
 
    ActorEffects playerEffects(ClientEntityDef definition, Entity entity) {
@@ -325,129 +305,126 @@ public final class ActorState {
       }
    }
 
-   @Nullable
-   ActorSnapshot evaluateMob(ModelRegistry registry, ClientEntityDef definition, Entity entity, EntityRenderState render, float partialTick) {
+   @Nullable ActorSnapshot evaluateMob(ModelRegistry registry, ClientEntityDef definition, Entity entity, EntityRenderState render, float partialTick) {
       if (this.mob == null) {
          return null;
-      } else {
-         if (this.instance == null || this.mobRegistry != registry) {
-            if (this.bindAttempt == registry) {
-               return null;
-            }
+      }
 
-            this.bindAttempt = registry;
-            this.bind(registry, definition);
+      if (this.instance == null || this.mobRegistry != registry) {
+         if (this.bindAttempt == registry) {
+            return null;
          }
 
-         return this.instance != null ? this.evaluate(entity, render, partialTick) : null;
+         this.bindAttempt = registry;
+         this.bind(registry, definition);
       }
+
+      return this.instance != null ? this.evaluate(entity, render, partialTick) : null;
    }
 
-   @Nullable
-   ActorSnapshot evaluate(Entity entity, EntityRenderState render, float partialTick) {
+   @Nullable ActorSnapshot evaluate(Entity entity, EntityRenderState render, float partialTick) {
       ActorInstance running = this.instance;
       if (running != null && !this.failed) {
          long frame = BedrockActors.frame();
          long now = System.nanoTime();
          if (frame == this.lastFrame && this.last != null && now - this.lastNanos < 100000000L) {
             return this.last;
-         } else {
-            float deltaTime = this.lastNanos == 0L ? 0.0F : (float)(now - this.lastNanos) / 1.0E9F;
-            this.lastNanos = now;
-            this.lastFrame = frame;
+         }
 
+         float deltaTime = this.lastNanos == 0L ? 0.0F : (float)(now - this.lastNanos) / 1.0E9F;
+         this.lastNanos = now;
+         this.lastFrame = frame;
+
+         try {
+            this.view.prepare(entity, render, partialTick, (float)(now - this.created) / 1.0E9F, this.mob);
+            this.engineVariables(running.variables(), entity, render, partialTick);
+            boolean[] attached = null;
+            if (this.mob != null) {
+               this.mob.catchUp(entity.level().getGameTime(), this.data, entity);
+               this.mob.setVariables(running.variables(), this.data, entity, partialTick);
+               running.setChangeColor(DyeColors.argb((int)this.data.number(EntityDataTypes.COLOR)));
+               running.setSecondColor(this.data.value(EntityDataTypes.COLOR_2) != null ? DyeColors.argb((int)this.data.number(EntityDataTypes.COLOR_2)) : -1);
+               attached = entity instanceof LivingEntity living ? this.equipment(living) : null;
+            }
+
+            if (this.effects == null) {
+               this.effects = new ActorEffects(running.definition(), entity);
+            }
+
+            MolangEnv env = this.actors.env();
+            env.effects = this.effects;
+
+            DrawList list;
             try {
-               this.view.prepare(entity, render, partialTick, (float)(now - this.created) / 1.0E9F, this.mob);
-               this.engineVariables(running.variables(), entity, render, partialTick);
-               boolean[] attached = null;
-               if (this.mob != null) {
-                  this.mob.catchUp(entity.level().getGameTime(), this.data, entity);
-                  this.mob.setVariables(running.variables(), this.data, entity, partialTick);
-                  running.setChangeColor(DyeColors.argb((int)this.data.number(EntityDataTypes.COLOR)));
-                  running.setSecondColor(this.data.value(EntityDataTypes.COLOR_2) != null ? DyeColors.argb((int)this.data.number(EntityDataTypes.COLOR_2)) : -1);
-                  attached = entity instanceof LivingEntity living ? this.equipment(living) : null;
+               list = running.frame(env, this.view, deltaTime, partialTick);
+            } finally {
+               env.effects = null;
+            }
+
+            ActorSnapshot snapshot = this.snapshots[this.next];
+            this.next ^= 1;
+            snapshot.identifier(this.data.identifier());
+            snapshot.fill(list, this.data.scale(), BedrockMobs.composing());
+            snapshot.draw().setUvAnimation(BedrockMobs.composing());
+            if (this.mob != null) {
+               snapshot.hands(running.drawnSkeleton(), attached);
+            }
+
+            snapshot.bodyYaw(this.view.bodyYaw());
+            snapshot.deathProgress(Math.min(1.0F, this.view.deathTicks() / 200.0F));
+            if (TRACE != null && traced(this.data.identifier()) && now - this.lastTrace >= 2000000000L) {
+               this.lastTrace = now;
+               if (TRACED_SCRIPTS.add(this.data.identifier())) {
+                  BedrockNative.LOGGER.info("Actor scripts {}", running.traceScripts());
                }
 
-               if (this.effects == null) {
-                  this.effects = new ActorEffects(running.definition(), entity);
-               }
+               BedrockNative.LOGGER
+                  .info(
+                     "Actor trace {} at {} {} {}, {} blocks from the camera: {}",
+                     new Object[]{
+                        this.javaId,
+                        Math.round(entity.getX()),
+                        Math.round(entity.getY()),
+                        Math.round(entity.getZ()),
+                        Math.round(Math.sqrt(render.distanceToCameraSq)),
+                        running.trace()
+                     }
+                  );
+            }
 
-               MolangEnv env = this.actors.env();
-               env.effects = this.effects;
-
-               DrawList list;
-               try {
-                  list = running.frame(env, this.view, deltaTime, partialTick);
-               } finally {
-                  env.effects = null;
-               }
-
-               ActorSnapshot snapshot = this.snapshots[this.next];
-               this.next ^= 1;
-               snapshot.identifier(this.data.identifier());
-               snapshot.fill(list, this.data.scale(), BedrockMobs.composing());
-               snapshot.draw().setUvAnimation(BedrockMobs.composing());
-               if (this.mob != null) {
-                  snapshot.hands(running.drawnSkeleton(), attached);
-               }
-
-               snapshot.bodyYaw(this.view.bodyYaw());
-               snapshot.deathProgress(Math.min(1.0F, this.view.deathTicks() / 200.0F));
-               if (TRACE != null && traced(this.data.identifier()) && now - this.lastTrace >= 2000000000L) {
-                  this.lastTrace = now;
-                  if (TRACED_SCRIPTS.add(this.data.identifier())) {
-                     BedrockNative.LOGGER.info("Actor scripts {}", running.traceScripts());
-                  }
-
-                  BedrockNative.LOGGER
-                     .info(
-                        "Actor trace {} at {} {} {}, {} blocks from the camera: {}",
-                        new Object[]{
-                           this.javaId,
-                           Math.round(entity.getX()),
-                           Math.round(entity.getY()),
-                           Math.round(entity.getZ()),
-                           Math.round(Math.sqrt(render.distanceToCameraSq)),
-                           running.trace()
-                        }
+            this.last = snapshot;
+            this.lastBodyYaw = this.view.bodyYaw();
+            this.evaluations++;
+            if (!this.facingLogged && now - this.created >= 1000000000L) {
+               this.facingLogged = true;
+               if (this.carrier || running.definition().serverPack()) {
+                  this.actors
+                     .facing()
+                     .frame(
+                        this,
+                        entity,
+                        (float)(now - this.created) / 1.0E9F,
+                        this.view.bodyYaw(),
+                        this.view.headYRotation(0),
+                        BedrockModels.registry(),
+                        snapshot.draw()
                      );
                }
-
-               this.last = snapshot;
-               this.lastBodyYaw = this.view.bodyYaw();
-               this.evaluations++;
-               if (!this.facingLogged && now - this.created >= 1000000000L) {
-                  this.facingLogged = true;
-                  if (this.carrier || running.definition().serverPack()) {
-                     this.actors
-                        .facing()
-                        .frame(
-                           this,
-                           entity,
-                           (float)(now - this.created) / 1.0E9F,
-                           this.view.bodyYaw(),
-                           this.view.headYRotation(0),
-                           BedrockModels.registry(),
-                           snapshot.draw()
-                        );
-                  }
-               }
-
-               return snapshot;
-            } catch (RuntimeException var17) {
-               this.failed = true;
-               this.last = null;
-               BedrockNative.LOGGER.error("The Bedrock model of {} failed and is no longer drawn", this.data.identifier(), var17);
-               return null;
             }
+
+            return snapshot;
+         } catch (RuntimeException e) {
+            this.failed = true;
+            this.last = null;
+            BedrockNative.LOGGER.error("The Bedrock model of {} failed and is no longer drawn", this.data.identifier(), e);
+            return null;
          }
       } else {
          return null;
       }
    }
 
-   @Nullable
-   ActorSnapshot evaluateOverlay(ModelRegistry registry, OverlayPlan plan, Entity entity, EntityRenderState render, float partialTick) {
+   @Nullable ActorSnapshot evaluateOverlay(ModelRegistry registry, OverlayPlan plan, Entity entity, EntityRenderState render, float partialTick) {
       if (this.overlayRegistry != registry) {
          this.overlayRegistry = registry;
          this.overlayFailed = false;
@@ -465,9 +442,9 @@ public final class ActorState {
             }
 
             this.overlay = created;
-         } catch (RuntimeException var20) {
+         } catch (RuntimeException e) {
             this.overlayFailed = true;
-            BedrockNative.LOGGER.warn("Couldn't set up what the server's packs add to {}", this.data.identifier(), var20);
+            BedrockNative.LOGGER.warn("Couldn't set up what the server's packs add to {}", this.data.identifier(), e);
          }
       }
 
@@ -477,53 +454,52 @@ public final class ActorState {
          long now = System.nanoTime();
          if (frame == this.overlayFrame && this.overlayLast != null && now - this.overlayNanos < 100000000L) {
             return this.overlayLast;
-         } else {
-            float deltaTime = this.overlayNanos == 0L ? 0.0F : (float)(now - this.overlayNanos) / 1.0E9F;
-            this.overlayNanos = now;
-            this.overlayFrame = frame;
+         }
 
-            try {
-               this.view.prepare(entity, render, partialTick, (float)(now - this.created) / 1.0E9F, this.mob);
-               this.engineVariables(running.variables(), entity, render, partialTick);
-               if (this.mob != null) {
-                  this.mob.catchUp(entity.level().getGameTime(), this.data, entity);
-                  this.mob.setVariables(running.variables(), this.data, entity, partialTick);
-                  running.setChangeColor(DyeColors.argb((int)this.data.number(EntityDataTypes.COLOR)));
-               }
+         float deltaTime = this.overlayNanos == 0L ? 0.0F : (float)(now - this.overlayNanos) / 1.0E9F;
+         this.overlayNanos = now;
+         this.overlayFrame = frame;
 
-               MolangEnv env = this.actors.env();
-               this.overlayEffects = effectsFor(this.overlayEffects, running.definition(), entity);
-               env.effects = this.overlayEffects;
-
-               DrawList list;
-               try {
-                  list = running.frame(env, this.view, deltaTime, partialTick);
-               } finally {
-                  env.effects = null;
-               }
-
-               ActorSnapshot snapshot = this.overlaySnapshots[this.overlayNext];
-               this.overlayNext ^= 1;
-               snapshot.identifier(this.data.identifier());
-               snapshot.fill(list, this.data.scale(), BedrockMobs.composing());
-               snapshot.draw().setUvAnimation(BedrockMobs.composing());
-               snapshot.bodyYaw(this.view.bodyYaw());
-               this.overlayLast = snapshot;
-               return snapshot;
-            } catch (RuntimeException var19) {
-               this.overlayFailed = true;
-               this.overlayLast = null;
-               BedrockNative.LOGGER.error("What the server's packs add to {} failed and is no longer drawn", this.data.identifier(), var19);
-               return null;
+         try {
+            this.view.prepare(entity, render, partialTick, (float)(now - this.created) / 1.0E9F, this.mob);
+            this.engineVariables(running.variables(), entity, render, partialTick);
+            if (this.mob != null) {
+               this.mob.catchUp(entity.level().getGameTime(), this.data, entity);
+               this.mob.setVariables(running.variables(), this.data, entity, partialTick);
+               running.setChangeColor(DyeColors.argb((int)this.data.number(EntityDataTypes.COLOR)));
             }
+
+            MolangEnv env = this.actors.env();
+            this.overlayEffects = effectsFor(this.overlayEffects, running.definition(), entity);
+            env.effects = this.overlayEffects;
+
+            DrawList list;
+            try {
+               list = running.frame(env, this.view, deltaTime, partialTick);
+            } finally {
+               env.effects = null;
+            }
+
+            ActorSnapshot snapshot = this.overlaySnapshots[this.overlayNext];
+            this.overlayNext ^= 1;
+            snapshot.identifier(this.data.identifier());
+            snapshot.fill(list, this.data.scale(), BedrockMobs.composing());
+            snapshot.draw().setUvAnimation(BedrockMobs.composing());
+            snapshot.bodyYaw(this.view.bodyYaw());
+            this.overlayLast = snapshot;
+            return snapshot;
+         } catch (RuntimeException e) {
+            this.overlayFailed = true;
+            this.overlayLast = null;
+            BedrockNative.LOGGER.error("What the server's packs add to {} failed and is no longer drawn", this.data.identifier(), e);
+            return null;
          }
       } else {
          return null;
       }
    }
 
-   @Nullable
-   public ActorInstance overlay() {
+   public @Nullable ActorInstance overlay() {
       return this.overlay;
    }
 
@@ -533,29 +509,29 @@ public final class ActorState {
       this.handsAttached[1] = false;
       if (running == null) {
          return this.handsAttached;
-      } else {
-         for (int slot = 0; slot < EQUIPMENT_SLOTS.length; slot++) {
-            ItemStack stack = entity.getItemBySlot(JAVA_SLOTS[slot]);
-            DyedItemColor dyed = (DyedItemColor)stack.get(DataComponents.DYED_COLOR);
+      }
 
-            boolean drawn;
-            try {
-               drawn = running.update(
-                  slot, this.data.item(EQUIPMENT_SLOTS[slot]), stack.hasFoil(), dyed != null ? 0xFF000000 | dyed.rgb() : -6265536, this.view, this.actors.env()
-               );
-            } catch (RuntimeException var8) {
-               BedrockNative.LOGGER
-                  .warn("Couldn't set up the attachable of {} on {}", new Object[]{this.data.item(EQUIPMENT_SLOTS[slot]), this.data.identifier(), var8});
-               drawn = false;
-            }
+      for (int slot = 0; slot < EQUIPMENT_SLOTS.length; slot++) {
+         ItemStack stack = entity.getItemBySlot(JAVA_SLOTS[slot]);
+         DyedItemColor dyed = stack.get(DataComponents.DYED_COLOR);
 
-            if (slot <= 1) {
-               this.handsAttached[slot] = drawn;
-            }
+         boolean drawn;
+         try {
+            drawn = running.update(
+               slot, this.data.item(EQUIPMENT_SLOTS[slot]), stack.hasFoil(), dyed != null ? 0xFF000000 | dyed.rgb() : -6265536, this.view, this.actors.env()
+            );
+         } catch (RuntimeException e) {
+            BedrockNative.LOGGER
+               .warn("Couldn't set up the attachable of {} on {}", new Object[]{this.data.item(EQUIPMENT_SLOTS[slot]), this.data.identifier(), e});
+            drawn = false;
          }
 
-         return this.handsAttached;
+         if (slot <= 1) {
+            this.handsAttached[slot] = drawn;
+         }
       }
+
+      return this.handsAttached;
    }
 
    private void engineVariables(VariableStore variables, Entity entity, EntityRenderState render, float partialTick) {
@@ -572,8 +548,7 @@ public final class ActorState {
       variables.set(HAS_TARGET, this.view.hasTarget() ? 1.0F : 0.0F, null);
    }
 
-   @Nullable
-   float[] bounds() {
+   float @Nullable [] bounds() {
       return this.bounds;
    }
 
@@ -581,13 +556,11 @@ public final class ActorState {
       return this.worldBounds;
    }
 
-   @Nullable
-   public ActorSnapshot lastSnapshot() {
+   public @Nullable ActorSnapshot lastSnapshot() {
       return this.last;
    }
 
-   @Nullable
-   public Vector3f locatorOffset(String locator) {
+   public @Nullable Vector3f locatorOffset(String locator) {
       ActorInstance running = this.instance;
       Skeleton skeleton = running != null ? running.primarySkeleton() : null;
       ActorSnapshot snapshot = this.last;

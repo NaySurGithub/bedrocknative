@@ -40,7 +40,7 @@ public final class SafeHttp {
          HttpResponse<InputStream> response;
          try {
             response = client.send(HttpRequest.newBuilder(uri).timeout(timeout).GET().build(), BodyHandlers.ofInputStream());
-         } catch (IllegalArgumentException var8) {
+         } catch (IllegalArgumentException e) {
             throw new IOException("Invalid URL");
          }
 
@@ -92,21 +92,21 @@ public final class SafeHttp {
       CompletableFuture<Void> lookup = CompletableFuture.runAsync(() -> {
          try {
             guard.check(uri);
-         } catch (IOException var3x) {
-            throw new CompletionException(var3x);
+         } catch (IOException e) {
+            throw new CompletionException(e);
          }
       }, LOOKUPS);
       current.set(lookup);
       lookup.<HttpResponse<byte[]>>thenCompose(ignored -> {
          if (result.isDone()) {
             return CompletableFuture.failedFuture(new CancellationException());
-         } else {
-            HttpRequest request = HttpRequest.newBuilder(uri).timeout(timeout).header("Accept", accept).GET().build();
-            BodyHandler<byte[]> capped = info -> BodyHandlers.limiting(BodyHandlers.ofByteArray(), Math.max(0L, maxBytes.applyAsLong(info))).apply(info);
-            CompletableFuture<HttpResponse<byte[]>> sent = client.sendAsync(request, capped);
-            current.set(sent);
-            return sent;
          }
+
+         HttpRequest request = HttpRequest.newBuilder(uri).timeout(timeout).header("Accept", accept).GET().build();
+         BodyHandler<byte[]> capped = info -> BodyHandlers.limiting(BodyHandlers.ofByteArray(), Math.max(0L, maxBytes.applyAsLong(info))).apply(info);
+         CompletableFuture<HttpResponse<byte[]>> sent = client.sendAsync(request, capped);
+         current.set(sent);
+         return sent;
       }).whenComplete((response, error) -> {
          if (error == null) {
             URI next = redirect(uri, response.statusCode(), response.headers().firstValue("location").orElse(null));
@@ -127,7 +127,7 @@ public final class SafeHttp {
       if (location != null && (status == 301 || status == 302 || status == 303 || status == 307 || status == 308)) {
          try {
             return from.resolve(location.trim());
-         } catch (IllegalArgumentException var4) {
+         } catch (IllegalArgumentException e) {
             return null;
          }
       } else {

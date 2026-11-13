@@ -16,14 +16,14 @@ final class ClientSignInActions implements SignInActions {
       if (!DeviceCodeLink.isMicrosoftPage(uri) && !XboxProblem.isFixedLink(uri)) {
          BedrockNative.LOGGER.warn("Not opening a sign-in page that is not on a Microsoft host");
          return false;
-      } else {
-         try {
-            Blaze3D.openUri(URI.create(uri));
-            return true;
-         } catch (RuntimeException var3) {
-            BedrockNative.LOGGER.warn("Couldn't open the sign-in page: {}", var3.getClass().getSimpleName());
-            return false;
-         }
+      }
+
+      try {
+         Blaze3D.openUri(URI.create(uri));
+         return true;
+      } catch (RuntimeException e) {
+         BedrockNative.LOGGER.warn("Couldn't open the sign-in page: {}", e.getClass().getSimpleName());
+         return false;
       }
    }
 
@@ -38,14 +38,12 @@ final class ClientSignInActions implements SignInActions {
       return AccountProblems.bedrockOr("xbox.signin", "bedrocknative.accounts.window.title").getString();
    }
 
-   @Nullable
    @Override
-   public String languageTag() {
+   public @Nullable String languageTag() {
       return languageTag(Minecraft.getInstance().options.languageCode);
    }
 
-   @Nullable
-   static String languageTag(@Nullable String javaCode) {
+   static @Nullable String languageTag(@Nullable String javaCode) {
       return javaCode != null
             && javaCode.matches("[a-z]{2,3}_[a-z]{2}")
             && !javaCode.equals("lol_us")

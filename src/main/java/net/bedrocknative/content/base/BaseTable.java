@@ -22,8 +22,7 @@ public final class BaseTable {
    public static final String RESOURCE = "/bedrocknative/base/bedrock-samples.txt";
    public static final String RAW_HOST = "raw.githubusercontent.com";
    public static final long MAX_FILE_BYTES = 67108864L;
-   @Nullable
-   private static volatile BaseTable bundled;
+   private static volatile @Nullable BaseTable bundled;
    private final String repository;
    private final String tag;
    private final String commit;
@@ -50,29 +49,22 @@ public final class BaseTable {
       this.byLowerPath = Collections.unmodifiableMap(lower);
    }
 
-   @Nullable
-   public static BaseTable bundled() {
+   public static @Nullable BaseTable bundled() {
       BaseTable table = bundled;
       if (table == null) {
-         try {
-            Object var2;
-            try (InputStream in = BaseTable.class.getResourceAsStream("/bedrocknative/base/bedrock-samples.txt")) {
-               if (in != null) {
-                  table = parse(in.readAllBytes());
-                  bundled = table;
-                  return table;
-               }
-
-               var2 = null;
+         try (InputStream in = BaseTable.class.getResourceAsStream("/bedrocknative/base/bedrock-samples.txt")) {
+            if (in == null) {
+               return null;
             }
 
-            return (BaseTable)var2;
-         } catch (IllegalArgumentException | IOException var6) {
+            table = parse(in.readAllBytes());
+            bundled = table;
+         } catch (IOException | IllegalArgumentException e) {
             return null;
          }
-      } else {
-         return table;
       }
+
+      return table;
    }
 
    public static BaseTable parse(byte[] text) {
@@ -153,8 +145,8 @@ public final class BaseTable {
    static String sha256(byte[] data) {
       try {
          return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(data));
-      } catch (NoSuchAlgorithmException var2) {
-         throw new IllegalStateException(var2);
+      } catch (NoSuchAlgorithmException e) {
+         throw new IllegalStateException(e);
       }
    }
 
@@ -168,8 +160,8 @@ public final class BaseTable {
          sha1.update(("blob " + length + "\u0000").getBytes(StandardCharsets.US_ASCII));
          sha1.update(data, 0, length);
          return HexFormat.of().formatHex(sha1.digest());
-      } catch (NoSuchAlgorithmException var3) {
-         throw new IllegalStateException(var3);
+      } catch (NoSuchAlgorithmException e) {
+         throw new IllegalStateException(e);
       }
    }
 
@@ -221,20 +213,20 @@ public final class BaseTable {
    public URI rawUrl(BaseTable.Entry entry) {
       try {
          return new URI("https", "raw.githubusercontent.com", "/" + this.repository + "/" + this.commit + "/" + this.root + entry.path(), null);
-      } catch (URISyntaxException var3) {
-         throw new IllegalArgumentException("Bad base file path " + entry.path(), var3);
+      } catch (URISyntaxException e) {
+         throw new IllegalArgumentException("Bad base file path " + entry.path(), e);
       }
    }
 
    public Optional<URI> releaseUrl() {
       if (this.release.isEmpty()) {
          return Optional.empty();
-      } else {
-         try {
-            return Optional.of(new URI("https", "github.com", "/" + this.repository + "/releases/download/" + this.tag + "/" + this.release, null));
-         } catch (URISyntaxException var2) {
-            return Optional.empty();
-         }
+      }
+
+      try {
+         return Optional.of(new URI("https", "github.com", "/" + this.repository + "/releases/download/" + this.tag + "/" + this.release, null));
+      } catch (URISyntaxException e) {
+         return Optional.empty();
       }
    }
 
@@ -261,14 +253,14 @@ public final class BaseTable {
    public record Entry(String path, long size, String sha1, BaseTable.Part part) {
    }
 
-   public static enum Part {
+   public enum Part {
       CORE("c"),
       SOUND("s"),
       LANGUAGE("l");
 
       private final String code;
 
-      private Part(String code) {
+      Part(String code) {
          this.code = code;
       }
 
@@ -276,8 +268,7 @@ public final class BaseTable {
          return this.code;
       }
 
-      @Nullable
-      static BaseTable.Part of(String code) {
+      static BaseTable.@Nullable Part of(String code) {
          for (BaseTable.Part part : values()) {
             if (part.code.equals(code)) {
                return part;

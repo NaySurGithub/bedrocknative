@@ -13,7 +13,7 @@ public final class BookEdits {
    private BookEdits() {
    }
 
-   public static List<BookEditPacket> plan(int slot, List<String> before, List<BookEdits.Op> ops, List<String> after, @Nullable BookEdits.Signature sign) {
+   public static List<BookEditPacket> plan(int slot, List<String> before, List<BookEdits.Op> ops, List<String> after, BookEdits.@Nullable Signature sign) {
       List<BookEditPacket> packets = new ArrayList<>();
       List<String> server = new ArrayList<>(before);
       after = withoutTrailingBlanks(clamp(after));
@@ -75,20 +75,20 @@ public final class BookEdits {
          }
       }
 
-      for (int ix = 0; ix < after.size(); ix++) {
-         if (ix >= server.size()) {
-            packets.add(replace(slot, ix, after.get(ix)));
-            server.add(after.get(ix));
-         } else if (!server.get(ix).equals(after.get(ix))) {
-            packets.add(replace(slot, ix, after.get(ix)));
-            server.set(ix, after.get(ix));
+      for (int i = 0; i < after.size(); i++) {
+         if (i >= server.size()) {
+            packets.add(replace(slot, i, after.get(i)));
+            server.add(after.get(i));
+         } else if (!server.get(i).equals(after.get(i))) {
+            packets.add(replace(slot, i, after.get(i)));
+            server.set(i, after.get(i));
          }
       }
 
-      for (int ixx = after.size(); ixx < server.size(); ixx++) {
-         if (!server.get(ixx).isEmpty()) {
-            packets.add(replace(slot, ixx, ""));
-            server.set(ixx, "");
+      for (int i = after.size(); i < server.size(); i++) {
+         if (!server.get(i).isEmpty()) {
+            packets.add(replace(slot, i, ""));
+            server.set(i, "");
          }
       }
 
@@ -154,13 +154,13 @@ public final class BookEdits {
    public sealed interface Op permits BookEdits.Op.Insert, BookEdits.Op.Delete, BookEdits.Op.Swap {
       List<String> pages();
 
-      public record Delete(int page, List<String> pages) implements BookEdits.Op {
+      record Delete(int page, List<String> pages) implements BookEdits.Op {
       }
 
-      public record Insert(int page, List<String> pages) implements BookEdits.Op {
+      record Insert(int page, List<String> pages) implements BookEdits.Op {
       }
 
-      public record Swap(int first, int second, List<String> pages) implements BookEdits.Op {
+      record Swap(int first, int second, List<String> pages) implements BookEdits.Op {
       }
    }
 

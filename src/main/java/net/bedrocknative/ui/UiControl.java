@@ -17,39 +17,30 @@ import org.jspecify.annotations.Nullable;
 public final class UiControl {
    String name;
    final UiType type;
-   @Nullable
-   UiControl parent;
+   @Nullable UiControl parent;
    final List<UiControl> children = new ArrayList<>();
    final String defId;
    final UiScope scope;
    final Function<String, String> keyNamespaces;
    final Map<String, UiValue> props = new HashMap<>();
    final Map<String, UiValue> bag = new HashMap<>();
-   @Nullable
-   private Set<String> seeded;
+   private @Nullable Set<String> seeded;
    private final Map<String, UiExpression> propExpressions = new HashMap<>();
    List<UiBinding> bindings = List.of();
    List<JsonObject> buttonMappings = List.of();
    final List<UiAnimation.Track> tracks = new ArrayList<>(0);
-   @Nullable
-   String collectionName;
+   @Nullable String collectionName;
    int collectionIndex = -1;
-   @Nullable
-   String indexCollection;
-   @Nullable
-   UiControl.Factory factory;
+   @Nullable String indexCollection;
+   UiControl.@Nullable Factory factory;
    final List<UiControl> generated = new ArrayList<>(0);
    final List<String> generatedKinds = new ArrayList<>(0);
    boolean fromServer;
-   @Nullable
-   String spawnedId;
-   @Nullable
-   UiControl.Grid grid;
+   @Nullable String spawnedId;
+   UiControl.@Nullable Grid grid;
    UiLength[] size = new UiLength[]{UiLength.DEFAULT, UiLength.DEFAULT};
-   @Nullable
-   UiLength[] minSize;
-   @Nullable
-   UiLength[] maxSize;
+   UiLength @Nullable [] minSize;
+   UiLength @Nullable [] maxSize;
    UiLength[] offset = new UiLength[]{UiLength.ZERO, UiLength.ZERO};
    UiAnchor anchorFrom = UiAnchor.CENTER;
    UiAnchor anchorTo = UiAnchor.CENTER;
@@ -64,8 +55,7 @@ public final class UiControl {
    boolean dirty = true;
    boolean readsData;
    boolean contextual;
-   @Nullable
-   private UiItemPath itemPath;
+   private @Nullable UiItemPath itemPath;
    boolean applied;
    boolean bindingsRun;
    int gridColumns;
@@ -103,39 +93,30 @@ public final class UiControl {
    UiFont font = UiFont.DEFAULT;
    boolean shadow;
    float[] color = new float[]{1.0F, 1.0F, 1.0F, 1.0F};
-   @Nullable
-   String alignment;
+   @Nullable String alignment;
    float linePadding;
    String texture = "";
    String fileSystem = "InUserPackage";
-   @Nullable
-   float[] uv;
-   @Nullable
-   float[] uvSize;
-   @Nullable
-   float[] nineslice;
+   float @Nullable [] uv;
+   float @Nullable [] uvSize;
+   float @Nullable [] nineslice;
    boolean keepRatio = true;
-   @Nullable
-   String tiled;
+   @Nullable String tiled;
    float[] tiledScale = new float[]{1.0F, 1.0F};
    boolean bilinear;
    boolean grayscale;
    float clipRatio;
    String clipDirection = "left";
-   @Nullable
-   String renderer;
+   @Nullable String renderer;
    float x;
    float y;
    float w;
    float h;
    float z;
    float drawAlpha = 1.0F;
-   @Nullable
-   UiDrawCommand.Image drawnImage;
-   @Nullable
-   UiDrawList.ImageInputs drawnInputs;
-   @Nullable
-   float[] clip;
+   UiDrawCommand.@Nullable Image drawnImage;
+   UiDrawList.@Nullable ImageInputs drawnInputs;
+   float @Nullable [] clip;
    boolean effectiveVisible = true;
    long measureEpoch = -1L;
    float measuredParentW = Float.NaN;
@@ -153,11 +134,9 @@ public final class UiControl {
    boolean stateActive;
    float scroll;
    float scrollContentH = Float.NaN;
-   @Nullable
-   UiControl clipArea;
+   @Nullable UiControl clipArea;
    boolean radioManaged;
-   @Nullable
-   UiScope factoryChildScope;
+   @Nullable UiScope factoryChildScope;
 
    UiControl(String name, UiType type, String defId, UiScope scope, Function<String, String> keyNamespaces) {
       this.name = name;
@@ -183,8 +162,7 @@ public final class UiControl {
       return this.fromServer;
    }
 
-   @Nullable
-   public UiControl parent() {
+   public @Nullable UiControl parent() {
       return this.parent;
    }
 
@@ -196,8 +174,7 @@ public final class UiControl {
       return this.scope;
    }
 
-   @Nullable
-   public UiControl child(String childName) {
+   public @Nullable UiControl child(String childName) {
       for (UiControl child : this.children) {
          if (child.name.equals(childName)) {
             return child;
@@ -207,8 +184,7 @@ public final class UiControl {
       return null;
    }
 
-   @Nullable
-   public UiControl find(String controlName) {
+   public @Nullable UiControl find(String controlName) {
       Deque<UiControl> queue = new ArrayDeque<>();
       queue.add(this);
 
@@ -248,8 +224,7 @@ public final class UiControl {
       return count[0];
    }
 
-   @Nullable
-   public UiValue prop(String key) {
+   public @Nullable UiValue prop(String key) {
       return this.props.get(key);
    }
 
@@ -272,8 +247,7 @@ public final class UiControl {
       }
    }
 
-   @Nullable
-   public UiValue bag(String key) {
+   public @Nullable UiValue bag(String key) {
       return this.bag.get(key);
    }
 
@@ -297,13 +271,11 @@ public final class UiControl {
       return this.collectionIndex;
    }
 
-   @Nullable
-   public String collectionName() {
+   public @Nullable String collectionName() {
       return this.collectionName;
    }
 
-   @Nullable
-   public String itemCollection() {
+   public @Nullable String itemCollection() {
       UiControl item = UiScreenInstance.indexed(this, null);
       return item == null ? null : item.indexCollection;
    }
@@ -346,8 +318,7 @@ public final class UiControl {
       return this.drawAlpha;
    }
 
-   @Nullable
-   public float[] clip() {
+   public float @Nullable [] clip() {
       return this.clip;
    }
 
@@ -391,8 +362,7 @@ public final class UiControl {
       return (float[])this.color.clone();
    }
 
-   @Nullable
-   public String renderer() {
+   public @Nullable String renderer() {
       return this.renderer;
    }
 
@@ -416,8 +386,7 @@ public final class UiControl {
       return this.gridVirtual ? this.gridCount : this.generated.size();
    }
 
-   @Nullable
-   public UiControl gridItem(int index) {
+   public @Nullable UiControl gridItem(int index) {
       for (UiControl item : this.generated) {
          if (item != null && item.collectionIndex == index) {
             return item;
@@ -431,8 +400,7 @@ public final class UiControl {
       return this.factory != null;
    }
 
-   @Nullable
-   public String factoryName() {
+   public @Nullable String factoryName() {
       return this.factory == null ? null : this.factory.name();
    }
 
@@ -450,33 +418,35 @@ public final class UiControl {
       UiValue value = this.props.get(key);
       if (value == null) {
          return UiValue.NULL;
-      } else {
-         String text = value.stringOrNull();
-         if (text == null || text.isEmpty() || text.charAt(0) == '@') {
-            return value;
-         } else if (text.charAt(0) == '#' && isName(text, 1)) {
-            return this.read(text, data);
-         } else {
-            if ((text.indexOf(35) >= 0 || text.indexOf(36) >= 0) && UiExpression.looksLikeExpression(text)) {
-               UiExpression expression = this.propExpressions.computeIfAbsent(key, k -> definitions.expression(text).bind(this.scope::get));
-               if (expression.valid()) {
-                  return expression.eval(name -> this.read(name, data), problems);
-               }
-            }
+      }
 
-            return value;
+      String text = value.stringOrNull();
+      if (text == null || text.isEmpty() || text.charAt(0) == '@') {
+         return value;
+      }
+
+      if (text.charAt(0) == '#' && isName(text, 1)) {
+         return this.read(text, data);
+      }
+
+      if ((text.indexOf(35) >= 0 || text.indexOf(36) >= 0) && UiExpression.looksLikeExpression(text)) {
+         UiExpression expression = this.propExpressions.computeIfAbsent(key, k -> definitions.expression(text).bind(this.scope::get));
+         if (expression.valid()) {
+            return expression.eval(name -> this.read(name, data), problems);
          }
       }
+
+      return value;
    }
 
    UiValue read(String name, UiDataSource data) {
       UiValue value = this.bag.get(name);
       if (value != null) {
          return value;
-      } else {
-         this.readsData = true;
-         return this.contextual ? data.global(name, this.itemPath()) : data.global(name);
       }
+
+      this.readsData = true;
+      return this.contextual ? data.global(name, this.itemPath()) : data.global(name);
    }
 
    public UiItemPath itemPath() {
@@ -496,16 +466,16 @@ public final class UiControl {
    static boolean isName(String text, int from) {
       if (text.length() <= from) {
          return false;
-      } else {
-         for (int i = from; i < text.length(); i++) {
-            char c = text.charAt(i);
-            if (!Character.isLetterOrDigit(c) && c != '_' && c != '.') {
-               return false;
-            }
-         }
-
-         return true;
       }
+
+      for (int i = from; i < text.length(); i++) {
+         char c = text.charAt(i);
+         if (!Character.isLetterOrDigit(c) && c != '_' && c != '.') {
+            return false;
+         }
+      }
+
+      return true;
    }
 
    @Override
@@ -516,8 +486,7 @@ public final class UiControl {
    record Factory(
       String name, Map<String, String> controlIds, @Nullable String controlName, int maxChildren, boolean dataDriven, String namespace, Set<String> weak
    ) {
-      @Nullable
-      String reference(@Nullable String kind) {
+      @Nullable String reference(@Nullable String kind) {
          if (kind != null) {
             String id = this.controlIds.get(kind);
             if (id != null) {

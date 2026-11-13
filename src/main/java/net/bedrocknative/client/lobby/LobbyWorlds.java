@@ -6,6 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.DateFormat;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -37,8 +38,8 @@ final class LobbyWorlds {
       LevelCandidates candidates;
       try {
          candidates = source.findLevelCandidates();
-      } catch (LevelStorageException var4) {
-         BedrockNative.LOGGER.warn("Bedrock lobby: couldn't list the worlds", var4);
+      } catch (LevelStorageException e) {
+         BedrockNative.LOGGER.warn("Bedrock lobby: couldn't list the worlds", e);
          return CompletableFuture.completedFuture(List.of());
       }
 
@@ -46,7 +47,7 @@ final class LobbyWorlds {
          BedrockNative.LOGGER.warn("Bedrock lobby: couldn't read the worlds", e);
          return List.of();
       }).thenApply(levels -> {
-         List<LevelSummary> sorted = new ArrayList<>(levels);
+         List<LevelSummary> sorted = new ArrayList<>((Collection<? extends LevelSummary>)levels);
          sorted.sort(null);
          return sorted;
       });
@@ -87,39 +88,39 @@ final class LobbyWorlds {
    static String mode(LevelSummary level) {
       if (level.isHardcore()) {
          return "selectWorld.gameMode.hardcore";
-      } else {
-         GameType mode = level.getGameMode();
-         return "createWorldScreen.gameMode." + mode.getName();
       }
+
+      GameType mode = level.getGameMode();
+      return "createWorldScreen.gameMode." + mode.getName();
    }
 
    private static String size(Minecraft minecraft, String levelId, Runnable counted) {
       String known = SIZES.get(levelId);
       if (known != null) {
          return known;
-      } else {
-         Path folder = minecraft.getLevelSource().getLevelPath(levelId);
-         SIZES.put(levelId, "");
-         Thread.ofVirtual().name("Bedrock lobby world size").start(() -> {
-            long bytes = 0L;
-
-            try (Stream<Path> files = Files.walk(folder)) {
-               bytes = files.filter(x$0 -> Files.isRegularFile(x$0)).mapToLong(file -> {
-                  try {
-                     return Files.size(file);
-                  } catch (IOException var2x) {
-                     return 0L;
-                  }
-               }).sum();
-            } catch (UncheckedIOException | IOException var11) {
-               BedrockNative.LOGGER.debug("Bedrock lobby: couldn't measure world {}", levelId, var11);
-            }
-
-            SIZES.put(levelId, format(bytes));
-            minecraft.execute(counted);
-         });
-         return "";
       }
+
+      Path folder = minecraft.getLevelSource().getLevelPath(levelId);
+      SIZES.put(levelId, "");
+      Thread.ofVirtual().name("Bedrock lobby world size").start(() -> {
+         long bytes = 0L;
+
+         try (Stream<Path> files = Files.walk(folder)) {
+            bytes = files.filter(x$0 -> Files.isRegularFile(x$0)).mapToLong(file -> {
+               try {
+                  return Files.size(file);
+               } catch (IOException e) {
+                  return 0L;
+               }
+            }).sum();
+         } catch (IOException | UncheckedIOException e) {
+            BedrockNative.LOGGER.debug("Bedrock lobby: couldn't measure world {}", levelId, e);
+         }
+
+         SIZES.put(levelId, format(bytes));
+         minecraft.execute(counted);
+      });
+      return "";
    }
 
    static String format(long bytes) {

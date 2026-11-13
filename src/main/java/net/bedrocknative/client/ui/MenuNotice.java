@@ -12,13 +12,12 @@ import org.jspecify.annotations.Nullable;
 public final class MenuNotice {
    private static final long SHOWN_MS = 3000L;
    private static final long FADE_MS = 400L;
-   @Nullable
-   private Component text;
+   private @Nullable Component text;
    private long shownAt;
 
    public void unavailable(String labelKey) {
       String label = BedrockText.translate(labelKey, List.of("0")).replaceAll("\\s*\\(0\\)$", "");
-      this.show(Component.translatable("bedrocknative.menu.unavailable", new Object[]{BedrockText.format(label)}));
+      this.show(Component.translatable("bedrocknative.menu.unavailable", BedrockText.format(label)));
    }
 
    public void show(Component message) {
@@ -26,8 +25,7 @@ public final class MenuNotice {
       this.shownAt = Util.getMillis();
    }
 
-   @Nullable
-   public Component text() {
+   public @Nullable Component text() {
       return this.text != null && Util.getMillis() - this.shownAt < 3000L ? this.text : null;
    }
 

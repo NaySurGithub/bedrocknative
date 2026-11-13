@@ -30,15 +30,15 @@ public final class ActorSnapshot {
    private int generation = -1;
    private int blendVersion = -1;
    private RenderType[][] types = new RenderType[0][];
-   private RenderType[][] glowTypes = new RenderType[0][];
-   private RenderType[][] outlineTypes = new RenderType[0][];
+   private @Nullable RenderType[][] glowTypes = new RenderType[0][];
+   private @Nullable RenderType[][] outlineTypes = new RenderType[0][];
    private Identifier[][] textures = new Identifier[0][];
    private RenderKind[][] kinds = new RenderKind[0][];
-   private MaterialTable.MaterialInfo[][] materials = new MaterialTable.MaterialInfo[0][];
-   private String[][][] layers = new String[0][][];
+   private MaterialTable.@Nullable MaterialInfo[][] materials = new MaterialTable.MaterialInfo[0][];
+   private @Nullable String[][][] layers = new String[0][][];
    private int[][] tints = new int[0][];
    private int[][] secondTints = new int[0][];
-   private String[][] masks = new String[0][];
+   private @Nullable String[][] masks = new String[0][];
    private boolean[][] dissolves = new boolean[0][];
    private boolean[][] composed = new boolean[0][];
    private float bodyYaw;
@@ -55,8 +55,7 @@ public final class ActorSnapshot {
    private final float[][] handPivots = new float[][]{new float[3], new float[3]};
    private final boolean[] hasHand = new boolean[2];
    private final boolean[] handAttached = new boolean[2];
-   @Nullable
-   private MeshedGeometry handMesh;
+   private @Nullable MeshedGeometry handMesh;
    private int rightItem = -1;
    private int leftItem = -1;
 
@@ -100,21 +99,20 @@ public final class ActorSnapshot {
       }
    }
 
-   @Nullable
-   private String dissolveMask(int c) {
+   private @Nullable String dissolveMask(int c) {
       if (c == 0) {
          return null;
-      } else {
-         DrawSnapshot.Call previous = this.draw.call(c - 1);
-
-         for (int g = 0; g < previous.groups(); g++) {
-            if (previous.kind(g) == RenderKind.DEPTH_ONLY) {
-               return previous.texture();
-            }
-         }
-
-         return null;
       }
+
+      DrawSnapshot.Call previous = this.draw.call(c - 1);
+
+      for (int g = 0; g < previous.groups(); g++) {
+         if (previous.kind(g) == RenderKind.DEPTH_ONLY) {
+            return previous.texture();
+         }
+      }
+
+      return null;
    }
 
    private void refresh(DrawSnapshot.Call call, int c, int g, @Nullable String mask) {
@@ -162,7 +160,7 @@ public final class ActorSnapshot {
       }
    }
 
-   void hands(@Nullable Skeleton skeleton, @Nullable boolean[] attached) {
+   void hands(@Nullable Skeleton skeleton, boolean @Nullable [] attached) {
       this.hasHand[0] = false;
       this.hasHand[1] = false;
       if (skeleton != null) {
@@ -178,7 +176,7 @@ public final class ActorSnapshot {
       }
    }
 
-   private void hand(int hand, Skeleton skeleton, int bone, @Nullable boolean[] attached) {
+   private void hand(int hand, Skeleton skeleton, int bone, boolean @Nullable [] attached) {
       if (bone >= 0) {
          this.hasHand[hand] = true;
          this.handAttached[hand] = attached != null && attached[hand];
@@ -259,20 +257,20 @@ public final class ActorSnapshot {
    private int vertexColor(DrawSnapshot.Call call, RenderKind kind, MaterialTable.MaterialInfo material, boolean dissolve) {
       if (!this.compose) {
          return -1;
-      } else {
-         float alpha = 1.0F;
-         if (dissolve) {
-            alpha = 1.0F - this.deathProgress;
-         } else if (kind.blended() && material.colorMask()) {
-            alpha = call.colorAlpha();
-            if (alpha <= 0.0F) {
-               return 0;
-            }
-         }
-
-         int tint = material.overlay() ? call.overlayTint() : 16777215;
-         return Math.round(Math.clamp(alpha, 0.0F, 1.0F) * 255.0F) << 24 | tint;
       }
+
+      float alpha = 1.0F;
+      if (dissolve) {
+         alpha = 1.0F - this.deathProgress;
+      } else if (kind.blended() && material.colorMask()) {
+         alpha = call.colorAlpha();
+         if (alpha <= 0.0F) {
+            return 0;
+         }
+      }
+
+      int tint = material.overlay() ? call.overlayTint() : 16777215;
+      return Math.round(Math.clamp(alpha, 0.0F, 1.0F) * 255.0F) << 24 | tint;
    }
 
    void bodyYaw(float yaw) {
@@ -467,13 +465,11 @@ public final class ActorSnapshot {
       return this.actorScale;
    }
 
-   @Nullable
-   public String texturePath(int call) {
+   public @Nullable String texturePath(int call) {
       return call < this.draw.calls() ? this.draw.call(call).texture() : null;
    }
 
-   @Nullable
-   public String layerPath(int call, int layer) {
+   public @Nullable String layerPath(int call, int layer) {
       return call < this.draw.calls() && layer < 3 ? this.draw.call(call).layer(layer) : null;
    }
 
@@ -481,8 +477,7 @@ public final class ActorSnapshot {
       return this.javaHand(hand);
    }
 
-   @Nullable
-   public Identifier texture(int call, int group) {
+   public @Nullable Identifier texture(int call, int group) {
       return call < this.draw.calls() && group < this.draw.call(call).groups() ? this.textures[call][group] : null;
    }
 

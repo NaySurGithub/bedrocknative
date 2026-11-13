@@ -20,17 +20,13 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin({SoundBufferLibrary.class})
+@Mixin(SoundBufferLibrary.class)
 public abstract class SoundBufferLibraryMixin implements BedrockAudio.BufferCache {
    @Shadow
    @Final
    private Map<Identifier, CompletableFuture<SoundBuffer>> cache;
 
-   @Inject(
-      method = {"getCompleteBuffer"},
-      at = {@At("HEAD")},
-      cancellable = true
-   )
+   @Inject(method = "getCompleteBuffer", at = @At("HEAD"), cancellable = true)
    private void bedrocknative$bedrockBuffer(Identifier location, CallbackInfoReturnable<CompletableFuture<SoundBuffer>> cir) {
       if (BedrockAudio.owns(location)) {
          BedrockAudio.attach(this);
@@ -38,21 +34,14 @@ public abstract class SoundBufferLibraryMixin implements BedrockAudio.BufferCach
       }
    }
 
-   @Inject(
-      method = {"getStream"},
-      at = {@At("HEAD")},
-      cancellable = true
-   )
+   @Inject(method = "getStream", at = @At("HEAD"), cancellable = true)
    private void bedrocknative$bedrockStream(Identifier location, boolean looping, CallbackInfoReturnable<CompletableFuture<AudioStream>> cir) {
       if (BedrockAudio.owns(location)) {
          cir.setReturnValue(BedrockAudio.stream(location, looping));
       }
    }
 
-   @Inject(
-      method = {"clear"},
-      at = {@At("HEAD")}
-   )
+   @Inject(method = "clear", at = @At("HEAD"))
    private void bedrocknative$discardReleased(CallbackInfo ci) {
       BedrockAudio.discardPendingNow();
    }

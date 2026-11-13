@@ -16,8 +16,7 @@ final class BoatPrediction implements VehiclePrediction {
    private final BoatPhysics.State state = new BoatPhysics.State();
    private final BoatPrediction.Frame[] frames = new BoatPrediction.Frame[64];
    private long lastTick = -1L;
-   @Nullable
-   private BoatPrediction.Frame pending;
+   private BoatPrediction.@Nullable Frame pending;
    private Vec3 moved = Vec3.ZERO;
 
    BoatPrediction(AbstractBoat boat) {

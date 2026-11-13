@@ -92,8 +92,7 @@ public final class PhaseClock {
       return this.line();
    }
 
-   @Nullable
-   public synchronized PhaseClock.Mark last() {
+   public synchronized PhaseClock.@Nullable Mark last() {
       return this.marks.isEmpty() ? null : this.marks.getLast();
    }
 

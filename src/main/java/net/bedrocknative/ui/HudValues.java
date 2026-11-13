@@ -71,70 +71,11 @@ public record HudValues(
       Set.of()
    );
 
-   public HudValues(
-      HudValues.Mode mode,
-      int tick,
-      int health,
-      int displayHealth,
-      float maxHealth,
-      int absorption,
-      boolean healthBlink,
-      HudValues.HeartType heartType,
-      boolean regeneration,
-      boolean hardcore,
-      int armor,
-      int food,
-      float saturation,
-      boolean hungerEffect,
-      int air,
-      int maxAir,
-      boolean underwater,
-      int mountHealth,
-      int mountHearts,
-      HudValues.Bar bar,
-      float experience,
-      int level,
-      float jump,
-      boolean jumpCooldown,
-      List<HudValues.Effect> effects,
-      int selected,
-      List<ContainerData.Slot> hotbar,
-      float[] cooldowns,
-      Set<HudValues.Part> hidden
-   ) {
+   public HudValues {
       effects = List.copyOf(effects);
       hotbar = List.copyOf(hotbar);
       cooldowns = (float[])cooldowns.clone();
       hidden = Set.copyOf(hidden);
-      this.mode = mode;
-      this.tick = tick;
-      this.health = health;
-      this.displayHealth = displayHealth;
-      this.maxHealth = maxHealth;
-      this.absorption = absorption;
-      this.healthBlink = healthBlink;
-      this.heartType = heartType;
-      this.regeneration = regeneration;
-      this.hardcore = hardcore;
-      this.armor = armor;
-      this.food = food;
-      this.saturation = saturation;
-      this.hungerEffect = hungerEffect;
-      this.air = air;
-      this.maxAir = maxAir;
-      this.underwater = underwater;
-      this.mountHealth = mountHealth;
-      this.mountHearts = mountHearts;
-      this.bar = bar;
-      this.experience = experience;
-      this.level = level;
-      this.jump = jump;
-      this.jumpCooldown = jumpCooldown;
-      this.effects = effects;
-      this.selected = selected;
-      this.hotbar = hotbar;
-      this.cooldowns = cooldowns;
-      this.hidden = hidden;
    }
 
    public static List<ContainerData.Slot> emptyHotbar() {
@@ -222,7 +163,7 @@ public record HudValues(
       );
    }
 
-   public static enum Bar {
+   public enum Bar {
       EXPERIENCE,
       LOCATOR,
       JUMP,
@@ -235,14 +176,14 @@ public record HudValues(
       }
    }
 
-   public static enum HeartType {
+   public enum HeartType {
       NORMAL,
       POISONED,
       WITHERED,
       FROZEN;
    }
 
-   public static enum Mode {
+   public enum Mode {
       SURVIVAL,
       CREATIVE,
       ADVENTURE,
@@ -253,7 +194,7 @@ public record HudValues(
       }
    }
 
-   public static enum Part {
+   public enum Part {
       HOTBAR,
       HEALTH,
       ARMOR,

@@ -263,8 +263,7 @@ public final class HudData extends UiDataMap {
       return this.chatCount;
    }
 
-   @Nullable
-   public String lastChat() {
+   public @Nullable String lastChat() {
       return this.chatCount == 0 ? null : this.chat[(this.chatCount - 1) % 100];
    }
 
@@ -384,7 +383,7 @@ public final class HudData extends UiDataMap {
          this(kind, name, controlId, variables, replace, null, -1);
       }
 
-      public static enum Kind {
+      public enum Kind {
          FACTORY,
          CLEAR,
          UI_EVENT;

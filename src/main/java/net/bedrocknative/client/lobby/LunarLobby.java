@@ -14,8 +14,7 @@ import org.jspecify.annotations.Nullable;
 
 final class LunarLobby {
    private static final long NOTE_MS = 60000L;
-   @Nullable
-   private static Screen tried;
+   private static @Nullable Screen tried;
    private static final Deque<Long> CATCHES = new ArrayDeque<>();
 
    private LunarLobby() {

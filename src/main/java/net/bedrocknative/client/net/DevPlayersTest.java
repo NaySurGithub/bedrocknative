@@ -73,9 +73,9 @@ final class DevPlayersTest {
          } else {
             this.test();
          }
-      } catch (RuntimeException var8) {
-         this.fail("exception: " + var8);
-         BedrockNative.LOGGER.error("Dev players test failed with an exception", var8);
+      } catch (RuntimeException e) {
+         this.fail("exception: " + e);
+         BedrockNative.LOGGER.error("Dev players test failed with an exception", e);
       } finally {
          this.restoreSkin();
          this.run(() -> {
@@ -313,8 +313,8 @@ final class DevPlayersTest {
       this.commands("replaceitem entity @s slot.weapon.mainhand 0 air");
    }
 
-   private void handFixedWithoutBobbing(@Nullable FirstPersonProbe.Box rest) {
-      boolean bobbing = this.onClient(() -> (Boolean)this.minecraft.options.bobView().get());
+   private void handFixedWithoutBobbing(FirstPersonProbe.@Nullable Box rest) {
+      boolean bobbing = this.onClient(() -> this.minecraft.options.bobView().get());
       this.run(() -> this.minecraft.options.bobView().set(false));
 
       try {
@@ -392,33 +392,32 @@ final class DevPlayersTest {
             }));
             this.screenshot("players-restored");
          }
-      } catch (RuntimeException var4) {
-         this.fail("putting the login skin back: " + var4);
+      } catch (RuntimeException e) {
+         this.fail("putting the login skin back: " + e);
       }
    }
 
-   @Nullable
-   private SerializedSkin classic(String texture, boolean slim, boolean cape) {
+   private @Nullable SerializedSkin classic(String texture, boolean slim, boolean cape) {
       if (!Files.isRegularFile(SKIN_PACK.resolve(texture))) {
          return null;
-      } else {
-         try {
-            JsonObject claims = BedrockSkin.classicFromSkinPack(SKIN_PACK, texture, slim).claims();
-            SerializedSkin skin = SkinClaims.toSerialized(claims);
-            if (cape) {
-               skin = skin.toBuilder()
-                  .capeData(ImageData.of(64, 32, capeImage()))
-                  .capeId("bedrocknative-dev-cape")
-                  .capeOnClassic(true)
-                  .fullSkinId(skin.getSkinId() + "bedrocknative-dev-cape")
-                  .build();
-            }
+      }
 
-            return skin;
-         } catch (Exception var6) {
-            this.fail("reading " + texture + " from the skin pack: " + var6);
-            return null;
+      try {
+         JsonObject claims = BedrockSkin.classicFromSkinPack(SKIN_PACK, texture, slim).claims();
+         SerializedSkin skin = SkinClaims.toSerialized(claims);
+         if (cape) {
+            skin = skin.toBuilder()
+               .capeData(ImageData.of(64, 32, capeImage()))
+               .capeId("bedrocknative-dev-cape")
+               .capeOnClassic(true)
+               .fullSkinId(skin.getSkinId() + "bedrocknative-dev-cape")
+               .build();
          }
+
+         return skin;
+      } catch (Exception e) {
+         this.fail("reading " + texture + " from the skin pack: " + e);
+         return null;
       }
    }
 
@@ -468,20 +467,20 @@ final class DevPlayersTest {
             int arm = mesh != null ? mesh.bone("rightArm") : -1;
             if (arm < 0) {
                return -1.0F;
-            } else {
-               float[] quads = mesh.bone(arm).quads();
-               float min = Float.MAX_VALUE;
-               float max = -Float.MAX_VALUE;
-
-               for (int i = 0; i < quads.length; i += 8) {
-                  min = Math.min(min, quads[i]);
-                  max = Math.max(max, quads[i]);
-               }
-
-               float width = max - min;
-               log("right arm of {}: {} pixels wide", model.defaultGeometry(), width);
-               return Math.round(width * 100.0F) / 100.0F;
             }
+
+            float[] quads = mesh.bone(arm).quads();
+            float min = Float.MAX_VALUE;
+            float max = -Float.MAX_VALUE;
+
+            for (int i = 0; i < quads.length; i += 8) {
+               min = Math.min(min, quads[i]);
+               max = Math.max(max, quads[i]);
+            }
+
+            float width = max - min;
+            log("right arm of {}: {} pixels wide", model.defaultGeometry(), width);
+            return Math.round(width * 100.0F) / 100.0F;
          } else {
             return -1.0F;
          }
@@ -504,7 +503,7 @@ final class DevPlayersTest {
       log("emote packets: {}", this.onClient(() -> BedrockActors.current().emoteLog()));
    }
 
-   private static String describe(@Nullable PlayerSkins.Entry entry) {
+   private static String describe(PlayerSkins.@Nullable Entry entry) {
       return entry == null ? "none" : entry.skin().describe() + (entry.trusted() ? ", trusted" : ", untrusted");
    }
 
@@ -571,7 +570,7 @@ final class DevPlayersTest {
    private static void sleep(long millis) {
       try {
          Thread.sleep(millis);
-      } catch (InterruptedException var3) {
+      } catch (InterruptedException e) {
          Thread.currentThread().interrupt();
       }
    }

@@ -11,13 +11,9 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin({SoundManager.class})
+@Mixin(SoundManager.class)
 public abstract class SoundManagerMixin {
-   @Inject(
-      method = {"play"},
-      at = {@At("HEAD")},
-      cancellable = true
-   )
+   @Inject(method = "play", at = @At("HEAD"), cancellable = true)
    private void bedrocknative$bridge(SoundInstance instance, CallbackInfoReturnable<PlayResult> cir) {
       PlayResult result = JavaSoundBridge.play(instance);
       if (result != null) {
@@ -25,23 +21,15 @@ public abstract class SoundManagerMixin {
       }
    }
 
-   @Inject(
-      method = {"isActive"},
-      at = {@At("HEAD")},
-      cancellable = true
-   )
+   @Inject(method = "isActive", at = @At("HEAD"), cancellable = true)
    private void bedrocknative$standInActive(SoundInstance instance, CallbackInfoReturnable<Boolean> cir) {
       BedrockSoundInstance standIn = JavaSoundBridge.standIn(instance);
       if (standIn != null) {
-         cir.setReturnValue(((SoundManager)this).isActive(standIn));
+         cir.setReturnValue(((SoundManager)(Object)this).isActive(standIn));
       }
    }
 
-   @Inject(
-      method = {"stop(Lnet/minecraft/client/resources/sounds/SoundInstance;)V"},
-      at = {@At("HEAD")},
-      cancellable = true
-   )
+   @Inject(method = "stop(Lnet/minecraft/client/resources/sounds/SoundInstance;)V", at = @At("HEAD"), cancellable = true)
    private void bedrocknative$stopStandIn(SoundInstance instance, CallbackInfo ci) {
       if (JavaSoundBridge.stop(instance)) {
          ci.cancel();

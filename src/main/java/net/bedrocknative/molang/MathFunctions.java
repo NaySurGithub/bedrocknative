@@ -15,8 +15,7 @@ public final class MathFunctions {
    private MathFunctions() {
    }
 
-   @Nullable
-   static MathFunctions.Function get(String name) {
+   static MathFunctions.@Nullable Function get(String name) {
       return FUNCTIONS.get(name);
    }
 
@@ -187,7 +186,7 @@ public final class MathFunctions {
       double at(double var1);
    }
 
-   record Function(String name, int arity, @Nullable MathFunctions.Pure pure, @Nullable MathFunctions.Random random) {
+   record Function(String name, int arity, MathFunctions.@Nullable Pure pure, MathFunctions.@Nullable Random random) {
       boolean dice() {
          return this.random != null && this.name.startsWith("die_roll");
       }

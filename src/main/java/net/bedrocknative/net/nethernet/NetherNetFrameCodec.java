@@ -18,9 +18,9 @@ public final class NetherNetFrameCodec extends MessageToMessageCodec<ByteBuf, Be
    protected void encode(ChannelHandlerContext ctx, BedrockBatchWrapper batch, List<Object> out) {
       if (batch.getCompressed() == null) {
          throw new IllegalStateException("Bedrock batch was not compressed");
-      } else {
-         out.add(batch.getCompressed().retainedSlice());
       }
+
+      out.add(batch.getCompressed().retainedSlice());
    }
 
    protected void decode(ChannelHandlerContext ctx, ByteBuf message, List<Object> out) {

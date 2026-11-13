@@ -21,9 +21,8 @@ public final class TradeData implements ContainerData.Station {
    private static final String STATE = "#trade_toggle_state";
    private static final Pattern ARGUMENT = Pattern.compile("%(?:(\\d+)\\$)?([sd])");
    private static final int VILLAGER_LEVELS = 5;
-   private final Function<String, String> lang;
-   @Nullable
-   private TradeData.Actions actions;
+   private final Function<String, @Nullable String> lang;
+   private TradeData.@Nullable Actions actions;
    private long version = 1L;
    private String traderName = "";
    private boolean levels;
@@ -39,11 +38,11 @@ public final class TradeData implements ContainerData.Station {
    private boolean secondValid = true;
    private boolean resultReady;
 
-   public TradeData(Function<String, String> lang) {
+   public TradeData(Function<String, @Nullable String> lang) {
       this.lang = lang;
    }
 
-   public void actions(@Nullable TradeData.Actions target) {
+   public void actions(TradeData.@Nullable Actions target) {
       this.actions = target;
    }
 
@@ -125,17 +124,17 @@ public final class TradeData implements ContainerData.Station {
    public int javaOffer(int offer) {
       if (!this.unlocked(offer)) {
          return -1;
-      } else {
-         int index = 0;
-
-         for (int i = 0; i < offer; i++) {
-            if (this.unlocked(i)) {
-               index++;
-            }
-         }
-
-         return index;
       }
+
+      int index = 0;
+
+      for (int i = 0; i < offer; i++) {
+         if (this.unlocked(i)) {
+            index++;
+         }
+      }
+
+      return index;
    }
 
    public int offerAt(UiItemPath path) {
@@ -144,8 +143,7 @@ public final class TradeData implements ContainerData.Station {
       return tier >= 0 && tier < this.tierOffers.length && trade >= 0 && trade < this.tierOffers[tier].length ? this.tierOffers[tier][trade] : -1;
    }
 
-   @Nullable
-   public static String cellAt(UiItemPath path) {
+   public static @Nullable String cellAt(UiItemPath path) {
       for (int depth = 0; depth < path.size(); depth++) {
          String collection = path.collection(depth);
          if ("trade_item_1".equals(collection) || "trade_item_2".equals(collection) || "sell_item".equals(collection)) {
@@ -164,19 +162,19 @@ public final class TradeData implements ContainerData.Station {
       String pattern = this.lang.apply(key);
       if (pattern == null) {
          return args.length == 0 ? key : key + " " + Arrays.toString(args);
-      } else {
-         Matcher matcher = ARGUMENT.matcher(pattern);
-         StringBuilder out = new StringBuilder();
-         int next = 0;
-
-         while (matcher.find()) {
-            int index = matcher.group(1) != null ? Integer.parseInt(matcher.group(1)) - 1 : next++;
-            matcher.appendReplacement(out, Matcher.quoteReplacement(index >= 0 && index < args.length ? String.valueOf(args[index]) : ""));
-         }
-
-         matcher.appendTail(out);
-         return out.toString();
       }
+
+      Matcher matcher = ARGUMENT.matcher(pattern);
+      StringBuilder out = new StringBuilder();
+      int next = 0;
+
+      while (matcher.find()) {
+         int index = matcher.group(1) != null ? Integer.parseInt(matcher.group(1)) - 1 : next++;
+         matcher.appendReplacement(out, Matcher.quoteReplacement(index >= 0 && index < args.length ? String.valueOf(args[index]) : ""));
+      }
+
+      matcher.appendTail(out);
+      return out.toString();
    }
 
    private String levelName(int tier) {
@@ -207,11 +205,11 @@ public final class TradeData implements ContainerData.Station {
          int tier = Math.max(0, Math.min(this.unlockedTier, this.tierExperience.size() - 1));
          if (tier >= this.tierExperience.size() - 1) {
             return 1.0F;
-         } else {
-            int from = this.tierExperience.get(tier);
-            int to = this.tierExperience.get(tier + 1);
-            return to <= from ? 1.0F : Math.max(0.0F, Math.min(1.0F, (float)(this.experience + extra - from) / (to - from)));
          }
+
+         int from = this.tierExperience.get(tier);
+         int to = this.tierExperience.get(tier + 1);
+         return to <= from ? 1.0F : Math.max(0.0F, Math.min(1.0F, (float)(this.experience + extra - from) / (to - from)));
       } else {
          return 0.0F;
       }
@@ -237,9 +235,8 @@ public final class TradeData implements ContainerData.Station {
       return "trade_tiers".equals(collection) ? this.tiers.length : -1;
    }
 
-   @Nullable
    @Override
-   public UiValue item(String collection, int index, String name) {
+   public @Nullable UiValue item(String collection, int index, String name) {
       if ("trade_tiers".equals(collection)) {
          if (index >= 0 && index < this.tiers.length) {
             int tier = this.tiers[index];
@@ -266,49 +263,48 @@ public final class TradeData implements ContainerData.Station {
       }
    }
 
-   @Nullable
    @Override
-   public UiValue global(String name, UiItemPath path) {
+   public @Nullable UiValue global(String name, UiItemPath path) {
       int offer = this.offerAt(path);
       if (offer < 0) {
          return null;
-      } else {
-         TradeData.Offer shown = this.offers.get(offer);
-         switch (name) {
-            case "#trade_toggle_state":
-               return UiValue.of(offer == this.selected);
-            case "#trade_toggle_enabled":
-               return UiValue.of(this.unlocked(offer));
-            case "#trade_possible":
-               return UiValue.of(!shown.outOfStock() && offer < this.affordable.length && this.affordable[offer]);
-            case "#trade_cross_out_visible":
-               return UiValue.of(shown.outOfStock());
-            case "#padding_around_sell_item":
-               return UiValue.of(!shown.first().changed() && !shown.second().changed());
-            case "#using_touch":
-               return UiValue.FALSE;
-            default:
-               String cell = cellAt(path);
-               if (cell == null) {
-                  return null;
-               } else {
-                  TradeData.Item item = switch (cell) {
-                     case "trade_item_1" -> shown.first();
-                     case "trade_item_2" -> shown.second();
-                     default -> shown.sell();
-                  };
+      }
 
-                  return switch (name) {
-                     case "#trade_item_count" -> UiValue.of(item.changed() ? Integer.toString(item.baseCount()) : count(item.count()));
-                     case "#second_trade_item_count" -> UiValue.of(item.changed() ? Integer.toString(item.count()) : "");
-                     case "#trade_price_different" -> UiValue.of(item.changed());
-                     case "#single_slash_visible" -> UiValue.of(item.changed() && item.baseCount() < 10);
-                     case "#double_slash_visible" -> UiValue.of(item.changed() && item.baseCount() >= 10);
-                     case "#hover_text" -> UiValue.of(item.present() ? item.name() : "");
-                     default -> null;
-                  };
-               }
-         }
+      TradeData.Offer shown = this.offers.get(offer);
+      switch (name) {
+         case "#trade_toggle_state":
+            return UiValue.of(offer == this.selected);
+         case "#trade_toggle_enabled":
+            return UiValue.of(this.unlocked(offer));
+         case "#trade_possible":
+            return UiValue.of(!shown.outOfStock() && offer < this.affordable.length && this.affordable[offer]);
+         case "#trade_cross_out_visible":
+            return UiValue.of(shown.outOfStock());
+         case "#padding_around_sell_item":
+            return UiValue.of(!shown.first().changed() && !shown.second().changed());
+         case "#using_touch":
+            return UiValue.FALSE;
+         default:
+            String cell = cellAt(path);
+            if (cell == null) {
+               return null;
+            } else {
+               TradeData.Item item = switch (cell) {
+                  case "trade_item_1" -> shown.first();
+                  case "trade_item_2" -> shown.second();
+                  default -> shown.sell();
+               };
+
+               return switch (name) {
+                  case "#trade_item_count" -> UiValue.of(item.changed() ? Integer.toString(item.baseCount()) : count(item.count()));
+                  case "#second_trade_item_count" -> UiValue.of(item.changed() ? Integer.toString(item.count()) : "");
+                  case "#trade_price_different" -> UiValue.of(item.changed());
+                  case "#single_slash_visible" -> UiValue.of(item.changed() && item.baseCount() < 10);
+                  case "#double_slash_visible" -> UiValue.of(item.changed() && item.baseCount() >= 10);
+                  case "#hover_text" -> UiValue.of(item.present() ? item.name() : "");
+                  default -> null;
+               };
+            }
       }
    }
 
@@ -320,22 +316,22 @@ public final class TradeData implements ContainerData.Station {
    public boolean event(String buttonId, UiItemPath path) {
       if (!"button.trade_select".equals(buttonId) && !"button.trade_secondary_select".equals(buttonId)) {
          return false;
-      } else {
-         int offer = this.offerAt(path);
-         if (offer < 0) {
-            return false;
-         } else {
-            this.changed();
-            if (this.unlocked(offer)) {
-               this.selected = offer;
-               if (this.actions != null) {
-                  this.actions.select(this.javaOffer(offer));
-               }
-            }
+      }
 
-            return true;
+      int offer = this.offerAt(path);
+      if (offer < 0) {
+         return false;
+      }
+
+      this.changed();
+      if (this.unlocked(offer)) {
+         this.selected = offer;
+         if (this.actions != null) {
+            this.actions.select(this.javaOffer(offer));
          }
       }
+
+      return true;
    }
 
    @Override

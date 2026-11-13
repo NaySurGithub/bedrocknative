@@ -30,11 +30,11 @@ public final class PositionLerp {
    public Vec3 next(Vec3 current) {
       if (this.remaining <= 0) {
          return current;
-      } else {
-         Vec3 result = current.lerp(this.target, 1.0 / this.remaining);
-         this.remaining--;
-         return result;
       }
+
+      Vec3 result = current.lerp(this.target, 1.0 / this.remaining);
+      this.remaining--;
+      return result;
    }
 
    public void cancel() {

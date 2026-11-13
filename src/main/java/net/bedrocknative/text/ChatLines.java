@@ -17,9 +17,9 @@ public final class ChatLines {
       String source = sourceName == null ? "" : sourceName;
 
       return switch (type) {
-         case CHAT -> source.isEmpty() ? text : Component.translatable("chat.type.text", new Object[]{BedrockText.format(source), text});
-         case WHISPER -> Component.translatable("commands.message.display.incoming", new Object[]{BedrockText.format(source), text})
-            .withStyle(new ChatFormatting[]{ChatFormatting.GRAY, ChatFormatting.ITALIC});
+         case CHAT -> source.isEmpty() ? text : Component.translatable("chat.type.text", BedrockText.format(source), text);
+         case WHISPER -> Component.translatable("commands.message.display.incoming", BedrockText.format(source), text)
+            .withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC);
          default -> text;
       };
    }

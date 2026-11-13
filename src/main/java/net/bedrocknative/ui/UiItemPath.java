@@ -8,10 +8,10 @@ import org.jspecify.annotations.Nullable;
 
 public final class UiItemPath {
    public static final UiItemPath NONE = new UiItemPath(new String[0], new int[0]);
-   private final String[] collections;
+   private final @Nullable String[] collections;
    private final int[] indices;
 
-   private UiItemPath(String[] collections, int[] indices) {
+   private UiItemPath(@Nullable String[] collections, int[] indices) {
       this.collections = collections;
       this.indices = indices;
    }
@@ -27,17 +27,17 @@ public final class UiItemPath {
 
       if (items.isEmpty()) {
          return NONE;
-      } else {
-         String[] collections = new String[items.size()];
-         int[] indices = new int[items.size()];
-
-         for (int i = 0; i < items.size(); i++) {
-            collections[i] = items.get(i).indexCollection;
-            indices[i] = items.get(i).collectionIndex;
-         }
-
-         return new UiItemPath(collections, indices);
       }
+
+      String[] collections = new String[items.size()];
+      int[] indices = new int[items.size()];
+
+      for (int i = 0; i < items.size(); i++) {
+         collections[i] = items.get(i).indexCollection;
+         indices[i] = items.get(i).collectionIndex;
+      }
+
+      return new UiItemPath(collections, indices);
    }
 
    public static UiItemPath of(Object... collectionsAndIndices) {
@@ -56,8 +56,7 @@ public final class UiItemPath {
       return this.indices.length;
    }
 
-   @Nullable
-   public String collection(int depth) {
+   public @Nullable String collection(int depth) {
       return depth >= 0 && depth < this.collections.length ? this.collections[depth] : null;
    }
 
@@ -77,14 +76,12 @@ public final class UiItemPath {
 
    @Override
    public boolean equals(Object other) {
-      return other instanceof UiItemPath path
-         && Arrays.equals((Object[])this.collections, (Object[])path.collections)
-         && Arrays.equals(this.indices, path.indices);
+      return other instanceof UiItemPath path && Arrays.equals(this.collections, path.collections) && Arrays.equals(this.indices, path.indices);
    }
 
    @Override
    public int hashCode() {
-      return Objects.hash(Arrays.hashCode((Object[])this.collections), Arrays.hashCode(this.indices));
+      return Objects.hash(Arrays.hashCode(this.collections), Arrays.hashCode(this.indices));
    }
 
    @Override

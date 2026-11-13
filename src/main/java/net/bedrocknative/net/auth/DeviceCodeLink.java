@@ -13,10 +13,10 @@ public final class DeviceCodeLink {
    public static String direct(String verificationUri, String userCode, @Nullable String completeUri) {
       if (completeUri != null && !completeUri.isBlank()) {
          return completeUri;
-      } else {
-         String separator = verificationUri.contains("?") ? "&" : "?";
-         return verificationUri + separator + "otc=" + URLEncoder.encode(userCode, StandardCharsets.UTF_8);
       }
+
+      String separator = verificationUri.contains("?") ? "&" : "?";
+      return verificationUri + separator + "otc=" + URLEncoder.encode(userCode, StandardCharsets.UTF_8);
    }
 
    public static boolean isMicrosoftPage(String link) {
@@ -34,7 +34,7 @@ public final class DeviceCodeLink {
          } else {
             return false;
          }
-      } catch (IllegalArgumentException var3) {
+      } catch (IllegalArgumentException e) {
          return false;
       }
    }

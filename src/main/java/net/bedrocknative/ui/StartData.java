@@ -30,15 +30,14 @@ public final class StartData implements UiDataSource {
       "button.friends_drawer",
       "menu.socialfriends"
    );
-   @Nullable
-   private StartData.Actions actions;
+   private StartData.@Nullable Actions actions;
    private String gamertag = "";
    private boolean face;
    private String versionText = "";
    private String socialText = "Social (0)";
    private long version = 1L;
 
-   public void actions(@Nullable StartData.Actions target) {
+   public void actions(StartData.@Nullable Actions target) {
       this.actions = target;
    }
 
@@ -128,9 +127,8 @@ public final class StartData implements UiDataSource {
       return UiValue.NULL;
    }
 
-   @Nullable
    @Override
-   public String kind(String collection, int index) {
+   public @Nullable String kind(String collection, int index) {
       return null;
    }
 

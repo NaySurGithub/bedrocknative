@@ -25,18 +25,18 @@ final class DevSettingsTest {
    }
 
    void run() {
-      int renderDistance = this.onClient(() -> (Integer)this.minecraft.options.renderDistance().get());
-      int guiScale = this.onClient(() -> (Integer)this.minecraft.options.guiScale().get());
+      int renderDistance = this.onClient(() -> this.minecraft.options.renderDistance().get());
+      int guiScale = this.onClient(() -> this.minecraft.options.guiScale().get());
       Window window = this.minecraft.getWindow();
-      int width = this.<Integer>onClient(window::getScreenWidth);
-      int height = this.<Integer>onClient(window::getScreenHeight);
+      int width = this.onClient(window::getScreenWidth);
+      int height = this.onClient(window::getScreenHeight);
 
       try {
          this.renderDistance(renderDistance);
          this.guiScale(window);
-      } catch (RuntimeException var10) {
-         this.failures.add("exception: " + var10);
-         BedrockNative.LOGGER.error("Dev settings test failed with an exception", var10);
+      } catch (RuntimeException e) {
+         this.failures.add("exception: " + e);
+         BedrockNative.LOGGER.error("Dev settings test failed with an exception", e);
       } finally {
          this.minecraft.execute(() -> {
             this.minecraft.options.renderDistance().set(renderDistance);
@@ -104,13 +104,13 @@ final class DevSettingsTest {
    private void guiScale(Window window) {
       this.minecraft.execute(() -> window.setWindowed(1280, 720));
 
-      for (int i = 0; i < 20 && this.<Integer>onClient(window::getWidth) != 1280; i++) {
+      for (int i = 0; i < 20 && this.onClient(window::getWidth) != 1280; i++) {
          sleep(250L);
       }
 
       sleep(1000L);
-      int actualWidth = this.<Integer>onClient(window::getWidth);
-      int actualHeight = this.<Integer>onClient(window::getHeight);
+      int actualWidth = this.onClient(window::getWidth);
+      int actualHeight = this.onClient(window::getHeight);
       BedrockOptions bedrock = BedrockOptions.read();
       int automatic = UiScale.scale(actualWidth, actualHeight, bedrock.guiScaleModifier(), bedrock.accessibilityScaling());
       int fits = UiScale.base(actualWidth, actualHeight);
@@ -193,7 +193,7 @@ final class DevSettingsTest {
    private static void sleep(long millis) {
       try {
          Thread.sleep(millis);
-      } catch (InterruptedException var3) {
+      } catch (InterruptedException e) {
          Thread.currentThread().interrupt();
       }
    }

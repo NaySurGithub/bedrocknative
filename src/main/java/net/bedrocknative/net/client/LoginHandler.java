@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.ScheduledFuture;
@@ -67,11 +66,9 @@ final class LoginHandler implements BedrockPacketHandler {
    private final ResourcePackPhase packs;
    private final List<BedrockPacket> beforeStartGame = new ArrayList<>();
    private final ItemPacketHold itemPackets;
-   @Nullable
-   private Map<Integer, String> lastRegistry;
+   private @Nullable Map<Integer, String> lastRegistry;
    private LoginHandler.State state = LoginHandler.State.NETWORK_SETTINGS;
-   @Nullable
-   private ScheduledFuture<?> handshakeGuard;
+   private @Nullable ScheduledFuture<?> handshakeGuard;
 
    LoginHandler(final BedrockClientSession session, ClientIdentity identity, InetSocketAddress address, BedrockGameListener listener, BedrockProtocol protocol) {
       this.session = session;
@@ -85,10 +82,6 @@ final class LoginHandler implements BedrockPacketHandler {
       });
       session.getPeer().getChannel().pipeline().addBefore("bedrock-packet-codec", "bedrocknative-item-hold", this.itemPackets);
       this.packs = new ResourcePackPhase(new ResourcePackPhase.Server() {
-         {
-            Objects.requireNonNull(LoginHandler.this);
-         }
-
          @Override
          public void send(BedrockPacket packet) {
             session.sendPacketImmediately(packet);
@@ -150,7 +143,7 @@ final class LoginHandler implements BedrockPacketHandler {
                case ResourcePacksInfoPacket info:
                   this.packs.execute(() -> this.packs.onInfo(info));
                   break;
-               case ResourcePackDataInfoPacket infox:
+               case ResourcePackDataInfoPacket info:
                   this.packs.execute(() -> this.packs.onDataInfo(info));
                   break;
                case ResourcePackChunkDataPacket chunk:
@@ -270,9 +263,9 @@ final class LoginHandler implements BedrockPacketHandler {
          BedrockCrypto.enableEncryption(this.session.getPeer(), key);
          this.state = LoginHandler.State.ENCRYPTION;
          this.session.sendPacketImmediately(new ClientToServerHandshakePacket());
-      } catch (Exception var6) {
-         BedrockNative.LOGGER.error("Bedrock encryption handshake failed", var6);
-         this.close(SessionEnd.client(DisconnectFailReason.UNRECOVERABLE_ERROR, "Encryption handshake failed: " + var6.getMessage()));
+      } catch (Exception e) {
+         BedrockNative.LOGGER.error("Bedrock encryption handshake failed", e);
+         this.close(SessionEnd.client(DisconnectFailReason.UNRECOVERABLE_ERROR, "Encryption handshake failed: " + e.getMessage()));
          this.session.disconnect("Encryption handshake failed");
       }
    }
@@ -284,7 +277,7 @@ final class LoginHandler implements BedrockPacketHandler {
    private static long handshakeWaitMillis() {
       try {
          return Math.max(1L, Long.parseLong(System.getProperty("bedrocknative.nethernetHandshakeWaitMs", "").trim()));
-      } catch (NumberFormatException var1) {
+      } catch (NumberFormatException e) {
          return 10000L;
       }
    }
@@ -330,8 +323,8 @@ final class LoginHandler implements BedrockPacketHandler {
 
          try {
             this.listener.onLoginSuccess();
-         } catch (RuntimeException var3) {
-            BedrockNative.LOGGER.warn("Login success listener failed", var3);
+         } catch (RuntimeException e) {
+            BedrockNative.LOGGER.warn("Login success listener failed", e);
          }
 
          ClientCacheStatusPacket cache = new ClientCacheStatusPacket();
@@ -374,9 +367,9 @@ final class LoginHandler implements BedrockPacketHandler {
          }
 
          this.session.getPeer().getCodecHelper().setItemDefinitions(SimpleDefinitionRegistry.<ItemDefinition>builder().addAll(entries.definitions()).build());
-      } catch (RuntimeException var6) {
+      } catch (RuntimeException e) {
          BedrockNative.LOGGER
-            .error("Item registry of {} entries could not be installed; item packets are dropped until one can be", items.getItems().size(), var6);
+            .error("Item registry of {} entries could not be installed; item packets are dropped until one can be", items.getItems().size(), e);
          return false;
       }
 
@@ -417,8 +410,8 @@ final class LoginHandler implements BedrockPacketHandler {
                   )
             );
          }
-      } catch (RuntimeException var5) {
-         BedrockNative.LOGGER.error("Item registry installed for the network, but its item mappings failed", var5);
+      } catch (RuntimeException e) {
+         BedrockNative.LOGGER.error("Item registry installed for the network, but its item mappings failed", e);
       }
 
       return true;
@@ -443,7 +436,7 @@ final class LoginHandler implements BedrockPacketHandler {
       this.close(SessionEnd.connection(reason.toString()));
    }
 
-   private static enum State {
+   private enum State {
       NETWORK_SETTINGS,
       LOGIN,
       ENCRYPTION,

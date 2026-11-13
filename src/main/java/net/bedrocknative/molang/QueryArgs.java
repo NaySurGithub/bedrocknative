@@ -22,14 +22,13 @@ public final class QueryArgs {
       return (int)this.number(env, index);
    }
 
-   @Nullable
-   public Object object(MolangEnv env, int index) {
+   public @Nullable Object object(MolangEnv env, int index) {
       if (index >= this.nodes.length) {
          return null;
-      } else {
-         this.nodes[index].eval(env);
-         return env.object;
       }
+
+      this.nodes[index].eval(env);
+      return env.object;
    }
 
    public String string(MolangEnv env, int index) {

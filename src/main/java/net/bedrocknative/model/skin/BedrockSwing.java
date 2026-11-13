@@ -13,11 +13,11 @@ public final class BedrockSwing {
       this.catchUp(gameTime);
       if (this.swinging && this.swingTime >= 0 && this.swingTime < 3) {
          return false;
-      } else {
-         this.swingTime = -1;
-         this.swinging = true;
-         return true;
       }
+
+      this.swingTime = -1;
+      this.swinging = true;
+      return true;
    }
 
    public void catchUp(long gameTime) {

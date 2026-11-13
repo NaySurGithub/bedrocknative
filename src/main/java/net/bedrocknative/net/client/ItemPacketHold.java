@@ -25,16 +25,14 @@ final class ItemPacketHold extends ChannelInboundHandlerAdapter {
    private final List<ByteBuf> held = new ArrayList<>();
    private final Consumer<String> onOverflow;
    private final LongSupplier clock;
-   @Nullable
-   private ChannelHandlerContext context;
+   private @Nullable ChannelHandlerContext context;
    private ItemPacketHold.Mode mode = ItemPacketHold.Mode.HOLDING;
    private long heldBytes;
    private long dropped;
    private long droppedBytes;
    private long startGame = -1L;
    private boolean closed;
-   @Nullable
-   private ScheduledFuture<?> grace;
+   private @Nullable ScheduledFuture<?> grace;
 
    ItemPacketHold(Consumer<String> onOverflow) {
       this(onOverflow, System::nanoTime);
@@ -195,7 +193,7 @@ final class ItemPacketHold extends ChannelInboundHandlerAdapter {
    private static boolean carriesItems(ByteBuf buf) {
       try {
          return ITEM_PACKETS.contains(VarInts.readUnsignedInt(buf.duplicate()) & 1023);
-      } catch (RuntimeException var2) {
+      } catch (RuntimeException e) {
          return false;
       }
    }
@@ -214,7 +212,7 @@ final class ItemPacketHold extends ChannelInboundHandlerAdapter {
       this.heldBytes = 0L;
    }
 
-   private static enum Mode {
+   private enum Mode {
       HOLDING,
       DROPPING,
       PASSING;

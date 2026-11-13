@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.function.Supplier;
 import net.bedrocknative.content.ArgbImage;
+import org.jspecify.annotations.Nullable;
 
 final class OwnHudArt {
    static final String UI = "textures/ui/";
@@ -19,7 +20,7 @@ final class OwnHudArt {
    private OwnHudArt() {
    }
 
-   static void register(Map<String, Supplier<OwnArt.Texture>> into) {
+   static void register(Map<String, Supplier<OwnArt.@Nullable Texture>> into) {
       for (int slot = 0; slot < 9; slot++) {
          int seed = slot;
          into.put("textures/ui/hotbar_" + slot, () -> OwnArt.Texture.plain(hotbarCell(seed)));
@@ -136,7 +137,7 @@ final class OwnHudArt {
       );
    }
 
-   private static void heartSet(Map<String, Supplier<OwnArt.Texture>> into, String name, int face, int light, int shade) {
+   private static void heartSet(Map<String, Supplier<OwnArt.@Nullable Texture>> into, String name, int face, int light, int shade) {
       into.put("textures/ui/" + name, () -> OwnArt.Texture.plain(heart(face, light, shade, false)));
       into.put("textures/ui/" + name + "_half", () -> OwnArt.Texture.plain(heart(face, light, shade, true)));
       into.put(
@@ -162,20 +163,20 @@ final class OwnHudArt {
       );
       if (filled == 2) {
          return image;
-      } else {
-         int dark = PixelArt.rgb(3947580);
+      }
 
-         for (int y = 0; y < 9; y++) {
-            for (int x = filled == 1 ? 5 : 0; x < 9; x++) {
-               int argb = image.pixel(x, y);
-               if (argb >>> 24 != 0 && argb != OUT) {
-                  PixelArt.set(image, x, y, dark);
-               }
+      int dark = PixelArt.rgb(3947580);
+
+      for (int y = 0; y < 9; y++) {
+         for (int x = filled == 1 ? 5 : 0; x < 9; x++) {
+            int argb = image.pixel(x, y);
+            if (argb >>> 24 != 0 && argb != OUT) {
+               PixelArt.set(image, x, y, dark);
             }
          }
-
-         return image;
       }
+
+      return image;
    }
 
    static ArgbImage drumstick(int meat, int light, int shade, int bone, boolean half, boolean empty) {
@@ -190,7 +191,7 @@ final class OwnHudArt {
       return image;
    }
 
-   private static void foodSet(Map<String, Supplier<OwnArt.Texture>> into, String prefix, int meat, int light, int shade) {
+   private static void foodSet(Map<String, Supplier<OwnArt.@Nullable Texture>> into, String prefix, int meat, int light, int shade) {
       int bone = PixelArt.rgb(15854038);
       into.put("textures/ui/" + prefix + "full", () -> OwnArt.Texture.plain(drumstick(meat, light, shade, bone, false, false)));
       into.put("textures/ui/" + prefix + "half", () -> OwnArt.Texture.plain(drumstick(meat, light, shade, bone, true, false)));
@@ -282,9 +283,9 @@ final class OwnHudArt {
    }
 
    static int shift(int rgb, int delta) {
-      int r = Math.clamp((long)((rgb >> 16 & 0xFF) + delta), 0, 255);
-      int g = Math.clamp((long)((rgb >> 8 & 0xFF) + delta), 0, 255);
-      int b = Math.clamp((long)((rgb & 0xFF) + delta), 0, 255);
+      int r = Math.clamp((rgb >> 16 & 0xFF) + delta, 0, 255);
+      int g = Math.clamp((rgb >> 8 & 0xFF) + delta, 0, 255);
+      int b = Math.clamp((rgb & 0xFF) + delta, 0, 255);
       return r << 16 | g << 8 | b;
    }
 

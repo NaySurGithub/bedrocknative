@@ -19,7 +19,6 @@ import net.minecraft.server.WorldLoader.DataLoadOutput;
 import net.minecraft.server.WorldLoader.InitConfig;
 import net.minecraft.server.WorldLoader.PackConfig;
 import net.minecraft.server.packs.repository.PackRepository;
-import net.minecraft.server.packs.repository.RepositorySource;
 import net.minecraft.server.packs.repository.ServerPacksSource;
 import net.minecraft.server.permissions.LevelBasedPermissionSet;
 import net.minecraft.util.Util;
@@ -44,11 +43,11 @@ public final class VanillaRegistries {
          VanillaRegistries.TimedSteps steps = OWN_THREAD
             ? new VanillaRegistries.TimedSteps(STEP_THREAD, "their own thread")
             : new VanillaRegistries.TimedSteps(minecraft, "the client thread");
-         PackRepository vanillaOnly = new PackRepository(new RepositorySource[]{new ServerPacksSource(minecraft.directoryValidator())});
+         PackRepository vanillaOnly = new PackRepository(new ServerPacksSource(minecraft.directoryValidator()));
          InitConfig config = new InitConfig(
             new PackConfig(vanillaOnly, WorldDataConfiguration.DEFAULT, false, true), CommandSelection.INTEGRATED, LevelBasedPermissionSet.GAMEMASTER
          );
-         loading = WorldLoader.load(config, context -> new DataLoadOutput(null, context.datapackDimensions()), (resources, managers, registries, cookie) -> {
+         loading = WorldLoader.load(config, context -> new DataLoadOutput<>(null, context.datapackDimensions()), (resources, managers, registries, cookie) -> {
             resources.close();
             return registries.compositeAccess();
          }, Util.backgroundExecutor(), steps);
@@ -75,7 +74,7 @@ public final class VanillaRegistries {
 
          try {
             pending.get(5000L, TimeUnit.MILLISECONDS);
-         } catch (InterruptedException var4) {
+         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
          } catch (Exception var5) {
          }

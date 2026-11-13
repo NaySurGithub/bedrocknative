@@ -33,17 +33,13 @@ import org.cloudburstmc.protocol.bedrock.packet.ServerSettingsResponsePacket;
 import org.jspecify.annotations.Nullable;
 
 public final class BedrockForms implements FormScreen.Host {
-   @Nullable
-   private static volatile BedrockForms active;
+   private static volatile @Nullable BedrockForms active;
    private final Minecraft minecraft;
    private final Consumer<BedrockPacket> sender;
    private final Deque<ModalFormRequestPacket> waiting = new ArrayDeque<>();
-   @Nullable
-   private ServerSettingsResponsePacket settings;
-   @Nullable
-   private Screen settingsRequestedFor;
-   @Nullable
-   private FormScreen covered;
+   private @Nullable ServerSettingsResponsePacket settings;
+   private @Nullable Screen settingsRequestedFor;
+   private @Nullable FormScreen covered;
    private int answered;
    private boolean jsonUiFailed;
 
@@ -112,18 +108,18 @@ public final class BedrockForms implements FormScreen.Host {
             BedrockNative.LOGGER.info("Server form {} came while {} is open: answered USER_BUSY", request.getFormId(), describe(current));
             this.send(request.getFormId(), null, ModalFormCancelReason.USER_BUSY);
          } else {
-            BedrockForm formx;
+            BedrockForm form;
             try {
-               formx = FormParser.parse(request.getFormData());
-            } catch (FormParser.FormParseException var10) {
-               BedrockNative.LOGGER.warn("Invalid server form {}: {}", request.getFormId(), var10.getMessage());
-               formx = new BedrockForm.Simple("serverUI.errorTitle", BedrockText.translate("serverUI.errorDescription", List.of(var10.getMessage())), List.of());
+               form = FormParser.parse(request.getFormData());
+            } catch (FormParser.FormParseException e) {
+               BedrockNative.LOGGER.warn("Invalid server form {}: {}", request.getFormId(), e.getMessage());
+               form = new BedrockForm.Simple("serverUI.errorTitle", BedrockText.translate("serverUI.errorDescription", List.of(e.getMessage())), List.of());
             }
 
             this.covered = below;
 
             try {
-               this.minecraft.gui.setScreen(this.screenFor(request.getFormId(), formx, below, null));
+               this.minecraft.gui.setScreen(this.screenFor(request.getFormId(), form, below, null));
             } finally {
                this.covered = null;
             }
@@ -144,12 +140,12 @@ public final class BedrockForms implements FormScreen.Host {
    }
 
    private FormScreen javaScreen(int formId, BedrockForm form, @Nullable FormScreen below, @Nullable Screen settingsParent) {
-      return (FormScreen)(switch (form) {
+      return switch (form) {
          case BedrockForm.Simple simple -> new SimpleFormScreen(this, formId, simple, below);
          case BedrockForm.Modal modal -> new ModalFormScreen(this, formId, modal, below);
          case BedrockForm.Custom custom -> new CustomFormScreen(this, formId, custom, below, settingsParent);
          default -> throw new MatchException(null, null);
-      });
+      };
    }
 
    private void fallBack(JsonUiFormScreen failed) {
@@ -204,15 +200,15 @@ public final class BedrockForms implements FormScreen.Host {
    private boolean answer(FormScreen screen, @Nullable String data, @Nullable ModalFormCancelReason reason) {
       if (!screen.markAnswered()) {
          return false;
-      } else {
-         this.send(screen.formId(), data, reason);
-         if (screen.isServerSettings()) {
-            this.settings = null;
-            this.settingsRequestedFor = null;
-         }
-
-         return true;
       }
+
+      this.send(screen.formId(), data, reason);
+      if (screen.isServerSettings()) {
+         this.settings = null;
+         this.settingsRequestedFor = null;
+      }
+
+      return true;
    }
 
    private void leave(FormScreen screen) {
@@ -270,8 +266,8 @@ public final class BedrockForms implements FormScreen.Host {
             }
 
             form = custom;
-         } catch (FormParser.FormParseException var6) {
-            BedrockNative.LOGGER.warn("Invalid server settings form {}: {}", response.getFormId(), var6.getMessage());
+         } catch (FormParser.FormParseException e) {
+            BedrockNative.LOGGER.warn("Invalid server settings form {}: {}", response.getFormId(), e.getMessage());
             return;
          }
 

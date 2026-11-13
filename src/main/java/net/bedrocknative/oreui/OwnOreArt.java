@@ -405,9 +405,9 @@ final class OwnOreArt {
       }
 
       for (int i = 0; i < width / 24; i++) {
-         int xx = texel * 2 + random.nextInt(Math.max(1, width - texel * 4)) / texel * texel;
-         if (!broken || Math.abs(xx - width / 2) >= texel * 4) {
-            PixelArt.fill(image, xx, top - texel, texel, texel, PixelArt.rgb(7127881));
+         int x = texel * 2 + random.nextInt(Math.max(1, width - texel * 4)) / texel * texel;
+         if (!broken || Math.abs(x - width / 2) >= texel * 4) {
+            PixelArt.fill(image, x, top - texel, texel, texel, PixelArt.rgb(7127881));
          }
       }
 

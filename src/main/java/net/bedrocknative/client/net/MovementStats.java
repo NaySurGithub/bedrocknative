@@ -55,8 +55,7 @@ public final class MovementStats {
       return TELEPORTS.get();
    }
 
-   @Nullable
-   public Vec3 sentPosition(long tick) {
+   public @Nullable Vec3 sentPosition(long tick) {
       int index = (int)Math.floorMod(tick, 512L);
       return this.ticks[index] == tick ? this.positions[index] : null;
    }
@@ -93,8 +92,7 @@ public final class MovementStats {
       return this.corrections.size();
    }
 
-   @Nullable
-   public Double lastCorrectedY() {
+   public @Nullable Double lastCorrectedY() {
       int size = this.corrections.size();
       return size == 0 ? null : this.corrections.get(size - 1).server().y;
    }

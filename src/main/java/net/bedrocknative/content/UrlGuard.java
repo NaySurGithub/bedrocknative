@@ -29,7 +29,7 @@ public final class UrlGuard {
             InetAddress[] addresses;
             try {
                addresses = InetAddress.getAllByName(uri.getHost());
-            } catch (UnknownHostException var8) {
+            } catch (UnknownHostException e) {
                throw new IOException("Unknown host " + uri.getHost());
             }
 
@@ -53,22 +53,24 @@ public final class UrlGuard {
          byte[] b = address.getAddress();
          if (b.length == 4) {
             return publicV4(b[0] & 255, b[1] & 255, b[2] & 255);
-         } else if ((b[0] & 254) == 252) {
+         }
+
+         if ((b[0] & 254) == 252) {
             return false;
+         }
+
+         boolean zeroPrefix = true;
+
+         for (int i = 0; i < 10; i++) {
+            zeroPrefix &= b[i] == 0;
+         }
+
+         if (zeroPrefix && b[10] == 0 && b[11] == 0) {
+            return false;
+         } else if (b[0] == 0 && b[1] == 100 && (b[2] & 255) == 255 && (b[3] & 255) == 155) {
+            return embedded(b, 12);
          } else {
-            boolean zeroPrefix = true;
-
-            for (int i = 0; i < 10; i++) {
-               zeroPrefix &= b[i] == 0;
-            }
-
-            if (zeroPrefix && b[10] == 0 && b[11] == 0) {
-               return false;
-            } else if (b[0] == 0 && b[1] == 100 && (b[2] & 255) == 255 && (b[3] & 255) == 155) {
-               return embedded(b, 12);
-            } else {
-               return b[0] == 32 && b[1] == 2 ? embedded(b, 2) : true;
-            }
+            return b[0] == 32 && b[1] == 2 ? embedded(b, 2) : true;
          }
       } else {
          return false;
@@ -78,7 +80,7 @@ public final class UrlGuard {
    private static boolean embedded(byte[] address, int offset) {
       try {
          return isPublic(InetAddress.getByAddress(new byte[]{address[offset], address[offset + 1], address[offset + 2], address[offset + 3]}));
-      } catch (UnknownHostException var3) {
+      } catch (UnknownHostException e) {
          return false;
       }
    }

@@ -55,8 +55,8 @@ public final class DevRestoreTest {
 
          try {
             test.run();
-         } catch (Throwable var6) {
-            BedrockNative.LOGGER.error("Dev restore test: FAIL crashed", var6);
+         } catch (Throwable e) {
+            BedrockNative.LOGGER.error("Dev restore test: FAIL crashed", e);
             test.failed++;
          } finally {
             test.log("SUMMARY {} passed, {} failed", test.passed, test.failed);
@@ -107,8 +107,8 @@ public final class DevRestoreTest {
          () -> {
             try {
                levelId[0] = FileUtil.findAvailableName(folder, "BN restore test", "");
-            } catch (IOException var4x) {
-               throw new IllegalStateException(var4x);
+            } catch (IOException e) {
+               throw new IllegalStateException(e);
             }
 
             LevelSettings settings = new LevelSettings(levelId[0], GameType.CREATIVE, DifficultySettings.DEFAULT, true, WorldDataConfiguration.DEFAULT);
@@ -170,13 +170,13 @@ public final class DevRestoreTest {
             files.sorted(Comparator.reverseOrder()).forEach(path -> {
                try {
                   Files.deleteIfExists(path);
-               } catch (IOException var3) {
-                  this.log("couldn't delete {}: {}", path, var3.toString());
+               } catch (IOException ex) {
+                  this.log("couldn't delete {}: {}", path, ex.toString());
                }
             });
             this.log("test world deleted");
-         } catch (IOException var7) {
-            this.log("couldn't delete the test world: {}", var7.toString());
+         } catch (IOException e) {
+            this.log("couldn't delete the test world: {}", e.toString());
          }
       }
    }
@@ -228,7 +228,7 @@ public final class DevRestoreTest {
    private static void sleep(long millis) {
       try {
          Thread.sleep(millis);
-      } catch (InterruptedException var3) {
+      } catch (InterruptedException e) {
          Thread.currentThread().interrupt();
       }
    }

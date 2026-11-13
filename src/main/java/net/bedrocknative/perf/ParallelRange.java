@@ -24,17 +24,17 @@ public final class ParallelRange {
          for (int i = 0; i < wanted; i++) {
             try {
                executor.execute(shared::help);
-            } catch (RuntimeException var11) {
+            } catch (RuntimeException e) {
                break;
             }
          }
 
          try {
             shared.take(true);
-         } catch (Error | RuntimeException var10) {
+         } catch (RuntimeException | Error e) {
             shared.stop();
             shared.awaitHelpers();
-            throw var10;
+            throw e;
          }
 
          shared.awaitHelpers();
@@ -90,7 +90,7 @@ public final class ParallelRange {
                   for (int index = start; index < end; index++) {
                      this.work.accept(index);
                   }
-               } catch (Throwable var8) {
+               } catch (Throwable e) {
                   synchronized (this.lock) {
                      this.failed.add(start);
                   }
@@ -109,7 +109,7 @@ public final class ParallelRange {
             while (this.working > 0) {
                try {
                   this.lock.wait();
-               } catch (InterruptedException var5) {
+               } catch (InterruptedException e) {
                   interrupted = true;
                }
             }

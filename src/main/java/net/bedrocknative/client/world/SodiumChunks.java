@@ -99,13 +99,13 @@ public final class SodiumChunks {
             int reported = which == -2 ? this.lightFlag : (which == -1 && !withLight ? this.blockFlag : this.flags);
             call.invoke((Object)chunkTracker, (int)x, (int)z, (int)reported);
             return true;
-         } catch (Throwable var10) {
+         } catch (Throwable failed) {
             if (!this.failureLogged) {
                this.failureLogged = true;
                BedrockNative.LOGGER
                   .warn(
                      "Sodium: its chunk tracker refused column {} {} ({} {}: {}); Sodium may draw columns wrongly on Bedrock servers (reported once per session)",
-                     new Object[]{x, z, add ? "onChunkStatusAdded" : "onChunkStatusRemoved", var10.getClass().getName(), var10.getMessage()}
+                     new Object[]{x, z, add ? "onChunkStatusAdded" : "onChunkStatusRemoved", failed.getClass().getName(), failed.getMessage()}
                   );
             }
 
@@ -120,7 +120,7 @@ public final class SodiumChunks {
       Class<?> holder;
       try {
          holder = Class.forName(this.holderName, true, SodiumChunks.class.getClassLoader());
-      } catch (LinkageError | ClassNotFoundException var12) {
+      } catch (ClassNotFoundException | LinkageError absent) {
          this.unavailable = "class " + this.holderName + " is not visible to " + SodiumChunks.class.getClassLoader() + " (the only name tried)";
          return;
       }
@@ -150,7 +150,7 @@ public final class SodiumChunks {
 
          try {
             this.flags = Class.forName(this.statusName, true, holder.getClassLoader()).getField("FLAG_ALL").getInt(null);
-         } catch (LinkageError | ReflectiveOperationException var11) {
+         } catch (ReflectiveOperationException | LinkageError keep) {
             this.flags = 3;
          }
 
@@ -158,26 +158,26 @@ public final class SodiumChunks {
             Class<?> status = Class.forName(this.statusName, true, holder.getClassLoader());
             this.blockFlag = status.getField("FLAG_HAS_BLOCK_DATA").getInt(null);
             this.lightFlag = status.getField("FLAG_HAS_LIGHT_DATA").getInt(null);
-         } catch (LinkageError | ReflectiveOperationException var10) {
+         } catch (ReflectiveOperationException | LinkageError keep) {
             this.blockFlag = 1;
             this.lightFlag = 2;
          }
 
          try {
             this.removed = lookup.findVirtual(trackerClass, "onChunkStatusRemoved", call).asType(generic);
-         } catch (RuntimeException | LinkageError | ReflectiveOperationException var9) {
+         } catch (ReflectiveOperationException | RuntimeException | LinkageError none) {
             this.removed = null;
             BedrockNative.LOGGER
-               .warn("Sodium: its chunk tracker has no onChunkStatusRemoved ({}); columns the client drops stay known to Sodium", var9.toString());
+               .warn("Sodium: its chunk tracker has no onChunkStatusRemoved ({}); columns the client drops stay known to Sodium", none.toString());
          }
 
          BedrockNative.LOGGER.info("Sodium: Bedrock columns are reported to its chunk tracker (flags {})", this.flags);
-      } catch (RuntimeException | LinkageError | ReflectiveOperationException var13) {
+      } catch (ReflectiveOperationException | RuntimeException | LinkageError failed) {
          this.tracker = null;
          this.added = null;
          this.removed = null;
-         this.unavailable = var13.toString();
-         BedrockNative.LOGGER.warn("Sodium is loaded but its chunk tracker was not found ({}); it may draw no terrain on Bedrock servers", var13.toString());
+         this.unavailable = failed.toString();
+         BedrockNative.LOGGER.warn("Sodium is loaded but its chunk tracker was not found ({}); it may draw no terrain on Bedrock servers", failed.toString());
       }
    }
 }

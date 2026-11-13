@@ -62,8 +62,8 @@ public final class ParticleEffects {
                      files++;
                      effects.put(effect.identifier(), effect);
                   }
-               } catch (RuntimeException | IOException var16) {
-                  BedrockNative.LOGGER.warn("Couldn't load Bedrock particle {} from {}: {}", new Object[]{path, pack, var16.toString()});
+               } catch (IOException | RuntimeException e) {
+                  BedrockNative.LOGGER.warn("Couldn't load Bedrock particle {} from {}: {}", new Object[]{path, pack, e.toString()});
                }
             }
          }
@@ -72,8 +72,7 @@ public final class ParticleEffects {
       return new ParticleEffects(Map.copyOf(effects), files, molang.errors(), unreadable);
    }
 
-   @Nullable
-   public ParticleEffect get(String identifier) {
+   public @Nullable ParticleEffect get(String identifier) {
       ParticleEffect effect = this.byIdentifier.get(identifier);
       return effect != null ? effect : this.byIdentifier.get(identifier.toLowerCase(Locale.ROOT));
    }

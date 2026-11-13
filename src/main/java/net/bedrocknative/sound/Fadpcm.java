@@ -35,8 +35,8 @@ final class Fadpcm {
    static void decodeFrame(byte[] data, int offset, short[] out) {
       int coefficients = Fsb5.intLE(data, offset);
       int shifts = Fsb5.intLE(data, offset + 4);
-      int history1 = (short)(data[offset + 9] << 8 | data[offset + 8] & 255);
-      int history2 = (short)(data[offset + 11] << 8 | data[offset + 10] & 255);
+      int history1 = (short)(data[offset + 9] << 8 | data[offset + 8] & 0xFF);
+      int history2 = (short)(data[offset + 11] << 8 | data[offset + 10] & 0xFF);
       int written = 0;
 
       for (int group = 0; group < 8; group++) {

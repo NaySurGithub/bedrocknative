@@ -8,7 +8,7 @@ public enum PingOutcome {
    SILENT,
    NOT_PINGED;
 
-   public static PingOutcome of(@Nullable BedrockPing.Located located) {
+   public static PingOutcome of(BedrockPing.@Nullable Located located) {
       if (located == null) {
          return NOT_PINGED;
       } else {

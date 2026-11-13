@@ -12,7 +12,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -91,8 +90,7 @@ public final class BlockMappings {
    private final Int2ObjectOpenHashMap<BlockState> byHash;
    private final Map<String, BlockState> byName;
    private volatile Reference2IntOpenHashMap<BlockState> toBedrock;
-   @Nullable
-   private volatile Reference2IntOpenHashMap<BlockState> legacyToBedrock;
+   private volatile @Nullable Reference2IntOpenHashMap<BlockState> legacyToBedrock;
    private final List<String> unresolved;
    private final Int2ObjectOpenHashMap<String> unresolvedNames;
    private final BlockState fallback = Blocks.STONE.defaultBlockState();
@@ -103,12 +101,9 @@ public final class BlockMappings {
    private final Int2ObjectOpenHashMap<BlockState> byShapelessHash;
    private volatile boolean shapelessSeen;
    private volatile ServerBlockPalette server = ServerBlockPalette.VANILLA_HASHED;
-   @Nullable
-   private volatile Int2ObjectOpenHashMap<String> names;
-   @Nullable
-   private volatile Map<String, List<BedrockBlockState>> statesByName;
-   @Nullable
-   private volatile Int2ObjectOpenHashMap<BedrockBlockState> vanillaByHash;
+   private volatile @Nullable Int2ObjectOpenHashMap<String> names;
+   private volatile @Nullable Map<String, List<BedrockBlockState>> statesByName;
+   private volatile @Nullable Int2ObjectOpenHashMap<BedrockBlockState> vanillaByHash;
 
    private BlockMappings(
       List<BedrockBlockState> palette,
@@ -196,8 +191,8 @@ public final class BlockMappings {
       return palette.persistentId(blockState, state -> {
          try {
             return this.resolvePersistent(palette, state);
-         } catch (RuntimeException var4) {
-            palette.resolved(ServerBlockPalette.Resolution.UNKNOWN, state + " (" + var4 + ")");
+         } catch (RuntimeException e) {
+            palette.resolved(ServerBlockPalette.Resolution.UNKNOWN, state + " (" + e + ")");
             return palette.idForHash(-2);
          }
       });
@@ -217,18 +212,13 @@ public final class BlockMappings {
 
    BlockUpdateLog.Names updateNames(final ServerBlockPalette current) {
       return new BlockUpdateLog.Names() {
-         {
-            Objects.requireNonNull(BlockMappings.this);
-         }
-
          @Override
          public String state(int networkId) {
             return current.numbers(networkId, false) ? BlockMappings.this.describe(current, current.hashOf(networkId), networkId) : "unknown id " + networkId;
          }
 
-         @Nullable
          @Override
-         public String otherState(int networkId) {
+         public @Nullable String otherState(int networkId) {
             if (!current.hasOtherNumbering()) {
                return null;
             } else {
@@ -254,22 +244,20 @@ public final class BlockMappings {
       BedrockBlockState state = this.stateOfHash(current, hash);
       if (state != null) {
          return state.toStateString();
-      } else {
-         String name = (String)this.names().get(hash);
-         return name != null ? name + " (an older palette's state)" : "unknown id " + networkId;
       }
+
+      String name = (String)this.names().get(hash);
+      return name != null ? name + " (an older palette's state)" : "unknown id " + networkId;
    }
 
-   @Nullable
-   private BedrockBlockState stateOfHash(ServerBlockPalette current, int hash) {
+   private @Nullable BedrockBlockState stateOfHash(ServerBlockPalette current, int hash) {
       BedrockBlockState state = (BedrockBlockState)this.vanillaByHash().get(hash);
       return state != null ? state : current.custom(hash);
    }
 
    private static boolean airOrLiquidName(@Nullable BedrockBlockState state) {
       if (state != null) {
-         String var1 = state.name();
-         switch (var1) {
+         switch (state.name()) {
             case "minecraft:air":
             case "minecraft:water":
             case "minecraft:flowing_water":
@@ -341,8 +329,7 @@ public final class BlockMappings {
          || CustomBlockSet.current().slot(hash) >= 0;
    }
 
-   @Nullable
-   private BedrockBlockState closestOfName(ServerBlockPalette current, String name, SortedMap<String, Object> states) {
+   private @Nullable BedrockBlockState closestOfName(ServerBlockPalette current, String name, SortedMap<String, Object> states) {
       List<BedrockBlockState> candidates = this.statesByName().get(name);
       if (candidates == null) {
          candidates = current.customOrder().stream().filter(statex -> statex.name().equals(name)).toList();
@@ -388,8 +375,7 @@ public final class BlockMappings {
       return map;
    }
 
-   @Nullable
-   public NbtMap customBlock(String name) {
+   public @Nullable NbtMap customBlock(String name) {
       return this.customBlocks.get(name);
    }
 
@@ -399,32 +385,32 @@ public final class BlockMappings {
       BlockState state = (BlockState)this.byHash.get(hash);
       if (state != null) {
          return state;
-      } else {
-         state = (BlockState)this.byShapelessHash.get(hash);
-         if (state != null) {
-            if (!this.shapelessSeen) {
-               this.shapelessSeen = true;
-            }
+      }
 
-            return state;
-         } else {
-            int slot = CustomBlockSet.current().slot(hash);
-            if (slot >= 0) {
-               return CustomBlocks.state(slot);
-            } else {
-               BedrockBlockState custom = current.custom(hash);
-               String bedrockOnly = (String)this.unresolvedNames.get(hash);
-               if (custom != null) {
-                  this.customSeen.add(custom.toStateString());
-               } else if (bedrockOnly != null) {
-                  this.bedrockOnlySeen.add(bedrockOnly);
-               } else if (this.unknownSeen.add(networkId)) {
-                  BedrockNative.LOGGER.debug("Unknown block network id {} (hash {})", networkId, Integer.toUnsignedString(hash, 16));
-               }
-
-               return this.fallback;
-            }
+      state = (BlockState)this.byShapelessHash.get(hash);
+      if (state != null) {
+         if (!this.shapelessSeen) {
+            this.shapelessSeen = true;
          }
+
+         return state;
+      } else {
+         int slot = CustomBlockSet.current().slot(hash);
+         if (slot >= 0) {
+            return CustomBlocks.state(slot);
+         }
+
+         BedrockBlockState custom = current.custom(hash);
+         String bedrockOnly = (String)this.unresolvedNames.get(hash);
+         if (custom != null) {
+            this.customSeen.add(custom.toStateString());
+         } else if (bedrockOnly != null) {
+            this.bedrockOnlySeen.add(bedrockOnly);
+         } else if (this.unknownSeen.add(networkId)) {
+            BedrockNative.LOGGER.debug("Unknown block network id {} (hash {})", networkId, Integer.toUnsignedString(hash, 16));
+         }
+
+         return this.fallback;
       }
    }
 
@@ -453,20 +439,20 @@ public final class BlockMappings {
       if (state.getBlock() instanceof CarrierBlock) {
          CustomBlockState custom = CarrierBlock.data(state);
          return this.server.networkIdOf(custom != null ? custom.state().networkHash() : reverse.defaultReturnValue());
-      } else {
-         int hash = reverse.getOrDefault(state, Integer.MIN_VALUE);
-         if (hash == Integer.MIN_VALUE && reverse != this.toBedrock) {
-            hash = this.toBedrock.getOrDefault(state, Integer.MIN_VALUE);
-         }
-
-         if (hash != Integer.MIN_VALUE) {
-            return this.server.networkIdOf(hash);
-         } else {
-            int protocol = this.server.protocol();
-            Map<BlockState, Integer> cache = this.nearest.computeIfAbsent(protocol, key -> new ConcurrentHashMap<>());
-            return this.server.networkIdOf(cache.computeIfAbsent(state, key -> this.nearestMapped(key, reverse)));
-         }
       }
+
+      int hash = reverse.getOrDefault(state, Integer.MIN_VALUE);
+      if (hash == Integer.MIN_VALUE && reverse != this.toBedrock) {
+         hash = this.toBedrock.getOrDefault(state, Integer.MIN_VALUE);
+      }
+
+      if (hash != Integer.MIN_VALUE) {
+         return this.server.networkIdOf(hash);
+      }
+
+      int protocol = this.server.protocol();
+      Map<BlockState, Integer> cache = this.nearest.computeIfAbsent(protocol, key -> new ConcurrentHashMap<>());
+      return this.server.networkIdOf(cache.computeIfAbsent(state, key -> this.nearestMapped(key, reverse)));
    }
 
    private Reference2IntOpenHashMap<BlockState> reverseMap() {
@@ -500,8 +486,7 @@ public final class BlockMappings {
       return block instanceof BedBlock || block instanceof BannerBlock || block instanceof WallBannerBlock;
    }
 
-   @Nullable
-   private BlockState closestMapped(BlockState state, Block block, Reference2IntOpenHashMap<BlockState> reverse) {
+   private @Nullable BlockState closestMapped(BlockState state, Block block, Reference2IntOpenHashMap<BlockState> reverse) {
       BlockState best = null;
       int bestDifference = Integer.MAX_VALUE;
       UnmodifiableIterator var6 = block.getStateDefinition().getPossibleStates().iterator();
@@ -549,17 +534,16 @@ public final class BlockMappings {
       return this.server.networkIdOf(BedrockBlockHasher.hash("minecraft:air", new TreeMap<>()));
    }
 
-   @Nullable
-   public String bedrockName(int networkId) {
+   public @Nullable String bedrockName(int networkId) {
       ServerBlockPalette current = this.server;
       int hash = current.hashOf(networkId);
       String name = (String)this.names().get(hash);
       if (name != null) {
          return name;
-      } else {
-         BedrockBlockState custom = current.custom(hash);
-         return custom != null ? custom.name() : null;
       }
+
+      BedrockBlockState custom = current.custom(hash);
+      return custom != null ? custom.name() : null;
    }
 
    private Int2ObjectOpenHashMap<String> names() {
@@ -700,11 +684,13 @@ public final class BlockMappings {
       boolean glow = bedrock.name().equals("minecraft:glow_frame");
       if (!glow && !bedrock.name().equals("minecraft:frame")) {
          return null;
-      } else {
-         int facing = bedrock.states().get("facing_direction") instanceof Number number ? number.intValue() : 2;
-         return (BlockState)((BlockState)Blocks.MOVING_PISTON.defaultBlockState().setValue(MovingPistonBlock.FACING, Direction.from3DDataValue(facing)))
-            .setValue(MovingPistonBlock.TYPE, glow ? PistonType.STICKY : PistonType.DEFAULT);
       }
+
+      int facing = bedrock.states().get("facing_direction") instanceof Number number ? number.intValue() : 2;
+      return Blocks.MOVING_PISTON
+         .defaultBlockState()
+         .setValue(MovingPistonBlock.FACING, Direction.from3DDataValue(facing))
+         .setValue(MovingPistonBlock.TYPE, glow ? PistonType.STICKY : PistonType.DEFAULT);
    }
 
    static int shapelessHash(BedrockBlockState bedrock) {
@@ -723,11 +709,11 @@ public final class BlockMappings {
 
       if (!shaped) {
          return bedrock.networkHash();
-      } else {
-         SortedMap<String, Object> reduced = new TreeMap<>(states);
-         reduced.keySet().removeIf(key -> key.equals("minecraft:corner") || CONNECTIONS.containsKey(key));
-         return BedrockBlockHasher.hash(bedrock.name(), reduced);
       }
+
+      SortedMap<String, Object> reduced = new TreeMap<>(states);
+      reduced.keySet().removeIf(key -> key.equals("minecraft:corner") || CONNECTIONS.containsKey(key));
+      return BedrockBlockHasher.hash(bedrock.name(), reduced);
    }
 
    private static BlockState viaTemplate(
@@ -740,35 +726,35 @@ public final class BlockMappings {
       BlockState target = parseJava(aliasOf(bedrock.name()));
       if (target == null) {
          return null;
-      } else {
-         SortedMap<String, Object> reduced = new TreeMap<>(bedrock.states());
-         reduced.keySet().removeIf(key -> key.equals("minecraft:corner") || CONNECTIONS.containsKey(key));
-         if (reduced.isEmpty() && target.getProperties().isEmpty()) {
-            return target;
-         } else {
-            Set<String> targetProperties = propertyNames(target);
-            List<String> templates = new ArrayList<>(templatesByKeys.getOrDefault(reduced.keySet(), List.of()));
-            templates.sort(Comparator.<String>comparingInt(name -> -commonSuffix(name, bedrock.name())).thenComparing(name -> (String)name));
+      }
 
-            for (String templateName : templates) {
-               String javaString = exact.get(new BedrockBlockState(templateName, reduced, 0).toStateString());
-               if (javaString == null) {
-                  javaString = nearest(reduced, byName.get(templateName));
-               }
+      SortedMap<String, Object> reduced = new TreeMap<>(bedrock.states());
+      reduced.keySet().removeIf(key -> key.equals("minecraft:corner") || CONNECTIONS.containsKey(key));
+      if (reduced.isEmpty() && target.getProperties().isEmpty()) {
+         return target;
+      }
 
-               BlockState templateJava = parsed.computeIfAbsent(javaString, BlockMappings::parseJava);
-               if (templateJava != null && propertyNames(templateJava).equals(targetProperties)) {
-                  for (Property<?> property : templateJava.getProperties()) {
-                     target = copyValue(target, templateJava, property);
-                  }
+      Set<String> targetProperties = propertyNames(target);
+      List<String> templates = new ArrayList<>(templatesByKeys.getOrDefault(reduced.keySet(), List.of()));
+      templates.sort(Comparator.<String>comparingInt(name -> -commonSuffix(name, bedrock.name())).thenComparing(name -> (String)name));
 
-                  return target;
-               }
+      for (String templateName : templates) {
+         String javaString = exact.get(new BedrockBlockState(templateName, reduced, 0).toStateString());
+         if (javaString == null) {
+            javaString = nearest(reduced, byName.get(templateName));
+         }
+
+         BlockState templateJava = parsed.computeIfAbsent(javaString, BlockMappings::parseJava);
+         if (templateJava != null && propertyNames(templateJava).equals(targetProperties)) {
+            for (Property<?> property : templateJava.getProperties()) {
+               target = copyValue(target, templateJava, property);
             }
 
-            return null;
+            return target;
          }
       }
+
+      return null;
    }
 
    private static int commonSuffix(String a, String b) {
@@ -793,18 +779,18 @@ public final class BlockMappings {
 
    private static <T extends Comparable<T>> BlockState copyValue(BlockState target, BlockState source, Property<T> sourceProperty) {
       Property<?> targetProperty = target.getBlock().getStateDefinition().getProperty(sourceProperty.getName());
-      return targetProperty == null ? target : setByName(target, (Property<T>)targetProperty, sourceProperty.getName(source.getValue(sourceProperty)));
+      return targetProperty == null ? target : setByName(target, targetProperty, sourceProperty.getName(source.getValue(sourceProperty)));
    }
 
    private static <T extends Comparable<T>> BlockState setByName(BlockState state, Property<T> property, String value) {
-      return property.getValue(value).map(v -> (BlockState)state.setValue(property, v)).orElse(state);
+      return property.getValue(value).map(v -> state.setValue(property, v)).orElse(state);
    }
 
    static BlockState applyPropertiesNewIn2650(BlockState java, SortedMap<String, Object> bedrock) {
       if (bedrock.get("minecraft:corner") instanceof String corner && java.hasProperty(BlockStateProperties.STAIRS_SHAPE)) {
          EnumProperty var10001 = BlockStateProperties.STAIRS_SHAPE;
 
-         java = (BlockState)java.setValue(var10001, switch (corner) {
+         java = java.setValue(var10001, switch (corner) {
             case "inner_left" -> StairsShape.INNER_LEFT;
             case "inner_right" -> StairsShape.INNER_RIGHT;
             case "outer_left" -> StairsShape.OUTER_LEFT;
@@ -814,8 +800,8 @@ public final class BlockMappings {
       }
 
       for (Entry<String, BooleanProperty> connection : CONNECTIONS.entrySet()) {
-         if (bedrock.get(connection.getKey()) instanceof Byte value && java.hasProperty((Property)connection.getValue())) {
-            java = (BlockState)java.setValue((Property)connection.getValue(), value != 0);
+         if (bedrock.get(connection.getKey()) instanceof Byte value && java.hasProperty(connection.getValue())) {
+            java = java.setValue(connection.getValue(), value != 0);
          }
       }
 
@@ -909,7 +895,7 @@ public final class BlockMappings {
    private static BlockState parseJava(String javaState) {
       try {
          return BlockStateParser.parseForBlock(BuiltInRegistries.BLOCK, javaState, false).blockState();
-      } catch (CommandSyntaxException var2) {
+      } catch (CommandSyntaxException e) {
          return null;
       }
    }

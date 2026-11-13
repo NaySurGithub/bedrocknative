@@ -22,7 +22,7 @@ public final class RuntimeEquipment {
    private final ModelRegistry registry;
    private final ActorInstance wearer;
    private final String[] items = new String[SLOTS.length];
-   private final ActorInstance[] attached = new ActorInstance[SLOTS.length];
+   private final @Nullable ActorInstance[] attached = new ActorInstance[SLOTS.length];
    private final VariableStore scratch = new VariableStore(8);
 
    public RuntimeEquipment(ModelRegistry registry, ActorInstance wearer) {
@@ -54,21 +54,20 @@ public final class RuntimeEquipment {
       ActorInstance instance = this.attached[slot];
       if (instance == null) {
          return false;
-      } else {
-         instance.context().set(OWNING_ENTITY, 0.0F, owner);
-         instance.variables().set(IS_ENCHANTED, enchanted ? 1.0F : 0.0F, null);
-         instance.variables().set(HAS_TRIM, 0.0F, null);
-         instance.setChangeColor(color);
-         return true;
       }
+
+      instance.context().set(OWNING_ENTITY, 0.0F, owner);
+      instance.variables().set(IS_ENCHANTED, enchanted ? 1.0F : 0.0F, null);
+      instance.variables().set(HAS_TRIM, 0.0F, null);
+      instance.setChangeColor(color);
+      return true;
    }
 
    public boolean attached(int slot) {
       return this.attached[slot] != null;
    }
 
-   @Nullable
-   public String definition(int slot) {
+   public @Nullable String definition(int slot) {
       ActorInstance instance = this.attached[slot];
       return instance != null ? instance.definition().identifier() : null;
    }
@@ -77,11 +76,13 @@ public final class RuntimeEquipment {
       ClientEntityDef definition = this.wearer.definition();
       if (!definition.enableAttachables()) {
          return false;
-      } else if (slot >= 2) {
-         return !definition.hideArmor();
-      } else {
-         MolangProgram hide = definition.scripts().hideHeldItems();
-         return hide == null || !hide.isConstant() || hide.constantValue() == 0.0F;
       }
+
+      if (slot >= 2) {
+         return !definition.hideArmor();
+      }
+
+      MolangProgram hide = definition.scripts().hideHeldItems();
+      return hide == null || !hide.isConstant() || hide.constantValue() == 0.0F;
    }
 }

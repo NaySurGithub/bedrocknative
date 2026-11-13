@@ -16,8 +16,7 @@ import net.bedrocknative.net.auth.window.WindowSignIns;
 import org.jspecify.annotations.Nullable;
 
 public final class XboxBrowserSignIn {
-   @Nullable
-   private static volatile XboxBrowserSignIn standard;
+   private static volatile @Nullable XboxBrowserSignIn standard;
    private final List<RedirectCapture> ways;
    private final CodeExchange exchange;
    private final SecureRandom random;
@@ -131,9 +130,8 @@ public final class XboxBrowserSignIn {
             return listener.windowTitle();
          }
 
-         @Nullable
          @Override
-         public String language() {
+         public @Nullable String language() {
             return listener.language();
          }
       };
@@ -150,7 +148,6 @@ public final class XboxBrowserSignIn {
 
       String windowTitle();
 
-      @Nullable
-      String language();
+      @Nullable String language();
    }
 }

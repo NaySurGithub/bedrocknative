@@ -59,25 +59,25 @@ public final class BedrockText {
       String whole = lookup(bare);
       if (whole != null) {
          return substitute(whole, args);
+      }
+
+      Matcher matcher = KEY.matcher(text);
+      StringBuilder out = new StringBuilder();
+      boolean any = false;
+
+      while (matcher.find()) {
+         String translated = lookup(matcher.group(1));
+         if (translated != null) {
+            matcher.appendReplacement(out, Matcher.quoteReplacement(substitute(translated, args)));
+            any = true;
+         }
+      }
+
+      matcher.appendTail(out);
+      if (any) {
+         return out.toString();
       } else {
-         Matcher matcher = KEY.matcher(text);
-         StringBuilder out = new StringBuilder();
-         boolean any = false;
-
-         while (matcher.find()) {
-            String translated = lookup(matcher.group(1));
-            if (translated != null) {
-               matcher.appendReplacement(out, Matcher.quoteReplacement(substitute(translated, args)));
-               any = true;
-            }
-         }
-
-         matcher.appendTail(out);
-         if (any) {
-            return out.toString();
-         } else {
-            return BARE_KEY.matcher(text).matches() && !args.isEmpty() ? String.join(", ", args) : substitute(text, args);
-         }
+         return BARE_KEY.matcher(text).matches() && !args.isEmpty() ? String.join(", ", args) : substitute(text, args);
       }
    }
 
@@ -154,7 +154,7 @@ public final class BedrockText {
    public static String rawTextString(String json) {
       try {
          return rawText(JsonParser.parseString(json));
-      } catch (RuntimeException var2) {
+      } catch (RuntimeException e) {
          return json;
       }
    }
@@ -162,7 +162,7 @@ public final class BedrockText {
    public static MutableComponent rawText(String json) {
       try {
          return format(rawText(JsonParser.parseString(json)));
-      } catch (RuntimeException var2) {
+      } catch (RuntimeException e) {
          return format(json);
       }
    }
@@ -170,44 +170,44 @@ public final class BedrockText {
    private static String rawText(JsonElement element) {
       if (!element.isJsonObject()) {
          return element.isJsonPrimitive() ? element.getAsString() : "";
-      } else {
-         JsonObject object = element.getAsJsonObject();
-         StringBuilder out = new StringBuilder();
-         if (object.has("rawtext")) {
-            for (JsonElement part : object.getAsJsonArray("rawtext")) {
-               out.append(rawText(part));
+      }
+
+      JsonObject object = element.getAsJsonObject();
+      StringBuilder out = new StringBuilder();
+      if (object.has("rawtext")) {
+         for (JsonElement part : object.getAsJsonArray("rawtext")) {
+            out.append(rawText(part));
+         }
+      }
+
+      if (object.has("text")) {
+         out.append(object.get("text").getAsString());
+      }
+
+      if (object.has("translate")) {
+         List<String> with = new ArrayList<>();
+         JsonElement withElement = object.get("with");
+         if (withElement != null && withElement.isJsonArray()) {
+            for (JsonElement arg : withElement.getAsJsonArray()) {
+               with.add(rawText(arg));
             }
-         }
-
-         if (object.has("text")) {
-            out.append(object.get("text").getAsString());
-         }
-
-         if (object.has("translate")) {
-            List<String> with = new ArrayList<>();
-            JsonElement withElement = object.get("with");
-            if (withElement != null && withElement.isJsonArray()) {
-               for (JsonElement arg : withElement.getAsJsonArray()) {
+         } else if (withElement != null && withElement.isJsonObject()) {
+            JsonArray parts = withElement.getAsJsonObject().getAsJsonArray("rawtext");
+            if (parts != null) {
+               for (JsonElement arg : parts) {
                   with.add(rawText(arg));
                }
-            } else if (withElement != null && withElement.isJsonObject()) {
-               JsonArray parts = withElement.getAsJsonObject().getAsJsonArray("rawtext");
-               if (parts != null) {
-                  for (JsonElement arg : parts) {
-                     with.add(rawText(arg));
-                  }
-               }
             }
-
-            out.append(translate(object.get("translate").getAsString(), with));
          }
 
-         if (object.has("selector")) {
-            out.append(object.get("selector").getAsString());
-         }
-
-         return out.toString();
+         out.append(translate(object.get("translate").getAsString(), with));
       }
+
+      if (object.has("selector")) {
+         out.append(object.get("selector").getAsString());
+      }
+
+      return out.toString();
    }
 
    public static String lookupKey(String key) {
@@ -218,15 +218,15 @@ public final class BedrockText {
       String bedrock = bedrockLanguage.get(key);
       if (bedrock != null) {
          return bedrock;
-      } else {
-         Language language = Language.getInstance();
-         if (language.has(key)) {
-            return language.getOrDefault(key);
-         } else {
-            String alias = ALIASES.get(key);
-            return alias != null && language.has(alias) ? language.getOrDefault(alias) : null;
-         }
       }
+
+      Language language = Language.getInstance();
+      if (language.has(key)) {
+         return language.getOrDefault(key);
+      }
+
+      String alias = ALIASES.get(key);
+      return alias != null && language.has(alias) ? language.getOrDefault(alias) : null;
    }
 
    private static String substitute(String format, List<String> args) {
@@ -256,15 +256,15 @@ public final class BedrockText {
       int colour = code < COLOURS.length ? COLOURS[code] : -1;
       if (colour >= 0) {
          return style.withColor(colour);
-      } else {
-         return switch (code) {
-            case 'k' -> style.withObfuscated(true);
-            case 'l' -> style.withBold(true);
-            default -> style;
-            case 'o' -> style.withItalic(true);
-            case 'r' -> Style.EMPTY;
-         };
       }
+
+      return switch (code) {
+         case 'k' -> style.withObfuscated(true);
+         case 'l' -> style.withBold(true);
+         default -> style;
+         case 'o' -> style.withItalic(true);
+         case 'r' -> Style.EMPTY;
+      };
    }
 
    private static void append(MutableComponent target, StringBuilder run, Style style) {

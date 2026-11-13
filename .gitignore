@@ -19,3 +19,6 @@ bedrock-samples-*.zip
 
 # keep the gradle wrapper jar despite the rule above
 !gradle/wrapper/gradle-wrapper.jar
+
+# shaded third-party libs extracted from the original jar (local only)
+libs/

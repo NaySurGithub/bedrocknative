@@ -31,10 +31,10 @@ public final class UrlImageBudget {
    public synchronized boolean tryStartUrl() {
       if (this.urls >= this.maxUrls) {
          return false;
-      } else {
-         this.urls++;
-         return true;
       }
+
+      this.urls++;
+      return true;
    }
 
    public synchronized boolean tryAddImage(long imagePixels) {
@@ -51,10 +51,10 @@ public final class UrlImageBudget {
          long extra = declaredLength - 2097152L;
          if (this.largeExtra + extra > this.maxLargeExtra) {
             return 2097152L;
-         } else {
-            this.largeExtra += extra;
-            return declaredLength;
          }
+
+         this.largeExtra += extra;
+         return declaredLength;
       } else {
          return 2097152L;
       }

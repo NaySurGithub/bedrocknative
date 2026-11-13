@@ -18,7 +18,6 @@ public record UiEnvironment(UiTextMeasurer measurer, UiTextures textures, UiEnvi
    }
 
    public interface Localizer {
-      @Nullable
-      String lookup(String var1);
+      @Nullable String lookup(String var1);
    }
 }

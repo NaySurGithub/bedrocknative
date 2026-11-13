@@ -43,8 +43,8 @@ public final class TextureData {
          Optional<byte[]> data;
          try {
             data = pack.read(file);
-         } catch (IOException var17) {
-            BedrockNative.LOGGER.warn("Couldn't read {} from {}", new Object[]{file, pack, var17});
+         } catch (IOException e) {
+            BedrockNative.LOGGER.warn("Couldn't read {} from {}", new Object[]{file, pack, e});
             continue;
          }
 
@@ -87,8 +87,8 @@ public final class TextureData {
             if (data.isPresent() && quietJson(data.get()) == null) {
                unreadable.add(file + " in " + pack);
             }
-         } catch (IOException var6) {
-            unreadable.add(file + " in " + pack + " (" + var6.getMessage() + ")");
+         } catch (IOException e) {
+            unreadable.add(file + " in " + pack + " (" + e.getMessage() + ")");
          }
       }
 
@@ -116,7 +116,7 @@ public final class TextureData {
 
          reader.close();
          return var3;
-      } catch (RuntimeException | IOException var6) {
+      } catch (IOException | RuntimeException e) {
          return null;
       }
    }
@@ -142,8 +142,8 @@ public final class TextureData {
 
          reader.close();
          return var4;
-      } catch (RuntimeException | IOException var7) {
-         BedrockNative.LOGGER.warn("Unreadable Bedrock JSON {}: {}", what, var7.getMessage());
+      } catch (IOException | RuntimeException e) {
+         BedrockNative.LOGGER.warn("Unreadable Bedrock JSON {}: {}", what, e.getMessage());
          return null;
       }
    }

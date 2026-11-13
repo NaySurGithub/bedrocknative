@@ -76,9 +76,7 @@ final class DevPerfRenderTest {
          );
          saved = this.onClient(
             () -> new DevPerfRenderTest.Options(
-               (Integer)this.minecraft.options.renderDistance().get(),
-               (CloudStatus)this.minecraft.options.cloudStatus().get(),
-               (Boolean)this.minecraft.options.bobView().get()
+               this.minecraft.options.renderDistance().get(), this.minecraft.options.cloudStatus().get(), this.minecraft.options.bobView().get()
             )
          );
          ClientTickEvents.START_CLIENT_TICK.register((StartTick)client -> {
@@ -107,8 +105,8 @@ final class DevPerfRenderTest {
          }
 
          this.command(String.format(Locale.ROOT, "tp @s %.2f %.2f %.2f", home.x, home.y, home.z));
-      } catch (RuntimeException var10) {
-         BedrockNative.LOGGER.error("Dev perf-render test failed", var10);
+      } catch (RuntimeException e) {
+         BedrockNative.LOGGER.error("Dev perf-render test failed", e);
       } finally {
          this.perTick = null;
          initial.forEach((name, value) -> RenderSwitches.all().get(name).set().accept(value));
@@ -141,8 +139,8 @@ final class DevPerfRenderTest {
                log("flight recording written to {}", destination);
             }
          }
-      } catch (RuntimeException | IOException var3) {
-         log("the flight recording could not be written: {}", var3.toString());
+      } catch (IOException | RuntimeException e) {
+         log("the flight recording could not be written: {}", e.toString());
       }
    }
 
@@ -580,7 +578,7 @@ final class DevPerfRenderTest {
 
       try {
          return image.get(10L, TimeUnit.SECONDS);
-      } catch (Exception var5) {
+      } catch (Exception e) {
          return null;
       }
    }
@@ -590,8 +588,8 @@ final class DevPerfRenderTest {
          File folder = new File(this.minecraft.gameDirectory, "screenshots");
          folder.mkdirs();
          image.writeToFile(new File(folder, name + ".png"));
-      } catch (IOException var4) {
-         log("could not save {}: {}", name, var4.toString());
+      } catch (IOException e) {
+         log("could not save {}: {}", name, e.toString());
       }
    }
 
@@ -660,15 +658,15 @@ final class DevPerfRenderTest {
       this.minecraft.execute(() -> {
          try {
             future.complete(supplier.get());
-         } catch (RuntimeException var3) {
-            future.completeExceptionally(var3);
+         } catch (RuntimeException e) {
+            future.completeExceptionally(e);
          }
       });
 
       try {
          return future.get(30L, TimeUnit.SECONDS);
-      } catch (Exception var4) {
-         throw new IllegalStateException(var4);
+      } catch (Exception e) {
+         throw new IllegalStateException(e);
       }
    }
 
@@ -679,7 +677,7 @@ final class DevPerfRenderTest {
    private static void sleep(long millis) {
       try {
          Thread.sleep(millis);
-      } catch (InterruptedException var3) {
+      } catch (InterruptedException e) {
          Thread.currentThread().interrupt();
       }
    }

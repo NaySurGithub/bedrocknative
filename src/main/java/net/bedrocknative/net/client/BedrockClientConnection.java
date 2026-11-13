@@ -140,7 +140,7 @@ public final class BedrockClientConnection {
             boolean dontFragment;
             try {
                dontFragment = channel.config().setOption(RakChannelOption.RAK_IP_DONT_FRAGMENT, true);
-            } catch (LinkageError | RuntimeException var4) {
+            } catch (RuntimeException | LinkageError e) {
                dontFragment = false;
             }
 

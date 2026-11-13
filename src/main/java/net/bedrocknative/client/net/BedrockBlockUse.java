@@ -39,7 +39,7 @@ public final class BedrockBlockUse {
             CustomBlockState custom = CarrierBlock.data(state);
             if (BlockUseRules.blockTakes(rule, result.consumesAction(), custom != null && custom.interactable())) {
                blockTook = true;
-               return (InteractionResult)(result.consumesAction() ? result : InteractionResult.SUCCESS);
+               return result.consumesAction() ? result : InteractionResult.SUCCESS;
             } else {
                return result;
             }
@@ -54,10 +54,10 @@ public final class BedrockBlockUse {
    static BlockUseRules.Rule rule(BlockState state) {
       if (state.getBlock() instanceof CarrierBlock) {
          return BlockUseRules.Rule.JAVA;
-      } else {
-         BlockMappings mappings = BlockMappings.get();
-         String name = mappings.bedrockName(mappings.toBedrock(state));
-         return name == null ? BlockUseRules.Rule.JAVA : BlockUseRules.rule(name);
       }
+
+      BlockMappings mappings = BlockMappings.get();
+      String name = mappings.bedrockName(mappings.toBedrock(state));
+      return name == null ? BlockUseRules.Rule.JAVA : BlockUseRules.rule(name);
    }
 }

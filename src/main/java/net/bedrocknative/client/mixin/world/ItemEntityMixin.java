@@ -12,7 +12,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin({ItemEntity.class})
+@Mixin(ItemEntity.class)
 public abstract class ItemEntityMixin extends Entity {
    @Shadow
    private int pickupDelay;
@@ -23,17 +23,14 @@ public abstract class ItemEntityMixin extends Entity {
       super(type, level);
    }
 
+   @Override
    protected InterpolationHandler createInterpolationHandler() {
       return ItemSmoothing.createHandler(this);
    }
 
-   @Inject(
-      method = {"tick"},
-      at = {@At("HEAD")},
-      cancellable = true
-   )
+   @Inject(method = "tick", at = @At("HEAD"), cancellable = true)
    private void bedrocknative$serverMoves(CallbackInfo ci) {
-      ItemEntity self = (ItemEntity)this;
+      ItemEntity self = (ItemEntity)(Object)this;
       if (this.level().isClientSide() && ItemSmoothing.active() && !self.getItem().isEmpty()) {
          this.baseTick();
          if (this.pickupDelay > 0 && this.pickupDelay != 32767) {

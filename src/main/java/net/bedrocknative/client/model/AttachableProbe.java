@@ -94,8 +94,7 @@ public final class AttachableProbe {
       );
    }
 
-   @Nullable
-   public static AttachableProbe.Sample sample(String key) {
+   public static AttachableProbe.@Nullable Sample sample(String key) {
       return SAMPLES.get(key);
    }
 
@@ -103,8 +102,7 @@ public final class AttachableProbe {
       SAMPLES.clear();
    }
 
-   @Nullable
-   public static Vector3f javaPoint(String key, String bone, float x, float y, float z) {
+   public static @Nullable Vector3f javaPoint(String key, String bone, float x, float y, float z) {
       AttachableProbe.Sample sample = SAMPLES.get(key);
       Matrix4f matrix = sample != null ? sample.wearerBones().get(bone.toLowerCase(Locale.ROOT)) : null;
       return matrix == null
@@ -113,22 +111,21 @@ public final class AttachableProbe {
             .add((float)(sample.camera().x - sample.wearer().x), (float)(sample.camera().y - sample.wearer().y), (float)(sample.camera().z - sample.wearer().z));
    }
 
-   @Nullable
-   public static Vector3f offset(String key, String bone, float x, float y, float z, boolean fromCamera) {
+   public static @Nullable Vector3f offset(String key, String bone, float x, float y, float z, boolean fromCamera) {
       AttachableProbe.Sample sample = SAMPLES.get(key);
       Matrix4f matrix = sample != null ? sample.bones().get(bone.toLowerCase(Locale.ROOT)) : null;
       if (matrix == null) {
          return null;
-      } else {
-         Vector3f point = matrix.transformPosition(new Vector3f(-x, y, z));
-         if (!fromCamera) {
-            point.add(
-               (float)(sample.camera().x - sample.wearer().x), (float)(sample.camera().y - sample.wearer().y), (float)(sample.camera().z - sample.wearer().z)
-            );
-         }
-
-         return point;
       }
+
+      Vector3f point = matrix.transformPosition(new Vector3f(-x, y, z));
+      if (!fromCamera) {
+         point.add(
+            (float)(sample.camera().x - sample.wearer().x), (float)(sample.camera().y - sample.wearer().y), (float)(sample.camera().z - sample.wearer().z)
+         );
+      }
+
+      return point;
    }
 
    public record Sample(Map<String, Matrix4f> bones, Map<String, Matrix4f> wearerBones, Vec3 camera, Vec3 wearer, long nanos) {

@@ -132,8 +132,7 @@ public final class BedrockEntities {
    private final Map<Long, String> playerNames = new HashMap<>();
    private final Int2IntMap tradeExperience = new Int2IntOpenHashMap();
    private final Map<Long, Pose> blockSeats = new HashMap<>();
-   @Nullable
-   private BlockSeat localSeat;
+   private @Nullable BlockSeat localSeat;
    private int nextJavaId;
    private int localJavaId;
    private long localRuntimeId;
@@ -193,14 +192,14 @@ public final class BedrockEntities {
             case AddEntityPacket add:
                this.onAddEntity(add);
                break;
-            case AddPlayerPacket addx:
-               this.onAddPlayer(addx);
+            case AddPlayerPacket add:
+               this.onAddPlayer(add);
                break;
-            case AddItemEntityPacket addxx:
-               this.onAddItem(addxx);
+            case AddItemEntityPacket add:
+               this.onAddItem(add);
                break;
-            case AddPaintingPacket addxxx:
-               this.onAddPainting(addxxx);
+            case AddPaintingPacket add:
+               this.onAddPainting(add);
                break;
             case SetEntityLinkPacket link:
                this.onLink(link.getEntityLink());
@@ -229,18 +228,18 @@ public final class BedrockEntities {
                   );
                }
                break;
-            case MoveEntityDeltaPacket movex:
-               this.onMoveDelta(movex);
+            case MoveEntityDeltaPacket move:
+               this.onMoveDelta(move);
                break;
-            case MovePlayerPacket movexx:
-               Entity entityxxx = this.remote(movexx.getRuntimeEntityId());
+            case MovePlayerPacket move:
+               Entity entityxxx = this.remote(move.getRuntimeEntityId());
                if (entityxxx != null) {
-                  if (movexx.getMode() == Mode.RESPAWN) {
+                  if (move.getMode() == Mode.RESPAWN) {
                      revive(entityxxx);
                   }
 
-                  Vector3f pos = movexx.getPosition();
-                  Vector3f rot = movexx.getRotation();
+                  Vector3f pos = move.getPosition();
+                  Vector3f rot = move.getRotation();
                   this.moveTo(
                      entityxxx,
                      pos.getX(),
@@ -249,8 +248,8 @@ public final class BedrockEntities {
                      rot.getY(),
                      rot.getX(),
                      rot.getZ(),
-                     movexx.getMode() == Mode.TELEPORT || movexx.getMode() == Mode.RESPAWN,
-                     movexx.isOnGround()
+                     move.getMode() == Mode.TELEPORT || move.getMode() == Mode.RESPAWN,
+                     move.isOnGround()
                   );
                }
                break;
@@ -277,9 +276,9 @@ public final class BedrockEntities {
                this.onEntityEvent(event);
                break;
             case MobEquipmentPacket equipment:
-               if (this.remote(equipment.getRuntimeEntityId()) instanceof LivingEntity livingx) {
-                  this.actors.onEquipment(livingx, equipment.getContainerId() == 119 ? "slot.weapon.offhand" : "slot.weapon.mainhand", equipment.getItem());
-                  livingx.setItemSlot(
+               if (this.remote(equipment.getRuntimeEntityId()) instanceof LivingEntity living) {
+                  this.actors.onEquipment(living, equipment.getContainerId() == 119 ? "slot.weapon.offhand" : "slot.weapon.mainhand", equipment.getItem());
+                  living.setItemSlot(
                      equipment.getContainerId() == 119 ? EquipmentSlot.OFFHAND : EquipmentSlot.MAINHAND, ItemMappings.toJava(equipment.getItem())
                   );
                }
@@ -325,11 +324,10 @@ public final class BedrockEntities {
             data = Block.getId(BlockMappings.get().toJava(blockHash));
          }
 
-         if (type == EntityTypes.FISHING_BOBBER && add.getMetadata().get(EntityDataTypes.OWNER_EID) instanceof Long ownerId) {
-            Entity var12 = this.byUniqueId(ownerId);
-            if (var12 instanceof Entity) {
-               data = var12.getId();
-            }
+         if (type == EntityTypes.FISHING_BOBBER
+            && add.getMetadata().get(EntityDataTypes.OWNER_EID) instanceof Long ownerId
+            && this.byUniqueId(ownerId) instanceof Entity owner) {
+            data = owner.getId();
          }
 
          boolean boat = type == EntityTypes.OAK_BOAT || type == EntityTypes.OAK_CHEST_BOAT;
@@ -419,15 +417,15 @@ public final class BedrockEntities {
       Direction facing = Direction.from2DDataValue(add.getDirection());
       Vector3f center = add.getPosition();
       Vec3 anchor = new Vec3(center.getX(), center.getY(), center.getZ())
-         .relative(facing.getCounterClockWise(), -paintingShift(((PaintingVariant)variant.value()).width()))
-         .relative(Direction.UP, -paintingShift(((PaintingVariant)variant.value()).height()));
+         .relative(facing.getCounterClockWise(), -paintingShift(variant.value().width()))
+         .relative(Direction.UP, -paintingShift(variant.value().height()));
       BlockPos pos = BlockPos.containing(anchor);
       Entity entity = this.spawn(
          add.getRuntimeEntityId(),
          add.getUniqueEntityId(),
          EntityTypes.PAINTING,
          uuidOf(add.getUniqueEntityId()),
-         Vector3f.from((float)pos.getX(), (float)pos.getY(), (float)pos.getZ()),
+         Vector3f.from(pos.getX(), pos.getY(), pos.getZ()),
          0.0F,
          null,
          0.0F,
@@ -448,10 +446,10 @@ public final class BedrockEntities {
       Registry<PaintingVariant> variants = this.minecraft.level.registryAccess().lookupOrThrow(Registries.PAINTING_VARIANT);
       String name = motive.replaceAll("([a-z0-9])([A-Z])", "$1_$2").toLowerCase(Locale.ROOT);
       Identifier id = Identifier.tryParse(name);
-      return (id == null ? Optional.empty() : variants.get(id))
+      return (id == null ? Optional.<Holder.Reference<PaintingVariant>>empty() : variants.get(id))
          .or(() -> variants.get(PaintingVariants.KEBAB))
          .map(holder -> (Holder<PaintingVariant>)holder)
-         .orElseGet(() -> (Holder<PaintingVariant>)variants.listElements().findFirst().orElseThrow());
+         .orElseGet(() -> variants.listElements().findFirst().orElseThrow());
    }
 
    private void onPassengerOfBlock(long uniqueId, PassengerOfBlockArguments arguments) {
@@ -567,39 +565,39 @@ public final class BedrockEntities {
       int existing = this.javaIds.get(runtimeId);
       if (existing == this.localJavaId) {
          return null;
-      } else {
-         if (existing != -1) {
-            if (level.getEntity(existing) instanceof Player old && !old.getUUID().equals(uuid)) {
-               this.actors.skins().despawned(old.getUUID());
-            }
-
-            level.removeEntity(existing, RemovalReason.DISCARDED);
-            this.actors.remove(existing);
-         }
-
-         int id = this.nextJavaId++;
-         long javaAdd = FrameTimes.start();
-         this.minecraft
-            .getConnection()
-            .handleAddEntity(
-               new ClientboundAddEntityPacket(
-                  id, uuid, pos.getX(), pos.getY() - yOffset, pos.getZ(), pitch, yaw, type, data, motion == null ? Vec3.ZERO : toVec3(motion), headYaw
-               )
-            );
-         FrameTimes.end(FrameWatch.Bucket.JAVA_ADD, javaAdd);
-         Entity entity = level.getEntity(id);
-         if (entity == null) {
-            return null;
-         } else {
-            entity.setYRot(yaw);
-            entity.setXRot(pitch);
-            entity.setYHeadRot(headYaw);
-            entity.setOldPosAndRot();
-            this.javaIds.put(runtimeId, id);
-            this.runtimeIds.put(uniqueId, runtimeId);
-            return entity;
-         }
       }
+
+      if (existing != -1) {
+         if (level.getEntity(existing) instanceof Player old && !old.getUUID().equals(uuid)) {
+            this.actors.skins().despawned(old.getUUID());
+         }
+
+         level.removeEntity(existing, RemovalReason.DISCARDED);
+         this.actors.remove(existing);
+      }
+
+      int id = this.nextJavaId++;
+      long javaAdd = FrameTimes.start();
+      this.minecraft
+         .getConnection()
+         .handleAddEntity(
+            new ClientboundAddEntityPacket(
+               id, uuid, pos.getX(), pos.getY() - yOffset, pos.getZ(), pitch, yaw, type, data, motion == null ? Vec3.ZERO : toVec3(motion), headYaw
+            )
+         );
+      FrameTimes.end(FrameWatch.Bucket.JAVA_ADD, javaAdd);
+      Entity entity = level.getEntity(id);
+      if (entity == null) {
+         return null;
+      }
+
+      entity.setYRot(yaw);
+      entity.setXRot(pitch);
+      entity.setYHeadRot(headYaw);
+      entity.setOldPosAndRot();
+      this.javaIds.put(runtimeId, id);
+      this.runtimeIds.put(uniqueId, runtimeId);
+      return entity;
    }
 
    private long distanceSq(Entity entity) {
@@ -771,13 +769,13 @@ public final class BedrockEntities {
          if (entity instanceof Player player && data.get(EntityDataTypes.SCALE) instanceof Float scale) {
             AttributeInstance size = player.getAttribute(Attributes.SCALE);
             if (size != null) {
-               size.setBaseValue(Math.clamp((double)scale.floatValue(), 0.0625, 16.0));
+               size.setBaseValue(Math.clamp(scale.floatValue(), 0.0625, 16.0));
             }
          }
 
          this.applyServerBox(entity, data);
          if (data.get(EntityDataTypes.TRADE_EXPERIENCE) instanceof Integer xp) {
-            this.tradeExperience.put(entity.getId(), xp);
+            this.tradeExperience.put(entity.getId(), xp.intValue());
          }
 
          if (entity instanceof Enderman enderman && data.get(EntityDataTypes.CARRY_BLOCK_STATE) instanceof BlockDefinition block) {
@@ -989,7 +987,7 @@ public final class BedrockEntities {
 
    private void addPlayerInfo(UUID uuid, String name, boolean listed) {
       ClientPacketListener connection = this.minecraft.getConnection();
-      PlayerInfo info = (PlayerInfo)connection.playerInfoMap.get(uuid);
+      PlayerInfo info = connection.playerInfoMap.get(uuid);
       if (info == null) {
          info = new PlayerInfo(new GameProfile(uuid, name), false);
          connection.playerInfoMap.put(uuid, info);
@@ -1059,8 +1057,7 @@ public final class BedrockEntities {
 
    private static void applyAttributes(LivingEntity living, List<AttributeData> attributes) {
       for (AttributeData attribute : attributes) {
-         String var4 = attribute.getName();
-         switch (var4) {
+         switch (attribute.getName()) {
             case "minecraft:health":
                AttributeInstance maxHealth = living.getAttribute(Attributes.MAX_HEALTH);
                if (maxHealth != null && attribute.getMaximum() > 0.0F) {

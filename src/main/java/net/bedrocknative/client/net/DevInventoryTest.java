@@ -989,9 +989,10 @@ final class DevInventoryTest {
          sleep(600L);
       }
 
+      int taken = cooked;
       this.minecraft.execute(() -> this.minecraft.player.closeContainer());
       sleep(600L);
-      this.commands(hasItem(resultId, null, -1, cooked));
+      this.commands(hasItem(resultId, null, -1, taken));
       sleep(600L);
       this.commands("setblock " + at(pos) + " air", "clear @s");
       sleep(600L);
@@ -1305,10 +1306,10 @@ final class DevInventoryTest {
          float[] at = screen.outsidePoint();
          if (at == null) {
             return this.missed(what, "no place outside the panels");
-         } else {
-            mouse(screen, at, button == 0 ? 1 : 3, 0, false);
-            return true;
          }
+
+         mouse(screen, at, button == 0 ? 1 : 3, 0, false);
+         return true;
       }
    }
 
@@ -1533,23 +1534,23 @@ final class DevInventoryTest {
       float size = control == null ? 0.0F : (horizontal ? control.width() : control.height());
       if (size <= 0.0F) {
          return Float.NaN;
-      } else {
-         float from = Float.MAX_VALUE;
-         float to = -Float.MAX_VALUE;
+      }
 
-         for (UiDrawCommand command : screen.ui().instance().drawList().commands()) {
-            if (command instanceof UiDrawCommand.Image image && image.control() == control) {
-               for (UiDrawCommand.Quad quad : image.quads()) {
-                  if (quad.w() > 0.0F && quad.h() > 0.0F) {
-                     from = Math.min(from, horizontal ? quad.x() : quad.y());
-                     to = Math.max(to, horizontal ? quad.x() + quad.w() : quad.y() + quad.h());
-                  }
+      float from = Float.MAX_VALUE;
+      float to = -Float.MAX_VALUE;
+
+      for (UiDrawCommand command : screen.ui().instance().drawList().commands()) {
+         if (command instanceof UiDrawCommand.Image image && image.control() == control) {
+            for (UiDrawCommand.Quad quad : image.quads()) {
+               if (quad.w() > 0.0F && quad.h() > 0.0F) {
+                  from = Math.min(from, horizontal ? quad.x() : quad.y());
+                  to = Math.max(to, horizontal ? quad.x() + quad.w() : quad.y() + quad.h());
                }
             }
          }
-
-         return to < from ? 0.0F : (to - from) / size;
       }
+
+      return to < from ? 0.0F : (to - from) / size;
    }
 
    private static String text(String key) {

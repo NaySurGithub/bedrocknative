@@ -28,7 +28,7 @@ public final class BedrockActorEntity extends LivingEntity {
    public static final ResourceKey<EntityType<?>> KEY = ResourceKey.create(
       Registries.ENTITY_TYPE, Identifier.fromNamespaceAndPath("bedrocknative", "bedrock_actor")
    );
-   public static final EntityType<BedrockActorEntity> TYPE = (EntityType<BedrockActorEntity>)Registry.register(
+   public static final EntityType<BedrockActorEntity> TYPE = Registry.register(
       BuiltInRegistries.ENTITY_TYPE,
       KEY,
       Builder.of(BedrockActorEntity::new, MobCategory.MISC).noLootTable().noSave().noSummon().sized(0.0F, 0.0F).clientTrackingRange(10).build(KEY)
@@ -77,42 +77,52 @@ public final class BedrockActorEntity extends LivingEntity {
       return this.motion;
    }
 
+   @Override
    protected EntityDimensions getDefaultDimensions(Pose pose) {
       return EntityDimensions.scalable(this.width, this.height);
    }
 
+   @Override
    public void tick() {
       super.tick();
       this.motion.tick(this.getX(), this.getY(), this.getZ(), this.yBodyRot, this.onGround(), this.isShiftKeyDown());
    }
 
+   @Override
    public HumanoidArm getMainArm() {
       return HumanoidArm.RIGHT;
    }
 
+   @Override
    public InteractionResult interact(Player player, InteractionHand hand, Vec3 location) {
-      return (InteractionResult)(this.level().isClientSide() ? InteractionResult.SUCCESS : InteractionResult.PASS);
+      return this.level().isClientSide() ? InteractionResult.SUCCESS : InteractionResult.PASS;
    }
 
+   @Override
    public boolean isPushable() {
       return false;
    }
 
+   @Override
    protected void pushEntities() {
    }
 
+   @Override
    public boolean canBeCollidedWith(@Nullable Entity other) {
       return false;
    }
 
+   @Override
    public PushReaction getPistonPushReaction() {
       return PushReaction.IGNORE_ENTITY;
    }
 
+   @Override
    public boolean isIgnoringBlockTriggers() {
       return true;
    }
 
+   @Override
    public boolean canBeHitByProjectile() {
       return false;
    }

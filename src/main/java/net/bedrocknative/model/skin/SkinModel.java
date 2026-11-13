@@ -86,8 +86,7 @@ public final class SkinModel {
    private final Set<PlayerSkin.Animated> animated;
    private final boolean cape;
    private final boolean blinking;
-   @Nullable
-   private final String fallback;
+   private final @Nullable String fallback;
    private final float[] frames = new float[PlayerSkin.Animated.values().length];
    private static final Set<String> CAPE_LOGGED = ConcurrentHashMap.newKeySet();
 
@@ -116,57 +115,58 @@ public final class SkinModel {
       }
    }
 
-   @Nullable
-   public static SkinModel build(ModelRegistry registry, PlayerSkin skin) {
+   public static @Nullable SkinModel build(ModelRegistry registry, PlayerSkin skin) {
       ClientEntityDef base = registry.entity("minecraft:player");
       if (base == null) {
          return null;
-      } else if (skin.isDefault()) {
-         return assemble(registry, base, skin, skin, null, null);
-      } else {
-         GeometryLibrary library = null;
-         String reason = null;
-         if (!skin.geometryData().isBlank()) {
-            JsonObject json = ModelJson.parse(skin.geometryData().getBytes(StandardCharsets.UTF_8), "skin geometry");
-            if (json == null) {
-               reason = "the skin's geometry data is not readable JSON ("
-                  + skin.geometryData().length()
-                  + " characters, starting "
-                  + snippet(skin.geometryData())
-                  + ")";
-            } else {
-               library = new GeometryLibrary(registry.geometryLibrary());
-
-               try {
-                  library.add(json, false);
-               } catch (RuntimeException var9) {
-                  reason = "the skin's geometry data is not readable: " + var9;
-                  library = null;
-               }
-            }
-         }
-
-         if (reason == null) {
-            String name = skin.geometryNames().get("default");
-            GeometryDef geometry = resolve(registry, library, name);
-            if (geometry == null) {
-               reason = "no geometry " + name + " in the skin or the pack stack";
-            } else {
-               try {
-                  SkinModel model = assemble(registry, base, skin, skin, library, null);
-                  reason = model.tooComplex();
-                  if (reason == null) {
-                     return model;
-                  }
-               } catch (RuntimeException var8) {
-                  reason = "the skin's geometry can't be built: " + var8;
-               }
-            }
-         }
-
-         PlayerSkin fallback = PlayerSkin.defaultSkin(skin.slim(), reason);
-         return assemble(registry, base, skin, fallback, null, reason);
       }
+
+      if (skin.isDefault()) {
+         return assemble(registry, base, skin, skin, null, null);
+      }
+
+      GeometryLibrary library = null;
+      String reason = null;
+      if (!skin.geometryData().isBlank()) {
+         JsonObject json = ModelJson.parse(skin.geometryData().getBytes(StandardCharsets.UTF_8), "skin geometry");
+         if (json == null) {
+            reason = "the skin's geometry data is not readable JSON ("
+               + skin.geometryData().length()
+               + " characters, starting "
+               + snippet(skin.geometryData())
+               + ")";
+         } else {
+            library = new GeometryLibrary(registry.geometryLibrary());
+
+            try {
+               library.add(json, false);
+            } catch (RuntimeException e) {
+               reason = "the skin's geometry data is not readable: " + e;
+               library = null;
+            }
+         }
+      }
+
+      if (reason == null) {
+         String name = skin.geometryNames().get("default");
+         GeometryDef geometry = resolve(registry, library, name);
+         if (geometry == null) {
+            reason = "no geometry " + name + " in the skin or the pack stack";
+         } else {
+            try {
+               SkinModel model = assemble(registry, base, skin, skin, library, null);
+               reason = model.tooComplex();
+               if (reason == null) {
+                  return model;
+               }
+            } catch (RuntimeException e) {
+               reason = "the skin's geometry can't be built: " + e;
+            }
+         }
+      }
+
+      PlayerSkin fallback = PlayerSkin.defaultSkin(skin.slim(), reason);
+      return assemble(registry, base, skin, fallback, null, reason);
    }
 
    static String snippet(String text) {
@@ -180,8 +180,7 @@ public final class SkinModel {
       return out.append('"').toString();
    }
 
-   @Nullable
-   private String tooComplex() {
+   private @Nullable String tooComplex() {
       for (MeshedGeometry mesh : this.meshes.values()) {
          if (mesh.boneCount() > 256) {
             return "the skin's geometry has " + mesh.boneCount() + " bones (at most 256 are drawn)";
@@ -221,8 +220,7 @@ public final class SkinModel {
       }
    }
 
-   @Nullable
-   private static GeometryDef resolve(ModelRegistry registry, @Nullable GeometryLibrary library, @Nullable String name) {
+   private static @Nullable GeometryDef resolve(ModelRegistry registry, @Nullable GeometryLibrary library, @Nullable String name) {
       if (name == null) {
          return null;
       } else {
@@ -346,59 +344,59 @@ public final class SkinModel {
       ClientEntityDef base = registry.entity("minecraft:player");
       if (base == null) {
          return new VanillaMobs.Support("minecraft:player", false, List.of("no client entity in the pack stack"), List.of());
-      } else {
-         List<ClientEntityDef.RenderControllerRef> controllers = new ArrayList<>(base.renderControllers());
-         List<ClientEntityDef.AnimateEntry> animate = new ArrayList<>(base.scripts().animate());
-
-         for (String controller : List.of(
-            "controller.render.player.cape", "controller.render.persona_animated_face.third_person", "controller.render.persona_animated_face.first_person"
-         )) {
-            if (registry.renderController(controller) != null) {
-               controllers.add(new ClientEntityDef.RenderControllerRef(controller, null));
-            }
-         }
-
-         if (base.animation("blink") != null) {
-            animate.add(new ClientEntityDef.AnimateEntry("blink", null));
-         }
-
-         ClientEntityDef.Scripts scripts = base.scripts();
-         ClientEntityDef full = new ClientEntityDef(
-            base.identifier(),
-            false,
-            base.minEngineVersion(),
-            base.formatVersion(),
-            base.materials(),
-            base.textures(),
-            base.geometries(),
-            base.animations(),
-            base.legacyControllers(),
-            new ClientEntityDef.Scripts(
-               scripts.initialize(),
-               scripts.preAnimation(),
-               List.copyOf(animate),
-               scripts.scale(),
-               scripts.scaleX(),
-               scripts.scaleY(),
-               scripts.scaleZ(),
-               scripts.publicVariables(),
-               scripts.parentSetup(),
-               scripts.shouldUpdateBonesAndEffectsOffscreen(),
-               scripts.shouldUpdateEffectsOffscreen(),
-               scripts.hideHeldItems()
-            ),
-            List.copyOf(controllers),
-            base.enableAttachables(),
-            base.hideArmor(),
-            base.queryableGeometry(),
-            null,
-            base.pack(),
-            base.serverPack(),
-            base.particleEffects(),
-            base.soundEffects()
-         );
-         return VanillaMobs.decide(registry, full, PLAYER_VARIABLES);
       }
+
+      List<ClientEntityDef.RenderControllerRef> controllers = new ArrayList<>(base.renderControllers());
+      List<ClientEntityDef.AnimateEntry> animate = new ArrayList<>(base.scripts().animate());
+
+      for (String controller : List.of(
+         "controller.render.player.cape", "controller.render.persona_animated_face.third_person", "controller.render.persona_animated_face.first_person"
+      )) {
+         if (registry.renderController(controller) != null) {
+            controllers.add(new ClientEntityDef.RenderControllerRef(controller, null));
+         }
+      }
+
+      if (base.animation("blink") != null) {
+         animate.add(new ClientEntityDef.AnimateEntry("blink", null));
+      }
+
+      ClientEntityDef.Scripts scripts = base.scripts();
+      ClientEntityDef full = new ClientEntityDef(
+         base.identifier(),
+         false,
+         base.minEngineVersion(),
+         base.formatVersion(),
+         base.materials(),
+         base.textures(),
+         base.geometries(),
+         base.animations(),
+         base.legacyControllers(),
+         new ClientEntityDef.Scripts(
+            scripts.initialize(),
+            scripts.preAnimation(),
+            List.copyOf(animate),
+            scripts.scale(),
+            scripts.scaleX(),
+            scripts.scaleY(),
+            scripts.scaleZ(),
+            scripts.publicVariables(),
+            scripts.parentSetup(),
+            scripts.shouldUpdateBonesAndEffectsOffscreen(),
+            scripts.shouldUpdateEffectsOffscreen(),
+            scripts.hideHeldItems()
+         ),
+         List.copyOf(controllers),
+         base.enableAttachables(),
+         base.hideArmor(),
+         base.queryableGeometry(),
+         null,
+         base.pack(),
+         base.serverPack(),
+         base.particleEffects(),
+         base.soundEffects()
+      );
+      return VanillaMobs.decide(registry, full, PLAYER_VARIABLES);
    }
 
    public void setVariables(VariableStore variables) {
@@ -413,8 +411,7 @@ public final class SkinModel {
       variables.set(SHORT_ARM_OFFSET_RIGHT, offset, null);
    }
 
-   @Nullable
-   public MeshedGeometry mesh(String identifier) {
+   public @Nullable MeshedGeometry mesh(String identifier) {
       return this.meshes.get(identifier);
    }
 
@@ -446,8 +443,7 @@ public final class SkinModel {
       return this.blinking;
    }
 
-   @Nullable
-   public String fallback() {
+   public @Nullable String fallback() {
       return this.fallback != null ? this.fallback : this.skin.fallback();
    }
 

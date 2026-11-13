@@ -72,8 +72,7 @@ public final class MeshedGeometry {
       return index;
    }
 
-   @Nullable
-   public float[] visibleBounds() {
+   public float @Nullable [] visibleBounds() {
       return Float.isNaN(this.visibleBounds[0]) ? null : (float[])this.visibleBounds.clone();
    }
 
@@ -97,10 +96,10 @@ public final class MeshedGeometry {
       int parent,
       float[] pivot,
       float[] restRotation,
-      @Nullable float[] bindPoseRotation,
+      float @Nullable [] bindPoseRotation,
       boolean neverRender,
       float[] quads,
-      @Nullable int[] quadMaterials,
+      int @Nullable [] quadMaterials,
       List<String> materialInstances,
       List<MeshedGeometry.Locator> locators,
       @Nullable String binding

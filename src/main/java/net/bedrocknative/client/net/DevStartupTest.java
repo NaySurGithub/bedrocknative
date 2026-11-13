@@ -42,8 +42,7 @@ public final class DevStartupTest {
    private final List<String> table = new ArrayList<>();
    private int passed;
    private int failed;
-   @Nullable
-   private Integer renderDistanceBefore;
+   private @Nullable Integer renderDistanceBefore;
 
    private DevStartupTest(Minecraft minecraft) {
       this.minecraft = minecraft;
@@ -55,8 +54,8 @@ public final class DevStartupTest {
 
          try {
             test.run();
-         } catch (Throwable var5) {
-            BedrockNative.LOGGER.error("Dev startup test: FAIL crashed", var5);
+         } catch (Throwable e) {
+            BedrockNative.LOGGER.error("Dev startup test: FAIL crashed", e);
             test.failed++;
          } finally {
             test.finish();
@@ -88,13 +87,13 @@ public final class DevStartupTest {
          "profile: {} processors seen by the JVM, max heap {} MB, render distance {}{}; join phases {}",
          runtime.availableProcessors(),
          runtime.maxMemory() >> 20,
-         this.onClient(() -> (Integer)this.minecraft.options.renderDistance().get()),
+         this.onClient(() -> this.minecraft.options.renderDistance().get()),
          this.lowEnd ? " (low-end profile: set to 8 for the join)" : "",
          ClientBedrockSession.JOIN_AHEAD ? "overlapped" : "one after the other (-PjoinAhead=off)"
       );
       if (this.lowEnd) {
          this.renderDistanceBefore = this.onClient(() -> {
-            int before = (Integer)this.minecraft.options.renderDistance().get();
+            int before = this.minecraft.options.renderDistance().get();
             this.minecraft.options.renderDistance().set(8);
             return before;
          });
@@ -169,8 +168,8 @@ public final class DevStartupTest {
                   )
                   .dumpHeap(dump, true);
                log("heap dumped to {}", dump);
-            } catch (RuntimeException | IOException var13) {
-               log("couldn't dump the heap: {}", var13.toString());
+            } catch (IOException | RuntimeException e) {
+               log("couldn't dump the heap: {}", e.toString());
             }
          }
       }
@@ -184,8 +183,8 @@ public final class DevStartupTest {
 
          try {
             Files.writeString(Minecraft.getInstance().gameDirectory.toPath().resolve("startup-histogram-" + label + ".txt"), output);
-         } catch (IOException var14) {
-            log("couldn't keep the histogram {}: {}", label, var14.toString());
+         } catch (IOException e) {
+            log("couldn't keep the histogram {}: {}", label, e.toString());
          }
 
          List<String> lines = List.of(output.split("\\R"));
@@ -216,13 +215,12 @@ public final class DevStartupTest {
 
          String unavailable = "unavailable (" + String.join(" / ", lines.subList(0, Math.min(2, lines.size()))) + ")";
          return new String[]{all.isEmpty() ? unavailable : all.toString(), mod.isEmpty() ? unavailable : mod.toString()};
-      } catch (Exception var15) {
-         return new String[]{"unavailable (" + var15 + ")", "unavailable"};
+      } catch (Exception e) {
+         return new String[]{"unavailable (" + e + ")", "unavailable"};
       }
    }
 
-   @Nullable
-   private PhaseClock connect(String name) {
+   private @Nullable PhaseClock connect(String name) {
       int joins = SessionTimeline.joins();
       DevLoadWatch.reset();
       this.run(() -> {
@@ -256,8 +254,7 @@ public final class DevStartupTest {
       }
    }
 
-   @Nullable
-   private PhaseClock leave(String name) {
+   private @Nullable PhaseClock leave(String name) {
       int leaves = SessionTimeline.leaves();
       DevLoadWatch.reset();
       this.run(() -> this.minecraft.disconnectFromWorld(ClientLevel.DEFAULT_QUIT_MESSAGE));
@@ -385,7 +382,7 @@ public final class DevStartupTest {
    private static void sleep(long millis) {
       try {
          Thread.sleep(millis);
-      } catch (InterruptedException var3) {
+      } catch (InterruptedException e) {
          Thread.currentThread().interrupt();
       }
    }

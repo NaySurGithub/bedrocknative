@@ -35,14 +35,12 @@ import org.jspecify.annotations.Nullable;
 public final class BedrockLecterns {
    private static final Map<Long, LecternPages.State> STATES = new ConcurrentHashMap<>();
    private static final Map<Long, Integer> SERVER_SPREADS = new ConcurrentHashMap<>();
-   @Nullable
-   private static volatile BedrockLecterns current;
+   private static volatile @Nullable BedrockLecterns current;
    private static volatile int updatesSent;
    private final Minecraft minecraft;
    private final Consumer<BedrockPacket> send;
    private Consumer<BlockPos> punch = pos -> {};
-   @Nullable
-   private BlockPos openAt;
+   private @Nullable BlockPos openAt;
    private int containerId;
    private int javaPage;
    private int knownSpread;
@@ -87,15 +85,15 @@ public final class BedrockLecterns {
          SERVER_SPREADS.remove(pos.asLong());
          return state;
       } else {
-         return (BlockState)state.setValue(BlockStateProperties.HAS_BOOK, hasBook(pos));
+         return state.setValue(BlockStateProperties.HAS_BOOK, hasBook(pos));
       }
    }
 
    public static void load(ClientLevel level, BlockPos pos, NbtMap tag) {
       LecternPages.State state = record(pos, tag);
       BlockState block = level.getBlockState(pos);
-      if (block.is(Blocks.LECTERN) && (Boolean)block.getValue(BlockStateProperties.HAS_BOOK) != state.hasBook()) {
-         level.setServerVerifiedBlockState(pos, (BlockState)block.setValue(BlockStateProperties.HAS_BOOK, state.hasBook()), 19);
+      if (block.is(Blocks.LECTERN) && block.getValue(BlockStateProperties.HAS_BOOK) != state.hasBook()) {
+         level.setServerVerifiedBlockState(pos, block.setValue(BlockStateProperties.HAS_BOOK, state.hasBook()), 19);
       }
 
       BedrockLecterns open = current;
@@ -139,13 +137,13 @@ public final class BedrockLecterns {
    }
 
    private static int pageCount(ItemStack book, LecternPages.State state) {
-      WrittenBookContent written = (WrittenBookContent)book.get(DataComponents.WRITTEN_BOOK_CONTENT);
+      WrittenBookContent written = book.get(DataComponents.WRITTEN_BOOK_CONTENT);
       if (written != null) {
          return written.pages().size();
-      } else {
-         WritableBookContent writable = (WritableBookContent)book.get(DataComponents.WRITABLE_BOOK_CONTENT);
-         return writable != null ? writable.pages().size() : state.totalPages();
       }
+
+      WritableBookContent writable = book.get(DataComponents.WRITABLE_BOOK_CONTENT);
+      return writable != null ? writable.pages().size() : state.totalPages();
    }
 
    private void changed(BlockPos pos, LecternPages.State state) {

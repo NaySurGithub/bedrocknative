@@ -220,7 +220,7 @@ public final class ContainerSlots {
       }
    }
 
-   public static enum Kind {
+   public enum Kind {
       CHEST,
       INVENTORY,
       CRAFTING_TABLE,

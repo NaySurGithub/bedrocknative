@@ -57,11 +57,7 @@ public final class BedrockDimensions {
          return builtin;
       } else {
          DimensionType type = withHeights(
-            (DimensionType)builtin.value(),
-            definition.getMinimumHeight(),
-            definition.getMaximumHeight(),
-            definition.getCloudHeight(),
-            definition.isRenderClouds()
+            builtin.value(), definition.getMinimumHeight(), definition.getMaximumHeight(), definition.getCloudHeight(), definition.isRenderClouds()
          );
          if (type == null) {
             this.reportUnusableOnce(dimension, definition.getMinimumHeight(), definition.getMaximumHeight());
@@ -95,59 +91,56 @@ public final class BedrockDimensions {
       return definition != null && definition.getGeneratorType() == 2;
    }
 
-   @Nullable
-   public DimensionDefinition definitionOf(int dimension) {
+   public @Nullable DimensionDefinition definitionOf(int dimension) {
       return this.definitions.get(dimension);
    }
 
-   @Nullable
-   static DimensionType withHeights(DimensionType base, int minimum, int maximum) {
+   static @Nullable DimensionType withHeights(DimensionType base, int minimum, int maximum) {
       return withHeights(base, minimum, maximum, Integer.MIN_VALUE, true);
    }
 
-   @Nullable
-   static DimensionType withHeights(DimensionType base, int minimum, int maximum, int cloudHeight, boolean renderClouds) {
+   static @Nullable DimensionType withHeights(DimensionType base, int minimum, int maximum, int cloudHeight, boolean renderClouds) {
       DimensionHeights heights = DimensionHeights.of(minimum, maximum);
       if (heights == null) {
          return null;
-      } else {
-         int logicalHeight = base.logicalHeight() == base.height() ? heights.height() : Math.min(base.logicalHeight(), heights.height());
-         EnvironmentAttributeMap attributes = base.attributes();
-         if (cloudHeight > 0 || !renderClouds) {
-            Builder builder = EnvironmentAttributeMap.builder().putAll(attributes);
-            if (cloudHeight > 0) {
-               builder.set(EnvironmentAttributes.CLOUD_HEIGHT, (float)cloudHeight);
-            }
+      }
 
-            if (!renderClouds) {
-               builder.set(EnvironmentAttributes.CLOUD_COLOR, ARGB.vector4fFromARGB32(0));
-            }
-
-            attributes = builder.build();
+      int logicalHeight = base.logicalHeight() == base.height() ? heights.height() : Math.min(base.logicalHeight(), heights.height());
+      EnvironmentAttributeMap attributes = base.attributes();
+      if (cloudHeight > 0 || !renderClouds) {
+         Builder builder = EnvironmentAttributeMap.builder().putAll(attributes);
+         if (cloudHeight > 0) {
+            builder.set(EnvironmentAttributes.CLOUD_HEIGHT, (float)cloudHeight);
          }
 
-         try {
-            return new DimensionType(
-               base.hasFixedTime(),
-               base.hasSkyLight(),
-               base.hasCeiling(),
-               base.hasEnderDragonFight(),
-               base.coordinateScale(),
-               heights.minY(),
-               heights.height(),
-               logicalHeight,
-               base.infiniburn(),
-               base.ambientLight(),
-               base.monsterSettings(),
-               base.skybox(),
-               base.cardinalLightType(),
-               attributes,
-               base.timelines(),
-               base.defaultClock()
-            );
-         } catch (IllegalArgumentException | IllegalStateException var9) {
-            return null;
+         if (!renderClouds) {
+            builder.set(EnvironmentAttributes.CLOUD_COLOR, ARGB.vector4fFromARGB32(0));
          }
+
+         attributes = builder.build();
+      }
+
+      try {
+         return new DimensionType(
+            base.hasFixedTime(),
+            base.hasSkyLight(),
+            base.hasCeiling(),
+            base.hasEnderDragonFight(),
+            base.coordinateScale(),
+            heights.minY(),
+            heights.height(),
+            logicalHeight,
+            base.infiniburn(),
+            base.ambientLight(),
+            base.monsterSettings(),
+            base.skybox(),
+            base.cardinalLightType(),
+            attributes,
+            base.timelines(),
+            base.defaultClock()
+         );
+      } catch (IllegalStateException | IllegalArgumentException e) {
+         return null;
       }
    }
 

@@ -17,14 +17,14 @@ import net.minecraft.server.packs.resources.ResourceManager;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 
-@Mixin({ModelManager.class})
+@Mixin(ModelManager.class)
 public abstract class ModelFileCacheMixin {
    @WrapOperation(
-      method = {"reload"},
-      at = {@At(
+      method = "reload",
+      at = @At(
          value = "INVOKE",
          target = "Lnet/minecraft/client/resources/model/ModelManager;loadBlockModels(Lnet/minecraft/server/packs/resources/ResourceManager;Ljava/util/concurrent/Executor;)Ljava/util/concurrent/CompletableFuture;"
-      )},
+      ),
       require = 0
    )
    private CompletableFuture<Map<Identifier, UnbakedModel>> bedrocknative$keptBlockModels(
@@ -39,11 +39,11 @@ public abstract class ModelFileCacheMixin {
    }
 
    @WrapOperation(
-      method = {"reload"},
-      at = {@At(
+      method = "reload",
+      at = @At(
          value = "INVOKE",
          target = "Lnet/minecraft/client/resources/model/BlockStateModelLoader;loadBlockStates(Lnet/minecraft/server/packs/resources/ResourceManager;Ljava/util/concurrent/Executor;)Ljava/util/concurrent/CompletableFuture;"
-      )},
+      ),
       require = 0
    )
    private CompletableFuture<LoadedModels> bedrocknative$keptBlockStates(
@@ -52,17 +52,17 @@ public abstract class ModelFileCacheMixin {
       return ModelFileCache.load(
          ModelFileCache.Kind.BLOCK_STATES,
          () -> (CompletableFuture<LoadedModels>)original.call(new Object[]{manager, executor}),
-         loaded -> new LoadedModels(new IdentityHashMap(loaded.models())),
+         loaded -> new LoadedModels(new IdentityHashMap<>(loaded.models())),
          executor
       );
    }
 
    @WrapOperation(
-      method = {"reload"},
-      at = {@At(
+      method = "reload",
+      at = @At(
          value = "INVOKE",
          target = "Lnet/minecraft/client/resources/model/ClientItemInfoLoader;scheduleLoad(Lnet/minecraft/server/packs/resources/ResourceManager;Ljava/util/concurrent/Executor;)Ljava/util/concurrent/CompletableFuture;"
-      )},
+      ),
       require = 0
    )
    private CompletableFuture<LoadedClientInfos> bedrocknative$keptItems(
@@ -71,7 +71,7 @@ public abstract class ModelFileCacheMixin {
       return ModelFileCache.load(
          ModelFileCache.Kind.ITEMS,
          () -> (CompletableFuture<LoadedClientInfos>)original.call(new Object[]{manager, executor}),
-         loaded -> new LoadedClientInfos(new HashMap(loaded.contents())),
+         loaded -> new LoadedClientInfos(new HashMap<>(loaded.contents())),
          executor
       );
    }

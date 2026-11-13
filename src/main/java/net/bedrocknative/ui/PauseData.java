@@ -30,15 +30,14 @@ public final class PauseData implements UiDataSource {
       "button.friends_drawer",
       "menu.socialfriends"
    );
-   @Nullable
-   private PauseData.Actions actions;
+   private PauseData.@Nullable Actions actions;
    private String playerName = "";
    private List<String> players = List.of();
    private int local = -1;
    private String socialText = "Social (0)";
    private long version = 1L;
 
-   public void actions(@Nullable PauseData.Actions target) {
+   public void actions(PauseData.@Nullable Actions target) {
       this.actions = target;
    }
 
@@ -114,9 +113,8 @@ public final class PauseData implements UiDataSource {
       }
    }
 
-   @Nullable
    @Override
-   public String kind(String collection, int index) {
+   public @Nullable String kind(String collection, int index) {
       return null;
    }
 

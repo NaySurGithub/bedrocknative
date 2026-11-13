@@ -79,7 +79,9 @@ final class UiLayout {
       UiControl parent = c.parent;
       if (parent == null || parent.type == UiType.STACK_PANEL || c.gridItem) {
          return false;
-      } else if (parent.effectiveVisible && c.ownVisible) {
+      }
+
+      if (parent.effectiveVisible && c.ownVisible) {
          float[] clip = parent.clip;
          if (parent.clipsChildren) {
             float[] own = new float[]{parent.x + parent.clipOffsetX, parent.y + parent.clipOffsetY, parent.w, parent.h};
@@ -244,15 +246,15 @@ final class UiLayout {
    private static float terms(UiControl c, boolean horizontal, UiLength length, float parent, float children, float largestChild, float other) {
       if (length.kind != UiLength.Kind.TERMS) {
          return known(parent);
-      } else {
-         float sibling = horizontal ? c.siblingMaxW : c.siblingMaxH;
-         return length.px
-            + length.parent * known(parent)
-            + length.children * children
-            + length.largestChild * largestChild
-            + length.largestSibling * sibling
-            + (horizontal ? length.height : length.width) * other;
       }
+
+      float sibling = horizontal ? c.siblingMaxW : c.siblingMaxH;
+      return length.px
+         + length.parent * known(parent)
+         + length.children * children
+         + length.largestChild * largestChild
+         + length.largestSibling * sibling
+         + (horizontal ? length.height : length.width) * other;
    }
 
    private float fromChildren(UiControl c, boolean horizontal, UiLength length, float parent, float other) {
@@ -269,7 +271,7 @@ final class UiLayout {
       float result = value;
       int axis = horizontal ? 0 : 1;
       if (c.maxSize != null && c.maxSize[axis].kind == UiLength.Kind.TERMS) {
-         result = Math.min(value, terms(c, horizontal, c.maxSize[axis], parent, this.extent(c, horizontal), largest(c, horizontal), known(other)));
+         result = Math.min(result, terms(c, horizontal, c.maxSize[axis], parent, this.extent(c, horizontal), largest(c, horizontal), known(other)));
       }
 
       if (c.minSize != null && c.minSize[axis].kind == UiLength.Kind.TERMS) {
@@ -302,10 +304,12 @@ final class UiLayout {
          } else {
             return c.type == UiType.STACK_PANEL ? largest(c, horizontal) : this.union(c, horizontal);
          }
-      } else if (!horizontal) {
-         int lines = c.text.isEmpty() ? 0 : Math.max(1, c.lines.size());
-         return lines * this.environment.measurer().lineHeight(c.font) + Math.max(0, lines - 1) * c.linePadding;
       } else {
+         if (!horizontal) {
+            int lines = c.text.isEmpty() ? 0 : Math.max(1, c.lines.size());
+            return lines * this.environment.measurer().lineHeight(c.font) + Math.max(0, lines - 1) * c.linePadding;
+         }
+
          float width = 0.0F;
 
          for (String line : c.text.split("\n", -1)) {
@@ -375,17 +379,17 @@ final class UiLayout {
          }
 
          if (deferredSiblings != null) {
-            for (UiControl childx : deferredSiblings) {
-               childx.siblingMaxW = siblingMax(c, childx, true);
-               childx.siblingMaxH = siblingMax(c, childx, false);
-               this.measure(childx, w, h, false);
+            for (UiControl child : deferredSiblings) {
+               child.siblingMaxW = siblingMax(c, child, true);
+               child.siblingMaxH = siblingMax(c, child, false);
+               this.measure(child, w, h, false);
             }
 
-            for (UiControl childx : deferredSiblings) {
-               if (childx.inheritMaxWidth || childx.inheritMaxHeight) {
-                  childx.forcedWidth = childx.inheritMaxWidth ? Math.max(childx.w, siblingMax(c, childx, true)) : Float.NaN;
-                  childx.forcedHeight = childx.inheritMaxHeight ? Math.max(childx.h, siblingMax(c, childx, false)) : Float.NaN;
-                  this.measure(childx, w, h, false);
+            for (UiControl child : deferredSiblings) {
+               if (child.inheritMaxWidth || child.inheritMaxHeight) {
+                  child.forcedWidth = child.inheritMaxWidth ? Math.max(child.w, siblingMax(c, child, true)) : Float.NaN;
+                  child.forcedHeight = child.inheritMaxHeight ? Math.max(child.h, siblingMax(c, child, false)) : Float.NaN;
+                  this.measure(child, w, h, false);
                }
             }
          }
@@ -394,35 +398,35 @@ final class UiLayout {
             float along = c.horizontal ? w : h;
             float used = 0.0F;
 
-            for (UiControl childxx : c.children) {
-               if (childxx.ownVisible && !fills.contains(childxx)) {
-                  used += c.horizontal ? childxx.w : childxx.h;
+            for (UiControl child : c.children) {
+               if (child.ownVisible && !fills.contains(child)) {
+                  used += c.horizontal ? child.w : child.h;
                }
             }
 
             float share = Float.isNaN(along) ? 0.0F : Math.max(0.0F, (along - used) / fills.size());
 
-            for (UiControl childxxx : fills) {
+            for (UiControl child : fills) {
                if (c.horizontal) {
-                  childxxx.forcedWidth = share;
+                  child.forcedWidth = share;
                } else {
-                  childxxx.forcedHeight = share;
+                  child.forcedHeight = share;
                }
 
-               this.measure(childxxx, w, h, false);
+               this.measure(child, w, h, false);
             }
 
-            for (UiControl childxxx : fills) {
-               boolean across = c.horizontal ? childxxx.inheritMaxHeight : childxxx.inheritMaxWidth;
+            for (UiControl child : fills) {
+               boolean across = c.horizontal ? child.inheritMaxHeight : child.inheritMaxWidth;
                if (across) {
-                  float largest = siblingMax(c, childxxx, !c.horizontal);
+                  float largest = siblingMax(c, child, !c.horizontal);
                   if (c.horizontal) {
-                     childxxx.forcedHeight = Math.max(childxxx.h, largest);
+                     child.forcedHeight = Math.max(child.h, largest);
                   } else {
-                     childxxx.forcedWidth = Math.max(childxxx.w, largest);
+                     child.forcedWidth = Math.max(child.w, largest);
                   }
 
-                  this.measure(childxxx, w, h, false);
+                  this.measure(child, w, h, false);
                }
             }
          }
@@ -430,7 +434,7 @@ final class UiLayout {
    }
 
    private static <T> List<T> add(@Nullable List<T> list, T value) {
-      List<T> result = (List<T>)(list == null ? new ArrayList<>(2) : list);
+      List<T> result = list == null ? new ArrayList<>(2) : list;
       result.add(value);
       return result;
    }
@@ -491,12 +495,12 @@ final class UiLayout {
       }
    }
 
-   private void arrange(UiControl c, float parentX, float parentY, float parentW, float parentH, @Nullable float[] clip, float parentZ, boolean visible) {
+   private void arrange(UiControl c, float parentX, float parentY, float parentW, float parentH, float @Nullable [] clip, float parentZ, boolean visible) {
       this.arrange(c, parentX, parentY, parentW, parentH, clip, parentZ, visible, true);
    }
 
    private void arrange(
-      UiControl c, float parentX, float parentY, float parentW, float parentH, @Nullable float[] clip, float parentZ, boolean visible, boolean anchored
+      UiControl c, float parentX, float parentY, float parentW, float parentH, float @Nullable [] clip, float parentZ, boolean visible, boolean anchored
    ) {
       if (c.ownVisible && visible) {
          boolean offsets = anchored || (this.active & 1) == 0;
@@ -578,21 +582,21 @@ final class UiLayout {
                   int rows = Math.max(1, c.gridRowsUsed);
 
                   for (int i = 0; i < c.children.size(); i++) {
-                     UiControl childx = c.children.get(i);
-                     float[] position = childx.props.get("grid_position") != null ? childx.props.get("grid_position").floats() : null;
+                     UiControl child = c.children.get(i);
+                     float[] position = child.props.get("grid_position") != null ? child.props.get("grid_position").floats() : null;
                      boolean placed = position != null && position.length >= 2;
                      int column = placed ? (int)position[0] : (c.grid.vertical() ? i / rows : i % columns);
                      int row = placed ? (int)position[1] : (c.grid.vertical() ? i % rows : i / columns);
-                     this.arrange(childx, c.x + column * c.gridCellW, c.y + row * c.gridCellH, c.gridCellW, c.gridCellH, childClip, c.z, true);
+                     this.arrange(child, c.x + column * c.gridCellW, c.y + row * c.gridCellH, c.gridCellW, c.gridCellH, childClip, c.z, true);
                   }
 
                   return;
                }
             }
 
-            for (UiControl childx : c.children) {
-               if (!childx.gridItem) {
-                  this.arrange(childx, c.x, c.y, c.w, c.h, childClip, c.z, true);
+            for (UiControl child : c.children) {
+               if (!child.gridItem) {
+                  this.arrange(child, c.x, c.y, c.w, c.h, childClip, c.z, true);
                }
             }
          }

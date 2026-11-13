@@ -57,17 +57,18 @@ public final class HoverTextColor {
       return name.toLowerCase(Locale.ROOT).replace("_", "").replace(" ", "").replace("-", "");
    }
 
-   @Nullable
-   public static Integer rgb(@Nullable String value) {
+   public static @Nullable Integer rgb(@Nullable String value) {
       if (value != null && !value.isBlank()) {
          String trimmed = value.trim();
          if (trimmed.length() == 2 && trimmed.charAt(0) == 167) {
             int rgb = UiFormatting.color(trimmed.charAt(1));
             return rgb >= 0 ? rgb : null;
-         } else if (trimmed.length() == 7 && trimmed.charAt(0) == '#') {
+         }
+
+         if (trimmed.length() == 7 && trimmed.charAt(0) == '#') {
             try {
                return Integer.parseInt(trimmed.substring(1), 16);
-            } catch (NumberFormatException var3) {
+            } catch (NumberFormatException e) {
                return null;
             }
          } else {

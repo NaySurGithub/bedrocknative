@@ -4,20 +4,16 @@ import java.util.List;
 import org.jspecify.annotations.Nullable;
 
 public record FlipbookAnimation(int[] order, int ticksPerFrame, boolean blend) {
-   public FlipbookAnimation(int[] order, int ticksPerFrame, boolean blend) {
+   public FlipbookAnimation {
       if (order.length == 0) {
          throw new IllegalArgumentException("A flipbook needs a frame");
-      } else {
-         order = (int[])order.clone();
-         ticksPerFrame = Math.max(1, ticksPerFrame);
-         this.order = order;
-         this.ticksPerFrame = ticksPerFrame;
-         this.blend = blend;
       }
+
+      order = (int[])order.clone();
+      ticksPerFrame = Math.max(1, ticksPerFrame);
    }
 
-   @Nullable
-   public static FlipbookAnimation of(FlipbookData.Flipbook flipbook, int frameCount) {
+   public static @Nullable FlipbookAnimation of(FlipbookData.Flipbook flipbook, int frameCount) {
       List<Integer> order = flipbook.order(frameCount);
       return order.size() < 2
          ? null

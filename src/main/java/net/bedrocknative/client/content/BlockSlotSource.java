@@ -43,6 +43,7 @@ public record BlockSlotSource() implements SpriteSource {
       return (int[])requested.clone();
    }
 
+   @Override
    public void run(ResourceManager resourceManager, Output output) {
       int[] counts = requested;
       stitched = counts;
@@ -57,6 +58,7 @@ public record BlockSlotSource() implements SpriteSource {
       }
    }
 
+   @Override
    public MapCodec<BlockSlotSource> codec() {
       return MAP_CODEC;
    }

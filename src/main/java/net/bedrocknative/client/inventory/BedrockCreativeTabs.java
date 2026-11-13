@@ -34,15 +34,13 @@ public final class BedrockCreativeTabs {
    private static final List<BedrockCreativeTabs.Tab> TABS = List.of(
       new BedrockCreativeTabs.Tab("building_blocks", CreativeItemCategory.CONSTRUCTION, "construction", Items.BRICKS),
       new BedrockCreativeTabs.Tab("colored_blocks", CreativeItemCategory.EQUIPMENT, "equipment", Items.IRON_SWORD),
-      new BedrockCreativeTabs.Tab("natural_blocks", CreativeItemCategory.ITEMS, "items", (Item)Items.BED.pick(DyeColor.RED)),
+      new BedrockCreativeTabs.Tab("natural_blocks", CreativeItemCategory.ITEMS, "items", Items.BED.pick(DyeColor.RED)),
       new BedrockCreativeTabs.Tab("functional_blocks", CreativeItemCategory.NATURE, "nature", Items.GRASS_BLOCK)
    );
    private static final Map<BedrockCreativeTabs.Tab, ItemStack> ICONS = new IdentityHashMap<>();
    private static final Set<Integer> OPEN = new HashSet<>();
-   @Nullable
-   private static volatile BedrockCreativeTabs.Layout layout;
-   @Nullable
-   private static CreativeItemData picked;
+   private static volatile BedrockCreativeTabs.@Nullable Layout layout;
+   private static @Nullable CreativeItemData picked;
    private static ItemStack pickedStack = ItemStack.EMPTY;
 
    private BedrockCreativeTabs() {
@@ -114,28 +112,30 @@ public final class BedrockCreativeTabs {
       return layout != null;
    }
 
-   @Nullable
-   public static List<List<ItemStack>> contents(CreativeModeTab javaTab) {
+   public static @Nullable List<List<ItemStack>> contents(CreativeModeTab javaTab) {
       BedrockCreativeTabs.Layout current = layout;
       if (current == null) {
          return null;
-      } else if (javaTab.getType() == Type.SEARCH) {
-         return List.of(current.all(), current.all());
-      } else if (javaTab.getType() != Type.CATEGORY) {
-         return null;
-      } else {
-         BedrockCreativeTabs.Tab tab = tab(javaTab);
-         if (tab == null) {
-            return List.of(List.of(), List.of());
-         } else {
-            List<Object> row = current.rows().getOrDefault(tab.category(), List.of());
-            return List.of(view(row), flatten(row));
-         }
       }
+
+      if (javaTab.getType() == Type.SEARCH) {
+         return List.of(current.all(), current.all());
+      }
+
+      if (javaTab.getType() != Type.CATEGORY) {
+         return null;
+      }
+
+      BedrockCreativeTabs.Tab tab = tab(javaTab);
+      if (tab == null) {
+         return List.of(List.of(), List.of());
+      }
+
+      List<Object> row = current.rows().getOrDefault(tab.category(), List.of());
+      return List.of(view(row), flatten(row));
    }
 
-   @Nullable
-   public static Component name(CreativeModeTab javaTab) {
+   public static @Nullable Component name(CreativeModeTab javaTab) {
       BedrockCreativeTabs.Tab tab = layout == null ? null : tab(javaTab);
       return tab == null ? null : Component.literal(BedrockText.translate("craftingScreen.tab." + tab.langKey(), List.of()));
    }
@@ -144,8 +144,7 @@ public final class BedrockCreativeTabs {
       return Component.literal(BedrockText.translate("craftingScreen.tab.allItems", List.of()));
    }
 
-   @Nullable
-   public static ItemStack icon(CreativeModeTab javaTab) {
+   public static @Nullable ItemStack icon(CreativeModeTab javaTab) {
       BedrockCreativeTabs.Tab tab = layout == null ? null : tab(javaTab);
       return tab == null ? null : ICONS.computeIfAbsent(tab, key -> new ItemStack(key.icon()));
    }
@@ -202,19 +201,16 @@ public final class BedrockCreativeTabs {
       }
    }
 
-   @Nullable
-   public static CreativeItemData picked(ItemStack stack) {
+   public static @Nullable CreativeItemData picked(ItemStack stack) {
       return picked != null && ItemStack.isSameItemSameComponents(pickedStack, stack) ? picked : null;
    }
 
-   @Nullable
-   public static CreativeItemData entry(ItemStack shown) {
+   public static @Nullable CreativeItemData entry(ItemStack shown) {
       BedrockCreativeTabs.Layout current = layout;
       return current == null ? null : current.entries().get(shown);
    }
 
-   @Nullable
-   public static BedrockCreativeTabs.Group group(ItemStack header) {
+   public static BedrockCreativeTabs.@Nullable Group group(ItemStack header) {
       BedrockCreativeTabs.Layout current = layout;
       return current == null ? null : current.headers().get(header);
    }
@@ -228,11 +224,10 @@ public final class BedrockCreativeTabs {
       return TABS.stream().map(BedrockCreativeTabs.Tab::category).toList();
    }
 
-   @Nullable
-   public static CreativeModeTab javaTab(CreativeItemCategory category) {
+   public static @Nullable CreativeModeTab javaTab(CreativeItemCategory category) {
       for (BedrockCreativeTabs.Tab tab : TABS) {
          if (tab.category() == category) {
-            return (CreativeModeTab)BuiltInRegistries.CREATIVE_MODE_TAB.getValue(key(tab));
+            return BuiltInRegistries.CREATIVE_MODE_TAB.getValue(key(tab));
          }
       }
 
@@ -243,25 +238,25 @@ public final class BedrockCreativeTabs {
       BedrockCreativeTabs.Layout current = layout;
       if (current == null) {
          return "inactive";
-      } else {
-         List<String> parts = new ArrayList<>();
-
-         for (BedrockCreativeTabs.Tab tab : TABS) {
-            List<Object> row = current.rows().getOrDefault(tab.category(), List.of());
-            parts.add(
-               tab.langKey()
-                  + " "
-                  + flatten(row).size()
-                  + " entries in "
-                  + row.stream().filter(BedrockCreativeTabs.Group.class::isInstance).count()
-                  + " groups + "
-                  + row.stream().filter(ItemStack.class::isInstance).count()
-                  + " loose"
-            );
-         }
-
-         return String.join(", ", parts);
       }
+
+      List<String> parts = new ArrayList<>();
+
+      for (BedrockCreativeTabs.Tab tab : TABS) {
+         List<Object> row = current.rows().getOrDefault(tab.category(), List.of());
+         parts.add(
+            tab.langKey()
+               + " "
+               + flatten(row).size()
+               + " entries in "
+               + row.stream().filter(BedrockCreativeTabs.Group.class::isInstance).count()
+               + " groups + "
+               + row.stream().filter(ItemStack.class::isInstance).count()
+               + " loose"
+         );
+      }
+
+      return String.join(", ", parts);
    }
 
    private static boolean shownCategory(CreativeItemCategory category) {
@@ -311,20 +306,19 @@ public final class BedrockCreativeTabs {
       return stacks;
    }
 
-   @Nullable
-   private static BedrockCreativeTabs.Tab tab(CreativeModeTab javaTab) {
-      ResourceKey<CreativeModeTab> key = (ResourceKey<CreativeModeTab>)BuiltInRegistries.CREATIVE_MODE_TAB.getResourceKey(javaTab).orElse(null);
+   private static BedrockCreativeTabs.@Nullable Tab tab(CreativeModeTab javaTab) {
+      ResourceKey<CreativeModeTab> key = BuiltInRegistries.CREATIVE_MODE_TAB.getResourceKey(javaTab).orElse(null);
       if (key == null) {
          return null;
-      } else {
-         for (BedrockCreativeTabs.Tab tab : TABS) {
-            if (key.equals(key(tab))) {
-               return tab;
-            }
-         }
-
-         return null;
       }
+
+      for (BedrockCreativeTabs.Tab tab : TABS) {
+         if (key.equals(key(tab))) {
+            return tab;
+         }
+      }
+
+      return null;
    }
 
    private static ResourceKey<CreativeModeTab> key(BedrockCreativeTabs.Tab tab) {

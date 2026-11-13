@@ -9,7 +9,6 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.BlockBehaviour.Properties;
 import net.minecraft.world.level.block.state.StateDefinition.Builder;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
-import net.minecraft.world.level.block.state.properties.Property;
 import net.minecraft.world.phys.shapes.BooleanOp;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
@@ -29,24 +28,27 @@ public final class CarrierBlock extends Block {
       registering = false;
    }
 
+   @Override
    public boolean hasDynamicShape() {
       return registering || super.hasDynamicShape();
    }
 
-   @Nullable
-   public static CustomBlockState data(BlockState state) {
-      return state.getBlock() instanceof CarrierBlock ? CustomBlockSet.current().data((Integer)state.getValue(SLOT)) : null;
+   public static @Nullable CustomBlockState data(BlockState state) {
+      return state.getBlock() instanceof CarrierBlock ? CustomBlockSet.current().data(state.getValue(SLOT)) : null;
    }
 
+   @Override
    protected void createBlockStateDefinition(Builder<Block, BlockState> builder) {
-      builder.add(new Property[]{SLOT});
+      builder.add(SLOT);
    }
 
+   @Override
    protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
       CustomBlockState data = data(state);
       return data == null ? Shapes.block() : data.selectionShape();
    }
 
+   @Override
    protected VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
       CustomBlockState data = data(state);
       VoxelShape shape = data == null ? Shapes.block() : data.collisionShape();
@@ -54,29 +56,35 @@ public final class CarrierBlock extends Block {
       return top > 0.0F && top < 1.0F ? Shapes.join(shape, Shapes.box(0.0, 0.0, 0.0, 1.0, top, 1.0), BooleanOp.AND) : shape;
    }
 
+   @Override
    protected VoxelShape getOcclusionShape(BlockState state) {
       CustomBlockState data = data(state);
       return data != null && !data.occludes() ? Shapes.empty() : Shapes.block();
    }
 
+   @Override
    protected int getLightDampening(BlockState state) {
       CustomBlockState data = data(state);
       return data == null ? 15 : data.lightDampening();
    }
 
+   @Override
    protected boolean propagatesSkylightDown(BlockState state) {
       CustomBlockState data = data(state);
       return data != null && data.lightDampening() == 0;
    }
 
+   @Override
    protected boolean useShapeForLightOcclusion(BlockState state) {
       return false;
    }
 
+   @Override
    protected SoundType getSoundType(BlockState state) {
-      return CustomBlocks.soundType((Integer)state.getValue(SLOT));
+      return CustomBlocks.soundType(state.getValue(SLOT));
    }
 
+   @Override
    protected float getDestroyProgress(BlockState state, Player player, BlockGetter level, BlockPos pos) {
       CustomBlockState data = data(state);
       if (data == null) {

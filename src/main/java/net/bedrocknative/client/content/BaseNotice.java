@@ -27,7 +27,7 @@ final class BaseNotice {
          try {
             JsonObject json = JsonParser.parseString(Files.readString(configFolder.resolve("base-notice.json"), StandardCharsets.UTF_8)).getAsJsonObject();
             return !archive().equals(json.get("seen").getAsString());
-         } catch (RuntimeException | IOException var2) {
+         } catch (IOException | RuntimeException e) {
             return true;
          }
       } else {

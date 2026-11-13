@@ -22,7 +22,6 @@ import net.bedrocknative.ui.RecipeBookData;
 import net.bedrocknative.ui.TradeData;
 import net.bedrocknative.ui.UiBinding;
 import net.bedrocknative.ui.UiControl;
-import net.bedrocknative.ui.UiDataSource;
 import net.bedrocknative.ui.UiDefinitionSet;
 import net.bedrocknative.ui.UiDrawCommand;
 import net.bedrocknative.ui.UiDrawList;
@@ -91,28 +90,21 @@ public final class JsonUiContainerScreen
    private final ItemStack[] shown;
    private ItemStack shownCarried = ItemStack.EMPTY;
    private long cellsVersion = -1L;
-   @Nullable
-   private UiControl cursorIcon;
+   private @Nullable UiControl cursorIcon;
    private boolean uiPressed;
    private boolean opened;
    private double mouseX = Double.NaN;
    private double mouseY = Double.NaN;
    private double hitX = Double.NaN;
    private double hitY = Double.NaN;
-   @Nullable
-   private UiDrawList hitLayout;
-   @Nullable
-   private Slot hit;
-   @Nullable
-   private final JsonUiWorkstation station;
-   @Nullable
-   private final JsonUiRecipeBook recipeBook;
+   private @Nullable UiDrawList hitLayout;
+   private @Nullable Slot hit;
+   private final @Nullable JsonUiWorkstation station;
+   private final @Nullable JsonUiRecipeBook recipeBook;
    private final MenuNotice notice = new MenuNotice();
-   @Nullable
-   private JsonUiTrading trading;
+   private @Nullable JsonUiTrading trading;
    private final Set<String> loggedCellMappings = new HashSet<>();
-   @Nullable
-   private String serverMenu;
+   private @Nullable String serverMenu;
    private long firstFrameAt = -1L;
    private boolean serverMenuNoted;
    private static final int NOTED_SLOTS = 54;
@@ -142,8 +134,7 @@ public final class JsonUiContainerScreen
       ui.items(this);
    }
 
-   @Nullable
-   static JsonUiContainerScreen create(
+   static @Nullable JsonUiContainerScreen create(
       MenuType<?> type,
       Minecraft minecraft,
       int containerId,
@@ -158,16 +149,14 @@ public final class JsonUiContainerScreen
          : create(minecraft, type.create(containerId, minecraft.player.getInventory()), title, choice, customName, trades, owner);
    }
 
-   @Nullable
-   static JsonUiContainerScreen inventory(Minecraft minecraft) {
+   static @Nullable JsonUiContainerScreen inventory(Minecraft minecraft) {
       LocalPlayer player = minecraft.player;
       return player == null
          ? null
          : create(minecraft, player.inventoryMenu, Component.translatable("container.crafting"), ContainerScreens.inventory(), null, null, null);
    }
 
-   @Nullable
-   private static JsonUiContainerScreen create(
+   private static @Nullable JsonUiContainerScreen create(
       Minecraft minecraft,
       AbstractContainerMenu menu,
       Component title,
@@ -183,50 +172,48 @@ public final class JsonUiContainerScreen
             if (trading && view.offers().size() > 24) {
                BedrockNative.LOGGER.info("JSON UI leaves a trade of {} offers to Java's screen (more than {})", view.offers().size(), 24);
                return null;
+            }
+
+            UiDefinitionSet definitions = JsonUi.definitions();
+            if (definitions == null) {
+               return null;
+            }
+
+            ContainerData data = new ContainerData(choice.slots());
+            data.owner(owner);
+            TradeData tradeData = null;
+            if (trading) {
+               tradeData = new TradeData(BedrockText::lookupKey);
+               data.station(tradeData);
+               JsonUiTrading.fill(tradeData, view, trades.traderExperience(view.trader()));
             } else {
-               UiDefinitionSet definitions = JsonUi.definitions();
-               if (definitions == null) {
+               data.station(WorkstationData.of(choice.slots().kind()));
+            }
+
+            RecipeBookData book = JsonUiRecipeBook.data(choice.slots().kind(), data);
+            Map<String, UiValue> variables = customName != null ? ContainerData.variables(customName, false) : ContainerData.variables(choice.titleKey(), true);
+            JsonUiScreen ui = JsonUiScreen.create(definitions, choice.screen(), variables, book != null ? book : data);
+            if (ui != null && JsonUi.use(choice.parityKey(), ui.instance())) {
+               ui.instance().problems().log("container " + choice.screen());
+               String titled = customName != null ? customName : choice.titleKey();
+               ui.diagnostics("container " + choice.screen(), choice.screen() + " " + (titled.length() > 64 ? titled.substring(0, 64) : titled));
+               if (ui.instance().cutShort()) {
+                  BedrockNative.LOGGER.warn("JSON UI container screen {} hit the engine's limits; the Java screen shows it", choice.screen());
                   return null;
-               } else {
-                  ContainerData data = new ContainerData(choice.slots());
-                  data.owner(owner);
-                  TradeData tradeData = null;
-                  if (trading) {
-                     tradeData = new TradeData(BedrockText::lookupKey);
-                     data.station(tradeData);
-                     JsonUiTrading.fill(tradeData, view, trades.traderExperience(view.trader()));
-                  } else {
-                     data.station(WorkstationData.of(choice.slots().kind()));
-                  }
-
-                  RecipeBookData book = JsonUiRecipeBook.data(choice.slots().kind(), data);
-                  Map<String, UiValue> variables = customName != null
-                     ? ContainerData.variables(customName, false)
-                     : ContainerData.variables(choice.titleKey(), true);
-                  JsonUiScreen ui = JsonUiScreen.create(definitions, choice.screen(), variables, (UiDataSource)(book != null ? book : data));
-                  if (ui != null && JsonUi.use(choice.parityKey(), ui.instance())) {
-                     ui.instance().problems().log("container " + choice.screen());
-                     String titled = customName != null ? customName : choice.titleKey();
-                     ui.diagnostics("container " + choice.screen(), choice.screen() + " " + (titled.length() > 64 ? titled.substring(0, 64) : titled));
-                     if (ui.instance().cutShort()) {
-                        BedrockNative.LOGGER.warn("JSON UI container screen {} hit the engine's limits; the Java screen shows it", choice.screen());
-                        return null;
-                     } else {
-                        JsonUiContainerScreen screen = new JsonUiContainerScreen(menu, minecraft.player.getInventory(), title, ui, data, choice.screen(), book);
-                        if (tradeData != null && menu instanceof MerchantMenu merchant) {
-                           screen.trading = new JsonUiTrading(minecraft, screen, merchant, tradeData, trades, view);
-                        }
-
-                        if (customName != null || owner != null) {
-                           screen.serverMenu = customName != null ? "\"" + UiTreeDump.escape(customName) + "\"" : "by default (actor " + owner + ")";
-                        }
-
-                        return screen;
-                     }
-                  } else {
-                     return null;
-                  }
                }
+
+               JsonUiContainerScreen screen = new JsonUiContainerScreen(menu, minecraft.player.getInventory(), title, ui, data, choice.screen(), book);
+               if (tradeData != null && menu instanceof MerchantMenu merchant) {
+                  screen.trading = new JsonUiTrading(minecraft, screen, merchant, tradeData, trades, view);
+               }
+
+               if (customName != null || owner != null) {
+                  screen.serverMenu = customName != null ? "\"" + UiTreeDump.escape(customName) + "\"" : "by default (actor " + owner + ")";
+               }
+
+               return screen;
+            } else {
+               return null;
             }
          } else {
             return null;
@@ -277,6 +264,7 @@ public final class JsonUiContainerScreen
       this.ui.fallback(action);
    }
 
+   @Override
    protected void init() {
       super.init();
       this.ui.resize(this.width, this.height);
@@ -293,6 +281,7 @@ public final class JsonUiContainerScreen
       }
    }
 
+   @Override
    public void removed() {
       super.removed();
       if (this.station != null) {
@@ -300,12 +289,13 @@ public final class JsonUiContainerScreen
       }
    }
 
+   @Override
    protected void containerTick() {
       LocalPlayer player = this.minecraft.player;
       if (this.menu instanceof InventoryMenu && player != null && player.hasInfiniteMaterials()) {
          this.minecraft
             .gui
-            .setScreen(new CreativeModeInventoryScreen(player, player.connection.enabledFeatures(), (Boolean)this.minecraft.options.operatorItemsTab().get()));
+            .setScreen(new CreativeModeInventoryScreen(player, player.connection.enabledFeatures(), this.minecraft.options.operatorItemsTab().get()));
       }
 
       if (this.station != null) {
@@ -313,6 +303,7 @@ public final class JsonUiContainerScreen
       }
    }
 
+   @Override
    public boolean keyPressed(KeyEvent event) {
       if (this.ui.input().focused() != null) {
          if (this.ui.keyPressed(event)) {
@@ -327,18 +318,22 @@ public final class JsonUiContainerScreen
       return super.keyPressed(event);
    }
 
+   @Override
    public boolean charTyped(CharacterEvent event) {
       return this.ui.input().focused() != null && this.ui.charTyped(event) || super.charTyped(event);
    }
 
+   @Override
    public boolean preeditUpdated(@Nullable PreeditEvent event) {
       return this.ui.input().focused() != null && this.ui.preeditUpdated(event) || super.preeditUpdated(event);
    }
 
+   @Override
    public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
       this.minecraft.gui.hud.extractDeferredSubtitles();
    }
 
+   @Override
    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
       if (!this.ui.failed()) {
          if ((int)this.mouseX != mouseX || (int)this.mouseY != mouseY || Double.isNaN(this.mouseX)) {
@@ -388,7 +383,7 @@ public final class JsonUiContainerScreen
             int own = Math.min(54, Math.max(0, this.menu.slots.size() - 36));
 
             for (int i = 0; i < own; i++) {
-               ItemStack stack = ((Slot)this.menu.slots.get(i)).getItem();
+               ItemStack stack = this.menu.slots.get(i).getItem();
                if (!stack.isEmpty()) {
                   items.add(
                      i
@@ -433,8 +428,7 @@ public final class JsonUiContainerScreen
       }
    }
 
-   @Nullable
-   public JsonUiRecipeBook recipeBook() {
+   public @Nullable JsonUiRecipeBook recipeBook() {
       return this.recipeBook;
    }
 
@@ -447,30 +441,28 @@ public final class JsonUiContainerScreen
    }
 
    private ContainerScreenAccessor accessor() {
-      return (ContainerScreenAccessor)this;
+      return (ContainerScreenAccessor)(Object)this;
    }
 
-   @Nullable
    @Override
-   public Slot slotAt(double x, double y) {
+   public @Nullable Slot slotAt(double x, double y) {
       this.cells();
       UiDrawList layout = this.ui.instance().drawList();
       if (x == this.hitX && y == this.hitY && layout == this.hitLayout) {
          return this.hit;
-      } else {
-         UiControl control = this.ui.topmost(x, y);
-         int javaSlot = control == null ? -1 : this.javaSlot(control);
-         Slot slot = javaSlot < 0 ? null : this.menu.getSlot(javaSlot);
-         this.hit = slot != null && slot.isActive() ? slot : null;
-         this.hitX = x;
-         this.hitY = y;
-         this.hitLayout = layout;
-         return this.hit;
       }
+
+      UiControl control = this.ui.topmost(x, y);
+      int javaSlot = control == null ? -1 : this.javaSlot(control);
+      Slot slot = javaSlot < 0 ? null : this.menu.getSlot(javaSlot);
+      this.hit = slot != null && slot.isActive() ? slot : null;
+      this.hitX = x;
+      this.hitY = y;
+      this.hitLayout = layout;
+      return this.hit;
    }
 
-   @Nullable
-   public float[] cellCentre(int javaSlot) {
+   public float @Nullable [] cellCentre(int javaSlot) {
       UiControl cell = this.visibleCell(javaSlot);
       return cell == null ? null : JsonUiScreen.toGui(cell.x() + cell.width() / 2.0F, cell.y() + cell.height() / 2.0F);
    }
@@ -488,8 +480,7 @@ public final class JsonUiContainerScreen
       return count;
    }
 
-   @Nullable
-   private UiControl visibleCell(int javaSlot) {
+   private @Nullable UiControl visibleCell(int javaSlot) {
       this.cells();
       if (javaSlot >= 0 && javaSlot < this.cells.size()) {
          for (UiControl cell : this.cells.get(javaSlot)) {
@@ -504,8 +495,7 @@ public final class JsonUiContainerScreen
       }
    }
 
-   @Nullable
-   public float[] outsidePoint() {
+   public float @Nullable [] outsidePoint() {
       float[][] candidates = new float[][]{{2.0F, 2.0F}, {this.width - 3, 2.0F}, {2.0F, this.height - 3}, {this.width - 3, this.height - 3}};
 
       for (float[] point : candidates) {
@@ -607,8 +597,7 @@ public final class JsonUiContainerScreen
       }
    }
 
-   @Nullable
-   private static UiControl item(UiControl control) {
+   private static @Nullable UiControl item(UiControl control) {
       for (UiControl c = control; c != null; c = c.parent()) {
          if (c.collectionIndex() >= 0) {
             return c;
@@ -690,40 +679,39 @@ public final class JsonUiContainerScreen
    public static ContainerData.Slot describe(ItemStack stack) {
       if (stack.isEmpty()) {
          return ContainerData.Slot.EMPTY;
-      } else {
-         int durabilityTotal = 0;
-         int durabilityCurrent = 0;
-         if (stack.isDamageableItem()) {
-            durabilityTotal = stack.getMaxDamage();
-            durabilityCurrent = durabilityTotal - stack.getDamageValue();
-         }
-
-         int storageTotal = 0;
-         int storageCurrent = 0;
-         if (stack.getItem() instanceof BundleItem) {
-            storageTotal = 1000;
-            storageCurrent = Math.round(BundleItem.getFullnessDisplay(stack) * 1000.0F);
-         }
-
-         CustomData data = (CustomData)stack.get(DataComponents.CUSTOM_DATA);
-         Object name = stack.get(DataComponents.CUSTOM_NAME);
-         ContainerData.Slot cached = cachedSlot(stack, stack.getCount(), stack.getDamageValue(), data, name, storageCurrent);
-         if (cached != null) {
-            return cached;
-         } else {
-            int lock = BedrockItemTags.bedrockData(stack).getByteOr("item_lock", (byte)0);
-            String raw = BedrockItemTags.rawHoverText(stack);
-            ContainerData.Slot slot = new ContainerData.Slot(
-               stack.getCount(), durabilityTotal, durabilityCurrent, storageTotal, storageCurrent, raw != null ? raw : stack.getHoverName().getString(), lock
-            );
-            rememberSlot(stack, stack.getCount(), stack.getDamageValue(), data, name, storageCurrent, slot);
-            return slot;
-         }
       }
+
+      int durabilityTotal = 0;
+      int durabilityCurrent = 0;
+      if (stack.isDamageableItem()) {
+         durabilityTotal = stack.getMaxDamage();
+         durabilityCurrent = durabilityTotal - stack.getDamageValue();
+      }
+
+      int storageTotal = 0;
+      int storageCurrent = 0;
+      if (stack.getItem() instanceof BundleItem) {
+         storageTotal = 1000;
+         storageCurrent = Math.round(BundleItem.getFullnessDisplay(stack) * 1000.0F);
+      }
+
+      CustomData data = stack.get(DataComponents.CUSTOM_DATA);
+      Object name = stack.get(DataComponents.CUSTOM_NAME);
+      ContainerData.Slot cached = cachedSlot(stack, stack.getCount(), stack.getDamageValue(), data, name, storageCurrent);
+      if (cached != null) {
+         return cached;
+      }
+
+      int lock = BedrockItemTags.bedrockData(stack).getByteOr("item_lock", (byte)0);
+      String raw = BedrockItemTags.rawHoverText(stack);
+      ContainerData.Slot slot = new ContainerData.Slot(
+         stack.getCount(), durabilityTotal, durabilityCurrent, storageTotal, storageCurrent, raw != null ? raw : stack.getHoverName().getString(), lock
+      );
+      rememberSlot(stack, stack.getCount(), stack.getDamageValue(), data, name, storageCurrent, slot);
+      return slot;
    }
 
-   @Nullable
-   private static ContainerData.Slot cachedSlot(ItemStack stack, int count, int damage, @Nullable CustomData data, @Nullable Object name, int storage) {
+   private static ContainerData.@Nullable Slot cachedSlot(ItemStack stack, int count, int damage, @Nullable CustomData data, @Nullable Object name, int storage) {
       synchronized (DESCRIBED) {
          for (JsonUiContainerScreen.Described entry : DESCRIBED) {
             if (entry != null
@@ -753,25 +741,30 @@ public final class JsonUiContainerScreen
    public ItemStack stack(UiControl renderer) {
       if (renderer == this.cursorIcon) {
          return this.shownCarried;
-      } else if (this.recipeBook != null && "recipe_book".equals(renderer.itemCollection())) {
-         return this.recipeBook.stack(renderer.itemIndex());
-      } else {
-         int javaSlot = this.javaSlot(renderer);
-         if (javaSlot >= 0) {
-            return this.shown[javaSlot];
-         } else if (this.trading != null) {
-            return this.trading.stack(renderer);
-         } else if (this.station != null) {
-            return this.station.stack(renderer);
-         } else {
-            UiValue idAux = this.recipeBook != null ? renderer.bag("#item_id_aux") : null;
-            return idAux != null && idAux.isNumber() ? ItemMappings.fromIdAux((int)idAux.asNumber()) : ItemStack.EMPTY;
-         }
       }
+
+      if (this.recipeBook != null && "recipe_book".equals(renderer.itemCollection())) {
+         return this.recipeBook.stack(renderer.itemIndex());
+      }
+
+      int javaSlot = this.javaSlot(renderer);
+      if (javaSlot >= 0) {
+         return this.shown[javaSlot];
+      }
+
+      if (this.trading != null) {
+         return this.trading.stack(renderer);
+      }
+
+      if (this.station != null) {
+         return this.station.stack(renderer);
+      }
+
+      UiValue idAux = this.recipeBook != null ? renderer.bag("#item_id_aux") : null;
+      return idAux != null && idAux.isNumber() ? ItemMappings.fromIdAux((int)idAux.asNumber()) : ItemStack.EMPTY;
    }
 
-   @Nullable
-   public JsonUiTrading trading() {
+   public @Nullable JsonUiTrading trading() {
       return this.trading;
    }
 
@@ -815,10 +808,12 @@ public final class JsonUiContainerScreen
       }
    }
 
+   @Override
    protected boolean hasClickedOutside(double mx, double my, int xo, int yo) {
       return this.slotAt(mx, my) == null && ContainerData.outside(this.ui.topmost(mx, my));
    }
 
+   @Override
    public void mouseMoved(double x, double y) {
       this.mouseX = x;
       this.mouseY = y;
@@ -826,6 +821,7 @@ public final class JsonUiContainerScreen
       this.hover(this.slotAt(x, y));
    }
 
+   @Override
    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
       if (this.recipeBook != null && this.menu.getCarried().isEmpty()) {
          UiControl control = this.ui.topmost(event.x(), event.y());
@@ -843,14 +839,14 @@ public final class JsonUiContainerScreen
          this.uiPressed = true;
          this.ui.mouseClicked(event);
          return true;
-      } else {
-         boolean handled = super.mouseClicked(event, doubleClick);
-         if (control != null && this.javaSlot(control) >= 0 && !this.ui.failed()) {
-            this.otherCellMappings(control, event.button());
-         }
-
-         return handled;
       }
+
+      boolean handled = super.mouseClicked(event, doubleClick);
+      if (control != null && this.javaSlot(control) >= 0 && !this.ui.failed()) {
+         this.otherCellMappings(control, event.button());
+      }
+
+      return handled;
    }
 
    private void otherCellMappings(UiControl control, int mouseButton) {
@@ -863,6 +859,7 @@ public final class JsonUiContainerScreen
       }
    }
 
+   @Override
    public boolean mouseReleased(MouseButtonEvent event) {
       if (this.uiPressed && event.button() == 1) {
          this.uiPressed = false;
@@ -873,10 +870,12 @@ public final class JsonUiContainerScreen
       }
    }
 
+   @Override
    public boolean mouseDragged(MouseButtonEvent event, double dx, double dy) {
       return this.uiPressed ? this.ui.mouseDragged(event) : super.mouseDragged(event, dx, dy);
    }
 
+   @Override
    public boolean mouseScrolled(double x, double y, double scrollX, double scrollY) {
       return super.mouseScrolled(x, y, scrollX, scrollY) || this.ui.mouseScrolled(x, y, scrollY);
    }

@@ -27,8 +27,7 @@ public final class NetherNetTrustStore {
    private static final int VERSION = 1;
    private static final Pattern DIGEST = Pattern.compile("[0-9a-f]{64}");
    private static final Map<Path, Object> FILE_MONITORS = new ConcurrentHashMap<>();
-   @Nullable
-   private final Path file;
+   private final @Nullable Path file;
    private final Map<String, NetherNetTrustStore.Entry> keys = new LinkedHashMap<>();
    private final Map<String, String> addresses = new LinkedHashMap<>();
    private final Set<String> unsaved = new HashSet<>();
@@ -86,13 +85,13 @@ public final class NetherNetTrustStore {
                }
             }
 
-            for (Map.Entry<String, NetherNetTrustStore.Entry> entryx : diskKeys.entrySet()) {
-               if (!entryx.getValue().lastTarget().isBlank()) {
-                  diskAddresses.putIfAbsent(addressKey(entryx.getValue().lastTarget()), entryx.getKey());
+            for (Map.Entry<String, NetherNetTrustStore.Entry> entry : diskKeys.entrySet()) {
+               if (!entry.getValue().lastTarget().isBlank()) {
+                  diskAddresses.putIfAbsent(addressKey(entry.getValue().lastTarget()), entry.getKey());
                }
             }
-         } catch (RuntimeException | IOException var10) {
-            BedrockNative.LOGGER.warn("NetherNet trust store {} is unreadable ({}); set aside, starting empty", this.file.getFileName(), var10.getMessage());
+         } catch (IOException | RuntimeException e) {
+            BedrockNative.LOGGER.warn("NetherNet trust store {} is unreadable ({}); set aside, starting empty", this.file.getFileName(), e.getMessage());
 
             try {
                Files.move(this.file, this.file.resolveSibling("nethernet-trust.unreadable.json"), StandardCopyOption.REPLACE_EXISTING);
@@ -105,9 +104,9 @@ public final class NetherNetTrustStore {
          Map<String, NetherNetTrustStore.Entry> pendingKeys = new LinkedHashMap<>();
 
          for (String digest : this.unsaved) {
-            NetherNetTrustStore.Entry entryxx = this.keys.get(digest);
-            if (entryxx != null) {
-               pendingKeys.put(digest, entryxx);
+            NetherNetTrustStore.Entry entry = this.keys.get(digest);
+            if (entry != null) {
+               pendingKeys.put(digest, entry);
             }
          }
 
@@ -135,13 +134,11 @@ public final class NetherNetTrustStore {
       return this.keys.containsKey(digest.toLowerCase(Locale.ROOT));
    }
 
-   @Nullable
-   public synchronized NetherNetTrustStore.Entry entry(String digest) {
+   public synchronized NetherNetTrustStore.@Nullable Entry entry(String digest) {
       return this.keys.get(digest.toLowerCase(Locale.ROOT));
    }
 
-   @Nullable
-   public synchronized String trustedAt(String target) {
+   public synchronized @Nullable String trustedAt(String target) {
       return this.addresses.get(addressKey(target));
    }
 
@@ -210,12 +207,11 @@ public final class NetherNetTrustStore {
       if (this.file == null) {
          change.run();
       } else {
-         Object monitor = FILE_MONITORS.computeIfAbsent(this.file.toAbsolutePath().normalize(), path -> new Object());
-         synchronized (monitor) {
+         synchronized (FILE_MONITORS.computeIfAbsent(this.file.toAbsolutePath().normalize(), path -> new Object())) {
             try {
                Files.createDirectories(this.file.getParent());
-            } catch (IOException var20) {
-               BedrockNative.LOGGER.warn("Couldn't create the NetherNet trust folder ({})", var20.getMessage());
+            } catch (IOException e) {
+               BedrockNative.LOGGER.warn("Couldn't create the NetherNet trust folder ({})", e.getMessage());
             }
 
             FileChannel channel = null;
@@ -224,8 +220,8 @@ public final class NetherNetTrustStore {
             try {
                channel = FileChannel.open(this.file.resolveSibling("nethernet-trust.json.lock"), StandardOpenOption.CREATE, StandardOpenOption.WRITE);
                lock = channel.lock();
-            } catch (RuntimeException | IOException var19) {
-               BedrockNative.LOGGER.debug("NetherNet trust store lock unavailable ({}); saving without it", var19.getMessage());
+            } catch (IOException | RuntimeException e) {
+               BedrockNative.LOGGER.debug("NetherNet trust store lock unavailable ({}); saving without it", e.getMessage());
             }
 
             try {
@@ -276,13 +272,13 @@ public final class NetherNetTrustStore {
 
          try {
             Files.move(temporary, this.file, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-         } catch (AtomicMoveNotSupportedException var8) {
+         } catch (AtomicMoveNotSupportedException e) {
             Files.move(temporary, this.file, StandardCopyOption.REPLACE_EXISTING);
          }
 
          return true;
-      } catch (IOException var9) {
-         BedrockNative.LOGGER.warn("Couldn't save the NetherNet trust store ({}); kept in memory", var9.getMessage());
+      } catch (IOException e) {
+         BedrockNative.LOGGER.warn("Couldn't save the NetherNet trust store ({}); kept in memory", e.getMessage());
          if (temporary != null) {
             try {
                Files.deleteIfExists(temporary);

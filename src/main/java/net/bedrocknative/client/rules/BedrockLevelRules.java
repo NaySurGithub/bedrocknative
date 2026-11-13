@@ -17,15 +17,13 @@ public final class BedrockLevelRules {
    private static final int NOTICE_REFRESH_TICKS = 40;
    private static final AtomicInteger IGNORED_EVENTS = new AtomicInteger();
    private final Minecraft minecraft;
-   @Nullable
-   private Difficulty pendingDifficulty;
+   private @Nullable Difficulty pendingDifficulty;
    private int ableToSleep = 1;
    private int overworldPlayers;
    private int sleepingPlayers;
    private int noticeIn;
    private static final AtomicInteger NOTICES = new AtomicInteger();
-   @Nullable
-   private static volatile String lastNotice;
+   private static volatile @Nullable String lastNotice;
 
    public BedrockLevelRules(Minecraft minecraft) {
       this.minecraft = minecraft;
@@ -97,8 +95,7 @@ public final class BedrockLevelRules {
       this.noticeIn = 0;
    }
 
-   @Nullable
-   public static String lastNotice() {
+   public static @Nullable String lastNotice() {
       return lastNotice;
    }
 

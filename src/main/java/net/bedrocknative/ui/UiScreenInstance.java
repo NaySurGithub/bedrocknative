@@ -30,8 +30,7 @@ public final class UiScreenInstance implements UiAnimation.Events {
    final Set<String> ignoredNames;
    final BitSet contributing = new BitSet();
    private final UiResolver resolver;
-   @Nullable
-   private UiControl root;
+   private @Nullable UiControl root;
    int controlCount;
    boolean cutShort;
    private double time;
@@ -57,8 +56,7 @@ public final class UiScreenInstance implements UiAnimation.Events {
    private long drawLists;
    private int layoutRules;
    private long layoutNanos;
-   @Nullable
-   private UiScreenInstance.LayoutListener layoutListener;
+   private UiScreenInstance.@Nullable LayoutListener layoutListener;
    private boolean unsettled = true;
    private long settledTree = -1L;
    private final List<UiControl> animated = new ArrayList<>();
@@ -170,21 +168,22 @@ public final class UiScreenInstance implements UiAnimation.Events {
    boolean ignored(String name) {
       if (this.ignoredNames.isEmpty()) {
          return false;
-      } else if (this.ignoredNames.contains(name)) {
-         return true;
-      } else {
-         for (String ignored : this.ignoredNames) {
-            if (ignored.endsWith("*") && name.startsWith(ignored.substring(0, ignored.length() - 1))) {
-               return true;
-            }
-         }
-
-         return false;
       }
+
+      if (this.ignoredNames.contains(name)) {
+         return true;
+      }
+
+      for (String ignored : this.ignoredNames) {
+         if (ignored.endsWith("*") && name.startsWith(ignored.substring(0, ignored.length() - 1))) {
+            return true;
+         }
+      }
+
+      return false;
    }
 
-   @Nullable
-   public UiControl root() {
+   public @Nullable UiControl root() {
       return this.root;
    }
 
@@ -204,13 +203,11 @@ public final class UiScreenInstance implements UiAnimation.Events {
       return this.definitions.fromServer(this.contributing);
    }
 
-   @Nullable
-   public String gapsLine() {
+   public @Nullable String gapsLine() {
       return this.gaps.line(this.definitions::baseGameName);
    }
 
-   @Nullable
-   public String baseGameGapsLine() {
+   public @Nullable String baseGameGapsLine() {
       return this.gaps.baseGameLine(this.definitions::baseGameName);
    }
 
@@ -258,8 +255,7 @@ public final class UiScreenInstance implements UiAnimation.Events {
       }
    }
 
-   @Nullable
-   public UiControl find(String name) {
+   public @Nullable UiControl find(String name) {
       return this.root == null ? null : this.root.find(name);
    }
 
@@ -275,7 +271,7 @@ public final class UiScreenInstance implements UiAnimation.Events {
       this.layoutDirty = true;
    }
 
-   void layoutListener(@Nullable UiScreenInstance.LayoutListener listener) {
+   void layoutListener(UiScreenInstance.@Nullable LayoutListener listener) {
       this.layoutListener = listener;
       this.layoutDirty = true;
    }
@@ -315,53 +311,53 @@ public final class UiScreenInstance implements UiAnimation.Events {
    ) {
       if (this.root == null) {
          return 0;
-      } else {
-         int spawned = 0;
+      }
 
-         for (UiControl control : List.copyOf(this.ordered())) {
-            UiControl.Factory factory = control.factory;
-            if (factory != null && !factory.dataDriven() && factory.name().equals(factoryName) && (control.parent != null || control == this.root)) {
-               String reference = factory.reference(controlId);
-               if (reference != null) {
-                  if (replace) {
-                     for (UiControl old : List.copyOf(control.generated)) {
-                        if (old.spawnedId == null || old.spawnedId.equals(controlId)) {
-                           this.destroyNow(old);
-                        }
+      int spawned = 0;
+
+      for (UiControl control : List.copyOf(this.ordered())) {
+         UiControl.Factory factory = control.factory;
+         if (factory != null && !factory.dataDriven() && factory.name().equals(factoryName) && (control.parent != null || control == this.root)) {
+            String reference = factory.reference(controlId);
+            if (reference != null) {
+               if (replace) {
+                  for (UiControl old : List.copyOf(control.generated)) {
+                     if (old.spawnedId == null || old.spawnedId.equals(controlId)) {
+                        this.destroyNow(old);
+                     }
+                  }
+               }
+
+               UiControl child = this.resolver.spawn(control, reference, factory.namespace(), null, variables);
+               if (child != null) {
+                  child.spawnedId = controlId;
+                  if (collection != null && index >= 0) {
+                     child.indexCollection = collection;
+                     child.collectionIndex = index;
+                  }
+
+                  if (!bag.isEmpty()) {
+                     child.walk(made -> {
+                        bag.forEach(made::seed);
+                        made.dirty = true;
+                     });
+                  }
+
+                  this.attach(control, child, -1);
+                  control.generated.add(child);
+                  if (factory.maxChildren() > 0) {
+                     while (control.generated.size() > factory.maxChildren()) {
+                        this.destroyNow(control.generated.getFirst());
                      }
                   }
 
-                  UiControl child = this.resolver.spawn(control, reference, factory.namespace(), null, variables);
-                  if (child != null) {
-                     child.spawnedId = controlId;
-                     if (collection != null && index >= 0) {
-                        child.indexCollection = collection;
-                        child.collectionIndex = index;
-                     }
-
-                     if (!bag.isEmpty()) {
-                        child.walk(made -> {
-                           bag.forEach(made::seed);
-                           made.dirty = true;
-                        });
-                     }
-
-                     this.attach(control, child, -1);
-                     control.generated.add(child);
-                     if (factory.maxChildren() > 0) {
-                        while (control.generated.size() > factory.maxChildren()) {
-                           this.destroyNow(control.generated.getFirst());
-                        }
-                     }
-
-                     spawned++;
-                  }
+                  spawned++;
                }
             }
          }
-
-         return spawned;
       }
+
+      return spawned;
    }
 
    void respawn(UiControl factoryControl, List<Entry<String, Map<String, UiValue>>> children) {
@@ -579,8 +575,8 @@ public final class UiScreenInstance implements UiAnimation.Events {
             }
          }
 
-         for (UiControl controlx : controls) {
-            controlx.bindingsRun = true;
+         for (UiControl control : controls) {
+            control.bindingsRun = true;
          }
 
          if (before == this.treeVersion) {
@@ -688,8 +684,7 @@ public final class UiScreenInstance implements UiAnimation.Events {
       return -1;
    }
 
-   @Nullable
-   static UiControl indexed(UiControl control, @Nullable String collection) {
+   static @Nullable UiControl indexed(UiControl control, @Nullable String collection) {
       for (UiControl c = control; c != null; c = c.parent) {
          if (c.collectionIndex >= 0 && (collection == null || c.indexCollection == null || collection.equals(c.indexCollection))) {
             return c;
@@ -712,8 +707,7 @@ public final class UiScreenInstance implements UiAnimation.Events {
       return group != null && group.truthy() && toggleName(control) != null;
    }
 
-   @Nullable
-   static String toggleName(UiControl control) {
+   static @Nullable String toggleName(UiControl control) {
       UiValue name = control.props.get("toggle_name");
       String text = name == null ? null : name.stringOrNull();
       return text != null && !text.isEmpty() ? text : null;
@@ -723,25 +717,25 @@ public final class UiScreenInstance implements UiAnimation.Events {
       UiValue fromData = this.data.radioSelection(toggleName);
       if (fromData.isNumber()) {
          return (int)fromData.asNumber();
-      } else {
-         Integer own = this.radioSelection.get(toggleName);
-         if (own != null) {
-            return own;
-         } else {
-            int selected = 0;
+      }
 
-            for (UiControl control : this.ordered()) {
-               if (control.type == UiType.TOGGLE && toggleName.equals(toggleName(control)) && radio(control)) {
-                  UiValue fallback = control.props.get("toggle_group_default_selected");
-                  selected = fallback != null && fallback.isNumber() ? (int)fallback.asNumber() : 0;
-                  break;
-               }
-            }
+      Integer own = this.radioSelection.get(toggleName);
+      if (own != null) {
+         return own;
+      }
 
-            this.radioSelection.put(toggleName, selected);
-            return selected;
+      int selected = 0;
+
+      for (UiControl control : this.ordered()) {
+         if (control.type == UiType.TOGGLE && toggleName.equals(toggleName(control)) && radio(control)) {
+            UiValue fallback = control.props.get("toggle_group_default_selected");
+            selected = fallback != null && fallback.isNumber() ? (int)fallback.asNumber() : 0;
+            break;
          }
       }
+
+      this.radioSelection.put(toggleName, selected);
+      return selected;
    }
 
    boolean radioChecked(UiControl toggle) {
@@ -754,42 +748,42 @@ public final class UiScreenInstance implements UiAnimation.Events {
       UiValue forced = toggle.props.get("toggle_group_forced_index");
       if (forced != null && forced.isNumber() && forced.asNumber() >= 0.0) {
          return (int)forced.asNumber();
-      } else {
-         String binding = forced == null ? null : forced.stringOrNull();
-         if (binding != null && binding.startsWith("#")) {
-            UiValue found = null;
-
-            for (UiControl c = toggle; c != null && found == null; c = c.parent) {
-               found = c.bag.get(binding);
-            }
-
-            if (found == null) {
-               UiControl item = indexed(toggle, null);
-               found = item != null && item.indexCollection != null
-                  ? this.data.item(item.indexCollection, item.collectionIndex, binding, outerIndex(item))
-                  : this.data.global(binding);
-            }
-
-            if (found.isNumber() && found.asNumber() >= 0.0) {
-               return (int)found.asNumber();
-            }
-         }
-
-         String name = toggleName(toggle);
-         int position = 0;
-
-         for (UiControl control : this.ordered()) {
-            if (control == toggle) {
-               return position;
-            }
-
-            if (control.type == UiType.TOGGLE && name != null && name.equals(toggleName(control)) && radio(control)) {
-               position++;
-            }
-         }
-
-         return -1;
       }
+
+      String binding = forced == null ? null : forced.stringOrNull();
+      if (binding != null && binding.startsWith("#")) {
+         UiValue found = null;
+
+         for (UiControl c = toggle; c != null && found == null; c = c.parent) {
+            found = c.bag.get(binding);
+         }
+
+         if (found == null) {
+            UiControl item = indexed(toggle, null);
+            found = item != null && item.indexCollection != null
+               ? this.data.item(item.indexCollection, item.collectionIndex, binding, outerIndex(item))
+               : this.data.global(binding);
+         }
+
+         if (found.isNumber() && found.asNumber() >= 0.0) {
+            return (int)found.asNumber();
+         }
+      }
+
+      String name = toggleName(toggle);
+      int position = 0;
+
+      for (UiControl control : this.ordered()) {
+         if (control == toggle) {
+            return position;
+         }
+
+         if (control.type == UiType.TOGGLE && name != null && name.equals(toggleName(control)) && radio(control)) {
+            position++;
+         }
+      }
+
+      return -1;
    }
 
    void selectRadio(UiControl toggle) {
@@ -834,40 +828,40 @@ public final class UiScreenInstance implements UiAnimation.Events {
       }
    }
 
-   @Nullable
-   private UiControl source(UiControl control, UiBinding binding) {
+   private @Nullable UiControl source(UiControl control, UiBinding binding) {
       if (binding.sourceControl == null) {
          return control;
-      } else if (binding.resolvedSource != null && binding.resolvedTreeVersion == this.treeVersion) {
-         return binding.resolvedSource;
-      } else {
-         UiControl found = null;
-         if (binding.siblingScope && control.parent != null) {
-            found = below(control.parent, binding.sourceControl);
-         }
-
-         if (found == null) {
-            found = below(control, binding.sourceControl);
-         }
-
-         for (UiControl c = control.parent; found == null && c != null; c = c.parent) {
-            if (c.name.equals(binding.sourceControl)) {
-               found = c;
-            }
-         }
-
-         if (found == null && this.root != null) {
-            found = this.root.find(binding.sourceControl);
-         }
-
-         binding.resolvedSource = found;
-         binding.resolvedTreeVersion = this.treeVersion;
-         return found;
       }
+
+      if (binding.resolvedSource != null && binding.resolvedTreeVersion == this.treeVersion) {
+         return binding.resolvedSource;
+      }
+
+      UiControl found = null;
+      if (binding.siblingScope && control.parent != null) {
+         found = below(control.parent, binding.sourceControl);
+      }
+
+      if (found == null) {
+         found = below(control, binding.sourceControl);
+      }
+
+      for (UiControl c = control.parent; found == null && c != null; c = c.parent) {
+         if (c.name.equals(binding.sourceControl)) {
+            found = c;
+         }
+      }
+
+      if (found == null && this.root != null) {
+         found = this.root.find(binding.sourceControl);
+      }
+
+      binding.resolvedSource = found;
+      binding.resolvedTreeVersion = this.treeVersion;
+      return found;
    }
 
-   @Nullable
-   private static UiControl below(UiControl from, String name) {
+   private static @Nullable UiControl below(UiControl from, String name) {
       Deque<UiControl> queue = new ArrayDeque<>(from.children);
 
       while (!queue.isEmpty()) {
@@ -1032,9 +1026,9 @@ public final class UiScreenInstance implements UiAnimation.Events {
       while (control.generatedKinds.size() > length) {
          int last = control.generatedKinds.size() - 1;
          control.generatedKinds.remove(last);
-         UiControl oldx = control.generated.get(last);
-         if (oldx != null) {
-            this.destroyNow(oldx);
+         UiControl old = control.generated.get(last);
+         if (old != null) {
+            this.destroyNow(old);
          }
 
          control.generated.remove(last);
@@ -1135,26 +1129,25 @@ public final class UiScreenInstance implements UiAnimation.Events {
 
       for (int index = first; index < last; index++) {
          if (!present.get(index)) {
-            UiControl itemx = this.spawnItem(control, grid.template(), grid.namespace(), control.name + "_item" + index, index);
-            if (itemx == null) {
+            UiControl item = this.spawnItem(control, grid.template(), grid.namespace(), control.name + "_item" + index, index);
+            if (item == null) {
                break;
             }
 
-            itemx.gridItem = true;
+            item.gridItem = true;
             int at = 0;
 
             while (at < control.generated.size() && control.generated.get(at).collectionIndex < index) {
                at++;
             }
 
-            control.generated.add(at, itemx);
-            this.attach(control, itemx, -1);
+            control.generated.add(at, item);
+            this.attach(control, item, -1);
          }
       }
    }
 
-   @Nullable
-   private static UiControl scrollViewOf(UiControl control) {
+   private static @Nullable UiControl scrollViewOf(UiControl control) {
       for (UiControl c = control.parent; c != null; c = c.parent) {
          if (c.type == UiType.SCROLL_VIEW) {
             return c;
@@ -1190,19 +1183,18 @@ public final class UiScreenInstance implements UiAnimation.Events {
       return changed;
    }
 
-   @Nullable
-   private UiControl spawnItem(UiControl parent, @Nullable String reference, String namespace, @Nullable String name, int index) {
+   private @Nullable UiControl spawnItem(UiControl parent, @Nullable String reference, String namespace, @Nullable String name, int index) {
       if (reference == null) {
          return null;
-      } else {
-         UiControl item = this.resolver.spawn(parent, reference, namespace, name, Map.of());
-         if (item != null) {
-            item.collectionIndex = index;
-            item.indexCollection = parent.collectionName;
-         }
-
-         return item;
       }
+
+      UiControl item = this.resolver.spawn(parent, reference, namespace, name, Map.of());
+      if (item != null) {
+         item.collectionIndex = index;
+         item.indexCollection = parent.collectionName;
+      }
+
+      return item;
    }
 
    private UiControl[] animated() {
@@ -1245,8 +1237,8 @@ public final class UiScreenInstance implements UiAnimation.Events {
                boolean moved = touched.contains(control);
                List<UiAnimation.Track> tracks = control.tracks;
 
-               for (int ix = 0; ix < tracks.size(); ix++) {
-                  UiAnimation.Track track = tracks.get(ix);
+               for (int i = 0; i < tracks.size(); i++) {
+                  UiAnimation.Track track = tracks.get(i);
                   boolean wasPlaying = track.playing();
                   boolean changed = track.advance(now, this, this.resolver);
                   moved |= RenderSwitches.animationChanges ? changed : wasPlaying || track.playing();
@@ -1267,8 +1259,8 @@ public final class UiScreenInstance implements UiAnimation.Events {
          }
 
          if (!this.pendingDestroy.isEmpty()) {
-            for (UiControl controlx : List.copyOf(this.pendingDestroy)) {
-               this.destroyNow(controlx);
+            for (UiControl control : List.copyOf(this.pendingDestroy)) {
+               this.destroyNow(control);
             }
 
             this.pendingDestroy.clear();

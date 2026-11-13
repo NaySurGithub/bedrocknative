@@ -33,8 +33,7 @@ public final class MsdfFont implements UiVectorFont {
       return this.name;
    }
 
-   @Nullable
-   private MsdfFont.Page page(int index) {
+   private MsdfFont.@Nullable Page page(int index) {
       return this.pages.computeIfAbsent(index, this::load).orElse(null);
    }
 
@@ -61,7 +60,7 @@ public final class MsdfFont implements UiVectorFont {
       try {
          ArgbImage image = BedrockImages.decode(png);
          return image.width() >= 16 && image.height() >= 16 && image.width() <= 4096 && image.height() <= 4096 ? Optional.of(image) : Optional.empty();
-      } catch (RuntimeException | IOException var2) {
+      } catch (IOException | RuntimeException e) {
          return Optional.empty();
       }
    }
@@ -134,26 +133,26 @@ public final class MsdfFont implements UiVectorFont {
 
          if (maxX < 0) {
             return UiVectorFont.Glyph.EMPTY;
-         } else {
-            int width = maxX - minX + 1;
-            int height = maxY - minY + 1;
-            int[] argb = new int[width * height];
-
-            for (int y = 0; y < height; y++) {
-               System.arraycopy(coverage, (minY + y) * size + minX, argb, y * width, width);
-            }
-
-            int baseline = Math.round(0.78125F * cellPixels);
-            return new UiVectorFont.Glyph(width, height, minX, minY - baseline, argb);
          }
+
+         int width = maxX - minX + 1;
+         int height = maxY - minY + 1;
+         int[] argb = new int[width * height];
+
+         for (int y = 0; y < height; y++) {
+            System.arraycopy(coverage, (minY + y) * size + minX, argb, y * width, width);
+         }
+
+         int baseline = Math.round(0.78125F * cellPixels);
+         return new UiVectorFont.Glyph(width, height, minX, minY - baseline, argb);
       } else {
          return UiVectorFont.Glyph.EMPTY;
       }
    }
 
    private static float median(ArgbImage image, int cellX, int cellY, int cell, int cellHeight, float tx, float ty) {
-      float fx = Math.max(0.0F, Math.min((float)(cell - 1), tx));
-      float fy = Math.max(0.0F, Math.min((float)(cellHeight - 1), ty));
+      float fx = Math.max(0.0F, Math.min(cell - 1, tx));
+      float fy = Math.max(0.0F, Math.min(cellHeight - 1, ty));
       int x0 = (int)fx;
       int y0 = (int)fy;
       int x1 = Math.min(cell - 1, x0 + 1);

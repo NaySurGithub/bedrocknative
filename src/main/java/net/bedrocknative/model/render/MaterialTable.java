@@ -73,33 +73,32 @@ public final class MaterialTable {
       MaterialTable.MaterialInfo info = this.resolved.get(key);
       if (info != null) {
          return info;
-      } else {
-         synchronized (this) {
-            info = this.resolve(key, new HashSet<>());
-            int dot = key.indexOf(46);
-            if (info == null && dot > 0) {
-               MaterialTable.MaterialInfo base = this.resolve(key.substring(0, dot), new HashSet<>());
-               info = base != null
-                  ? new MaterialTable.MaterialInfo(key, base.defines(), base.states(), base.depthFunc(), true, base.blendSrc(), base.blendDst())
-                  : null;
-            }
+      }
 
-            if (info == null) {
-               BedrockNative.LOGGER.debug("Unknown Bedrock material {}, drawn as {}", name, "entity_alphatest");
-               MaterialTable.MaterialInfo fallback = this.resolve("entity_alphatest", new HashSet<>());
-               info = fallback != null
-                  ? new MaterialTable.MaterialInfo(key, fallback.defines(), fallback.states(), fallback.depthFunc(), false)
-                  : new MaterialTable.MaterialInfo(key, Set.of("ALPHA_TEST"), Set.of("DisableCulling"), null, false);
-            }
-
-            this.resolved.put(key, info);
-            return info;
+      synchronized (this) {
+         info = this.resolve(key, new HashSet<>());
+         int dot = key.indexOf(46);
+         if (info == null && dot > 0) {
+            MaterialTable.MaterialInfo base = this.resolve(key.substring(0, dot), new HashSet<>());
+            info = base != null
+               ? new MaterialTable.MaterialInfo(key, base.defines(), base.states(), base.depthFunc(), true, base.blendSrc(), base.blendDst())
+               : null;
          }
+
+         if (info == null) {
+            BedrockNative.LOGGER.debug("Unknown Bedrock material {}, drawn as {}", name, "entity_alphatest");
+            MaterialTable.MaterialInfo fallback = this.resolve("entity_alphatest", new HashSet<>());
+            info = fallback != null
+               ? new MaterialTable.MaterialInfo(key, fallback.defines(), fallback.states(), fallback.depthFunc(), false)
+               : new MaterialTable.MaterialInfo(key, Set.of("ALPHA_TEST"), Set.of("DisableCulling"), null, false);
+         }
+
+         this.resolved.put(key, info);
+         return info;
       }
    }
 
-   @Nullable
-   private MaterialTable.MaterialInfo resolve(String name, Set<String> visiting) {
+   private MaterialTable.@Nullable MaterialInfo resolve(String name, Set<String> visiting) {
       MaterialTable.Raw raw = this.raws.get(name);
       if (raw != null && visiting.add(name)) {
          Set<String> defines = new LinkedHashSet<>();

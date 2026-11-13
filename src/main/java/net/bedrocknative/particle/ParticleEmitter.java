@@ -14,8 +14,7 @@ public final class ParticleEmitter {
    private final VariableStore variables = new VariableStore();
    final List<ParticleInstance> particles = new ArrayList<>();
    private final boolean manual;
-   @Nullable
-   private final ParticleAnchor anchor;
+   private final @Nullable ParticleAnchor anchor;
    double x;
    double y;
    double z;
@@ -223,18 +222,18 @@ public final class ParticleEmitter {
 
       if (this.expired) {
          return !this.particles.isEmpty();
-      } else {
-         if (this.anchor == null && this.particles.isEmpty() && !this.manual) {
-            ParticleEffect.Rate rate = components.rate();
-            if (rate == ParticleEffect.Rate.NONE
-               || rate == ParticleEffect.Rate.MANUAL
-               || rate == ParticleEffect.Rate.INSTANT && this.emittedInstant && components.lifetime() != ParticleEffect.Lifetime.LOOPING) {
-               return false;
-            }
-         }
-
-         return true;
       }
+
+      if (this.anchor == null && this.particles.isEmpty() && !this.manual) {
+         ParticleEffect.Rate rate = components.rate();
+         if (rate == ParticleEffect.Rate.NONE
+            || rate == ParticleEffect.Rate.MANUAL
+            || rate == ParticleEffect.Rate.INSTANT && this.emittedInstant && components.lifetime() != ParticleEffect.Lifetime.LOOPING) {
+            return false;
+         }
+      }
+
+      return true;
    }
 
    private void start(MolangEnv env) {
@@ -305,7 +304,7 @@ public final class ParticleEmitter {
             break;
          case STEADY:
             this.spawnAccumulator = this.spawnAccumulator + Math.max(0.0F, components.rateAmount().evaluate(env)) * dt;
-            this.spawnAccumulator = Math.min(this.spawnAccumulator, (float)Math.max(1, this.maxParticles));
+            this.spawnAccumulator = Math.min(this.spawnAccumulator, Math.max(1, this.maxParticles));
 
             while (this.spawnAccumulator >= 1.0F) {
                this.spawnAccumulator--;
@@ -326,126 +325,124 @@ public final class ParticleEmitter {
 
       if (this.particles.size() >= Math.max(1, this.maxParticles)) {
          return false;
-      } else {
-         this.builtins();
-         return this.emitParticle(env, px, py, pz, pvx, pvy, pvz);
       }
+
+      this.builtins();
+      return this.emitParticle(env, px, py, pz, pvx, pvy, pvz);
    }
 
    private boolean emitParticle(MolangEnv env, double originX, double originY, double originZ, float extraX, float extraY, float extraZ) {
       ParticleInstance particle = this.system.obtain();
       if (particle == null) {
          return false;
-      } else {
-         ParticleEffect.Particle components = this.effect.particle();
-         ParticleEffect.Emitter emitter = this.effect.emitter();
-         particle.random1 = this.system.random.nextFloat();
-         particle.random2 = this.system.random.nextFloat();
-         particle.random3 = this.system.random.nextFloat();
-         particle.random4 = this.system.random.nextFloat();
-         VariableStore scope = this.scope(particle);
-         env.variables = scope;
-         ParticleVariables.particle(scope, this.effect.builtins(), 0.0F, 0.0F, particle.random1, particle.random2, particle.random3, particle.random4);
-         particle.lifetime = components.maxLifetime() != null ? components.maxLifetime().evaluate(env) : Float.POSITIVE_INFINITY;
-         ParticleVariables.particle(
-            scope, this.effect.builtins(), 0.0F, particle.lifetime, particle.random1, particle.random2, particle.random3, particle.random4
-         );
-         float[] shape = this.system.shape;
-         ParticleShapes.sample(this.effect, env, this.system.random, this.anchor, shape, this.system.anchorScratch);
-         float ox = shape[0];
-         float oy = shape[1];
-         float oz = shape[2];
-         float dx = shape[3];
-         float dy = shape[4];
-         float dz = shape[5];
-         boolean turn = this.anchor != null && this.yaw != 0.0F && !this.localPosition();
-         if (turn) {
-            float radians = (float)Math.toRadians(this.yaw);
-            float cos = (float)Math.cos(radians);
-            float sin = (float)Math.sin(radians);
-            float rx = ox * cos - oz * sin;
-            oz = ox * sin + oz * cos;
-            ox = rx;
-            float rdx = dx * cos - dz * sin;
-            dz = dx * sin + dz * cos;
-            dx = rdx;
-         }
-
-         if (this.localPosition()) {
-            particle.x = ox;
-            particle.y = oy;
-            particle.z = oz;
-         } else {
-            particle.x = originX + ox;
-            particle.y = originY + oy;
-            particle.z = originZ + oz;
-         }
-
-         particle.prevX = particle.x;
-         particle.prevY = particle.y;
-         particle.prevZ = particle.z;
-         if (components.speedVector() != null) {
-            particle.vx = components.speedVector()[0].evaluate(env);
-            particle.vy = components.speedVector()[1].evaluate(env);
-            particle.vz = components.speedVector()[2].evaluate(env);
-         } else if (components.speed() != null) {
-            float speed = components.speed().evaluate(env);
-            particle.vx = dx * speed;
-            particle.vy = dy * speed;
-            particle.vz = dz * speed;
-         }
-
-         if (emitter.localVelocity()) {
-            particle.vx = particle.vx + this.vx;
-            particle.vy = particle.vy + this.vy;
-            particle.vz = particle.vz + this.vz;
-         }
-
-         particle.vx += extraX;
-         particle.vy += extraY;
-         particle.vz += extraZ;
-         particle.dirX = dx;
-         particle.dirY = dy;
-         particle.dirZ = dz;
-         float speed = (float)Math.sqrt(particle.vx * particle.vx + particle.vy * particle.vy + particle.vz * particle.vz);
-         if (speed > 1.0E-6F) {
-            particle.dirX = particle.vx / speed;
-            particle.dirY = particle.vy / speed;
-            particle.dirZ = particle.vz / speed;
-         }
-
-         particle.rotation = particle.prevRotation = components.spinRotation().evaluate(env);
-         particle.rotationRate = components.spinRate().evaluate(env);
-         if (components.creation() != null) {
-            components.creation().evaluate(env);
-         }
-
-         if (components.killPlane() != null) {
-            particle.killSide = Math.signum(this.killPlane(particle, components.killPlane()));
-         }
-
-         this.particles.add(particle);
-         env.variables = this.variables;
-         if (components.creationEvents().length > 0) {
-            double[] point = this.world(particle, 1.0F);
-            this.fire(components.creationEvents(), point[0], point[1], point[2], particle);
-         }
-
-         return true;
       }
+
+      ParticleEffect.Particle components = this.effect.particle();
+      ParticleEffect.Emitter emitter = this.effect.emitter();
+      particle.random1 = this.system.random.nextFloat();
+      particle.random2 = this.system.random.nextFloat();
+      particle.random3 = this.system.random.nextFloat();
+      particle.random4 = this.system.random.nextFloat();
+      VariableStore scope = this.scope(particle);
+      env.variables = scope;
+      ParticleVariables.particle(scope, this.effect.builtins(), 0.0F, 0.0F, particle.random1, particle.random2, particle.random3, particle.random4);
+      particle.lifetime = components.maxLifetime() != null ? components.maxLifetime().evaluate(env) : Float.POSITIVE_INFINITY;
+      ParticleVariables.particle(scope, this.effect.builtins(), 0.0F, particle.lifetime, particle.random1, particle.random2, particle.random3, particle.random4);
+      float[] shape = this.system.shape;
+      ParticleShapes.sample(this.effect, env, this.system.random, this.anchor, shape, this.system.anchorScratch);
+      float ox = shape[0];
+      float oy = shape[1];
+      float oz = shape[2];
+      float dx = shape[3];
+      float dy = shape[4];
+      float dz = shape[5];
+      boolean turn = this.anchor != null && this.yaw != 0.0F && !this.localPosition();
+      if (turn) {
+         float radians = (float)Math.toRadians(this.yaw);
+         float cos = (float)Math.cos(radians);
+         float sin = (float)Math.sin(radians);
+         float rx = ox * cos - oz * sin;
+         oz = ox * sin + oz * cos;
+         ox = rx;
+         float rdx = dx * cos - dz * sin;
+         dz = dx * sin + dz * cos;
+         dx = rdx;
+      }
+
+      if (this.localPosition()) {
+         particle.x = ox;
+         particle.y = oy;
+         particle.z = oz;
+      } else {
+         particle.x = originX + ox;
+         particle.y = originY + oy;
+         particle.z = originZ + oz;
+      }
+
+      particle.prevX = particle.x;
+      particle.prevY = particle.y;
+      particle.prevZ = particle.z;
+      if (components.speedVector() != null) {
+         particle.vx = components.speedVector()[0].evaluate(env);
+         particle.vy = components.speedVector()[1].evaluate(env);
+         particle.vz = components.speedVector()[2].evaluate(env);
+      } else if (components.speed() != null) {
+         float speed = components.speed().evaluate(env);
+         particle.vx = dx * speed;
+         particle.vy = dy * speed;
+         particle.vz = dz * speed;
+      }
+
+      if (emitter.localVelocity()) {
+         particle.vx = particle.vx + this.vx;
+         particle.vy = particle.vy + this.vy;
+         particle.vz = particle.vz + this.vz;
+      }
+
+      particle.vx += extraX;
+      particle.vy += extraY;
+      particle.vz += extraZ;
+      particle.dirX = dx;
+      particle.dirY = dy;
+      particle.dirZ = dz;
+      float speed = (float)Math.sqrt(particle.vx * particle.vx + particle.vy * particle.vy + particle.vz * particle.vz);
+      if (speed > 1.0E-6F) {
+         particle.dirX = particle.vx / speed;
+         particle.dirY = particle.vy / speed;
+         particle.dirZ = particle.vz / speed;
+      }
+
+      particle.rotation = particle.prevRotation = components.spinRotation().evaluate(env);
+      particle.rotationRate = components.spinRate().evaluate(env);
+      if (components.creation() != null) {
+         components.creation().evaluate(env);
+      }
+
+      if (components.killPlane() != null) {
+         particle.killSide = Math.signum(this.killPlane(particle, components.killPlane()));
+      }
+
+      this.particles.add(particle);
+      env.variables = this.variables;
+      if (components.creationEvents().length > 0) {
+         double[] point = this.world(particle, 1.0F);
+         this.fire(components.creationEvents(), point[0], point[1], point[2], particle);
+      }
+
+      return true;
    }
 
    private VariableStore scope(ParticleInstance particle) {
       if (!this.effect.builtins().particleScope()) {
          return this.variables;
-      } else {
-         if (particle.variables == null) {
-            particle.variables = new VariableStore(8);
-         }
-
-         particle.variables.setParent(this.variables);
-         return particle.variables;
       }
+
+      if (particle.variables == null) {
+         particle.variables = new VariableStore(8);
+      }
+
+      particle.variables.setParent(this.variables);
+      return particle.variables;
    }
 
    private void updateParticles(MolangEnv env, float dt) {
@@ -475,101 +472,101 @@ public final class ParticleEmitter {
       );
       if (particle.age >= particle.lifetime) {
          return this.die(particle);
+      }
+
+      this.curves(env);
+      if (components.perUpdate() != null) {
+         components.perUpdate().evaluate(env);
+      }
+
+      if (components.expiration() != null && components.expiration().evaluate(env) != 0.0F) {
+         return this.die(particle);
+      }
+
+      if (components.parametricPosition() != null) {
+         MolangProgram[] position = components.parametricPosition();
+         float px = position[0].evaluate(env);
+         float py = position[1].evaluate(env);
+         float pz = position[2].evaluate(env);
+         if (this.localPosition()) {
+            particle.x = px;
+            particle.y = py;
+            particle.z = pz;
+         } else {
+            particle.x = this.x + px;
+            particle.y = this.y + py;
+            particle.z = this.z + pz;
+         }
       } else {
-         this.curves(env);
-         if (components.perUpdate() != null) {
-            components.perUpdate().evaluate(env);
+         MolangProgram[] acceleration = components.acceleration();
+         float drag = components.drag().evaluate(env);
+         particle.vx = particle.vx + (acceleration[0].evaluate(env) - drag * particle.vx) * dt;
+         particle.vy = particle.vy + (acceleration[1].evaluate(env) - drag * particle.vy) * dt;
+         particle.vz = particle.vz + (acceleration[2].evaluate(env) - drag * particle.vz) * dt;
+         double[] motion = this.system.motion;
+         motion[0] = particle.vx * dt;
+         motion[1] = particle.vy * dt;
+         motion[2] = particle.vz * dt;
+         ParticleEffect.Collision collision = components.collision();
+         if (collision != null && collision.enabled().evaluate(env) != 0.0F && !this.collide(particle, collision, motion, dt)) {
+            return this.die(particle);
          }
 
-         if (components.expiration() != null && components.expiration().evaluate(env) != 0.0F) {
-            return this.die(particle);
-         } else {
-            if (components.parametricPosition() != null) {
-               MolangProgram[] position = components.parametricPosition();
-               float px = position[0].evaluate(env);
-               float py = position[1].evaluate(env);
-               float pz = position[2].evaluate(env);
-               if (this.localPosition()) {
-                  particle.x = px;
-                  particle.y = py;
-                  particle.z = pz;
-               } else {
-                  particle.x = this.x + px;
-                  particle.y = this.y + py;
-                  particle.z = this.z + pz;
-               }
-            } else {
-               MolangProgram[] acceleration = components.acceleration();
-               float drag = components.drag().evaluate(env);
-               particle.vx = particle.vx + (acceleration[0].evaluate(env) - drag * particle.vx) * dt;
-               particle.vy = particle.vy + (acceleration[1].evaluate(env) - drag * particle.vy) * dt;
-               particle.vz = particle.vz + (acceleration[2].evaluate(env) - drag * particle.vz) * dt;
-               double[] motion = this.system.motion;
-               motion[0] = particle.vx * dt;
-               motion[1] = particle.vy * dt;
-               motion[2] = particle.vz * dt;
-               ParticleEffect.Collision collision = components.collision();
-               if (collision != null && collision.enabled().evaluate(env) != 0.0F && !this.collide(particle, collision, motion, dt)) {
-                  return this.die(particle);
-               }
+         particle.x = particle.x + motion[0];
+         particle.y = particle.y + motion[1];
+         particle.z = particle.z + motion[2];
+      }
 
-               particle.x = particle.x + motion[0];
-               particle.y = particle.y + motion[1];
-               particle.z = particle.z + motion[2];
-            }
+      float rotationDrag = components.rotationDrag().evaluate(env);
+      particle.rotationRate = particle.rotationRate + (components.rotationAcceleration().evaluate(env) - rotationDrag * particle.rotationRate) * dt;
+      particle.rotation = particle.rotation + particle.rotationRate * dt;
+      if (components.parametricRotation() != null) {
+         particle.rotation = components.parametricRotation().evaluate(env);
+      }
 
-            float rotationDrag = components.rotationDrag().evaluate(env);
-            particle.rotationRate = particle.rotationRate + (components.rotationAcceleration().evaluate(env) - rotationDrag * particle.rotationRate) * dt;
-            particle.rotation = particle.rotation + particle.rotationRate * dt;
-            if (components.parametricRotation() != null) {
-               particle.rotation = components.parametricRotation().evaluate(env);
-            }
-
-            if (components.parametricDirection() != null) {
-               particle.dirX = components.parametricDirection()[0].evaluate(env);
-               particle.dirY = components.parametricDirection()[1].evaluate(env);
-               particle.dirZ = components.parametricDirection()[2].evaluate(env);
-            } else {
-               ParticleEffect.Billboard billboard = components.billboard();
-               float threshold = billboard != null ? billboard.minSpeed() : 0.01F;
-               float speed = (float)Math.sqrt(particle.vx * particle.vx + particle.vy * particle.vy + particle.vz * particle.vz);
-               if (speed > threshold && speed > 1.0E-6F) {
-                  particle.dirX = particle.vx / speed;
-                  particle.dirY = particle.vy / speed;
-                  particle.dirZ = particle.vz / speed;
-               }
-            }
-
-            if (components.killPlane() != null) {
-               float side = Math.signum(this.killPlane(particle, components.killPlane()));
-               if (particle.killSide != 0.0F && side != 0.0F && side != particle.killSide) {
-                  return this.die(particle);
-               }
-            }
-
-            if (!components.expireInBlocks().isEmpty() || !components.expireNotInBlocks().isEmpty()) {
-               double[] point = this.world(particle, 1.0F);
-               String block = this.system.world().blockName(point[0], point[1], point[2]);
-               if (components.expireInBlocks().contains(block)) {
-                  return this.die(particle);
-               }
-
-               if (!components.expireNotInBlocks().isEmpty() && !components.expireNotInBlocks().contains(block)) {
-                  return this.die(particle);
-               }
-            }
-
-            for (ParticleEffect.Timeline timeline = components.timeline();
-               particle.timelineIndex < timeline.times().length && timeline.times()[particle.timelineIndex] <= particle.age;
-               env.variables = this.scope(particle)
-            ) {
-               double[] pointx = this.world(particle, 1.0F);
-               this.fire(timeline.names()[particle.timelineIndex++], pointx[0], pointx[1], pointx[2], particle);
-            }
-
-            return true;
+      if (components.parametricDirection() != null) {
+         particle.dirX = components.parametricDirection()[0].evaluate(env);
+         particle.dirY = components.parametricDirection()[1].evaluate(env);
+         particle.dirZ = components.parametricDirection()[2].evaluate(env);
+      } else {
+         ParticleEffect.Billboard billboard = components.billboard();
+         float threshold = billboard != null ? billboard.minSpeed() : 0.01F;
+         float speed = (float)Math.sqrt(particle.vx * particle.vx + particle.vy * particle.vy + particle.vz * particle.vz);
+         if (speed > threshold && speed > 1.0E-6F) {
+            particle.dirX = particle.vx / speed;
+            particle.dirY = particle.vy / speed;
+            particle.dirZ = particle.vz / speed;
          }
       }
+
+      if (components.killPlane() != null) {
+         float side = Math.signum(this.killPlane(particle, components.killPlane()));
+         if (particle.killSide != 0.0F && side != 0.0F && side != particle.killSide) {
+            return this.die(particle);
+         }
+      }
+
+      if (!components.expireInBlocks().isEmpty() || !components.expireNotInBlocks().isEmpty()) {
+         double[] point = this.world(particle, 1.0F);
+         String block = this.system.world().blockName(point[0], point[1], point[2]);
+         if (components.expireInBlocks().contains(block)) {
+            return this.die(particle);
+         }
+
+         if (!components.expireNotInBlocks().isEmpty() && !components.expireNotInBlocks().contains(block)) {
+            return this.die(particle);
+         }
+      }
+
+      for (ParticleEffect.Timeline timeline = components.timeline();
+         particle.timelineIndex < timeline.times().length && timeline.times()[particle.timelineIndex] <= particle.age;
+         env.variables = this.scope(particle)
+      ) {
+         double[] point = this.world(particle, 1.0F);
+         this.fire(timeline.names()[particle.timelineIndex++], point[0], point[1], point[2], particle);
+      }
+
+      return true;
    }
 
    private boolean collide(ParticleInstance particle, ParticleEffect.Collision collision, double[] motion, float dt) {
@@ -581,40 +578,42 @@ public final class ParticleEmitter {
          motion[axis] = wanted != wanted ? 0.0 : Math.max(-64.0, Math.min(64.0, wanted));
       }
 
-      double radius = Math.min(4.0, (double)Math.max(0.005F, collision.radius()));
+      double radius = Math.min(4.0, Math.max(0.005F, collision.radius()));
       int hit = this.system.world().collide(point[0], point[1], point[2], radius, motion);
       if (hit == 0) {
          return true;
-      } else if (collision.expireOnContact()) {
+      }
+
+      if (collision.expireOnContact()) {
          this.fireCollision(particle, collision, before);
          return false;
-      } else {
-         float restitution = collision.restitution();
-         if ((hit & 1) != 0) {
-            particle.vx = -particle.vx * restitution;
-         }
-
-         if ((hit & 2) != 0) {
-            particle.vy = -particle.vy * restitution;
-         }
-
-         if ((hit & 4) != 0) {
-            particle.vz = -particle.vz * restitution;
-         }
-
-         if (collision.drag() > 0.0F) {
-            float speed = (float)Math.sqrt(particle.vx * particle.vx + particle.vy * particle.vy + particle.vz * particle.vz);
-            if (speed > 0.0F) {
-               float slowed = Math.max(0.0F, speed - collision.drag() * dt) / speed;
-               particle.vx *= slowed;
-               particle.vy *= slowed;
-               particle.vz *= slowed;
-            }
-         }
-
-         this.fireCollision(particle, collision, before);
-         return true;
       }
+
+      float restitution = collision.restitution();
+      if ((hit & 1) != 0) {
+         particle.vx = -particle.vx * restitution;
+      }
+
+      if ((hit & 2) != 0) {
+         particle.vy = -particle.vy * restitution;
+      }
+
+      if ((hit & 4) != 0) {
+         particle.vz = -particle.vz * restitution;
+      }
+
+      if (collision.drag() > 0.0F) {
+         float speed = (float)Math.sqrt(particle.vx * particle.vx + particle.vy * particle.vy + particle.vz * particle.vz);
+         if (speed > 0.0F) {
+            float slowed = Math.max(0.0F, speed - collision.drag() * dt) / speed;
+            particle.vx *= slowed;
+            particle.vy *= slowed;
+            particle.vz *= slowed;
+         }
+      }
+
+      this.fireCollision(particle, collision, before);
+      return true;
    }
 
    private void fireCollision(ParticleInstance particle, ParticleEffect.Collision collision, double speed) {
@@ -798,21 +797,21 @@ public final class ParticleEmitter {
          point[1] = ly;
          point[2] = lz;
          return point;
-      } else {
-         if (this.localRotation()) {
-            float turn = (float)Math.toRadians(this.prevYaw + (this.yaw - this.prevYaw) * partialTick);
-            float cos = (float)Math.cos(turn);
-            float sin = (float)Math.sin(turn);
-            double rx = lx * cos - lz * sin;
-            lz = lx * sin + lz * cos;
-            lx = rx;
-         }
-
-         point[0] = this.prevX + (this.x - this.prevX) * partialTick + lx;
-         point[1] = this.prevY + (this.y - this.prevY) * partialTick + ly;
-         point[2] = this.prevZ + (this.z - this.prevZ) * partialTick + lz;
-         return point;
       }
+
+      if (this.localRotation()) {
+         float turn = (float)Math.toRadians(this.prevYaw + (this.yaw - this.prevYaw) * partialTick);
+         float cos = (float)Math.cos(turn);
+         float sin = (float)Math.sin(turn);
+         double rx = lx * cos - lz * sin;
+         lz = lx * sin + lz * cos;
+         lx = rx;
+      }
+
+      point[0] = this.prevX + (this.x - this.prevX) * partialTick + lx;
+      point[1] = this.prevY + (this.y - this.prevY) * partialTick + ly;
+      point[2] = this.prevZ + (this.z - this.prevZ) * partialTick + lz;
+      return point;
    }
 
    float yaw(float partialTick) {

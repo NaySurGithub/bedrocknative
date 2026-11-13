@@ -17,21 +17,16 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin({EntityCollisionContext.class})
+@Mixin(EntityCollisionContext.class)
 public abstract class EntityCollisionContextMixin {
    @Shadow
    @Final
-   @Nullable
-   private Entity entity;
+   private @Nullable Entity entity;
 
-   @Inject(
-      method = {"getCollisionShape"},
-      at = {@At("RETURN")},
-      cancellable = true
-   )
+   @Inject(method = "getCollisionShape", at = @At("RETURN"), cancellable = true)
    private void bedrocknative$bedrockShape(BlockState state, CollisionGetter collisionGetter, BlockPos pos, CallbackInfoReturnable<VoxelShape> cir) {
       if (BedrockMovement.simulates(this.entity)) {
-         VoxelShape shape = BedrockCollisionShapes.get(state, pos, (CollisionContext)this, (VoxelShape)cir.getReturnValue());
+         VoxelShape shape = BedrockCollisionShapes.get(state, pos, (CollisionContext)(Object)this, (VoxelShape)cir.getReturnValue());
          if (shape != null) {
             cir.setReturnValue(shape);
          }

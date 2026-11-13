@@ -41,8 +41,7 @@ public final class OreSession {
       return this.install.theme();
    }
 
-   @Nullable
-   public Path defaultWorldPicture() {
+   public @Nullable Path defaultWorldPicture() {
       return this.install.picture("world-preview-default").orElse(null);
    }
 

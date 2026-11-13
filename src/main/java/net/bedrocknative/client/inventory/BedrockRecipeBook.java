@@ -26,8 +26,7 @@ import org.jspecify.annotations.Nullable;
 
 public final class BedrockRecipeBook {
    private static final boolean ENABLED = !switchOff(System.getProperty("bedrocknative.bedrockRecipeBook"));
-   @Nullable
-   private static volatile BedrockRecipeBook active;
+   private static volatile @Nullable BedrockRecipeBook active;
    private final Minecraft minecraft;
    private final StackRequests requests;
    private final RecipeUnlocks unlocks;
@@ -56,15 +55,13 @@ public final class BedrockRecipeBook {
       return ENABLED;
    }
 
-   @Nullable
-   public static BedrockRecipeBook active() {
+   public static @Nullable BedrockRecipeBook active() {
       return ENABLED ? active : null;
    }
 
    static boolean switchOff(@Nullable String value) {
       if (value != null) {
-         String var1 = value.trim().toLowerCase(Locale.ROOT);
-         switch (var1) {
+         switch (value.trim().toLowerCase(Locale.ROOT)) {
             case "off":
             case "false":
             case "0":
@@ -164,8 +161,7 @@ public final class BedrockRecipeBook {
 
    static final class Catalog implements RecipeBook.Catalog {
       private final CreativeItems creative;
-      @Nullable
-      private List<CreativeItemData> builtFor;
+      private @Nullable List<CreativeItemData> builtFor;
       private final Map<String, RecipeBook.Place> places = new HashMap<>();
       private final Map<String, String> names = new HashMap<>();
       private int version;
@@ -200,8 +196,7 @@ public final class BedrockRecipeBook {
          }
       }
 
-      @Nullable
-      private static RecipeBook.Tab tab(CreativeItemCategory category) {
+      private static RecipeBook.@Nullable Tab tab(CreativeItemCategory category) {
          return switch (category) {
             case CONSTRUCTION -> RecipeBook.Tab.CONSTRUCTION;
             case EQUIPMENT -> RecipeBook.Tab.EQUIPMENT;
@@ -211,9 +206,8 @@ public final class BedrockRecipeBook {
          };
       }
 
-      @Nullable
       @Override
-      public RecipeBook.Place place(ItemData result) {
+      public RecipeBook.@Nullable Place place(ItemData result) {
          this.refresh();
          RecipeBook.Place place = this.places.get(RecipeBook.key(result));
          return place != null ? place : this.places.get(result.getDefinition().getIdentifier() + ":" + result.getDamage());

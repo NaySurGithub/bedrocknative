@@ -18,15 +18,13 @@ import org.jspecify.annotations.Nullable;
 
 final class ControllerInstance implements Playable, MolangControllerScope {
    private final ControllerDef definition;
-   private final Function<String, Playable> factory;
+   private final Function<String, @Nullable Playable> factory;
    private final boolean vanilla;
    private final Map<ControllerDef.State, List<ControllerInstance.Entry>> stateEntries = new IdentityHashMap<>();
    private final Map<ControllerDef.State, int[]> stateVariableIds = new IdentityHashMap<>();
-   @Nullable
-   private ControllerDef.State current;
+   private ControllerDef.@Nullable State current;
    private List<ControllerInstance.Entry> entries = List.of();
-   @Nullable
-   private ControllerDef.State previous;
+   private ControllerDef.@Nullable State previous;
    private List<ControllerInstance.Entry> previousEntries = List.of();
    private float stateTime;
    private float blendElapsed;
@@ -34,16 +32,14 @@ final class ControllerInstance implements Playable, MolangControllerScope {
    private boolean blendShortestPath;
    private boolean entered;
    private int[] variableIds = new int[0];
-   @Nullable
-   private PoseBuffer scratchFrom;
-   @Nullable
-   private PoseBuffer scratchTo;
+   private @Nullable PoseBuffer scratchFrom;
+   private @Nullable PoseBuffer scratchTo;
 
-   ControllerInstance(ControllerDef definition, Function<String, Playable> factory) {
+   ControllerInstance(ControllerDef definition, Function<String, @Nullable Playable> factory) {
       this(definition, factory, false);
    }
 
-   ControllerInstance(ControllerDef definition, Function<String, Playable> factory, boolean vanilla) {
+   ControllerInstance(ControllerDef definition, Function<String, @Nullable Playable> factory, boolean vanilla) {
       this.definition = definition;
       this.factory = factory;
       this.vanilla = vanilla;
@@ -53,8 +49,7 @@ final class ControllerInstance implements Playable, MolangControllerScope {
       return this.definition;
    }
 
-   @Nullable
-   String state() {
+   @Nullable String state() {
       return this.current != null ? this.current.name() : null;
    }
 
@@ -245,13 +240,13 @@ final class ControllerInstance implements Playable, MolangControllerScope {
       }
    }
 
-   private List<ControllerInstance.Entry> entries(@Nullable ControllerDef.State state) {
+   private List<ControllerInstance.Entry> entries(ControllerDef.@Nullable State state) {
       if (state == null) {
          return List.of();
-      } else {
-         List<ControllerInstance.Entry> cached = this.stateEntries.get(state);
-         return cached != null ? cached : this.createEntries(state);
       }
+
+      List<ControllerInstance.Entry> cached = this.stateEntries.get(state);
+      return cached != null ? cached : this.createEntries(state);
    }
 
    private List<ControllerInstance.Entry> createEntries(ControllerDef.State state) {
@@ -269,24 +264,24 @@ final class ControllerInstance implements Playable, MolangControllerScope {
       return created;
    }
 
-   private int[] variableIds(@Nullable ControllerDef.State state) {
+   private int[] variableIds(ControllerDef.@Nullable State state) {
       if (state == null) {
          return new int[0];
-      } else {
-         int[] cached = this.stateVariableIds.get(state);
-         if (cached != null) {
-            return cached;
-         } else {
-            int[] ids = new int[state.variables().size()];
-
-            for (int i = 0; i < ids.length; i++) {
-               ids[i] = MolangNames.id(state.variables().get(i).name());
-            }
-
-            this.stateVariableIds.put(state, ids);
-            return ids;
-         }
       }
+
+      int[] cached = this.stateVariableIds.get(state);
+      if (cached != null) {
+         return cached;
+      }
+
+      int[] ids = new int[state.variables().size()];
+
+      for (int i = 0; i < ids.length; i++) {
+         ids[i] = MolangNames.id(state.variables().get(i).name());
+      }
+
+      this.stateVariableIds.put(state, ids);
+      return ids;
    }
 
    private static void run(List<MolangProgram> programs, MolangEnv env) {
@@ -331,8 +326,7 @@ final class ControllerInstance implements Playable, MolangControllerScope {
 
    private static final class Entry {
       final Playable playable;
-      @Nullable
-      final MolangProgram weight;
+      final @Nullable MolangProgram weight;
       boolean active = true;
 
       Entry(Playable playable, @Nullable MolangProgram weight) {

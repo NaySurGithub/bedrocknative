@@ -196,8 +196,7 @@ public final class InventoryReference {
       return new InventoryReference.Mask(include, exclude);
    }
 
-   @Nullable
-   private static float[] rect(@Nullable UiControl control) {
+   private static float @Nullable [] rect(@Nullable UiControl control) {
       return control == null ? null : new float[]{control.x(), control.y(), control.x() + control.width(), control.y() + control.height()};
    }
 
@@ -301,7 +300,7 @@ public final class InventoryReference {
    public record Found(UiScreenInstance instance, UiTextMeasurer measurer) {
    }
 
-   public static enum Layout {
+   public enum Layout {
       ITEMS("bedrock-real-creative-items.png", 450, 177),
       BOTH("bedrock-real-creative-both.png", 439, 217),
       INVENTORY("bedrock-real-creative-inventory.png", 663, 265);
@@ -310,7 +309,7 @@ public final class InventoryReference {
       public final int frameX;
       public final int frameY;
 
-      private Layout(String picture, int frameX, int frameY) {
+      Layout(String picture, int frameX, int frameY) {
          this.picture = picture;
          this.frameX = frameX;
          this.frameY = frameY;
@@ -344,7 +343,7 @@ public final class InventoryReference {
       }
    }
 
-   public record Result(InventoryReference.Rect rect, @Nullable float[] ours, float off, boolean ok) {
+   public record Result(InventoryReference.Rect rect, float @Nullable [] ours, float off, boolean ok) {
       @Override
       public String toString() {
          return this.ours == null

@@ -60,8 +60,8 @@ public final class BaseDownloads {
                minecraft.gui.setScreen(new BaseNoticeScreen(title, () -> {
                   try {
                      BaseNotice.markSeen(configFolder());
-                  } catch (IOException var1x) {
-                     BedrockNative.LOGGER.warn("Couldn't keep the base notice as seen: {}", var1x.getMessage());
+                  } catch (IOException e) {
+                     BedrockNative.LOGGER.warn("Couldn't keep the base notice as seen: {}", e.getMessage());
                   }
                }));
                return;
@@ -85,8 +85,8 @@ public final class BaseDownloads {
          minecraft.gui.setScreen(new BaseDownloadScreen(screen, size, answer -> {
             try {
                BaseConsent.store(configFolder(), answer);
-            } catch (IOException var3x) {
-               BedrockNative.LOGGER.warn("Couldn't keep the base download answer: {}", var3x.getMessage());
+            } catch (IOException e) {
+               BedrockNative.LOGGER.warn("Couldn't keep the base download answer: {}", e.getMessage());
             }
 
             if (answer == BaseConsent.Answer.YES && BaseDownload.want(PENDING)) {

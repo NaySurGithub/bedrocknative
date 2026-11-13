@@ -15,25 +15,24 @@ public final class DropPackets {
    private DropPackets() {
    }
 
-   @Nullable
-   public static InventoryTransactionPacket hotbarDrop(int slot, ItemData before, ItemData after) {
+   public static @Nullable InventoryTransactionPacket hotbarDrop(int slot, ItemData before, ItemData after) {
       if (before != null && !before.isNull()) {
          ItemData kept = after != null && !after.isNull() ? after : ItemData.AIR;
          int dropped = before.getCount() - (kept.isNull() ? 0 : kept.getCount());
          if (dropped <= 0) {
             return null;
-         } else {
-            InventoryTransactionPacket drop = new InventoryTransactionPacket();
-            drop.setTransactionType(InventoryTransactionType.NORMAL);
-            drop.getActions().add(new InventoryActionData(InventorySource.fromContainerWindowId(0), slot, withoutStackId(before), withoutStackId(kept)));
-            drop.getActions()
-               .add(
-                  new InventoryActionData(
-                     InventorySource.fromWorldInteraction(Flag.DROP_ITEM), 0, ItemData.AIR, withoutStackId(before.toBuilder().count(dropped).build())
-                  )
-               );
-            return drop;
          }
+
+         InventoryTransactionPacket drop = new InventoryTransactionPacket();
+         drop.setTransactionType(InventoryTransactionType.NORMAL);
+         drop.getActions().add(new InventoryActionData(InventorySource.fromContainerWindowId(0), slot, withoutStackId(before), withoutStackId(kept)));
+         drop.getActions()
+            .add(
+               new InventoryActionData(
+                  InventorySource.fromWorldInteraction(Flag.DROP_ITEM), 0, ItemData.AIR, withoutStackId(before.toBuilder().count(dropped).build())
+               )
+            );
+         return drop;
       } else {
          return null;
       }

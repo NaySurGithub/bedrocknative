@@ -218,10 +218,10 @@ public final class CorrectionLog {
          case UpdateAttributesPacket attributes -> attributes.getRuntimeEntityId() == localRuntimeId;
          case MobEffectPacket effect -> effect.getRuntimeEntityId() == localRuntimeId;
          case SetEntityDataPacket data -> data.getRuntimeEntityId() == localRuntimeId;
-         case MovementEffectPacket effectx -> effectx.getEntityRuntimeId() == localRuntimeId;
+         case MovementEffectPacket effect -> effect.getEntityRuntimeId() == localRuntimeId;
          case CorrectPlayerMovePredictionPacket ignored -> true;
-         case UpdateAbilitiesPacket ignoredx -> true;
-         case UpdatePlayerGameTypePacket ignoredxx -> true;
+         case UpdateAbilitiesPacket ignored -> true;
+         case UpdatePlayerGameTypePacket ignored -> true;
          default -> false;
       };
       if (ours) {
@@ -238,12 +238,12 @@ public final class CorrectionLog {
          case UpdateAttributesPacket attributes -> attributes.getRuntimeEntityId() == localRuntimeId;
          case MobEffectPacket effect -> effect.getRuntimeEntityId() == localRuntimeId;
          case SetEntityDataPacket data -> data.getRuntimeEntityId() == localRuntimeId;
-         case MovementEffectPacket effectx -> effectx.getEntityRuntimeId() == localRuntimeId;
+         case MovementEffectPacket effect -> effect.getEntityRuntimeId() == localRuntimeId;
          case MotionPredictionHintsPacket hints -> hints.getRuntimeEntityId() == localRuntimeId;
          case CorrectPlayerMovePredictionPacket ignored -> true;
-         case UpdateAbilitiesPacket ignoredx -> true;
-         case UpdatePlayerGameTypePacket ignoredxx -> true;
-         case UpdateAdventureSettingsPacket ignoredxxx -> true;
+         case UpdateAbilitiesPacket ignored -> true;
+         case UpdatePlayerGameTypePacket ignored -> true;
+         case UpdateAdventureSettingsPacket ignored -> true;
          default -> false;
       };
       if (counted) {
@@ -294,11 +294,11 @@ public final class CorrectionLog {
    private String jumpText(long tick, int sinceJump) {
       if (sinceJump < 0) {
          return "no jump in the 16 ticks before";
-      } else {
-         CorrectionTrail.Sent jump = this.trail.at(tick - sinceJump);
-         return (sinceJump == 0 ? "the jump's own tick" : "jump " + sinceJump + " ticks before")
-            + (jump != null && jump.autoJump() ? " (the game's auto-jump, no key)" : "");
       }
+
+      CorrectionTrail.Sent jump = this.trail.at(tick - sinceJump);
+      return (sinceJump == 0 ? "the jump's own tick" : "jump " + sinceJump + " ticks before")
+         + (jump != null && jump.autoJump() ? " (the game's auto-jump, no key)" : "");
    }
 
    private static String context(LocalPlayer player, Vec3 feet) {

@@ -9,15 +9,15 @@ public record BlockSeat(Vector3f position, float rotation, float rotationLimit, 
    public float clampYaw(float yaw) {
       if (this.rotationLimit <= 0.0F) {
          return yaw;
-      } else {
-         float delta = (yaw - this.rotation + 540.0F) % 360.0F - 180.0F;
-         if (Math.abs(delta) <= this.rotationLimit) {
-            return yaw;
-         } else {
-            float clamped = this.rotation + Math.copySign(this.rotationLimit, delta);
-            return (clamped % 360.0F + 360.0F) % 360.0F;
-         }
       }
+
+      float delta = (yaw - this.rotation + 540.0F) % 360.0F - 180.0F;
+      if (Math.abs(delta) <= this.rotationLimit) {
+         return yaw;
+      }
+
+      float clamped = this.rotation + Math.copySign(this.rotationLimit, delta);
+      return (clamped % 360.0F + 360.0F) % 360.0F;
    }
 
    public static BlockSeat of(PassengerOfBlockArguments arguments) {

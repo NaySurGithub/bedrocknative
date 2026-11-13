@@ -31,29 +31,20 @@ public final class HttpSignaling implements NetherNetClientSignaling {
    private final String host;
    private final InetSocketAddress address;
    private final ServerIdentityTrust trust;
-   @Nullable
-   private final X509ExtendedTrustManager tls;
+   private final @Nullable X509ExtendedTrustManager tls;
    private final Duration answerTimeout;
    private final Duration connectTimeout;
-   @Nullable
-   private volatile Predicate<UntrustedServerException> question;
-   @Nullable
-   private volatile UntrustedServerException asked;
-   @Nullable
-   private volatile Socket inFlight;
+   private volatile @Nullable Predicate<UntrustedServerException> question;
+   private volatile @Nullable UntrustedServerException asked;
+   private volatile @Nullable Socket inFlight;
    private final String localNetworkId = Long.toUnsignedString(ThreadLocalRandom.current().nextLong());
-   @Nullable
-   private volatile String connectionId;
-   @Nullable
-   private volatile SignalHandler handler;
-   @Nullable
-   private volatile FailureHandler failureHandler;
+   private volatile @Nullable String connectionId;
+   private volatile @Nullable SignalHandler handler;
+   private volatile @Nullable FailureHandler failureHandler;
    private volatile boolean closed;
    private volatile HttpSignaling.Stage stage = HttpSignaling.Stage.IDLE;
-   @Nullable
-   private volatile Throwable failure;
-   @Nullable
-   private volatile ServerIdentityTrust.Verified verified;
+   private volatile @Nullable Throwable failure;
+   private volatile ServerIdentityTrust.@Nullable Verified verified;
    private volatile int offeredCandidates = -1;
    private volatile int answerCandidates = -1;
 
@@ -149,8 +140,8 @@ public final class HttpSignaling implements NetherNetClientSignaling {
          }
 
          answer = body;
-      } catch (RuntimeException | IOException var14) {
-         this.fail(var14, start);
+      } catch (IOException | RuntimeException e) {
+         this.fail(e, start);
          return;
       }
 
@@ -163,15 +154,15 @@ public final class HttpSignaling implements NetherNetClientSignaling {
       ServerIdentityTrust.Verified server;
       try {
          server = this.trust.verify(answer);
-      } catch (UntrustedServerException var11) {
+      } catch (UntrustedServerException e) {
          BedrockNative.LOGGER
-            .info("NetherNet: answer in {} ms, identity {}, key sha256 {}: not trusted yet", new Object[]{millis, var11.displayDomain(), var11.shortDigest()});
-         server = this.askDuringJoin(var11, answer, start);
+            .info("NetherNet: answer in {} ms, identity {}, key sha256 {}: not trusted yet", new Object[]{millis, e.displayDomain(), e.shortDigest()});
+         server = this.askDuringJoin(e, answer, start);
          if (server == null) {
             return;
          }
-      } catch (Exception var12) {
-         this.fail(new ServerIdentityException(var12), start);
+      } catch (Exception e) {
+         this.fail(new ServerIdentityException(e), start);
          return;
       }
 
@@ -195,8 +186,7 @@ public final class HttpSignaling implements NetherNetClientSignaling {
       }
    }
 
-   @Nullable
-   private ServerIdentityTrust.Verified askDuringJoin(UntrustedServerException untrusted, String answer, long start) {
+   private ServerIdentityTrust.@Nullable Verified askDuringJoin(UntrustedServerException untrusted, String answer, long start) {
       Predicate<UntrustedServerException> ask = this.question;
       if (ask != null && !this.closed) {
          this.asked = untrusted;
@@ -206,8 +196,8 @@ public final class HttpSignaling implements NetherNetClientSignaling {
          boolean trusted;
          try {
             trusted = ask.test(untrusted);
-         } catch (RuntimeException var14) {
-            BedrockNative.LOGGER.warn("NetherNet: the trust question failed", var14);
+         } catch (RuntimeException e) {
+            BedrockNative.LOGGER.warn("NetherNet: the trust question failed", e);
             trusted = false;
          }
 
@@ -217,21 +207,23 @@ public final class HttpSignaling implements NetherNetClientSignaling {
             this.failure = untrusted;
             this.stage = HttpSignaling.Stage.FAILED;
             return null;
-         } else if (!trusted) {
+         }
+
+         if (!trusted) {
             this.fail(untrusted, start);
             return null;
-         } else {
-            try {
-               ServerIdentityTrust.Verified server = this.trust.verify(answer);
-               BedrockNative.LOGGER.info("NetherNet: key sha256 {} trusted by the player in {} ms, the join goes on", server.shortDigest(), millis);
-               return server;
-            } catch (UntrustedServerException var12) {
-               this.fail(var12, start);
-               return null;
-            } catch (Exception var13) {
-               this.fail(new ServerIdentityException(var13), start);
-               return null;
-            }
+         }
+
+         try {
+            ServerIdentityTrust.Verified server = this.trust.verify(answer);
+            BedrockNative.LOGGER.info("NetherNet: key sha256 {} trusted by the player in {} ms, the join goes on", server.shortDigest(), millis);
+            return server;
+         } catch (UntrustedServerException e) {
+            this.fail(e, start);
+            return null;
+         } catch (Exception e) {
+            this.fail(new ServerIdentityException(e), start);
+            return null;
          }
       } else {
          this.fail(untrusted, start);
@@ -243,8 +235,7 @@ public final class HttpSignaling implements NetherNetClientSignaling {
       this.question = question;
    }
 
-   @Nullable
-   public UntrustedServerException asked() {
+   public @Nullable UntrustedServerException asked() {
       return this.asked;
    }
 
@@ -341,13 +332,11 @@ public final class HttpSignaling implements NetherNetClientSignaling {
       return this.stage;
    }
 
-   @Nullable
-   public Throwable failure() {
+   public @Nullable Throwable failure() {
       return this.failure;
    }
 
-   @Nullable
-   public ServerIdentityTrust.Verified verified() {
+   public ServerIdentityTrust.@Nullable Verified verified() {
       return this.verified;
    }
 
@@ -359,7 +348,7 @@ public final class HttpSignaling implements NetherNetClientSignaling {
       return this.answerCandidates;
    }
 
-   public static enum Stage {
+   public enum Stage {
       IDLE,
       POSTED,
       ASKING,

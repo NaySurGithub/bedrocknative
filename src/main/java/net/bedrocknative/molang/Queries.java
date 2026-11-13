@@ -54,17 +54,17 @@ final class Queries {
       r.register("approx_eq", 0, -1, (env, args) -> {
          if (args.count() < 2) {
             return 1.0F;
-         } else {
-            float first = args.number(env, 0);
-
-            for (int i = 1; i < args.count(); i++) {
-               if (Math.abs(args.number(env, i) - first) > 1.0E-6F) {
-                  return 0.0F;
-               }
-            }
-
-            return 1.0F;
          }
+
+         float first = args.number(env, 0);
+
+         for (int i = 1; i < args.count(); i++) {
+            if (Math.abs(args.number(env, i) - first) > 1.0E-6F) {
+               return 0.0F;
+            }
+         }
+
+         return 1.0F;
       });
       r.register("in_range", 3, 3, (env, args) -> {
          float value = args.number(env, 0);
@@ -105,21 +105,21 @@ final class Queries {
    private static float matchAll(MolangEnv env, QueryArgs args, boolean all) {
       if (args.count() < 2) {
          return 0.0F;
-      } else {
-         float first = args.number(env, 0);
-         Object firstObject = env.object;
-
-         for (int i = 1; i < args.count(); i++) {
-            float value = args.number(env, i);
-            Object object = env.object;
-            boolean equal = firstObject == null && object == null ? value == first : firstObject != null && firstObject.equals(object);
-            if (equal != all) {
-               return all ? 0.0F : 1.0F;
-            }
-         }
-
-         return all ? 1.0F : 0.0F;
       }
+
+      float first = args.number(env, 0);
+      Object firstObject = env.object;
+
+      for (int i = 1; i < args.count(); i++) {
+         float value = args.number(env, i);
+         Object object = env.object;
+         boolean equal = firstObject == null && object == null ? value == first : firstObject != null && firstObject.equals(object);
+         if (equal != all) {
+            return all ? 0.0F : 1.0F;
+         }
+      }
+
+      return all ? 1.0F : 0.0F;
    }
 
    private static void timing(QueryRegistry.Registrar r) {
@@ -246,7 +246,9 @@ final class Queries {
       r.register("has_owner", 0, -1, (env, args) -> bool(env.actor.hasOwner()));
       r.register("has_rider", 0, -1, (env, args) -> bool(env.actor.hasRider()));
       r.register("property", 1, 1, (env, args) -> {
-         return switch (env.actor.property(args.string(env, 0))) {
+         Object value = env.actor.property(args.string(env, 0));
+
+         return switch (value) {
             case Number number -> number.floatValue();
             case Boolean bool -> bool(bool);
             case String text -> {
@@ -357,16 +359,16 @@ final class Queries {
       String slot = args.string(env, 0);
       if (args.count() < 2) {
          return 0.0F;
-      } else {
-         for (int i = 1; i < args.count(); i++) {
-            boolean has = env.actor.itemHasTag(slot, 0, args.string(env, i));
-            if (has != all) {
-               return all ? 0.0F : 1.0F;
-            }
-         }
-
-         return all ? 1.0F : 0.0F;
       }
+
+      for (int i = 1; i < args.count(); i++) {
+         boolean has = env.actor.itemHasTag(slot, 0, args.string(env, i));
+         if (has != all) {
+            return all ? 0.0F : 1.0F;
+         }
+      }
+
+      return all ? 1.0F : 0.0F;
    }
 
    private static String withoutNamespace(String item) {

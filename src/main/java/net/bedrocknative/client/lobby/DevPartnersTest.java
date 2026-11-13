@@ -21,7 +21,6 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Map.Entry;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executors;
@@ -52,8 +51,7 @@ public final class DevPartnersTest {
    private final Path folder = LobbyPartners.folder();
    private final List<String> requests = new CopyOnWriteArrayList<>();
    private volatile String mode = "ok";
-   @Nullable
-   private HttpServer http;
+   private @Nullable HttpServer http;
    private int passed;
    private int failed;
 
@@ -67,10 +65,6 @@ public final class DevPartnersTest {
 
    private DevOrePlayTest.Reporter reporter() {
       return new DevOrePlayTest.Reporter() {
-         {
-            Objects.requireNonNull(DevPartnersTest.this);
-         }
-
          @Override
          public void check(String what, boolean ok) {
             DevPartnersTest.this.check(what, ok);
@@ -95,14 +89,14 @@ public final class DevPartnersTest {
       byte[] oldBefore = DevOrePlayTest.read(serversOld);
       Map<Path, byte[]> saved = this.backup();
       Window window = this.minecraft.getWindow();
-      int guiScale = DevOrePlayTest.onClient(this.minecraft, () -> (Integer)this.minecraft.options.guiScale().get());
-      int width = DevOrePlayTest.<Integer>onClient(this.minecraft, window::getScreenWidth);
-      int height = DevOrePlayTest.<Integer>onClient(this.minecraft, window::getScreenHeight);
+      int guiScale = DevOrePlayTest.onClient(this.minecraft, () -> this.minecraft.options.guiScale().get());
+      int width = DevOrePlayTest.onClient(this.minecraft, window::getScreenWidth);
+      int height = DevOrePlayTest.onClient(this.minecraft, window::getScreenHeight);
 
       try {
          this.run(serversDat, serversOld, datBefore, oldBefore);
-      } catch (Throwable var15) {
-         BedrockNative.LOGGER.error("Dev partners test: FAIL crashed", var15);
+      } catch (Throwable e) {
+         BedrockNative.LOGGER.error("Dev partners test: FAIL crashed", e);
          this.failed++;
       } finally {
          if (this.http != null) {
@@ -138,7 +132,7 @@ public final class DevPartnersTest {
       }
    }
 
-   private void run(Path serversDat, Path serversOld, @Nullable byte[] datBefore, @Nullable byte[] oldBefore) throws IOException {
+   private void run(Path serversDat, Path serversOld, byte @Nullable [] datBefore, byte @Nullable [] oldBefore) throws IOException {
       DevOrePlayTest.Reporter reporter = this.reporter();
       DevOrePlayTest.waitFor(
          this.minecraft,
@@ -406,6 +400,7 @@ public final class DevPartnersTest {
       String list = "{\"version\": 1, \"servers\": [\n  {\"name\": \"%s\", \"address\": \"127.0.0.1\", \"port\": 19132, \"order\": 2, \"message\": \"Local test server\",\n   \"description\": \"The local BDS, listed as a sponsored partner by the dev test only.\"},\n  {\"name\": \"Partner Alpha\", \"address\": \"partner-alpha.example.com\", \"order\": 1, \"message\": \"Mini-jeux\",\n   \"description\": \"A made-up partner server (never pinged or joined by the test).\", \"icon\": \"data:image/png;base64,%s\",\n   \"banner\": \"http://127.0.0.1:%d/banner.png\", \"ends\": \"%s\"},\n  {\"name\": \"Expired\", \"address\": \"expired.example.com\", \"order\": 0, \"ends\": \"%s\"},\n  {\"name\": \"Malformed\", \"address\": \"not a host\", \"order\": 0},\n  {\"futureField\": true, \"name\": \"Bad port\", \"address\": \"badport.example.com\", \"port\": 0}\n]}";
       this.http = HttpServer.create(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), 0);
       String listText = list.formatted("BN partner BDS", Base64.getEncoder().encodeToString(icon), this.http.getAddress().getPort(), today, yesterday);
+      String listBody = listText;
       this.http.createContext("/", exchange -> {
          String cookie = exchange.getRequestHeaders().containsKey("Cookie") ? " cookie" : "";
          this.requests.add(exchange.getRequestMethod() + " " + exchange.getRequestURI() + cookie);
@@ -416,7 +411,7 @@ public final class DevPartnersTest {
             body = "down".getBytes(StandardCharsets.UTF_8);
             status = 503;
          } else if (path.equals("/list.json")) {
-            body = (this.mode.equals("malformed") ? "{\"version\": 1, \"servers\": [" : listText).getBytes(StandardCharsets.UTF_8);
+            body = (this.mode.equals("malformed") ? "{\"version\": 1, \"servers\": [" : listBody).getBytes(StandardCharsets.UTF_8);
          } else if (path.equals("/banner.png")) {
             body = banner;
          } else {
@@ -448,8 +443,7 @@ public final class DevPartnersTest {
       return out.toByteArray();
    }
 
-   @Nullable
-   private OrePlayScreen open(DevOrePlayTest.Reporter reporter) {
+   private @Nullable OrePlayScreen open(DevOrePlayTest.Reporter reporter) {
       OrePlayScreen play = DevOrePlayTest.open(this.minecraft, 2, reporter);
       if (play != null && DevOrePlayTest.onClient(this.minecraft, () -> play.ui().tab()) != 2) {
          DevOrePlayTest.onClient(this.minecraft, () -> {
@@ -567,8 +561,8 @@ public final class DevPartnersTest {
             Files.createDirectories(entry.getKey().getParent());
             Files.write(entry.getKey(), entry.getValue());
          }
-      } catch (IOException var4) {
-         BedrockNative.LOGGER.error("Dev partners test: FAIL couldn't put the partner files back", var4);
+      } catch (IOException e) {
+         BedrockNative.LOGGER.error("Dev partners test: FAIL couldn't put the partner files back", e);
          this.failed++;
       }
    }

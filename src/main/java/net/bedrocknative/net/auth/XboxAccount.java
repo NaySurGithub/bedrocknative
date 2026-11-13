@@ -52,8 +52,8 @@ public final class XboxAccount {
    static BedrockAuthManager withRefreshToken(XboxTitle title, String refreshToken) throws IOException {
       try {
          return BedrockAuthManager.create(HTTP, "1.26.63").msaApplicationConfig(title.msaConfig()).deviceType(title.deviceType()).login(refreshToken);
-      } catch (MsaRequestException var3) {
-         throw new SignInFailure(SignInFailure.Reason.INCOMPLETE, "Microsoft refused the new sign-in's first renewal", var3.getError());
+      } catch (MsaRequestException e) {
+         throw new SignInFailure(SignInFailure.Reason.INCOMPLETE, "Microsoft refused the new sign-in's first renewal", e.getError());
       }
    }
 
@@ -81,7 +81,7 @@ public final class XboxAccount {
       try {
          Holder<MsaToken> token = fromJson(json).getMsaToken();
          return token.hasValue() ? token.getCached().getExpireTimeMs() : 0L;
-      } catch (RuntimeException var2) {
+      } catch (RuntimeException e) {
          return 0L;
       }
    }
@@ -101,8 +101,7 @@ public final class XboxAccount {
          this.show(title, code);
       }
 
-      @Nullable
-      default XboxBrowserSignIn.Listener window() {
+      default XboxBrowserSignIn.@Nullable Listener window() {
          return null;
       }
 

@@ -7,13 +7,9 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin({ClientInput.class})
+@Mixin(ClientInput.class)
 public abstract class ClientInputLockMixin {
-   @Inject(
-      method = {"makeJump"},
-      at = {@At("HEAD")},
-      cancellable = true
-   )
+   @Inject(method = "makeJump", at = @At("HEAD"), cancellable = true)
    private void bedrocknative$noJump(CallbackInfo ci) {
       if (BedrockInputLocks.jumpLocked()) {
          ci.cancel();

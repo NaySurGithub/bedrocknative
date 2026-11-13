@@ -20,7 +20,7 @@ public record UiAnimation(
    double fps,
    int frameCount,
    float frameStep,
-   @Nullable float[] initialUv,
+   float @Nullable [] initialUv,
    boolean reversible,
    boolean scaleFromStartingAlpha
 ) {
@@ -41,23 +41,19 @@ public record UiAnimation(
    }
 
    public interface Resolver {
-      @Nullable
-      UiAnimation resolve(String var1, UiControl var2);
+      @Nullable UiAnimation resolve(String var1, UiControl var2);
    }
 
    public static final class Track {
       private final UiControl control;
-      @Nullable
-      private final String property;
+      private final @Nullable String property;
       private final UiAnimation first;
       private UiAnimation current;
       private double start;
       private boolean waiting;
       private boolean done;
-      @Nullable
-      private UiValue value;
-      @Nullable
-      private UiLength[] lengths;
+      private @Nullable UiValue value;
+      private UiLength @Nullable [] lengths;
       private double activatedAt = Double.NEGATIVE_INFINITY;
 
       public Track(UiControl control, @Nullable String property, UiAnimation first, double now) {
@@ -82,8 +78,7 @@ public record UiAnimation(
          return this.control;
       }
 
-      @Nullable
-      public String property() {
+      public @Nullable String property() {
          return this.property != null ? this.property : this.current.type.property();
       }
 
@@ -99,13 +94,11 @@ public record UiAnimation(
          return this.waiting;
       }
 
-      @Nullable
-      public UiValue value() {
+      public @Nullable UiValue value() {
          return this.value;
       }
 
-      @Nullable
-      public UiLength[] lengths() {
+      public UiLength @Nullable [] lengths() {
          return this.lengths;
       }
 
@@ -153,10 +146,12 @@ public record UiAnimation(
             || this.activatedAt != activatedBefore;
       }
 
-      private static boolean sameLengths(@Nullable UiLength[] a, @Nullable UiLength[] b) {
+      private static boolean sameLengths(UiLength @Nullable [] a, UiLength @Nullable [] b) {
          if (a == b) {
             return true;
-         } else if (a != null && b != null && a.length == b.length) {
+         }
+
+         if (a != null && b != null && a.length == b.length) {
             for (int i = 0; i < a.length; i++) {
                UiLength x = a[i];
                UiLength y = b[i];
@@ -292,7 +287,7 @@ public record UiAnimation(
       }
    }
 
-   public static enum Type {
+   public enum Type {
       ALPHA,
       OFFSET,
       SIZE,
@@ -303,21 +298,19 @@ public record UiAnimation(
       WAIT,
       CLIP;
 
-      @Nullable
-      public static UiAnimation.Type of(@Nullable String name) {
+      public static UiAnimation.@Nullable Type of(@Nullable String name) {
          if (name == null) {
             return null;
-         } else {
-            try {
-               return valueOf(name.trim().toUpperCase(Locale.ROOT));
-            } catch (IllegalArgumentException var2) {
-               return null;
-            }
+         }
+
+         try {
+            return valueOf(name.trim().toUpperCase(Locale.ROOT));
+         } catch (IllegalArgumentException e) {
+            return null;
          }
       }
 
-      @Nullable
-      public String property() {
+      public @Nullable String property() {
          return switch (this) {
             case ALPHA -> "alpha";
             case OFFSET -> "offset";

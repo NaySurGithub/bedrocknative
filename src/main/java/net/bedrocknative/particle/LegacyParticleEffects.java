@@ -15,8 +15,7 @@ public final class LegacyParticleEffects {
       EFFECTS.put(type, effect);
    }
 
-   @Nullable
-   public static String of(ParticleType type) {
+   public static @Nullable String of(ParticleType type) {
       return EFFECTS.get(type);
    }
 

@@ -32,18 +32,15 @@ public final class TrimRegistry {
       }
    }
 
-   @Nullable
-   public TrimPattern patternOfTemplate(String itemName) {
+   public @Nullable TrimPattern patternOfTemplate(String itemName) {
       return this.patternsByItem.get(itemName);
    }
 
-   @Nullable
-   public TrimMaterial materialOfItem(String itemName) {
+   public @Nullable TrimMaterial materialOfItem(String itemName) {
       return this.materialsByItem.get(itemName);
    }
 
-   @Nullable
-   public TrimMaterial material(String materialId) {
+   public @Nullable TrimMaterial material(String materialId) {
       return this.materialsById.get(materialId);
    }
 

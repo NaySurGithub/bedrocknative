@@ -99,9 +99,7 @@ public final class UiDrawList {
       if (!c.text.isEmpty() && !c.lines.isEmpty()) {
          UiDrawCommand.Alignment alignment;
          if (c.alignment != null) {
-            String var5 = c.alignment;
-
-            alignment = switch (var5) {
+            alignment = switch (c.alignment) {
                case "center" -> UiDrawCommand.Alignment.CENTER;
                case "right" -> UiDrawCommand.Alignment.RIGHT;
                default -> UiDrawCommand.Alignment.LEFT;
@@ -148,9 +146,9 @@ public final class UiDrawList {
       float y,
       float w,
       float h,
-      @Nullable float[] uv,
-      @Nullable float[] uvSize,
-      @Nullable float[] slices,
+      float @Nullable [] uv,
+      float @Nullable [] uvSize,
+      float @Nullable [] slices,
       boolean keepRatio,
       @Nullable String tiled,
       float[] tiledScale,
@@ -191,8 +189,7 @@ public final class UiDrawList {
             && this.clipDirection.equals(c.clipDirection);
       }
 
-      @Nullable
-      private static float[] copy(@Nullable float[] values) {
+      private static float @Nullable [] copy(float @Nullable [] values) {
          return values == null ? null : (float[])values.clone();
       }
    }

@@ -99,8 +99,8 @@ public final class BedrockSounds {
                   BedrockSoundEngine.update(update);
                }
                break;
-            case LevelEventPacket eventx:
-               this.onLevelEvent(eventx);
+            case LevelEventPacket event:
+               this.onLevelEvent(event);
                break;
             default:
          }
@@ -137,9 +137,8 @@ public final class BedrockSounds {
          if (!stop.getSoundName().isEmpty()) {
             BedrockSoundEngine.unqueue(stop.getSoundName());
             BedrockSoundEngine.stop(stop.getSoundName());
-            SoundEvent var3 = SoundMappings.get().playSound(stop.getSoundName());
-            if (var3 instanceof SoundEvent) {
-               this.minecraft.getSoundManager().stop(var3.location(), null);
+            if (SoundMappings.get().playSound(stop.getSoundName()) instanceof SoundEvent sound) {
+               this.minecraft.getSoundManager().stop(sound.location(), null);
             }
          }
       }
@@ -249,48 +248,50 @@ public final class BedrockSounds {
                   random
                );
             return play != null && (BedrockSoundEngine.vanilla() || play.serverContent()) && this.playBedrock(what, play, pos, options);
+         }
+
+         String identifier = actorIdentifier(packet.getIdentifier());
+         Entity entity = this.entities.byUniqueId(packet.getEntityUniqueId());
+         String blockName = catalog.events().blockEvent(name) ? BlockMappings.get().bedrockName(packet.getExtraData()) : null;
+         boolean customBlock = blockName != null && BlockMappings.get().customBlock(blockName) != null;
+         CustomBlockState custom = customBlock ? CarrierBlock.data(BlockMappings.get().toJava(packet.getExtraData())) : null;
+         String blockType = custom != null
+            ? JavaBlockSounds.customType(catalog, custom)
+            : (blockName != null ? JavaBlockSounds.bedrockType(catalog, blockName) : null);
+         SoundEventTable.Resolved resolved = SoundPlanner.levelSoundOfType(
+            catalog, name, identifier, blockName != null, blockType, packet.isBabySound(), this.keys(entity, identifier, packet.isBabySound()), random
+         );
+         boolean serverEntity = !identifier.isEmpty() && catalog.events().serverEntity(identifier);
+         if (resolved == null) {
+            if (!serverEntity && (!BedrockSoundEngine.vanilla() || !catalog.baseGame())) {
+               return false;
+            }
+
+            this.skip(what, "no sound in sounds.json", pos);
+            return true;
          } else {
-            String identifier = actorIdentifier(packet.getIdentifier());
-            Entity entity = this.entities.byUniqueId(packet.getEntityUniqueId());
-            String blockName = catalog.events().blockEvent(name) ? BlockMappings.get().bedrockName(packet.getExtraData()) : null;
-            boolean customBlock = blockName != null && BlockMappings.get().customBlock(blockName) != null;
-            CustomBlockState custom = customBlock ? CarrierBlock.data(BlockMappings.get().toJava(packet.getExtraData())) : null;
-            String blockType = custom != null
-               ? JavaBlockSounds.customType(catalog, custom)
-               : (blockName != null ? JavaBlockSounds.bedrockType(catalog, blockName) : null);
-            SoundEventTable.Resolved resolved = SoundPlanner.levelSoundOfType(
-               catalog, name, identifier, blockName != null, blockType, packet.isBabySound(), this.keys(entity, identifier, packet.isBabySound()), random
-            );
-            boolean serverEntity = !identifier.isEmpty() && catalog.events().serverEntity(identifier);
-            if (resolved == null) {
-               if (!serverEntity && (!BedrockSoundEngine.vanilla() || !catalog.baseGame())) {
-                  return false;
-               } else {
-                  this.skip(what, "no sound in sounds.json", pos);
+            boolean server = resolved.serverPack() || serverEntity;
+            if (!resolved.silent()) {
+               SoundPlanner.Play play = SoundPlanner.definition(catalog.definitions(), resolved.sound(), resolved.volume(), resolved.pitch(), server, random);
+               if (play == null) {
+                  if (!server && (!BedrockSoundEngine.vanilla() || !catalog.baseGame())) {
+                     return false;
+                  }
+
+                  this.skip(what, "no definition " + resolved.sound(), pos);
                   return true;
+               } else {
+                  return !BedrockSoundEngine.vanilla() && !play.serverContent() && !customBlock
+                     ? false
+                     : this.playBedrock(what + " -> " + resolved.sound(), play, pos, options) || play.serverContent();
                }
             } else {
-               boolean server = resolved.serverPack() || serverEntity;
-               if (!resolved.silent()) {
-                  SoundPlanner.Play play = SoundPlanner.definition(catalog.definitions(), resolved.sound(), resolved.volume(), resolved.pitch(), server, random);
-                  if (play == null) {
-                     if (!server && (!BedrockSoundEngine.vanilla() || !catalog.baseGame())) {
-                        return false;
-                     } else {
-                        this.skip(what, "no definition " + resolved.sound(), pos);
-                        return true;
-                     }
-                  } else {
-                     return !BedrockSoundEngine.vanilla() && !play.serverContent() && !customBlock
-                        ? false
-                        : this.playBedrock(what + " -> " + resolved.sound(), play, pos, options) || play.serverContent();
-                  }
-               } else if (!server && !BedrockSoundEngine.vanilla()) {
+               if (!server && !BedrockSoundEngine.vanilla()) {
                   return false;
-               } else {
-                  this.skip(what, "silent in sounds.json", pos);
-                  return true;
                }
+
+               this.skip(what, "silent in sounds.json", pos);
+               return true;
             }
          }
       } else {
@@ -378,7 +379,7 @@ public final class BedrockSounds {
 
    private SoundEventTable.VariantKeys keys(@Nullable Entity entity, String identifier, boolean baby) {
       ActorState state = entity != null ? BedrockActors.state(entity) : null;
-      MolangActor actor = (MolangActor)(state != null ? state.view() : new BedrockSounds.PacketActor(identifier, baby));
+      MolangActor actor = state != null ? state.view() : new BedrockSounds.PacketActor(identifier, baby);
       return key -> {
          this.env.actor = actor;
          Object result = key.evaluateObject(this.env);
@@ -414,49 +415,49 @@ public final class BedrockSounds {
    private boolean playBlockSound(org.cloudburstmc.protocol.bedrock.data.SoundEvent event, int blockHash, Vec3 pos, String what, boolean local) {
       if (!BlockMappings.get().isKnown(blockHash)) {
          return false;
-      } else {
-         BlockState state = BlockMappings.get().toJava(blockHash);
-         SoundType type = state.getSoundType();
-         SoundEvent sound;
-         float volume;
-         float pitch;
-         switch (event) {
-            case PLACE:
-            case ITEM_USE_ON:
-               sound = type.getPlaceSound();
-               volume = (type.getVolume() + 1.0F) / 2.0F;
-               pitch = type.getPitch() * 0.8F;
-               break;
-            case BREAK:
-            case BREAK_BLOCK:
-               sound = type.getBreakSound();
-               volume = (type.getVolume() + 1.0F) / 2.0F;
-               pitch = type.getPitch() * 0.8F;
-               break;
-            case HIT:
-               sound = type.getHitSound();
-               volume = (type.getVolume() + 1.0F) / 8.0F;
-               pitch = type.getPitch() * 0.5F;
-               break;
-            case STEP:
-               sound = type.getStepSound();
-               volume = type.getVolume() * 0.15F;
-               pitch = type.getPitch();
-               break;
-            case FALL:
-            case LAND:
-               sound = type.getFallSound();
-               volume = type.getVolume() * 0.5F;
-               pitch = type.getPitch() * 0.75F;
-               break;
-            default:
-               return false;
-         }
-
-         this.report(what + " " + state, sound, pos, local);
-         this.play(sound, SoundSource.BLOCKS, pos, volume, pitch);
-         return true;
       }
+
+      BlockState state = BlockMappings.get().toJava(blockHash);
+      SoundType type = state.getSoundType();
+      SoundEvent sound;
+      float volume;
+      float pitch;
+      switch (event) {
+         case PLACE:
+         case ITEM_USE_ON:
+            sound = type.getPlaceSound();
+            volume = (type.getVolume() + 1.0F) / 2.0F;
+            pitch = type.getPitch() * 0.8F;
+            break;
+         case BREAK:
+         case BREAK_BLOCK:
+            sound = type.getBreakSound();
+            volume = (type.getVolume() + 1.0F) / 2.0F;
+            pitch = type.getPitch() * 0.8F;
+            break;
+         case HIT:
+            sound = type.getHitSound();
+            volume = (type.getVolume() + 1.0F) / 8.0F;
+            pitch = type.getPitch() * 0.5F;
+            break;
+         case STEP:
+            sound = type.getStepSound();
+            volume = type.getVolume() * 0.15F;
+            pitch = type.getPitch();
+            break;
+         case FALL:
+         case LAND:
+            sound = type.getFallSound();
+            volume = type.getVolume() * 0.5F;
+            pitch = type.getPitch() * 0.75F;
+            break;
+         default:
+            return false;
+      }
+
+      this.report(what + " " + state, sound, pos, local);
+      this.play(sound, SoundSource.BLOCKS, pos, volume, pitch);
+      return true;
    }
 
    private void onPlaySound(PlaySoundPacket packet) {

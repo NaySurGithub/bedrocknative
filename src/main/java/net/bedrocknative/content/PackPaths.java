@@ -9,15 +9,15 @@ public final class PackPaths {
          String clean = path.replace('\\', '/');
          if (clean.startsWith("/")) {
             return true;
-         } else {
-            for (String segment : clean.split("/", -1)) {
-               if (segment.trim().equals("..")) {
-                  return true;
-               }
-            }
-
-            return false;
          }
+
+         for (String segment : clean.split("/", -1)) {
+            if (segment.trim().equals("..")) {
+               return true;
+            }
+         }
+
+         return false;
       } else {
          return true;
       }

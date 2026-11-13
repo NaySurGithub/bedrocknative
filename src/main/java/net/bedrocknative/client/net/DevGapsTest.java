@@ -147,8 +147,8 @@ final class DevGapsTest {
    private void step(String name, Runnable body) {
       try {
          body.run();
-      } catch (RuntimeException var4) {
-         BedrockNative.LOGGER.error("Dev gaps test {} failed", name, var4);
+      } catch (RuntimeException e) {
+         BedrockNative.LOGGER.error("Dev gaps test {} failed", name, e);
       }
    }
 
@@ -821,7 +821,7 @@ final class DevGapsTest {
    private static void sleep(long millis) {
       try {
          Thread.sleep(millis);
-      } catch (InterruptedException var3) {
+      } catch (InterruptedException e) {
          Thread.currentThread().interrupt();
       }
    }

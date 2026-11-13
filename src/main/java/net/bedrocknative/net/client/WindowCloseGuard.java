@@ -30,10 +30,10 @@ public final class WindowCloseGuard {
    public boolean reopened(int windowId) {
       if (this.deferred != windowId) {
          return false;
-      } else {
-         this.deferred = Integer.MIN_VALUE;
-         return true;
       }
+
+      this.deferred = Integer.MIN_VALUE;
+      return true;
    }
 
    public void keep() {
@@ -43,13 +43,13 @@ public final class WindowCloseGuard {
    public WindowCloseGuard.Settled endOfTick() {
       if (this.answersDue == 0 && this.deferred == Integer.MIN_VALUE) {
          return WindowCloseGuard.Settled.NOTHING;
-      } else {
-         WindowCloseGuard.Settled settled = new WindowCloseGuard.Settled(this.answersDue, this.deferred == Integer.MIN_VALUE ? null : this.deferred);
-         this.answers = this.answers + this.answersDue;
-         this.answersDue = 0;
-         this.deferred = Integer.MIN_VALUE;
-         return settled;
       }
+
+      WindowCloseGuard.Settled settled = new WindowCloseGuard.Settled(this.answersDue, this.deferred == Integer.MIN_VALUE ? null : this.deferred);
+      this.answers = this.answers + this.answersDue;
+      this.answersDue = 0;
+      this.deferred = Integer.MIN_VALUE;
+      return settled;
    }
 
    public void reset() {

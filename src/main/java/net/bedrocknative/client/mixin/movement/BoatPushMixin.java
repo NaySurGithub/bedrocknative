@@ -8,13 +8,9 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin({AbstractBoat.class})
+@Mixin(AbstractBoat.class)
 public abstract class BoatPushMixin {
-   @Inject(
-      method = {"push(Lnet/minecraft/world/entity/Entity;)V"},
-      at = {@At("HEAD")},
-      cancellable = true
-   )
+   @Inject(method = "push(Lnet/minecraft/world/entity/Entity;)V", at = @At("HEAD"), cancellable = true)
    private void bedrocknative$noPlayerPush(Entity entity, CallbackInfo ci) {
       if (BedrockMovement.appliesTo(entity)) {
          ci.cancel();

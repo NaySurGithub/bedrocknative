@@ -81,6 +81,7 @@ public final class BedrockSoundInstance extends AbstractSoundInstance implements
       return clean.isEmpty() ? "unnamed" : clean.toString();
    }
 
+   @Override
    public WeighedSoundEvents getOrResolve(SoundManager soundManager) {
       this.sound = this.bedrockSound;
       this.soundEvent = this.events;
@@ -104,10 +105,12 @@ public final class BedrockSoundInstance extends AbstractSoundInstance implements
       return this.start;
    }
 
+   @Override
    public boolean canStartSilent() {
       return true;
    }
 
+   @Override
    public boolean isStopped() {
       return this.stopped;
    }
@@ -139,6 +142,7 @@ public final class BedrockSoundInstance extends AbstractSoundInstance implements
       this.refresh();
    }
 
+   @Override
    public void tick() {
       if (this.fadeTicks > 0) {
          this.fadeTicks--;
@@ -160,6 +164,7 @@ public final class BedrockSoundInstance extends AbstractSoundInstance implements
          this.range = range;
       }
 
+      @Override
       public float getAttenuationDistance(float volume) {
          return this.range;
       }

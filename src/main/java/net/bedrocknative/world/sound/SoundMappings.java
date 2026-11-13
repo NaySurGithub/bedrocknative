@@ -148,23 +148,18 @@ public final class SoundMappings {
 
    private static SoundEvent javaSound(String name) {
       Identifier id = Identifier.tryParse(name);
-      return id == null ? null : (SoundEvent)BuiltInRegistries.SOUND_EVENT.getValue(id);
+      return id == null ? null : BuiltInRegistries.SOUND_EVENT.getValue(id);
    }
 
    private static SoundMappings load() {
-      try {
-         SoundMappings var1;
-         try (InputStream raw = SoundMappings.class.getResourceAsStream("/assets/bedrocknative/mappings/geyser-mappings/sounds.json.gz")) {
-            if (raw == null) {
-               throw new IllegalStateException("Missing /assets/bedrocknative/mappings/geyser-mappings/sounds.json.gz");
-            }
-
-            var1 = build(JsonParser.parseReader(new InputStreamReader(new GZIPInputStream(raw), StandardCharsets.UTF_8)).getAsJsonObject());
+      try (InputStream raw = SoundMappings.class.getResourceAsStream("/assets/bedrocknative/mappings/geyser-mappings/sounds.json.gz")) {
+         if (raw == null) {
+            throw new IllegalStateException("Missing /assets/bedrocknative/mappings/geyser-mappings/sounds.json.gz");
+         } else {
+            return build(JsonParser.parseReader(new InputStreamReader(new GZIPInputStream(raw), StandardCharsets.UTF_8)).getAsJsonObject());
          }
-
-         return var1;
-      } catch (IOException var5) {
-         throw new UncheckedIOException(var5);
+      } catch (IOException e) {
+         throw new UncheckedIOException(e);
       }
    }
 
@@ -183,45 +178,39 @@ public final class SoundMappings {
             unknownJava++;
          } else {
             JsonObject mapping = entry.getValue().getAsJsonObject();
-            JsonElement event = mapping.get("playsound_mapping");
-            if (event instanceof JsonElement) {
-               byPlaySound.computeIfAbsent(event.getAsString(), k -> new ArrayList<>()).add(java);
-               toBedrock.put(java, event.getAsString());
+            if (mapping.get("playsound_mapping") instanceof JsonElement playSound) {
+               byPlaySound.computeIfAbsent(playSound.getAsString(), k -> new ArrayList<>()).add(java);
+               toBedrock.put(java, playSound.getAsString());
             }
 
-            event = mapping.get("bedrock_mapping");
-            if (event instanceof JsonElement && !mapping.has("level_event")) {
-               String eventx = event.getAsString();
-               if (eventx.equals("NOTE")) {
-                  JsonElement kind = mapping.get("extra_data");
-                  if (kind instanceof JsonElement) {
-                     notes.put(kind.getAsInt() >> 8, javaSound(java));
-                     continue;
+            if (mapping.get("bedrock_mapping") instanceof JsonElement eventElement && !mapping.has("level_event")) {
+               String event = eventElement.getAsString();
+               if (event.equals("NOTE") && mapping.get("extra_data") instanceof JsonElement data) {
+                  notes.put(data.getAsInt() >> 8, javaSound(java));
+               } else {
+                  String[] parts = java.split("\\.");
+                  if (parts.length >= 3 && parts[0].equals("entity")) {
+                     String kind = parts[1];
+                     byEntity.computeIfAbsent(kind, k -> new HashMap<>()).computeIfAbsent(event, k -> new ArrayList<>()).add(java);
+                     if (kind.startsWith("baby_")) {
+                        byBabyEntity.computeIfAbsent(kind.substring(5), k -> new HashMap<>()).computeIfAbsent(event, k -> new ArrayList<>()).add(java);
+                     }
                   }
-               }
 
-               String[] parts = java.split("\\.");
-               if (parts.length >= 3 && parts[0].equals("entity")) {
-                  String kind = parts[1];
-                  byEntity.computeIfAbsent(kind, k -> new HashMap<>()).computeIfAbsent(eventx, k -> new ArrayList<>()).add(java);
-                  if (kind.startsWith("baby_")) {
-                     byBabyEntity.computeIfAbsent(kind.substring(5), k -> new HashMap<>()).computeIfAbsent(eventx, k -> new ArrayList<>()).add(java);
-                  }
+                  generic.computeIfAbsent(event, k -> new ArrayList<>()).add(java);
                }
-
-               generic.computeIfAbsent(eventx, k -> new ArrayList<>()).add(java);
             }
          }
       }
 
       Map<String, SoundEvent> genericBest = new HashMap<>();
-      generic.forEach((eventxx, candidates) -> {
+      generic.forEach((event, candidates) -> {
          List<String> usable = (List<String>)(candidates.size() == 1 ? candidates : candidates.stream().filter(SoundMappings::isGenericKind).toList());
          if (!usable.isEmpty()) {
-            genericBest.put(eventxx, javaSound(NameMatch.best(eventxx, usable)));
+            genericBest.put(event, javaSound(NameMatch.best(event, usable)));
          }
       });
-      GENERIC_OVERRIDES.forEach((eventxx, javax) -> genericBest.put(eventxx, javaSound(javax)));
+      GENERIC_OVERRIDES.forEach((event, javax) -> genericBest.put(event, javaSound(javax)));
       return new SoundMappings(bestOf(byPlaySound), nestedBest(byEntity), nestedBest(byBabyEntity), genericBest, notes, Map.copyOf(toBedrock), unknownJava);
    }
 

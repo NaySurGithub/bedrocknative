@@ -8,14 +8,11 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
-@Mixin({ClientChunkCache.class})
+@Mixin(ClientChunkCache.class)
 public abstract class ClientChunkCacheLightMixin {
    @Redirect(
-      method = {"<init>"},
-      at = {@At(
-         value = "NEW",
-         target = "(Lnet/minecraft/world/level/chunk/LightChunkGetter;ZZ)Lnet/minecraft/world/level/lighting/LevelLightEngine;"
-      )},
+      method = "<init>",
+      at = @At(value = "NEW", target = "(Lnet/minecraft/world/level/chunk/LightChunkGetter;ZZ)Lnet/minecraft/world/level/lighting/LevelLightEngine;"),
       require = 0
    )
    private LevelLightEngine bedrocknative$lightEngine(LightChunkGetter source, boolean hasBlockLight, boolean hasSkyLight) {

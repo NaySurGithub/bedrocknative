@@ -6,20 +6,18 @@ import org.jspecify.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 
-@Mixin({EntityRenderState.class})
+@Mixin(EntityRenderState.class)
 public abstract class EntityRenderStateTagMixin implements BedrockNameTag.StateHolder {
    @Unique
-   @Nullable
-   private BedrockNameTag.Drawn bedrocknative$drawn;
+   private BedrockNameTag.@Nullable Drawn bedrocknative$drawn;
 
-   @Nullable
    @Override
-   public BedrockNameTag.Drawn bedrocknative$drawn() {
+   public BedrockNameTag.@Nullable Drawn bedrocknative$drawn() {
       return this.bedrocknative$drawn;
    }
 
    @Override
-   public void bedrocknative$setDrawn(@Nullable BedrockNameTag.Drawn drawn) {
+   public void bedrocknative$setDrawn(BedrockNameTag.@Nullable Drawn drawn) {
       this.bedrocknative$drawn = drawn;
    }
 }

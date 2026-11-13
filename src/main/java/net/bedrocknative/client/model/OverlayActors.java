@@ -27,14 +27,12 @@ public final class OverlayActors {
    public static final RenderStateDataKey<ActorSnapshot> FRAME = RenderStateDataKey.create(() -> "bedrocknative:overlay");
    private static final Map<String, Optional<OverlayPlan>> PLANS = new HashMap<>();
    private static final Object2IntOpenHashMap<String> SUBMITTED = new Object2IntOpenHashMap();
-   @Nullable
-   private static ModelRegistry plansFor;
+   private static @Nullable ModelRegistry plansFor;
 
    private OverlayActors() {
    }
 
-   @Nullable
-   public static OverlayPlan plan(ModelRegistry registry, String identifier) {
+   public static @Nullable OverlayPlan plan(ModelRegistry registry, String identifier) {
       if (plansFor != registry) {
          PLANS.clear();
          plansFor = registry;
@@ -48,8 +46,8 @@ public final class OverlayActors {
          try {
             made = OverlayPlan.of(registry, identifier);
             replacement = made == null ? OverlayPlan.replacement(registry, identifier) : null;
-         } catch (RuntimeException var6) {
-            BedrockNative.LOGGER.warn("Couldn't read what the server's packs add to {}", identifier, var6);
+         } catch (RuntimeException e) {
+            BedrockNative.LOGGER.warn("Couldn't read what the server's packs add to {}", identifier, e);
          }
 
          if (made != null) {

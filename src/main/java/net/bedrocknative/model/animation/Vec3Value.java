@@ -8,10 +8,9 @@ public final class Vec3Value {
    public static final Vec3Value ZERO = new Vec3Value(new float[3], null);
    public static final Vec3Value ONE = new Vec3Value(new float[]{1.0F, 1.0F, 1.0F}, null);
    private final float[] constants;
-   @Nullable
-   private final MolangProgram[] programs;
+   private final @Nullable MolangProgram @Nullable [] programs;
 
-   public Vec3Value(float[] constants, @Nullable MolangProgram[] programs) {
+   public Vec3Value(float[] constants, @Nullable MolangProgram @Nullable [] programs) {
       this.constants = constants;
       this.programs = programs;
    }
@@ -32,8 +31,7 @@ public final class Vec3Value {
       return this.constants[axis];
    }
 
-   @Nullable
-   public MolangProgram program(int axis) {
+   public @Nullable MolangProgram program(int axis) {
       return this.programs != null ? this.programs[axis] : null;
    }
 }

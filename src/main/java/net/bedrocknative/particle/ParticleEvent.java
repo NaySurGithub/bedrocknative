@@ -8,7 +8,7 @@ import org.jspecify.annotations.Nullable;
 public record ParticleEvent(
    List<ParticleEvent> sequence,
    List<ParticleEvent.Weighted> randomize,
-   @Nullable ParticleEvent.Effect effect,
+   ParticleEvent.@Nullable Effect effect,
    @Nullable String sound,
    @Nullable MolangProgram expression,
    @Nullable String log
@@ -47,7 +47,7 @@ public record ParticleEvent(
    public record Effect(String identifier, ParticleEvent.EffectType type, @Nullable MolangProgram preEffectExpression) {
    }
 
-   public static enum EffectType {
+   public enum EffectType {
       EMITTER,
       EMITTER_BOUND,
       PARTICLE,

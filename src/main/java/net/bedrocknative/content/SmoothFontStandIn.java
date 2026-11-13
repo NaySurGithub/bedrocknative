@@ -25,8 +25,7 @@ public final class SmoothFontStandIn implements PackSource {
    private static final double TOLERANCE = 5.0E-4;
    private static final int MAX_BYTES = 1048576;
    private static final List<String> ALIASES = List.of("SmoothFontLatin", "SmoothFontWithHangulFallback", "SmoothWithEmoticons", "SmoothSmall");
-   @Nullable
-   private volatile Optional<byte[]> font;
+   private volatile @Nullable Optional<byte[]> font;
 
    private SmoothFontStandIn() {
    }
@@ -92,8 +91,8 @@ public final class SmoothFontStandIn implements PackSource {
 
                BedrockNative.LOGGER.info("Smooth font: {} not used ({})", candidate, refused);
             }
-         } catch (Exception var4) {
-            BedrockNative.LOGGER.info("Smooth font: {} not readable ({})", candidate, var4.toString());
+         } catch (Exception e) {
+            BedrockNative.LOGGER.info("Smooth font: {} not readable ({})", candidate, e.toString());
          }
       }
 
@@ -107,30 +106,29 @@ public final class SmoothFontStandIn implements PackSource {
       if (configured != null && !configured.isBlank()) {
          paths.add(Path.of(configured.trim()));
          return paths;
-      } else {
-         String windows = System.getenv("WINDIR");
-         paths.add(Path.of(windows != null ? windows : "C:/Windows", "Fonts", "NotoSans-Regular.ttf"));
-         String local = System.getenv("LOCALAPPDATA");
-         if (local != null) {
-            paths.add(Path.of(local, "Microsoft", "Windows", "Fonts", "NotoSans-Regular.ttf"));
-         }
-
-         String home = System.getProperty("user.home", "");
-         paths.add(Path.of("/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf"));
-         paths.add(Path.of("/usr/share/fonts/noto/NotoSans-Regular.ttf"));
-         paths.add(Path.of("/usr/share/fonts/google-noto/NotoSans-Regular.ttf"));
-         paths.add(Path.of("/Library/Fonts/NotoSans-Regular.ttf"));
-         if (!home.isEmpty()) {
-            paths.add(Path.of(home, ".local", "share", "fonts", "NotoSans-Regular.ttf"));
-            paths.add(Path.of(home, "Library", "Fonts", "NotoSans-Regular.ttf"));
-         }
-
-         return paths;
       }
+
+      String windows = System.getenv("WINDIR");
+      paths.add(Path.of(windows != null ? windows : "C:/Windows", "Fonts", "NotoSans-Regular.ttf"));
+      String local = System.getenv("LOCALAPPDATA");
+      if (local != null) {
+         paths.add(Path.of(local, "Microsoft", "Windows", "Fonts", "NotoSans-Regular.ttf"));
+      }
+
+      String home = System.getProperty("user.home", "");
+      paths.add(Path.of("/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf"));
+      paths.add(Path.of("/usr/share/fonts/noto/NotoSans-Regular.ttf"));
+      paths.add(Path.of("/usr/share/fonts/google-noto/NotoSans-Regular.ttf"));
+      paths.add(Path.of("/Library/Fonts/NotoSans-Regular.ttf"));
+      if (!home.isEmpty()) {
+         paths.add(Path.of(home, ".local", "share", "fonts", "NotoSans-Regular.ttf"));
+         paths.add(Path.of(home, "Library", "Fonts", "NotoSans-Regular.ttf"));
+      }
+
+      return paths;
    }
 
-   @Nullable
-   static String check(byte[] bytes) {
+   static @Nullable String check(byte[] bytes) {
       if (bytes.length >= 12 && bytes.length <= 1048576 && bytes[0] == 0 && bytes[1] == 1 && bytes[2] == 0 && bytes[3] == 0) {
          try {
             Font reference = Font.createFont(0, new ByteArrayInputStream(bytes)).deriveFont(1000.0F);
@@ -139,24 +137,22 @@ public final class SmoothFontStandIn implements PackSource {
             float lineHeight = line.getAscent() + line.getDescent();
             if (lineHeight <= 0.0F) {
                return "no line height";
-            } else {
-               for (int i = 0; i < PROBES.length; i++) {
-                  if (!reference.canDisplay(PROBES[i])) {
-                     return "no " + Character.toString(PROBES[i]);
-                  }
+            }
 
-                  double ratio = reference.createGlyphVector(context, Character.toString(PROBES[i])).getGlyphMetrics(0).getAdvance() / lineHeight;
-                  if (Math.abs(ratio - RATIOS[i]) > 5.0E-4) {
-                     return String.format(
-                        Locale.ROOT, "%s advance %.5f of the line, Bedrock's smooth font %.5f", Character.toString(PROBES[i]), ratio, RATIOS[i]
-                     );
-                  }
+            for (int i = 0; i < PROBES.length; i++) {
+               if (!reference.canDisplay(PROBES[i])) {
+                  return "no " + Character.toString(PROBES[i]);
                }
 
-               return null;
+               double ratio = reference.createGlyphVector(context, Character.toString(PROBES[i])).getGlyphMetrics(0).getAdvance() / lineHeight;
+               if (Math.abs(ratio - RATIOS[i]) > 5.0E-4) {
+                  return String.format(Locale.ROOT, "%s advance %.5f of the line, Bedrock's smooth font %.5f", Character.toString(PROBES[i]), ratio, RATIOS[i]);
+               }
             }
-         } catch (Exception var8) {
-            return "unreadable: " + var8.getMessage();
+
+            return null;
+         } catch (Exception e) {
+            return "unreadable: " + e.getMessage();
          }
       } else {
          return "not a TrueType file";

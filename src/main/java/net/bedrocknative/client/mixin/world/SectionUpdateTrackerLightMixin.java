@@ -9,14 +9,9 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin({SectionUpdateTracker.class})
+@Mixin(SectionUpdateTracker.class)
 public abstract class SectionUpdateTrackerLightMixin {
-   @Inject(
-      method = {"hasAllNeighbors"},
-      at = {@At("HEAD")},
-      cancellable = true,
-      require = 0
-   )
+   @Inject(method = "hasAllNeighbors", at = @At("HEAD"), cancellable = true, require = 0)
    private void bedrocknative$ownColumnLit(ClientLevel level, long sectionNode, CallbackInfoReturnable<Boolean> cir) {
       if (level.getLightEngine() instanceof ThreadedLightEngine engine && !engine.lightOnInColumn(SectionPos.getZeroNode(sectionNode))) {
          cir.setReturnValue(false);

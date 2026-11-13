@@ -598,9 +598,9 @@ final class DevTest {
                   nearest.position(),
                   Math.round(nearest.distanceTo(player)),
                   nearest.isOnFire(),
-                  nearest instanceof LivingEntity livingxx && livingxx.isBaby(),
+                  nearest instanceof LivingEntity living && living.isBaby(),
                   nearest.getCustomName(),
-                  nearest instanceof LivingEntity livingx ? livingx.getMainHandItem() : null,
+                  nearest instanceof LivingEntity living ? living.getMainHandItem() : null,
                   nearest instanceof LivingEntity living ? living.getItemBySlot(EquipmentSlot.HEAD) : null
                }
             );

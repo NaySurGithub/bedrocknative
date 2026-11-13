@@ -38,8 +38,7 @@ public final class NetherNetConnectException extends ConnectException {
       return this.millis;
    }
 
-   @Nullable
-   public static NetherNetConnectException in(@Nullable Throwable failure) {
+   public static @Nullable NetherNetConnectException in(@Nullable Throwable failure) {
       for (Throwable cause = failure; cause != null; cause = cause.getCause() == cause ? null : cause.getCause()) {
          if (cause instanceof NetherNetConnectException netherNet) {
             return netherNet;
@@ -49,7 +48,7 @@ public final class NetherNetConnectException extends ConnectException {
       return null;
    }
 
-   public static enum Stage {
+   public enum Stage {
       UNAVAILABLE,
       OFFER,
       SIGNALING,

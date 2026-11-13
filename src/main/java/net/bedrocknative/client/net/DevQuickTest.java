@@ -469,32 +469,27 @@ final class DevQuickTest {
    private long logSize() {
       try {
          return Files.size(this.log);
-      } catch (IOException var2) {
+      } catch (IOException e) {
          return 0L;
       }
    }
 
    private String chatSince(long offset) {
-      try {
-         String var14;
-         try (RandomAccessFile file = new RandomAccessFile(this.log.toFile(), "r")) {
-            file.seek(Math.min(offset, file.length()));
-            byte[] bytes = new byte[(int)(file.length() - file.getFilePointer())];
-            file.readFully(bytes);
-            StringBuilder chat = new StringBuilder();
+      try (RandomAccessFile file = new RandomAccessFile(this.log.toFile(), "r")) {
+         file.seek(Math.min(offset, file.length()));
+         byte[] bytes = new byte[(int)(file.length() - file.getFilePointer())];
+         file.readFully(bytes);
+         StringBuilder chat = new StringBuilder();
 
-            for (String line : new String(bytes, StandardCharsets.UTF_8).split("\n")) {
-               int index = line.indexOf("[CHAT]");
-               if (index >= 0) {
-                  chat.append(line.substring(index + 7).trim()).append(" | ");
-               }
+         for (String line : new String(bytes, StandardCharsets.UTF_8).split("\n")) {
+            int index = line.indexOf("[CHAT]");
+            if (index >= 0) {
+               chat.append(line.substring(index + 7).trim()).append(" | ");
             }
-
-            var14 = chat.toString();
          }
 
-         return var14;
-      } catch (IOException var13) {
+         return chat.toString();
+      } catch (IOException e) {
          return "";
       }
    }
@@ -568,7 +563,7 @@ final class DevQuickTest {
       this.arena("creative");
       String joined = BedrockAdventureSettings.lastRequest();
       this.check("the settings BDS sent at the join arrived (" + joined + ")", joined.contains("autoJump=true"));
-      boolean ownAutoJump = this.supply(() -> (Boolean)this.minecraft.options.autoJump().get());
+      boolean ownAutoJump = this.supply(() -> this.minecraft.options.autoJump().get());
       this.setOwnAutoJump(true);
       this.check("the server's true leaves the player's own option in charge: on is on (" + this.effectiveAutoJump() + ")", this.effectiveAutoJump());
       this.setOwnAutoJump(false);
@@ -587,9 +582,9 @@ final class DevQuickTest {
          "the server's false forbids auto-jump ("
             + this.effectiveAutoJump()
             + ") without touching the option ("
-            + this.supply(() -> (Boolean)this.minecraft.options.autoJump().get())
+            + this.supply(() -> this.minecraft.options.autoJump().get())
             + ")",
-         !this.effectiveAutoJump() && this.supply(() -> (Boolean)this.minecraft.options.autoJump().get())
+         !this.effectiveAutoJump() && this.supply(() -> this.minecraft.options.autoJump().get())
       );
       this.inject.accept(adventure(false, false, false, false, true));
       sleep(300L);
@@ -935,17 +930,12 @@ final class DevQuickTest {
    }
 
    private String logSince(long offset) {
-      try {
-         String var5;
-         try (RandomAccessFile file = new RandomAccessFile(this.log.toFile(), "r")) {
-            file.seek(Math.min(offset, file.length()));
-            byte[] bytes = new byte[(int)(file.length() - file.getFilePointer())];
-            file.readFully(bytes);
-            var5 = new String(bytes, StandardCharsets.UTF_8);
-         }
-
-         return var5;
-      } catch (IOException var8) {
+      try (RandomAccessFile file = new RandomAccessFile(this.log.toFile(), "r")) {
+         file.seek(Math.min(offset, file.length()));
+         byte[] bytes = new byte[(int)(file.length() - file.getFilePointer())];
+         file.readFully(bytes);
+         return new String(bytes, StandardCharsets.UTF_8);
+      } catch (IOException e) {
          return "";
       }
    }
@@ -1053,8 +1043,8 @@ final class DevQuickTest {
             turn.setAccessible(true);
             turn.invoke(this.minecraft.mouseHandler, 0.05);
             return null;
-         } catch (ReflectiveOperationException var5) {
-            throw new IllegalStateException(var5);
+         } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException(e);
          }
       });
       sleep(150L);
@@ -1392,7 +1382,7 @@ final class DevQuickTest {
    private static void sleep(long millis) {
       try {
          Thread.sleep(millis);
-      } catch (InterruptedException var3) {
+      } catch (InterruptedException e) {
          Thread.currentThread().interrupt();
       }
    }

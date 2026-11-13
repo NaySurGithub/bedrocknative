@@ -46,7 +46,7 @@ public final class PackIndex implements PackLookup {
       this.contentsRead = contentsRead;
    }
 
-   public static PackIndex of(String name, PackSource pack, boolean readContents, Function<String, String> lowerUiNamespaces) {
+   public static PackIndex of(String name, PackSource pack, boolean readContents, Function<String, @Nullable String> lowerUiNamespaces) {
       PackIndex index = new PackIndex(name, pack, readContents);
 
       for (String path : pack.list("")) {
@@ -99,9 +99,8 @@ public final class PackIndex implements PackLookup {
       return this.defs.getOrDefault(kind, Map.of());
    }
 
-   @Nullable
    @Override
-   public String uiNamespace(String file) {
+   public @Nullable String uiNamespace(String file) {
       return this.uiNamespaces.get(file.toLowerCase(Locale.ROOT));
    }
 
@@ -109,8 +108,7 @@ public final class PackIndex implements PackLookup {
       return this.uiElements.getOrDefault(file.toLowerCase(Locale.ROOT), List.of());
    }
 
-   @Nullable
-   public String file(String path) {
+   public @Nullable String file(String path) {
       return this.files.get(clean(path));
    }
 
@@ -119,9 +117,8 @@ public final class PackIndex implements PackLookup {
       return own == null ? Optional.empty() : this.pack.read(own);
    }
 
-   @Nullable
    @Override
-   public PackLookup.Hit find(PackIndex.Kind kind, String key) {
+   public PackLookup.@Nullable Hit find(PackIndex.Kind kind, String key) {
       String path = switch (kind) {
          case TEXTURE -> this.withExtension(key, TEXTURE_EXTENSIONS);
          case SOUND_FILE -> this.withExtension(key, SOUND_EXTENSIONS);
@@ -131,14 +128,13 @@ public final class PackIndex implements PackLookup {
       };
       if (path != null) {
          return new PackLookup.Hit(this, path, null);
-      } else {
-         PackIndex.Def def = this.defs(kind == PackIndex.Kind.UI_VARIABLE_ELEMENT ? PackIndex.Kind.UI_ELEMENT : kind).get(key);
-         return def != null ? new PackLookup.Hit(this, this.file(def.file()) != null ? this.file(def.file()) : def.file(), def) : null;
       }
+
+      PackIndex.Def def = this.defs(kind == PackIndex.Kind.UI_VARIABLE_ELEMENT ? PackIndex.Kind.UI_ELEMENT : kind).get(key);
+      return def != null ? new PackLookup.Hit(this, this.file(def.file()) != null ? this.file(def.file()) : def.file(), def) : null;
    }
 
-   @Nullable
-   private String withExtension(String key, List<String> extensions) {
+   private @Nullable String withExtension(String key, List<String> extensions) {
       String lower = clean(key);
 
       for (String extension : extensions) {
@@ -147,8 +143,8 @@ public final class PackIndex implements PackLookup {
          }
       }
 
-      for (String extensionx : extensions) {
-         String found = this.files.get(lower + extensionx);
+      for (String extension : extensions) {
+         String found = this.files.get(lower + extension);
          if (found != null) {
             return found;
          }
@@ -208,7 +204,7 @@ public final class PackIndex implements PackLookup {
       return found;
    }
 
-   private void read(String lower, Function<String, String> lowerUiNamespaces) {
+   private void read(String lower, Function<String, @Nullable String> lowerUiNamespaces) {
       String folder = lower.indexOf(47) > 0 ? lower.substring(0, lower.indexOf(47)) : "";
       boolean json = lower.endsWith(".json");
       if (lower.endsWith(".lang") && folder.equals("texts")) {
@@ -300,23 +296,22 @@ public final class PackIndex implements PackLookup {
       }
    }
 
-   @Nullable
-   private JsonElement parse(String lower) {
+   private @Nullable JsonElement parse(String lower) {
       byte[] data;
       try {
          data = this.read(lower).orElse(null);
-      } catch (IOException var5) {
-         this.unreadable.add(lower + ": " + var5.getMessage());
+      } catch (IOException e) {
+         this.unreadable.add(lower + ": " + e.getMessage());
          return null;
       }
 
       if (data != null && data.length != 0) {
          try {
             return UiJson.parse(data);
-         } catch (UiJson.Error var6) {
+         } catch (UiJson.Error e) {
             JsonObject lenient = ModelJson.parse(data, this.name + " " + lower);
             if (lenient == null) {
-               this.unreadable.add(lower + ": " + var6.getMessage());
+               this.unreadable.add(lower + ": " + e.getMessage());
             }
 
             return lenient;
@@ -348,8 +343,8 @@ public final class PackIndex implements PackLookup {
                }
             }
          }
-      } catch (IOException var11) {
-         this.unreadable.add(lower + ": " + var11.getMessage());
+      } catch (IOException e) {
+         this.unreadable.add(lower + ": " + e.getMessage());
       }
    }
 
@@ -373,10 +368,10 @@ public final class PackIndex implements PackLookup {
 
          var5 = description.get("render_controllers");
          if (var5 instanceof JsonArray) {
-            for (JsonElement entryx : (JsonArray)var5) {
-               if (entryx instanceof JsonPrimitive id) {
+            for (JsonElement entry : (JsonArray)var5) {
+               if (entry instanceof JsonPrimitive id) {
                   add(sink, PackIndex.Kind.RENDER_CONTROLLER, id.getAsString(), file);
-               } else if (entryx instanceof JsonObject conditional) {
+               } else if (entry instanceof JsonObject conditional) {
                   conditional.keySet().forEach(id -> add(sink, PackIndex.Kind.RENDER_CONTROLLER, id, file));
                }
             }
@@ -495,7 +490,7 @@ public final class PackIndex implements PackLookup {
          if (var5 instanceof JsonArray) {
             for (JsonElement entry : (JsonArray)var5) {
                String name = string(entry instanceof JsonObject o ? o : null, "font_name");
-               String fontFile = string(entry instanceof JsonObject ox ? ox : null, "font_file");
+               String fontFile = string(entry instanceof JsonObject o ? o : null, "font_file");
                if (name != null && fontFile != null) {
                   this.put(new PackIndex.Def(PackIndex.Kind.FONT, name.toLowerCase(Locale.ROOT), file, new JsonPrimitive(fontFile), ""));
                }
@@ -503,15 +498,15 @@ public final class PackIndex implements PackLookup {
          }
 
          if (object.get("font_aliases") instanceof JsonArray aliases) {
-            for (JsonElement entryx : aliases) {
-               JsonObject alias = entryx instanceof JsonObject o ? o : null;
+            for (JsonElement entry : aliases) {
+               JsonObject alias = entry instanceof JsonObject o ? o : null;
                String name = string(alias, "alias");
                if (name != null) {
                   JsonArray targets = new JsonArray();
                   JsonElement var11 = alias.get("fonts");
                   if (var11 instanceof JsonArray) {
                      for (JsonElement reference : (JsonArray)var11) {
-                        String target = string(reference instanceof JsonObject ox ? ox : null, "font_reference");
+                        String target = string(reference instanceof JsonObject o ? o : null, "font_reference");
                         if (target != null) {
                            targets.add(target);
                         }
@@ -687,7 +682,7 @@ public final class PackIndex implements PackLookup {
          JsonElement component = block.get("permutations");
          if (component instanceof JsonArray) {
             for (JsonElement permutation : (JsonArray)component) {
-               JsonObject found = object(permutation instanceof JsonObject ox ? ox : null, "components");
+               JsonObject found = object(permutation instanceof JsonObject o ? o : null, "components");
                if (found != null) {
                   components.add(found);
                }
@@ -698,7 +693,7 @@ public final class PackIndex implements PackLookup {
             JsonObject instances = object(componentx, "minecraft:material_instances");
             if (instances != null) {
                for (JsonElement instance : instances.asMap().values()) {
-                  String texture = string(instance instanceof JsonObject ox ? ox : null, "texture");
+                  String texture = string(instance instanceof JsonObject o ? o : null, "texture");
                   if (texture != null) {
                      add(sink, PackIndex.Kind.TERRAIN_KEY, texture, file);
                   }
@@ -708,14 +703,14 @@ public final class PackIndex implements PackLookup {
             JsonElement geometry = componentx.get("minecraft:geometry");
             if (geometry instanceof JsonPrimitive id) {
                add(sink, PackIndex.Kind.GEOMETRY, id.getAsString(), file);
-            } else if (string(geometry instanceof JsonObject ox ? ox : null, "identifier") != null) {
+            } else if (string(geometry instanceof JsonObject o ? o : null, "identifier") != null) {
                add(sink, PackIndex.Kind.GEOMETRY, string((JsonObject)geometry, "identifier"), file);
             }
          }
       }
    }
 
-   private void uiFile(JsonElement root, String file, Function<String, String> lowerUiNamespaces, Consumer<PackIndex.Ref> sink) {
+   private void uiFile(JsonElement root, String file, Function<String, @Nullable String> lowerUiNamespaces, Consumer<PackIndex.Ref> sink) {
       if (root instanceof JsonObject object) {
          if (file.equals("ui/_ui_defs.json")) {
             JsonElement var17 = object.get("ui_defs");
@@ -742,13 +737,13 @@ public final class PackIndex implements PackLookup {
             this.uiNamespaces.put(file, namespace);
             List<PackIndex.Def> elements = this.uiElements.computeIfAbsent(file, keyx -> new ArrayList<>());
 
-            for (Entry<String, JsonElement> entryx : object.entrySet()) {
-               String key = entryx.getKey();
+            for (Entry<String, JsonElement> entry : object.entrySet()) {
+               String key = entry.getKey();
                if (!key.equals("namespace")) {
                   int at = key.indexOf(64);
                   String own = at >= 0 ? key.substring(0, at) : key;
                   JsonObject body = new JsonObject();
-                  body.add(key, entryx.getValue());
+                  body.add(key, entry.getValue());
                   if (own.indexOf(47) < 0) {
                      PackIndex.Def def = new PackIndex.Def(PackIndex.Kind.UI_ELEMENT, namespace + "." + own.toLowerCase(Locale.ROOT), file, body, namespace);
                      this.put(def);
@@ -856,13 +851,11 @@ public final class PackIndex implements PackLookup {
       }
    }
 
-   @Nullable
-   private static JsonObject object(@Nullable JsonElement parent, String key) {
+   private static @Nullable JsonObject object(@Nullable JsonElement parent, String key) {
       return parent instanceof JsonObject object && object.get(key) instanceof JsonObject child ? child : null;
    }
 
-   @Nullable
-   private static String string(@Nullable JsonObject parent, String key) {
+   private static @Nullable String string(@Nullable JsonObject parent, String key) {
       return parent != null && parent.get(key) instanceof JsonPrimitive primitive ? primitive.getAsString() : null;
    }
 
@@ -905,7 +898,7 @@ public final class PackIndex implements PackLookup {
    public record Def(PackIndex.Kind kind, String key, String file, @Nullable JsonElement body, String namespace) {
    }
 
-   public static enum Kind {
+   public enum Kind {
       TEXTURE,
       TERRAIN_KEY,
       ITEM_TEXTURE_KEY,

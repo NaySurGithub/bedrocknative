@@ -51,10 +51,10 @@ public final class FormResponse {
    static String real(float value) {
       if (!Float.isFinite(value)) {
          return "null";
-      } else {
-         String plain = new BigDecimal(Float.toString(value)).stripTrailingZeros().toPlainString();
-         return plain.contains(".") ? plain : plain + ".0";
       }
+
+      String plain = new BigDecimal(Float.toString(value)).stripTrailingZeros().toPlainString();
+      return plain.contains(".") ? plain : plain + ".0";
    }
 
    private static void quote(StringBuilder out, String value) {

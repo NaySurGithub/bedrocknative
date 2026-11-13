@@ -63,8 +63,8 @@ public final class EmoteLibrary {
                      }
                   }
                }
-            } catch (RuntimeException | IOException var19) {
-               BedrockNative.LOGGER.debug("Couldn't read the persona emote {}: {}", path, var19.toString());
+            } catch (IOException | RuntimeException e) {
+               BedrockNative.LOGGER.debug("Couldn't read the persona emote {}: {}", path, e.toString());
             }
          }
       }
@@ -72,14 +72,12 @@ public final class EmoteLibrary {
       return new EmoteLibrary(Collections.unmodifiableMap(byId), Collections.unmodifiableMap(names));
    }
 
-   @Nullable
-   private static JsonObject json(PackSource pack, String path) throws IOException {
+   private static @Nullable JsonObject json(PackSource pack, String path) throws IOException {
       Optional<byte[]> data = pack.read(path);
       return data.isPresent() ? ModelJson.parse(data.get(), path) : null;
    }
 
-   @Nullable
-   public EmoteLibrary.Emote emote(String pieceId) {
+   public EmoteLibrary.@Nullable Emote emote(String pieceId) {
       return this.byId.get(pieceId.toLowerCase(Locale.ROOT));
    }
 

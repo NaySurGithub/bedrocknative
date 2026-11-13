@@ -26,8 +26,7 @@ public final class BitmapFontMetrics implements UiTextMeasurer {
    private long pagePixels;
    private long pageBudget = 67108864L;
    private final boolean[] asked = new boolean[257];
-   @Nullable
-   private final BitmapFontMetrics.PageLoader loader;
+   private final BitmapFontMetrics.@Nullable PageLoader loader;
    private boolean latinStandIn;
    private static final String BEDROCK_DEFAULT8_ADVANCES = "6666664666666664467666666699963302566663555626266666666666225656766666666466666666666666666464663666665662653666666646666665257566666666666463666666666666666646636666666566626689936688686888666996996777997999999766799669955987787888788789677777667863396558";
 
@@ -44,7 +43,7 @@ public final class BitmapFontMetrics implements UiTextMeasurer {
       this(null);
    }
 
-   public BitmapFontMetrics(@Nullable BitmapFontMetrics.PageLoader loader) {
+   public BitmapFontMetrics(BitmapFontMetrics.@Nullable PageLoader loader) {
       this.loader = loader;
    }
 
@@ -58,44 +57,44 @@ public final class BitmapFontMetrics implements UiTextMeasurer {
          long others = this.pagePixels - (previous == null ? 0L : (long)previous.width() * previous.height());
          if (others + (long)width * height > this.pageBudget) {
             return this;
-         } else {
-            int cellWidth = width / 16;
-            int cellHeight = height / 16;
-            short[] left = new short[256];
-            short[] right = new short[256];
+         }
 
-            for (int glyph = 0; glyph < 256; glyph++) {
-               int cellX = glyph % 16 * cellWidth;
-               int cellY = glyph / 16 * cellHeight;
-               int first = -1;
-               int last = -1;
+         int cellWidth = width / 16;
+         int cellHeight = height / 16;
+         short[] left = new short[256];
+         short[] right = new short[256];
 
-               for (int x = 0; x < cellWidth; x++) {
-                  for (int y = 0; y < cellHeight; y++) {
-                     if (argb[(cellY + y) * width + cellX + x] >>> 24 != 0) {
-                        if (first < 0) {
-                           first = x;
-                        }
+         for (int glyph = 0; glyph < 256; glyph++) {
+            int cellX = glyph % 16 * cellWidth;
+            int cellY = glyph / 16 * cellHeight;
+            int first = -1;
+            int last = -1;
 
-                        last = x;
-                        break;
+            for (int x = 0; x < cellWidth; x++) {
+               for (int y = 0; y < cellHeight; y++) {
+                  if (argb[(cellY + y) * width + cellX + x] >>> 24 != 0) {
+                     if (first < 0) {
+                        first = x;
                      }
+
+                     last = x;
+                     break;
                   }
                }
-
-               left[glyph] = (short)first;
-               right[glyph] = (short)last;
             }
 
-            if (previous == null) {
-               this.pageCount++;
-            }
-
-            this.pages[index] = new BitmapFontMetrics.Page(width, height, argb, left, right);
-            this.glyphs[index] = null;
-            this.pagePixels = others + (long)width * height;
-            return this;
+            left[glyph] = (short)first;
+            right[glyph] = (short)last;
          }
+
+         if (previous == null) {
+            this.pageCount++;
+         }
+
+         this.pages[index] = new BitmapFontMetrics.Page(width, height, argb, left, right);
+         this.glyphs[index] = null;
+         this.pagePixels = others + (long)width * height;
+         return this;
       } else {
          return this;
       }
@@ -105,8 +104,7 @@ public final class BitmapFontMetrics implements UiTextMeasurer {
       return Collections.unmodifiableSet(DEFAULT8_CELLS.keySet());
    }
 
-   @Nullable
-   public BitmapFontMetrics.Page page(int index) {
+   public BitmapFontMetrics.@Nullable Page page(int index) {
       if (index >= 0 && index < 257) {
          BitmapFontMetrics.Page page = this.pages[index];
          if (page == null && this.loader != null && !this.asked[index]) {
@@ -151,32 +149,29 @@ public final class BitmapFontMetrics implements UiTextMeasurer {
       }
    }
 
-   @Nullable
-   public BitmapFontMetrics.Glyph glyph(int codePoint) {
+   public BitmapFontMetrics.@Nullable Glyph glyph(int codePoint) {
       if (codePoint >= 0 && codePoint <= 65535) {
          int classic = default8Cell(codePoint);
          BitmapFontMetrics.Page page = classic >= 0 ? this.page(0) : null;
          if (page == null) {
             return this.pageGlyph(codePoint);
-         } else {
-            BitmapFontMetrics.Glyph glyph = this.glyphOf(page, 0, classic, codePoint);
-            return this.latinStandIn && glyph.width() == 0 && codePoint != 32 && Character.getType(codePoint) != 12 ? this.pageGlyph(codePoint) : glyph;
          }
+
+         BitmapFontMetrics.Glyph glyph = this.glyphOf(page, 0, classic, codePoint);
+         return this.latinStandIn && glyph.width() == 0 && codePoint != 32 && Character.getType(codePoint) != 12 ? this.pageGlyph(codePoint) : glyph;
       } else {
          return null;
       }
    }
 
-   @Nullable
-   public BitmapFontMetrics.Glyph latinGlyph(int codePoint) {
+   public BitmapFontMetrics.@Nullable Glyph latinGlyph(int codePoint) {
       int cell = default8Cell(codePoint);
       BitmapFontMetrics.Page page = cell < 0 ? null : this.page(0);
       BitmapFontMetrics.Glyph glyph = page == null ? null : this.glyphOf(page, 0, cell, codePoint);
       return glyph != null && glyph.width() != 0 ? glyph : null;
    }
 
-   @Nullable
-   public BitmapFontMetrics.Glyph pageGlyph(int codePoint) {
+   public BitmapFontMetrics.@Nullable Glyph pageGlyph(int codePoint) {
       if (codePoint >= 0 && codePoint <= 65535) {
          int pageIndex = codePoint >> 8 == 0 ? 256 : codePoint >> 8;
          BitmapFontMetrics.Page page = this.page(pageIndex);
@@ -225,7 +220,7 @@ public final class BitmapFontMetrics implements UiTextMeasurer {
       return bold ? advance + 1.0F : advance;
    }
 
-   public float advance(int codePoint, @Nullable BitmapFontMetrics.Glyph glyph, boolean bold) {
+   public float advance(int codePoint, BitmapFontMetrics.@Nullable Glyph glyph, boolean bold) {
       float advance = this.standInAdvance(codePoint);
       if (advance == 0.0F) {
          advance = glyph == null ? 6.0F : glyph.advance();
@@ -301,8 +296,7 @@ public final class BitmapFontMetrics implements UiTextMeasurer {
          return this.height / 16;
       }
 
-      @Nullable
-      public int[] opaqueRows(int cell) {
+      public int @Nullable [] opaqueRows(int cell) {
          int cellWidth = this.cellWidth();
          int cellHeight = this.cellHeight();
          int u0 = cell % 16 * cellWidth;
@@ -328,8 +322,7 @@ public final class BitmapFontMetrics implements UiTextMeasurer {
    }
 
    public interface PageLoader {
-      @Nullable
-      BitmapFontMetrics.Pixels load(int var1);
+      BitmapFontMetrics.@Nullable Pixels load(int var1);
    }
 
    public record Pixels(int width, int height, int[] argb) {

@@ -18,8 +18,7 @@ public final class CreativeItems {
    private final Map<Object, List<CreativeItems.Entry>> byItem = new HashMap<>();
    private List<CreativeItemData> contents = List.of();
    private List<CreativeItemGroup> groups = List.of();
-   @Nullable
-   private CreativeItemData lastCreated;
+   private @Nullable CreativeItemData lastCreated;
 
    public void apply(CreativeContentPacket packet) {
       this.byItem.clear();
@@ -51,8 +50,7 @@ public final class CreativeItems {
       return this.groups;
    }
 
-   @Nullable
-   public CreativeItemData entryFor(ItemStack stack) {
+   public @Nullable CreativeItemData entryFor(ItemStack stack) {
       CreativeItemData picked = BedrockCreativeTabs.picked(stack);
       return picked != null ? picked : this.find(stack);
    }
@@ -61,25 +59,23 @@ public final class CreativeItems {
       this.lastCreated = entry;
    }
 
-   @Nullable
-   public CreativeItemData lastCreated() {
+   public @Nullable CreativeItemData lastCreated() {
       return this.lastCreated;
    }
 
-   @Nullable
-   public CreativeItemData find(ItemStack stack) {
+   public @Nullable CreativeItemData find(ItemStack stack) {
       List<CreativeItems.Entry> entries = this.byItem.get(key(stack));
       if (entries == null) {
          return null;
-      } else {
-         for (CreativeItems.Entry entry : entries) {
-            if (ItemStack.isSameItemSameComponents(entry.java(), stack)) {
-               return entry.data();
-            }
-         }
-
-         return entries.size() == 1 ? entries.getFirst().data() : null;
       }
+
+      for (CreativeItems.Entry entry : entries) {
+         if (ItemStack.isSameItemSameComponents(entry.java(), stack)) {
+            return entry.data();
+         }
+      }
+
+      return entries.size() == 1 ? entries.getFirst().data() : null;
    }
 
    private static Object key(ItemStack stack) {

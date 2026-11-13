@@ -36,7 +36,6 @@ import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.LevelChunkSection;
 import net.minecraft.world.level.chunk.PalettedContainer;
 import net.minecraft.world.level.chunk.PalettedContainerFactory;
-import net.minecraft.world.level.chunk.PalettedContainerRO;
 import net.minecraft.world.level.chunk.PalettedContainerRO.PackedData;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.Heightmap.Types;
@@ -71,7 +70,7 @@ public final class BedrockChunkLoader {
          FrameWatch watch = FrameTimes.watch();
          long started = System.nanoTime();
          int index = storage.getIndex(chunkX, chunkZ);
-         LevelChunk chunk = (LevelChunk)storage.chunks.get(index);
+         LevelChunk chunk = storage.chunks.get(index);
          ChunkPos pos = new ChunkPos(chunkX, chunkZ);
          boolean fresh = !ClientChunkCache.isValidChunk(chunk, chunkX, chunkZ);
          if (fresh) {
@@ -136,7 +135,7 @@ public final class BedrockChunkLoader {
          long lit = System.nanoTime();
          watch.applyPart(FrameWatch.ApplyPart.LIGHT_ENQUEUE, lit - inserted);
          SodiumChunks.loaded(level, chunkX, chunkZ, ThreadedLight.of(level) == null);
-         Collection<Integer> indices = (Collection<Integer>)(replaceAll ? IntStream.range(0, target.length).boxed().toList() : sections.keySet());
+         Collection<Integer> indices = replaceAll ? IntStream.range(0, target.length).boxed().toList() : sections.keySet();
          BedrockBlocks.createBlockEntities(level, chunk, indices, column.blockEntities(), column.blockEntityBlocks());
          watch.applyPart(FrameWatch.ApplyPart.BLOCK_ENTITIES, System.nanoTime() - lit);
       }
@@ -145,13 +144,13 @@ public final class BedrockChunkLoader {
    public static void applyBiomes(ClientLevel level, int chunkX, int chunkZ, List<PalettedContainer<Holder<Biome>>> biomes) {
       Storage storage = level.getChunkSource().storage;
       if (storage.inRange(chunkX, chunkZ)) {
-         LevelChunk chunk = (LevelChunk)storage.chunks.get(storage.getIndex(chunkX, chunkZ));
+         LevelChunk chunk = storage.chunks.get(storage.getIndex(chunkX, chunkZ));
          if (ClientChunkCache.isValidChunk(chunk, chunkX, chunkZ)) {
             LevelChunkSection[] sections = chunk.getSections();
             int count = Math.min(sections.length, biomes.size());
 
             for (int i = 0; i < count; i++) {
-               ((LevelChunkSectionAccessor)sections[i]).bedrocknative$setBiomes((PalettedContainerRO<Holder<Biome>>)biomes.get(i));
+               ((LevelChunkSectionAccessor)sections[i]).bedrocknative$setBiomes(biomes.get(i));
             }
 
             chunk.markUnsaved();
@@ -185,7 +184,7 @@ public final class BedrockChunkLoader {
       List<ChunkPos> held = new ArrayList<>();
 
       for (int i = 0; i < storage.chunks.length(); i++) {
-         LevelChunk chunk = (LevelChunk)storage.chunks.get(i);
+         LevelChunk chunk = storage.chunks.get(i);
          if (chunk != null) {
             held.add(chunk.getPos());
          }
@@ -290,7 +289,7 @@ public final class BedrockChunkLoader {
          for (int index = 0; index < 4096; index++) {
             int id = blocks[index];
             int entry = lastEntry;
-            if (id != lastId || lastEntry < 0) {
+            if (id != lastId || entry < 0) {
                int slot = id * -1640531527 >>> 19;
 
                while (true) {
@@ -315,7 +314,7 @@ public final class BedrockChunkLoader {
             if (withLiquid && this.waterloggable[entry] && this.water(mappings, liquid[index])) {
                paletteAt = this.wet[entry];
                if (paletteAt < 0) {
-                  paletteAt = this.wet[entry] = this.add((BlockState)this.base[entry].setValue(BlockStateProperties.WATERLOGGED, true));
+                  paletteAt = this.wet[entry] = this.add(this.base[entry].setValue(BlockStateProperties.WATERLOGGED, true));
                }
             } else {
                paletteAt = this.dry[entry];
@@ -371,32 +370,31 @@ public final class BedrockChunkLoader {
       private int add(BlockState state) {
          if (state.isAir()) {
             return 0;
-         } else {
-            int at = this.paletteIndex.getOrDefault(state, -1);
-            if (at < 0) {
-               at = this.palette.size();
-               this.palette.add(state);
-               this.paletteIndex.put(state, at);
-            }
-
-            return at;
          }
+
+         int at = this.paletteIndex.getOrDefault(state, -1);
+         if (at < 0) {
+            at = this.palette.size();
+            this.palette.add(state);
+            this.paletteIndex.put(state, at);
+         }
+
+         return at;
       }
 
-      @Nullable
-      private PalettedContainer<BlockState> packed(PalettedContainerFactory factory) {
+      private @Nullable PalettedContainer<BlockState> packed(PalettedContainerFactory factory) {
          int size = this.palette.size();
          if (size == 1) {
             return factory.createForBlockStates();
-         } else {
-            int bits = Math.max(4, Mth.ceillog2(size));
-            long[] raw = new SimpleBitStorage(bits, 4096, this.indices).getRaw();
-            return (PalettedContainer<BlockState>)PalettedContainer.unpack(
-                  factory.blockStatesStrategy(), new PackedData(List.copyOf(this.palette), Optional.of(LongStream.of(raw)), bits)
-               )
-               .result()
-               .orElse(null);
          }
+
+         int bits = Math.max(4, Mth.ceillog2(size));
+         long[] raw = new SimpleBitStorage(bits, 4096, this.indices).getRaw();
+         return (PalettedContainer<BlockState>)PalettedContainer.unpack(
+               factory.blockStatesStrategy(), new PackedData<>(List.copyOf(this.palette), Optional.of(LongStream.of(raw)), bits)
+            )
+            .result()
+            .orElse(null);
       }
 
       private static PalettedContainer<BlockState> slow(PalettedContainerFactory factory, BlockMappings mappings, int[] blocks, int[] liquid) {
@@ -405,7 +403,7 @@ public final class BedrockChunkLoader {
          for (int index = 0; index < 4096; index++) {
             BlockState state = mappings.toJava(blocks[index]);
             if (liquid != null && state.hasProperty(BlockStateProperties.WATERLOGGED) && mappings.toJava(liquid[index]).is(Blocks.WATER)) {
-               state = (BlockState)state.setValue(BlockStateProperties.WATERLOGGED, true);
+               state = state.setValue(BlockStateProperties.WATERLOGGED, true);
             }
 
             if (!state.isAir()) {

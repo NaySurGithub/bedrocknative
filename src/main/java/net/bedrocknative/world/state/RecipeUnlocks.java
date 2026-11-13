@@ -16,30 +16,30 @@ public final class RecipeUnlocks {
       List<String> added = new ArrayList<>();
       if (packet.getAction() == null) {
          return added;
-      } else {
-         switch (packet.getAction()) {
-            case INITIALLY_UNLOCKED:
-               this.unlocked.clear();
-               this.addAll(packet, added);
-               this.known = true;
-               break;
-            case NEWLY_UNLOCKED:
-               this.addAll(packet, added);
-               break;
-            case REMOVE_UNLOCKED:
-               packet.getUnlockedRecipes().forEach(this.unlocked::remove);
-               break;
-            case REMOVE_ALL:
-               this.unlocked.clear();
-               this.known = true;
-               break;
-            case EMPTY:
-               return added;
-         }
-
-         this.version++;
-         return added;
       }
+
+      switch (packet.getAction()) {
+         case INITIALLY_UNLOCKED:
+            this.unlocked.clear();
+            this.addAll(packet, added);
+            this.known = true;
+            break;
+         case NEWLY_UNLOCKED:
+            this.addAll(packet, added);
+            break;
+         case REMOVE_UNLOCKED:
+            packet.getUnlockedRecipes().forEach(this.unlocked::remove);
+            break;
+         case REMOVE_ALL:
+            this.unlocked.clear();
+            this.known = true;
+            break;
+         case EMPTY:
+            return added;
+      }
+
+      this.version++;
+      return added;
    }
 
    private void addAll(UnlockedRecipesPacket packet, List<String> added) {

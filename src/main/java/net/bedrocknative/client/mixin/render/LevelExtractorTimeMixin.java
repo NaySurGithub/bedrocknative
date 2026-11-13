@@ -13,7 +13,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin({LevelExtractor.class})
+@Mixin(LevelExtractor.class)
 public abstract class LevelExtractorTimeMixin {
    @Unique
    private long bedrocknative$entitiesStarted;
@@ -24,21 +24,13 @@ public abstract class LevelExtractorTimeMixin {
    @Unique
    private long bedrocknative$blockEntitiesNamed;
 
-   @Inject(
-      method = {"extractVisibleEntities"},
-      at = {@At("HEAD")},
-      require = 0
-   )
+   @Inject(method = "extractVisibleEntities", at = @At("HEAD"), require = 0)
    private void bedrocknative$entitiesStart(CallbackInfo ci) {
       this.bedrocknative$entitiesStarted = System.nanoTime();
       this.bedrocknative$entitiesNamed = FrameTimes.watch().namedNanos();
    }
 
-   @Inject(
-      method = {"extractVisibleEntities"},
-      at = {@At("RETURN")},
-      require = 0
-   )
+   @Inject(method = "extractVisibleEntities", at = @At("RETURN"), require = 0)
    private void bedrocknative$entitiesEnd(Camera camera, Frustum frustum, DeltaTracker deltaTracker, LevelRenderState output, CallbackInfo ci) {
       if (this.bedrocknative$entitiesStarted != 0L) {
          FrameTimes.endAround(FrameWatch.Bucket.ENTITY_RENDER, this.bedrocknative$entitiesStarted, this.bedrocknative$entitiesNamed);
@@ -47,21 +39,13 @@ public abstract class LevelExtractorTimeMixin {
       }
    }
 
-   @Inject(
-      method = {"extractVisibleBlockEntities"},
-      at = {@At("HEAD")},
-      require = 0
-   )
+   @Inject(method = "extractVisibleBlockEntities", at = @At("HEAD"), require = 0)
    private void bedrocknative$blockEntitiesStart(CallbackInfo ci) {
       this.bedrocknative$blockEntitiesStarted = System.nanoTime();
       this.bedrocknative$blockEntitiesNamed = FrameTimes.watch().namedNanos();
    }
 
-   @Inject(
-      method = {"extractVisibleBlockEntities"},
-      at = {@At("RETURN")},
-      require = 0
-   )
+   @Inject(method = "extractVisibleBlockEntities", at = @At("RETURN"), require = 0)
    private void bedrocknative$blockEntitiesEnd(Camera camera, float deltaPartialTick, LevelRenderState levelRenderState, CallbackInfo ci) {
       if (this.bedrocknative$blockEntitiesStarted != 0L) {
          FrameTimes.endAround(FrameWatch.Bucket.BLOCK_ENTITY_RENDER, this.bedrocknative$blockEntitiesStarted, this.bedrocknative$blockEntitiesNamed);

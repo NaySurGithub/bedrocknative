@@ -7,7 +7,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -53,9 +52,9 @@ public final class DevOreDisconnectTest {
       while ((instance = Minecraft.getInstance()) == null || instance.getWindow() == null) {
          try {
             Thread.sleep(200L);
-         } catch (InterruptedException var2) {
+         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new IllegalStateException(var2);
+            throw new IllegalStateException(e);
          }
       }
 
@@ -73,15 +72,15 @@ public final class DevOreDisconnectTest {
                byte[] datBefore = DevOrePlayTest.read(serversDat);
                byte[] oldBefore = DevOrePlayTest.read(serversOld);
                Window window = test.minecraft.getWindow();
-               int guiScale = DevOrePlayTest.onClient(test.minecraft, () -> (Integer)test.minecraft.options.guiScale().get());
-               int width = DevOrePlayTest.<Integer>onClient(test.minecraft, window::getScreenWidth);
-               int height = DevOrePlayTest.<Integer>onClient(test.minecraft, window::getScreenHeight);
+               int guiScale = DevOrePlayTest.onClient(test.minecraft, () -> test.minecraft.options.guiScale().get());
+               int width = DevOrePlayTest.onClient(test.minecraft, window::getScreenWidth);
+               int height = DevOrePlayTest.onClient(test.minecraft, window::getScreenHeight);
                Thread watcher = Thread.ofVirtual().name("Dev oredisconnect watcher").start(test::watchJavaScreen);
 
                try {
                   test.run();
-               } catch (Throwable var14) {
-                  BedrockNative.LOGGER.error("Dev oredisconnect test: FAIL crashed", var14);
+               } catch (Throwable e) {
+                  BedrockNative.LOGGER.error("Dev oredisconnect test: FAIL crashed", e);
                   test.failed++;
                } finally {
                   watcher.interrupt();
@@ -109,10 +108,6 @@ public final class DevOreDisconnectTest {
 
    private DevOrePlayTest.Reporter reporter() {
       return new DevOrePlayTest.Reporter() {
-         {
-            Objects.requireNonNull(DevOreDisconnectTest.this);
-         }
-
          @Override
          public void check(String what, boolean ok) {
             DevOreDisconnectTest.this.check(what, ok);
@@ -140,7 +135,7 @@ public final class DevOreDisconnectTest {
 
          try {
             Thread.sleep(50L);
-         } catch (InterruptedException var3) {
+         } catch (InterruptedException e) {
             return;
          }
       }
@@ -353,7 +348,7 @@ public final class DevOreDisconnectTest {
       BufferedImage shot;
       try {
          shot = Files.isRegularFile(file) ? ImageIO.read(file.toFile()) : null;
-      } catch (IOException var18) {
+      } catch (IOException e) {
          shot = null;
       }
 
@@ -389,16 +384,15 @@ public final class DevOreDisconnectTest {
 
          try {
             ImageIO.write(offline, "png", file.resolveSibling(picture + "-offline.png").toFile());
-         } catch (IOException var17) {
-            this.reporter().log("couldn't save the offline render: {}", var17.getMessage());
+         } catch (IOException e) {
+            this.reporter().log("couldn't save the offline render: {}", e.getMessage());
          }
       } else {
          this.check("the screenshot " + picture + " can be read for the comparison", false);
       }
    }
 
-   @Nullable
-   private OreDisconnectScreen awaitScreen(@Nullable OreDisconnectScreen previous, String what) {
+   private @Nullable OreDisconnectScreen awaitScreen(@Nullable OreDisconnectScreen previous, String what) {
       long started = System.currentTimeMillis();
 
       while (
@@ -419,26 +413,24 @@ public final class DevOreDisconnectTest {
       return found;
    }
 
-   @Nullable
-   private Screen screenNow() {
+   private @Nullable Screen screenNow() {
       return this.ask(() -> this.minecraft.gui.screen());
    }
 
-   @Nullable
-   private <T> T ask(Supplier<T> question) {
+   private <T> @Nullable T ask(Supplier<T> question) {
       if (this.minecraft.isSameThread()) {
          return question.get();
-      } else {
-         CompletableFuture<T> answer = CompletableFuture.supplyAsync(question, this.minecraft::execute);
+      }
 
-         try {
-            return answer.get(2L, TimeUnit.SECONDS);
-         } catch (ExecutionException | TimeoutException var4) {
-            return null;
-         } catch (InterruptedException var5) {
-            Thread.currentThread().interrupt();
-            return null;
-         }
+      CompletableFuture<T> answer = CompletableFuture.supplyAsync(question, this.minecraft::execute);
+
+      try {
+         return answer.get(2L, TimeUnit.SECONDS);
+      } catch (TimeoutException | ExecutionException e) {
+         return null;
+      } catch (InterruptedException e) {
+         Thread.currentThread().interrupt();
+         return null;
       }
    }
 
@@ -462,7 +454,7 @@ public final class DevOreDisconnectTest {
       });
    }
 
-   private void logEnd(@Nullable BedrockDisconnects.Ended end) {
+   private void logEnd(BedrockDisconnects.@Nullable Ended end) {
       if (end == null) {
          this.reporter().log("no session end on record");
       } else {

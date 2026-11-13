@@ -40,24 +40,24 @@ public final class UiModifications {
                break;
             case "insert_after":
             case "insert_before":
-               int indexxx = find(array, controls, modification);
-               if (indexxx < 0) {
+               int indexx = find(array, controls, modification);
+               if (indexx < 0) {
                   skipped(problems, where, operation);
                } else {
-                  insert(array, operation.equals("insert_after") ? indexxx + 1 : indexxx, value, controls);
+                  insert(array, operation.equals("insert_after") ? indexx + 1 : indexx, value, controls);
                }
                break;
             case "move_back":
             case "move_front":
-               int indexx = find(array, controls, modification);
-               if (indexx < 0 && value != null) {
-                  indexx = indexOf(array, value);
+               int indexx2 = find(array, controls, modification);
+               if (indexx2 < 0 && value != null) {
+                  indexx2 = indexOf(array, value);
                }
 
-               if (indexx < 0) {
+               if (indexx2 < 0) {
                   skipped(problems, where, operation);
                } else {
-                  JsonElement entry = array.remove(indexx);
+                  JsonElement entry = array.remove(indexx2);
                   if (operation.equals("move_back")) {
                      array.add(entry);
                   } else {
@@ -67,11 +67,11 @@ public final class UiModifications {
                break;
             case "move_after":
             case "move_before":
-               int indexxxxxx = find(array, controls, modification);
+               int indexxxxx = find(array, controls, modification);
                int targetx = target(array, controls, modification);
-               if (indexxxxxx >= 0 && targetx >= 0 && indexxxxxx != targetx) {
-                  JsonElement entry = array.remove(indexxxxxx);
-                  if (indexxxxxx < targetx) {
+               if (indexxxxx >= 0 && targetx >= 0 && indexxxxx != targetx) {
+                  JsonElement entry = array.remove(indexxxxx);
+                  if (indexxxxx < targetx) {
                      targetx--;
                   }
 
@@ -81,21 +81,21 @@ public final class UiModifications {
                }
                break;
             case "swap":
-               int indexxxxx = find(array, controls, modification);
+               int indexxxx = find(array, controls, modification);
                int target = target(array, controls, modification);
-               if (indexxxxx >= 0 && target >= 0) {
-                  JsonElement first = array.get(indexxxxx);
-                  array.set(indexxxxx, array.get(target));
+               if (indexxxx >= 0 && target >= 0) {
+                  JsonElement first = array.get(indexxxx);
+                  array.set(indexxxx, array.get(target));
                   array.set(target, first);
                } else {
                   skipped(problems, where, operation);
                }
                break;
             case "replace":
-               int indexxxx = find(array, controls, modification);
-               if (indexxxx >= 0 && value != null) {
-                  array.remove(indexxxx);
-                  insert(array, indexxxx, value, controls);
+               int indexxx = find(array, controls, modification);
+               if (indexxx >= 0 && value != null) {
+                  array.remove(indexxx);
+                  insert(array, indexxx, value, controls);
                } else {
                   skipped(problems, where, operation);
                }
@@ -210,8 +210,7 @@ public final class UiModifications {
       return -1;
    }
 
-   @Nullable
-   static String string(@Nullable JsonElement element) {
+   static @Nullable String string(@Nullable JsonElement element) {
       return element != null && element.isJsonPrimitive() && element.getAsJsonPrimitive().isString() ? element.getAsString() : null;
    }
 }

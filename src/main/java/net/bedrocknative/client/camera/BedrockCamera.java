@@ -30,13 +30,11 @@ import org.jspecify.annotations.Nullable;
 public final class BedrockCamera {
    private static final CameraDirector DIRECTOR = new CameraDirector();
    private static final double CLIP_MARGIN = 0.1;
-   @Nullable
-   private static volatile CameraType forced;
-   private static LongFunction<Entity> entities = id -> null;
+   private static volatile @Nullable CameraType forced;
+   private static LongFunction<@Nullable Entity> entities = id -> null;
    private static volatile String lastInstruction = "";
    private static volatile String lastAimAssist = "";
-   @Nullable
-   private static volatile CameraDirector.Pose lastPose;
+   private static volatile CameraDirector.@Nullable Pose lastPose;
    private static float partialTicks;
 
    private BedrockCamera() {
@@ -46,7 +44,7 @@ public final class BedrockCamera {
       return System.nanoTime() / 1.0E9;
    }
 
-   public static synchronized void start(LongFunction<Entity> byUniqueId) {
+   public static synchronized void start(LongFunction<@Nullable Entity> byUniqueId) {
       DIRECTOR.open();
       forced = null;
       lastPose = null;
@@ -92,7 +90,7 @@ public final class BedrockCamera {
          CameraDirector.Pose start = player == null
             ? new CameraDirector.Pose(Vector3d.ZERO, 0.0F, 0.0F)
             : new CameraDirector.Pose(of(player.getEyePosition()), player.getYRot(), player.getXRot());
-         DIRECTOR.apply(packet, now(), start, ((Integer)minecraft.options.fov().get()).intValue());
+         DIRECTOR.apply(packet, now(), start, minecraft.options.fov().get().intValue());
          refresh();
          BedrockNative.LOGGER.debug("Camera instruction {} -> {} {}", new Object[]{packet, DIRECTOR.presetName(), forced});
       }
@@ -115,8 +113,7 @@ public final class BedrockCamera {
       forced = null;
    }
 
-   @Nullable
-   public static CameraType forcedCameraType() {
+   public static @Nullable CameraType forcedCameraType() {
       return forced;
    }
 
@@ -133,8 +130,7 @@ public final class BedrockCamera {
       refresh();
    }
 
-   @Nullable
-   public static synchronized CameraDirector.Pose align(
+   public static synchronized CameraDirector.@Nullable Pose align(
       Entity entity, Level level, float partialTick, Vec3 eye, float yaw, float pitch, Vec3 javaPosition, float javaYaw, float javaPitch
    ) {
       partialTicks = partialTick;
@@ -177,8 +173,7 @@ public final class BedrockCamera {
       return DIRECTOR;
    }
 
-   @Nullable
-   public static CameraDirector.Pose lastPose() {
+   public static CameraDirector.@Nullable Pose lastPose() {
       return lastPose;
    }
 
@@ -203,16 +198,14 @@ public final class BedrockCamera {
    }
 
    private record World(Entity camera, Level level) implements CameraDirector.World {
-      @Nullable
       @Override
-      public Vector3d eyeOf(long uniqueEntityId) {
+      public @Nullable Vector3d eyeOf(long uniqueEntityId) {
          Entity entity = BedrockCamera.entities.apply(uniqueEntityId);
          return entity == null ? null : BedrockCamera.of(entity.getEyePosition(BedrockCamera.partialTicks));
       }
 
-      @Nullable
       @Override
-      public Vector3d centreOf(long uniqueEntityId) {
+      public @Nullable Vector3d centreOf(long uniqueEntityId) {
          Entity entity = BedrockCamera.entities.apply(uniqueEntityId);
          return entity == null
             ? null
@@ -230,11 +223,11 @@ public final class BedrockCamera {
          HitResult hit = this.level.clip(new ClipContext(start, end, Block.VISUAL, Fluid.NONE, this.camera));
          if (hit.getType() == Type.MISS) {
             return to;
-         } else {
-            Vec3 along = end.subtract(start);
-            double reach = Math.max(hit.getLocation().distanceTo(start) - 0.1, 0.0);
-            return BedrockCamera.of(start.add(along.normalize().scale(reach)));
          }
+
+         Vec3 along = end.subtract(start);
+         double reach = Math.max(hit.getLocation().distanceTo(start) - 0.1, 0.0);
+         return BedrockCamera.of(start.add(along.normalize().scale(reach)));
       }
    }
 }

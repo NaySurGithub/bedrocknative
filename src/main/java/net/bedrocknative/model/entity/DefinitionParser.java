@@ -28,8 +28,7 @@ public final class DefinitionParser {
       this.version = version;
    }
 
-   @Nullable
-   public ClientEntityDef parse(JsonObject file, int pack, boolean serverPack) {
+   public @Nullable ClientEntityDef parse(JsonObject file, int pack, boolean serverPack) {
       int format = MolangVersion.parse(ModelJson.string(file, "format_version"));
       boolean attachable = false;
       JsonObject root = ModelJson.object(file, "minecraft:client_entity");
@@ -55,10 +54,10 @@ public final class DefinitionParser {
          List<ClientEntityDef.RenderControllerRef> renderControllers = new ArrayList<>();
          JsonArray controllers = ModelJson.array(description, "render_controllers");
          if (controllers != null) {
-            for (JsonElement elementx : controllers) {
-               if (elementx instanceof JsonPrimitive name) {
+            for (JsonElement element : controllers) {
+               if (element instanceof JsonPrimitive name) {
                   renderControllers.add(new ClientEntityDef.RenderControllerRef(name.getAsString(), null));
-               } else if (elementx instanceof JsonObject conditional) {
+               } else if (element instanceof JsonObject conditional) {
                   conditional.entrySet()
                      .forEach(
                         entryx -> renderControllers.add(
@@ -149,8 +148,7 @@ public final class DefinitionParser {
       );
    }
 
-   @Nullable
-   private MolangProgram joined(@Nullable JsonObject json, String key, boolean lowerCase) {
+   private @Nullable MolangProgram joined(@Nullable JsonObject json, String key, boolean lowerCase) {
       JsonElement element = member(json, key);
       List<String> lines = new ArrayList<>();
       if (element instanceof JsonPrimitive primitive) {
@@ -166,29 +164,27 @@ public final class DefinitionParser {
       return lines.isEmpty() ? null : this.molang.script(lines, this.version, lowerCase);
    }
 
-   @Nullable
-   private MolangProgram optional(@Nullable JsonObject json, String key) {
+   private @Nullable MolangProgram optional(@Nullable JsonObject json, String key) {
       return member(json, key) instanceof JsonPrimitive primitive ? this.program(primitive, false) : null;
    }
 
-   @Nullable
-   static JsonElement member(@Nullable JsonObject json, String key) {
+   static @Nullable JsonElement member(@Nullable JsonObject json, String key) {
       if (json == null) {
          return null;
-      } else {
-         JsonElement exact = json.get(key);
-         if (exact != null) {
-            return exact;
-         } else {
-            for (Entry<String, JsonElement> entry : json.entrySet()) {
-               if (entry.getKey().equalsIgnoreCase(key)) {
-                  return entry.getValue();
-               }
-            }
+      }
 
-            return null;
+      JsonElement exact = json.get(key);
+      if (exact != null) {
+         return exact;
+      }
+
+      for (Entry<String, JsonElement> entry : json.entrySet()) {
+         if (entry.getKey().equalsIgnoreCase(key)) {
+            return entry.getValue();
          }
       }
+
+      return null;
    }
 
    private MolangProgram program(JsonElement json, boolean lowerCase) {

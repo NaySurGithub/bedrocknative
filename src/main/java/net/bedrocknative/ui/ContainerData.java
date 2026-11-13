@@ -55,10 +55,8 @@ public final class ContainerData implements UiDataSource {
    private final ContainerSlots slots;
    private final Map<String, ContainerData.Slot[]> items = new LinkedHashMap<>();
    private ContainerData.Slot carried = ContainerData.Slot.EMPTY;
-   @Nullable
-   private ContainerData.Controller controller;
-   @Nullable
-   private ContainerData.Station station;
+   private ContainerData.@Nullable Controller controller;
+   private ContainerData.@Nullable Station station;
    private long version = 1L;
    private float furnaceArrow = 1.0F;
    private float furnaceFlame = 1.0F;
@@ -81,17 +79,16 @@ public final class ContainerData implements UiDataSource {
       this(ContainerSlots.chest(ownSlots));
    }
 
-   public void controller(@Nullable ContainerData.Controller target) {
+   public void controller(ContainerData.@Nullable Controller target) {
       this.controller = target;
    }
 
-   public void station(@Nullable ContainerData.Station data) {
+   public void station(ContainerData.@Nullable Station data) {
       this.station = data;
       this.version++;
    }
 
-   @Nullable
-   public ContainerData.Station station() {
+   public ContainerData.@Nullable Station station() {
       return this.station;
    }
 
@@ -144,15 +141,15 @@ public final class ContainerData implements UiDataSource {
    public static boolean outside(@Nullable UiControl hit) {
       if (hit == null) {
          return true;
-      } else {
-         for (String target : selectTargets(hit)) {
-            if (target.startsWith("button.cursor_drop_")) {
-               return true;
-            }
-         }
-
-         return false;
       }
+
+      for (String target : selectTargets(hit)) {
+         if (target.startsWith("button.cursor_drop_")) {
+            return true;
+         }
+      }
+
+      return false;
    }
 
    private static List<String> selectTargets(UiControl control) {
@@ -170,8 +167,7 @@ public final class ContainerData implements UiDataSource {
       return targets;
    }
 
-   @Nullable
-   private static String string(@Nullable JsonElement element) {
+   private static @Nullable String string(@Nullable JsonElement element) {
       return element != null && element.isJsonPrimitive() ? element.getAsString() : null;
    }
 
@@ -300,20 +296,24 @@ public final class ContainerData implements UiDataSource {
       if (collectionItems == null) {
          UiValue value = this.station == null ? null : this.station.item(collection, index, name);
          return value == null ? UiValue.NULL : value;
-      } else if (index < 0) {
-         return name.equals("#collection_total_items") ? UiValue.of(collectionItems.length) : UiValue.NULL;
-      } else if (index >= collectionItems.length) {
-         return UiValue.NULL;
-      } else {
-         if (this.station != null) {
-            UiValue value = this.station.item(collection, index, name);
-            if (value != null) {
-               return value;
-            }
-         }
-
-         return slotValue(collectionItems[index], name);
       }
+
+      if (index < 0) {
+         return name.equals("#collection_total_items") ? UiValue.of(collectionItems.length) : UiValue.NULL;
+      }
+
+      if (index >= collectionItems.length) {
+         return UiValue.NULL;
+      }
+
+      if (this.station != null) {
+         UiValue value = this.station.item(collection, index, name);
+         if (value != null) {
+            return value;
+         }
+      }
+
+      return slotValue(collectionItems[index], name);
    }
 
    public static UiValue slotValue(ContainerData.Slot slot, String name) {
@@ -339,9 +339,8 @@ public final class ContainerData implements UiDataSource {
       };
    }
 
-   @Nullable
    @Override
-   public String kind(String collection, int index) {
+   public @Nullable String kind(String collection, int index) {
       return null;
    }
 
@@ -431,8 +430,7 @@ public final class ContainerData implements UiDataSource {
 
       int length(String var1);
 
-      @Nullable
-      UiValue item(String var1, int var2, String var3);
+      @Nullable UiValue item(String var1, int var2, String var3);
 
       boolean event(String var1, @Nullable String var2, int var3);
 
@@ -440,8 +438,7 @@ public final class ContainerData implements UiDataSource {
 
       long version();
 
-      @Nullable
-      default UiValue global(String name, UiItemPath path) {
+      default @Nullable UiValue global(String name, UiItemPath path) {
          return null;
       }
 

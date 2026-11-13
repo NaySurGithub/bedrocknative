@@ -14,24 +14,22 @@ public final class OreFonts implements OreText.Fonts {
       this.install = install;
    }
 
-   @Nullable
    @Override
-   public synchronized OreFont font(String family, int weight) {
+   public synchronized @Nullable OreFont font(String family, int weight) {
       OreFont own = this.install.ownFont(family, weight);
       if (own != null) {
          return own;
-      } else {
-         String key = OreInstall.faceKey(family, weight, "normal");
-         return this.loaded.computeIfAbsent(key, k -> {
-            Optional<Path> file = this.install.font(family, weight, "normal");
-            return file.map(path -> OreFont.load(family + (weight >= 600 ? " bold" : ""), path));
-         }).orElse(null);
       }
+
+      String key = OreInstall.faceKey(family, weight, "normal");
+      return this.loaded.computeIfAbsent(key, k -> {
+         Optional<Path> file = this.install.font(family, weight, "normal");
+         return file.map(path -> OreFont.load(family + (weight >= 600 ? " bold" : ""), path));
+      }).orElse(null);
    }
 
-   @Nullable
    @Override
-   public OreFont fallback() {
+   public @Nullable OreFont fallback() {
       return this.font("Noto Sans", 400);
    }
 

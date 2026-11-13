@@ -103,15 +103,12 @@ final class Nodes {
             env.actor = actor;
             env.variables = shared != null ? shared : EMPTY.get();
 
-            float var6;
             try {
-               var6 = this.body.eval(env);
+               return this.body.eval(env);
             } finally {
                env.actor = previousActor;
                env.variables = previousVariables;
             }
-
-            return var6;
          } else {
             env.object = null;
             return 0.0F;
@@ -121,8 +118,7 @@ final class Nodes {
 
    static final class Coalesce extends Node {
       final Node left;
-      @Nullable
-      final Nodes.VariableRead leftVariable;
+      final Nodes.@Nullable VariableRead leftVariable;
       final Node right;
 
       Coalesce(Node left, Node right) {
@@ -135,10 +131,10 @@ final class Nodes {
       float eval(MolangEnv env) {
          if (this.leftVariable != null && !this.leftVariable.isSet(env)) {
             return this.right.eval(env);
-         } else {
-            float value = this.left.eval(env);
-            return env.object instanceof MolangActor actor && !actor.valid() ? this.right.eval(env) : value;
          }
+
+         float value = this.left.eval(env);
+         return env.object instanceof MolangActor actor && !actor.valid() ? this.right.eval(env) : value;
       }
    }
 
@@ -364,12 +360,9 @@ final class Nodes {
 
    static final class MathCall extends Nodes.Numeric {
       final MathFunctions.Function function;
-      @Nullable
-      final Node a;
-      @Nullable
-      final Node b;
-      @Nullable
-      final Node c;
+      final @Nullable Node a;
+      final @Nullable Node b;
+      final @Nullable Node c;
 
       MathCall(MathFunctions.Function function, @Nullable Node a, @Nullable Node b, @Nullable Node c) {
          this.function = function;
@@ -614,8 +607,7 @@ final class Nodes {
    static final class Ternary extends Node {
       final Node condition;
       final Node then;
-      @Nullable
-      final Node otherwise;
+      final @Nullable Node otherwise;
 
       Ternary(Node condition, Node then, @Nullable Node otherwise) {
          this.condition = condition;
@@ -684,27 +676,27 @@ final class Nodes {
 
          if (index < 0) {
             return this.missing(env);
-         } else {
-            float value = store.valueAt(index);
-            Object object = store.objectAt(index);
+         }
 
-            for (int i = 1; i < this.path.length; i++) {
-               if (!(object instanceof MolangStruct struct)) {
-                  return this.missing(env);
-               }
+         float value = store.valueAt(index);
+         Object object = store.objectAt(index);
 
-               int member = struct.members.index(this.path[i]);
-               if (member < 0) {
-                  return this.missing(env);
-               }
-
-               value = struct.members.valueAt(member);
-               object = struct.members.objectAt(member);
+         for (int i = 1; i < this.path.length; i++) {
+            if (!(object instanceof MolangStruct struct)) {
+               return this.missing(env);
             }
 
-            env.object = object;
-            return value;
+            int member = struct.members.index(this.path[i]);
+            if (member < 0) {
+               return this.missing(env);
+            }
+
+            value = struct.members.valueAt(member);
+            object = struct.members.objectAt(member);
          }
+
+         env.object = object;
+         return value;
       }
 
       boolean isSet(MolangEnv env) {
@@ -717,24 +709,24 @@ final class Nodes {
 
          if (index < 0) {
             return false;
-         } else {
-            Object object = store.objectAt(index);
+         }
 
-            for (int i = 1; i < this.path.length; i++) {
-               if (!(object instanceof MolangStruct struct)) {
-                  return false;
-               }
+         Object object = store.objectAt(index);
 
-               int member = struct.members.index(this.path[i]);
-               if (member < 0) {
-                  return false;
-               }
-
-               object = struct.members.objectAt(member);
+         for (int i = 1; i < this.path.length; i++) {
+            if (!(object instanceof MolangStruct struct)) {
+               return false;
             }
 
-            return true;
+            int member = struct.members.index(this.path[i]);
+            if (member < 0) {
+               return false;
+            }
+
+            object = struct.members.objectAt(member);
          }
+
+         return true;
       }
 
       private float missing(MolangEnv env) {
@@ -764,15 +756,15 @@ final class Nodes {
          Object object = env.object;
          if (env.flow != 0) {
             return number;
-         } else {
-            if (object instanceof MolangStruct struct) {
-               object = struct.copy();
-            }
-
-            assign(env, this.scope, this.path, number, object);
-            env.object = object;
-            return number;
          }
+
+         if (object instanceof MolangStruct struct) {
+            object = struct.copy();
+         }
+
+         assign(env, this.scope, this.path, number, object);
+         env.object = object;
+         return number;
       }
 
       static void assign(MolangEnv env, int scope, int[] path, float number, @Nullable Object object) {

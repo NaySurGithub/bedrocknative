@@ -30,7 +30,7 @@ public final class LightReference {
       Storage storage = cache.storage;
 
       for (int i = 0; i < storage.chunks.length(); i++) {
-         LevelChunk chunk = (LevelChunk)storage.chunks.get(i);
+         LevelChunk chunk = storage.chunks.get(i);
          if (chunk != null && ClientChunkCache.isValidChunk(chunk, chunk.getPos().x(), chunk.getPos().z())) {
             loaded.add(chunk);
          }
@@ -42,8 +42,8 @@ public final class LightReference {
       for (LevelChunk chunk : loaded) {
          LevelChunkSection[] sections = chunk.getSections();
 
-         for (int ix = 0; ix < sections.length; ix++) {
-            reference.updateSectionStatus(SectionPos.of(chunk.getPos(), level.getSectionYFromSectionIndex(ix)), sections[ix].hasOnlyAir());
+         for (int i = 0; i < sections.length; i++) {
+            reference.updateSectionStatus(SectionPos.of(chunk.getPos(), level.getSectionYFromSectionIndex(i)), sections[i].hasOnlyAir());
          }
       }
 
@@ -94,28 +94,28 @@ public final class LightReference {
       DataLayer b = reference.getDataLayerData(section);
       if (a == null && b == null) {
          return 0L;
-      } else {
-         long count = 0L;
+      }
 
-         for (int y = 0; y < 16; y++) {
-            for (int z = 0; z < 16; z++) {
-               for (int x = 0; x < 16; x++) {
-                  int left = a == null ? 0 : a.get(x, y, z);
-                  int right = b == null ? 0 : b.get(x, y, z);
-                  if (left != right) {
-                     count++;
-                  }
+      long count = 0L;
+
+      for (int y = 0; y < 16; y++) {
+         for (int z = 0; z < 16; z++) {
+            for (int x = 0; x < 16; x++) {
+               int left = a == null ? 0 : a.get(x, y, z);
+               int right = b == null ? 0 : b.get(x, y, z);
+               if (left != right) {
+                  count++;
                }
             }
          }
-
-         return count;
       }
+
+      return count;
    }
 
    private record Getter(ClientLevel level, List<LevelChunk> chunks) implements LightChunkGetter {
-      @Nullable
-      public LightChunk getChunkForLighting(int chunkX, int chunkZ) {
+      @Override
+      public @Nullable LightChunk getChunkForLighting(int chunkX, int chunkZ) {
          for (LevelChunk chunk : this.chunks) {
             if (chunk.getPos().x() == chunkX && chunk.getPos().z() == chunkZ) {
                return chunk;
@@ -125,10 +125,12 @@ public final class LightReference {
          return null;
       }
 
+      @Override
       public BlockGetter getLevel() {
          return this.level;
       }
 
+      @Override
       public void onLightUpdate(LightLayer layer, SectionPos pos) {
       }
    }

@@ -88,10 +88,10 @@ final class DevJsonUiScreensTest {
                UiControl line = find(this.chatScreen(), control -> control.type() == UiType.LABEL && control.visible() && second.equals(control.text()));
                if (line == null) {
                   return false;
-               } else {
-                  press(this.chatScreen(), line.x() + 2.0F, line.y() + line.height() / 2.0F);
-                  return true;
                }
+
+               press(this.chatScreen(), line.x() + 2.0F, line.y() + line.height() / 2.0F);
+               return true;
             });
             sleep(300L);
             String typed = this.onClient(() -> this.chatScreen().typed());
@@ -109,10 +109,10 @@ final class DevJsonUiScreensTest {
             UiControl target = button != null ? button : send;
             if (target == null) {
                return false;
-            } else {
-               press(this.chatScreen(), target.x() + target.width() / 2.0F, target.y() + target.height() / 2.0F);
-               return true;
             }
+
+            press(this.chatScreen(), target.x() + target.width() / 2.0F, target.y() + target.height() / 2.0F);
+            return true;
          });
          sleep(1500L);
          check(
@@ -241,8 +241,7 @@ final class DevJsonUiScreensTest {
       });
    }
 
-   @Nullable
-   private static UiControl find(Screen screen, Predicate<UiControl> wanted) {
+   private static @Nullable UiControl find(Screen screen, Predicate<UiControl> wanted) {
       if (screen instanceof JsonUiHost host && host.ui().instance().root() != null) {
          UiControl[] found = new UiControl[]{null};
          host.ui().instance().root().walk(control -> {
@@ -256,8 +255,7 @@ final class DevJsonUiScreensTest {
       }
    }
 
-   @Nullable
-   private static UiControl first(UiControl from, UiType type) {
+   private static @Nullable UiControl first(UiControl from, UiType type) {
       UiControl[] found = new UiControl[]{null};
       from.walk(control -> {
          if (found[0] == null && control.type() == type && control.visible()) {
@@ -321,7 +319,7 @@ final class DevJsonUiScreensTest {
    private static void sleep(long millis) {
       try {
          Thread.sleep(millis);
-      } catch (InterruptedException var3) {
+      } catch (InterruptedException e) {
          Thread.currentThread().interrupt();
       }
    }

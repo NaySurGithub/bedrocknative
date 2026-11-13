@@ -91,7 +91,7 @@ public final class BedrockBiomes {
          }
       }
 
-      Holder<Biome> holder = key == null ? null : (Holder)this.registry.get(key).orElse(null);
+      Holder<Biome> holder = key == null ? null : this.registry.get(key).orElse(null);
       if (holder != null) {
          if (BiomeMappings.isApproximate(bedrockId)) {
             BedrockNative.LOGGER
@@ -128,7 +128,7 @@ public final class BedrockBiomes {
                .ifPresent(
                   holder -> candidates.add(
                      new BiomeClimates.Candidate<>(
-                        holder, new BiomeClimates.Climate(((Biome)holder.value()).getBaseTemperature(), ((Biome)holder.value()).climateSettings.downfall())
+                        holder, new BiomeClimates.Climate(holder.value().getBaseTemperature(), holder.value().climateSettings.downfall())
                      )
                   )
                );

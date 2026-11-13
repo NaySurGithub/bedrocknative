@@ -47,49 +47,49 @@ public final class PackCache {
    public Optional<Path> find(UUID uuid, String version, long advertisedSize) {
       if (!cacheable(version)) {
          return Optional.empty();
-      } else {
-         Path zip = this.file(uuid, version, ".zip");
-         Path info = this.file(uuid, version, ".json");
-         if (Files.isRegularFile(zip) && Files.isRegularFile(info)) {
-            try {
-               JsonObject stored = JsonParser.parseString(Files.readString(info, StandardCharsets.UTF_8)).getAsJsonObject();
-               if (stored.get("size").getAsLong() == Files.size(zip)
-                  && stored.get("advertisedSize").getAsLong() == advertisedSize
-                  && stored.get("sha256").getAsString().equals(HexFormat.of().formatHex(sha256(zip)))) {
-                  touch(zip);
-                  return Optional.of(zip);
-               }
+      }
 
-               BedrockNative.LOGGER.info("Cached pack {}_{} no longer matches its download; downloading it again", uuid, version);
-            } catch (RuntimeException | IOException var8) {
-               BedrockNative.LOGGER.info("Cached pack {}_{} is unreadable; downloading it again", uuid, version);
+      Path zip = this.file(uuid, version, ".zip");
+      Path info = this.file(uuid, version, ".json");
+      if (Files.isRegularFile(zip) && Files.isRegularFile(info)) {
+         try {
+            JsonObject stored = JsonParser.parseString(Files.readString(info, StandardCharsets.UTF_8)).getAsJsonObject();
+            if (stored.get("size").getAsLong() == Files.size(zip)
+               && stored.get("advertisedSize").getAsLong() == advertisedSize
+               && stored.get("sha256").getAsString().equals(HexFormat.of().formatHex(sha256(zip)))) {
+               touch(zip);
+               return Optional.of(zip);
             }
 
-            this.delete(uuid, version);
-            return Optional.empty();
-         } else {
-            return Optional.empty();
+            BedrockNative.LOGGER.info("Cached pack {}_{} no longer matches its download; downloading it again", uuid, version);
+         } catch (IOException | RuntimeException e) {
+            BedrockNative.LOGGER.info("Cached pack {}_{} is unreadable; downloading it again", uuid, version);
          }
+
+         this.delete(uuid, version);
+         return Optional.empty();
+      } else {
+         return Optional.empty();
       }
    }
 
    public Path store(UUID uuid, String version, long advertisedSize, Path downloaded, byte[] sha256) throws IOException {
       if (!cacheable(version)) {
          throw new IOException("Pack version can't be cached: " + version);
-      } else {
-         Path zip = this.file(uuid, version, ".zip");
-         Files.createDirectories(this.folder);
-         JsonObject stored = new JsonObject();
-         stored.addProperty("uuid", uuid.toString());
-         stored.addProperty("version", version);
-         stored.addProperty("advertisedSize", advertisedSize);
-         stored.addProperty("size", Files.size(downloaded));
-         stored.addProperty("sha256", HexFormat.of().formatHex(sha256));
-         Files.move(downloaded, zip, StandardCopyOption.REPLACE_EXISTING);
-         Files.writeString(this.file(uuid, version, ".json"), stored.toString(), StandardCharsets.UTF_8);
-         this.evict(zip);
-         return zip;
       }
+
+      Path zip = this.file(uuid, version, ".zip");
+      Files.createDirectories(this.folder);
+      JsonObject stored = new JsonObject();
+      stored.addProperty("uuid", uuid.toString());
+      stored.addProperty("version", version);
+      stored.addProperty("advertisedSize", advertisedSize);
+      stored.addProperty("size", Files.size(downloaded));
+      stored.addProperty("sha256", HexFormat.of().formatHex(sha256));
+      Files.move(downloaded, zip, StandardCopyOption.REPLACE_EXISTING);
+      Files.writeString(this.file(uuid, version, ".json"), stored.toString(), StandardCharsets.UTF_8);
+      this.evict(zip);
+      return zip;
    }
 
    void evict(Path keep) {
@@ -101,8 +101,8 @@ public final class PackCache {
          List<Path> zips;
          try (Stream<Path> files = Files.list(this.folder)) {
             zips = files.filter(file -> isCachedPack(file.getFileName().toString())).filter(x$0 -> Files.isRegularFile(x$0)).toList();
-         } catch (IOException var17) {
-            BedrockNative.LOGGER.debug("Couldn't list {}", this.folder, var17);
+         } catch (IOException e) {
+            BedrockNative.LOGGER.debug("Couldn't list {}", this.folder, e);
             return;
          }
 
@@ -120,21 +120,21 @@ public final class PackCache {
 
          candidates.sort(Comparator.comparingLong(PackCache::modified));
 
-         for (Path zipx : candidates) {
+         for (Path zip : candidates) {
             if (total <= limit) {
                return;
             }
 
-            long bytes = size(zipx);
+            long bytes = size(zip);
 
             try {
-               Files.deleteIfExists(zipx);
-               String name = zipx.getFileName().toString();
-               Files.deleteIfExists(zipx.resolveSibling(name.substring(0, name.length() - ".zip".length()) + ".json"));
+               Files.deleteIfExists(zip);
+               String name = zip.getFileName().toString();
+               Files.deleteIfExists(zip.resolveSibling(name.substring(0, name.length() - ".zip".length()) + ".json"));
                total -= bytes;
                BedrockNative.LOGGER.info("Deleted cached pack {} (cache over {} MiB)", name, limit >> 20);
-            } catch (IOException var15) {
-               BedrockNative.LOGGER.debug("Couldn't delete {}", zipx, var15);
+            } catch (IOException e) {
+               BedrockNative.LOGGER.debug("Couldn't delete {}", zip, e);
             }
          }
       }
@@ -143,7 +143,7 @@ public final class PackCache {
    private static long size(Path file) {
       try {
          return Files.size(file);
-      } catch (IOException var2) {
+      } catch (IOException e) {
          return 0L;
       }
    }
@@ -151,7 +151,7 @@ public final class PackCache {
    private static long modified(Path file) {
       try {
          return Files.getLastModifiedTime(file).toMillis();
-      } catch (IOException var2) {
+      } catch (IOException e) {
          return 0L;
       }
    }
@@ -159,8 +159,8 @@ public final class PackCache {
    private static void touch(Path zip) {
       try {
          Files.setLastModifiedTime(zip, FileTime.fromMillis(System.currentTimeMillis()));
-      } catch (IOException var2) {
-         BedrockNative.LOGGER.debug("Couldn't mark {} as used", zip, var2);
+      } catch (IOException e) {
+         BedrockNative.LOGGER.debug("Couldn't mark {} as used", zip, e);
       }
    }
 
@@ -179,12 +179,12 @@ public final class PackCache {
                   if (Files.getLastModifiedTime(file).toMillis() < cutoff && Files.deleteIfExists(file)) {
                      BedrockNative.LOGGER.info("Deleted unfinished pack download {}", file.getFileName());
                   }
-               } catch (IOException var8) {
-                  BedrockNative.LOGGER.debug("Couldn't delete {}", file, var8);
+               } catch (IOException e) {
+                  BedrockNative.LOGGER.debug("Couldn't delete {}", file, e);
                }
             }
-         } catch (IOException var10) {
-            BedrockNative.LOGGER.debug("Couldn't list {}", this.folder, var10);
+         } catch (IOException e) {
+            BedrockNative.LOGGER.debug("Couldn't list {}", this.folder, e);
          }
       }
    }
@@ -194,8 +194,8 @@ public final class PackCache {
          try {
             Files.deleteIfExists(this.file(uuid, version, ".zip"));
             Files.deleteIfExists(this.file(uuid, version, ".json"));
-         } catch (IOException var4) {
-            BedrockNative.LOGGER.warn("Couldn't delete cached pack {}_{}", new Object[]{uuid, version, var4});
+         } catch (IOException e) {
+            BedrockNative.LOGGER.warn("Couldn't delete cached pack {}_{}", new Object[]{uuid, version, e});
          }
       }
    }
@@ -230,8 +230,8 @@ public final class PackCache {
    public static MessageDigest sha256() {
       try {
          return MessageDigest.getInstance("SHA-256");
-      } catch (NoSuchAlgorithmException var1) {
-         throw new IllegalStateException(var1);
+      } catch (NoSuchAlgorithmException e) {
+         throw new IllegalStateException(e);
       }
    }
 }

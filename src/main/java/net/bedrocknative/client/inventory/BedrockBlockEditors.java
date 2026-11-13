@@ -22,8 +22,7 @@ public final class BedrockBlockEditors {
    private final Minecraft minecraft;
    private final Consumer<BedrockPacket> send;
    private int windowId = -1;
-   @Nullable
-   private Class<? extends Screen> screenType;
+   private @Nullable Class<? extends Screen> screenType;
    private int opened;
 
    public BedrockBlockEditors(Minecraft minecraft, Consumer<BedrockPacket> send) {

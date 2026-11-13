@@ -66,9 +66,9 @@ public final class DevPacksTest {
             }
 
             log("done");
-         } catch (RuntimeException var4) {
-            BedrockNative.LOGGER.error("Dev packs test failed", var4);
-            log("done (failed: {})", var4.getMessage());
+         } catch (RuntimeException e) {
+            BedrockNative.LOGGER.error("Dev packs test failed", e);
+            log("done (failed: {})", e.getMessage());
          }
       });
    }
@@ -245,14 +245,12 @@ public final class DevPacksTest {
    }
 
    private void deleteCache() {
-      try {
-         try (Stream<Path> files = Files.exists(this.cache) ? Files.list(this.cache) : Stream.empty()) {
-            for (Path file : files.filter(filex -> filex.getFileName().toString().startsWith(PACK.toString())).toList()) {
-               Files.delete(file);
-            }
+      try (Stream<Path> files = Files.exists(this.cache) ? Files.list(this.cache) : Stream.empty()) {
+         for (Path file : files.filter(filex -> filex.getFileName().toString().startsWith(PACK.toString())).toList()) {
+            Files.delete(file);
          }
-      } catch (IOException var6) {
-         throw new IllegalStateException(var6);
+      } catch (IOException e) {
+         throw new IllegalStateException(e);
       }
    }
 
@@ -261,8 +259,8 @@ public final class DevPacksTest {
          Path part = Files.writeString(this.cache.resolve(PACK + "crashed.part"), "partial");
          Files.setLastModifiedTime(part, FileTime.fromMillis(System.currentTimeMillis() - 3600000L));
          return part;
-      } catch (IOException var2) {
-         throw new IllegalStateException(var2);
+      } catch (IOException e) {
+         throw new IllegalStateException(e);
       }
    }
 
@@ -274,21 +272,16 @@ public final class DevPacksTest {
          bytes[bytes.length / 2] = (byte)(bytes[bytes.length / 2] ^ 85);
          Files.write(zip, bytes);
          log("3 corrupted one byte of {}", zip.getFileName());
-      } catch (IOException var3) {
-         throw new IllegalStateException(var3);
+      } catch (IOException e) {
+         throw new IllegalStateException(e);
       }
    }
 
    private List<String> cacheFiles() {
-      try {
-         List var2;
-         try (Stream<Path> files = Files.exists(this.cache) ? Files.list(this.cache) : Stream.empty()) {
-            var2 = files.<String>map(file -> file.getFileName().toString()).filter(name -> name.startsWith(PACK.toString())).sorted().toList();
-         }
-
-         return var2;
-      } catch (IOException var6) {
-         return List.of(var6.getMessage());
+      try (Stream<Path> files = Files.exists(this.cache) ? Files.list(this.cache) : Stream.empty()) {
+         return files.<String>map(file -> file.getFileName().toString()).filter(name -> name.startsWith(PACK.toString())).sorted().toList();
+      } catch (IOException e) {
+         return List.of(e.getMessage());
       }
    }
 
@@ -323,8 +316,7 @@ public final class DevPacksTest {
       return this.onClient(() -> this.screen() == null ? "none" : this.screen().getClass().getSimpleName());
    }
 
-   @Nullable
-   private Screen screen() {
+   private @Nullable Screen screen() {
       return this.minecraft.gui == null ? null : this.minecraft.gui.screen();
    }
 
@@ -350,7 +342,7 @@ public final class DevPacksTest {
    private static void sleep(long millis) {
       try {
          Thread.sleep(millis);
-      } catch (InterruptedException var3) {
+      } catch (InterruptedException e) {
          Thread.currentThread().interrupt();
       }
    }

@@ -34,8 +34,7 @@ public final class PlayerSkins {
    private static final int MAX_EXPLAINED = 64;
    private static final int MAX_UNLISTED_EARLY = 256;
    private static final long EXPLAIN_AFTER_NANOS = 2000000000L;
-   @Nullable
-   private static volatile EmoteLibrary emotes;
+   private static volatile @Nullable EmoteLibrary emotes;
    private static boolean emotesLoading;
    private final Map<UUID, PlayerSkins.Entry> skins = new HashMap<>();
    private final Map<UUID, String> names = new HashMap<>();
@@ -48,21 +47,16 @@ public final class PlayerSkins {
    private final Set<UUID> explained = new HashSet<>();
    private final Map<UUID, PlayerSkins.Pending> pending = new HashMap<>();
    private final BooleanSupplier active;
-   private final BiFunction<ModelRegistry, PlayerSkin, SkinModel> builder;
+   private final BiFunction<ModelRegistry, PlayerSkin, @Nullable SkinModel> builder;
    private final LongSupplier clock;
-   @Nullable
-   private final PrepPool prep;
-   private final Supplier<ModelRegistry> registry;
+   private final @Nullable PrepPool prep;
+   private final Supplier<@Nullable ModelRegistry> registry;
    private final Executor modelExecutor;
-   @Nullable
-   private UUID localUuid;
-   @Nullable
-   private SerializedSkin localSkin;
-   @Nullable
-   private String localKey;
+   private @Nullable UUID localUuid;
+   private @Nullable SerializedSkin localSkin;
+   private @Nullable String localKey;
    private boolean localStandIn;
-   @Nullable
-   private PlayerSkins.Skipped localSkipped;
+   private PlayerSkins.@Nullable Skipped localSkipped;
    private int versions;
    private int decoded;
    private int changes;
@@ -76,20 +70,20 @@ public final class PlayerSkins {
       this(BedrockPlayers::enabled, PlayerSkins::build, System::nanoTime, ActorPrep.pool(), BedrockModels::registry, ActorPrep.modelExecutor());
    }
 
-   PlayerSkins(BooleanSupplier active, BiFunction<ModelRegistry, PlayerSkin, SkinModel> builder) {
+   PlayerSkins(BooleanSupplier active, BiFunction<ModelRegistry, PlayerSkin, @Nullable SkinModel> builder) {
       this(active, builder, System::nanoTime);
    }
 
-   PlayerSkins(BooleanSupplier active, BiFunction<ModelRegistry, PlayerSkin, SkinModel> builder, LongSupplier clock) {
+   PlayerSkins(BooleanSupplier active, BiFunction<ModelRegistry, PlayerSkin, @Nullable SkinModel> builder, LongSupplier clock) {
       this(active, builder, clock, null, () -> null, Util.backgroundExecutor());
    }
 
    PlayerSkins(
       BooleanSupplier active,
-      BiFunction<ModelRegistry, PlayerSkin, SkinModel> builder,
+      BiFunction<ModelRegistry, PlayerSkin, @Nullable SkinModel> builder,
       LongSupplier clock,
       @Nullable PrepPool prep,
-      Supplier<ModelRegistry> registry,
+      Supplier<@Nullable ModelRegistry> registry,
       Executor modelExecutor
    ) {
       this.active = active;
@@ -124,8 +118,7 @@ public final class PlayerSkins {
       this.apply(uuid, skin, true, "own login skin", false);
    }
 
-   @Nullable
-   public SerializedSkin localSkin() {
+   public @Nullable SerializedSkin localSkin() {
       return this.localSkin;
    }
 
@@ -287,7 +280,10 @@ public final class PlayerSkins {
    }
 
    static PreparedSkin prepare(
-      SerializedSkin serialized, boolean trusted, Supplier<ModelRegistry> modelFor, BiFunction<ModelRegistry, PlayerSkin, SkinModel> builder
+      SerializedSkin serialized,
+      boolean trusted,
+      Supplier<@Nullable ModelRegistry> modelFor,
+      BiFunction<ModelRegistry, PlayerSkin, @Nullable SkinModel> builder
    ) {
       PlayerSkin skin = PlayerSkin.of(serialized);
       PlayerSkin drawn = drawn(skin, trusted);
@@ -351,12 +347,11 @@ public final class PlayerSkins {
       return this.names.getOrDefault(uuid, uuid.equals(this.localUuid) ? "the local player" : uuid.toString());
    }
 
-   @Nullable
-   public PlayerSkins.Entry entry(UUID uuid) {
+   public PlayerSkins.@Nullable Entry entry(UUID uuid) {
       return this.skins.get(uuid);
    }
 
-   public PlayerSkin drawn(@Nullable PlayerSkins.Entry entry) {
+   public PlayerSkin drawn(PlayerSkins.@Nullable Entry entry) {
       return entry == null ? STEVE : drawn(entry.skin(), entry.trusted());
    }
 
@@ -387,8 +382,7 @@ public final class PlayerSkins {
       return coming != null && coming.slim ? ALEX : STEVE;
    }
 
-   @Nullable
-   private String defaultReason(UUID uuid, @Nullable PlayerSkins.Entry entry, PlayerSkin drawn) {
+   private @Nullable String defaultReason(UUID uuid, PlayerSkins.@Nullable Entry entry, PlayerSkin drawn) {
       if (entry == null) {
          PlayerSkins.Spawn since = this.spawned.get(uuid);
          return !this.pending.containsKey(uuid) && since != null && this.clock.getAsLong() - since.time() >= 2000000000L
@@ -410,8 +404,7 @@ public final class PlayerSkins {
       }
    }
 
-   @Nullable
-   private String localKey() {
+   private @Nullable String localKey() {
       if (this.localKey == null && this.localSkin != null) {
          this.localKey = PlayerSkin.of(this.localSkin).key();
       }
@@ -446,8 +439,7 @@ public final class PlayerSkins {
       return this.pending.size();
    }
 
-   @Nullable
-   public SkinModel model(ModelRegistry registry, PlayerSkin skin) {
+   public @Nullable SkinModel model(ModelRegistry registry, PlayerSkin skin) {
       String key = skin.key();
       PlayerSkins.Built built = this.models.get(key);
       if (built == null || built.registry() != registry) {
@@ -459,9 +451,9 @@ public final class PlayerSkins {
       SkinModel model;
       try {
          model = built.model().getNow(null);
-      } catch (RuntimeException var7) {
+      } catch (RuntimeException e) {
          if (this.loggedFallbacks.add(key + "/failed")) {
-            BedrockNative.LOGGER.warn("The model of skin {} failed: the player is drawn by Java", key, var7);
+            BedrockNative.LOGGER.warn("The model of skin {} failed: the player is drawn by Java", key, e);
          }
 
          return null;
@@ -474,8 +466,7 @@ public final class PlayerSkins {
       return model;
    }
 
-   @Nullable
-   public SkinModel defaultModel(ModelRegistry registry, boolean slim) {
+   public @Nullable SkinModel defaultModel(ModelRegistry registry, boolean slim) {
       return this.model(registry, slim ? ALEX : STEVE);
    }
 
@@ -485,8 +476,8 @@ public final class PlayerSkins {
          if (model != null) {
             return model;
          }
-      } catch (RuntimeException var3) {
-         BedrockNative.LOGGER.warn("Couldn't build the model of skin {}", skin.key(), var3);
+      } catch (RuntimeException e) {
+         BedrockNative.LOGGER.warn("Couldn't build the model of skin {}", skin.key(), e);
       }
 
       return SkinModel.build(registry, PlayerSkin.defaultSkin(skin.slim(), "the skin's model couldn't be built"));
@@ -541,8 +532,7 @@ public final class PlayerSkins {
       return this.receivedOwn;
    }
 
-   @Nullable
-   public UUID localUuid() {
+   public @Nullable UUID localUuid() {
       return this.localUuid;
    }
 
@@ -555,19 +545,19 @@ public final class PlayerSkins {
       EmoteLibrary library = emotes;
       if (library != null) {
          return library;
-      } else {
-         if (!emotesLoading) {
-            emotesLoading = true;
-            CompletableFuture.runAsync(() -> {
-               Path persona = BedrockInstall.dataFolder().resolve("resource_packs").resolve("persona");
-               EmoteLibrary loaded = Files.isDirectory(persona) ? EmoteLibrary.load(new FolderPack(persona)) : EmoteLibrary.EMPTY;
-               BedrockNative.LOGGER.info("Bedrock emotes of the install: {}", loaded.describe());
-               emotes = loaded;
-            }, Util.backgroundExecutor());
-         }
-
-         return EmoteLibrary.EMPTY;
       }
+
+      if (!emotesLoading) {
+         emotesLoading = true;
+         CompletableFuture.runAsync(() -> {
+            Path persona = BedrockInstall.dataFolder().resolve("resource_packs").resolve("persona");
+            EmoteLibrary loaded = Files.isDirectory(persona) ? EmoteLibrary.load(new FolderPack(persona)) : EmoteLibrary.EMPTY;
+            BedrockNative.LOGGER.info("Bedrock emotes of the install: {}", loaded.describe());
+            emotes = loaded;
+         }, Util.backgroundExecutor());
+      }
+
+      return EmoteLibrary.EMPTY;
    }
 
    private record Built(ModelRegistry registry, CompletableFuture<SkinModel> model) {
@@ -582,8 +572,7 @@ public final class PlayerSkins {
       final boolean trusted;
       final String source;
       final boolean slim;
-      @Nullable
-      PrepPool.Ticket ticket;
+      PrepPool.@Nullable Ticket ticket;
 
       Pending(long seq, SerializedSkin skin, boolean trusted, String source) {
          this.seq = seq;

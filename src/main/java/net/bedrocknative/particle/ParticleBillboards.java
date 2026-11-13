@@ -82,11 +82,11 @@ final class ParticleBillboards {
                dz = 0.0F;
             }
 
-            float rx;
             float ry;
             float ux;
             float uy;
             float uz;
+            float rx;
             float rz;
             label95:
             switch (billboard.facing()) {
@@ -131,18 +131,18 @@ final class ParticleBillboards {
                   uz = camera.upZ;
                   break;
                case ROTATE_Y:
-                  float lengthxxxxx = (float)Math.sqrt(camera.rightX * camera.rightX + camera.rightZ * camera.rightZ);
-                  rx = lengthxxxxx > 1.0E-6F ? camera.rightX / lengthxxxxx : 1.0F;
+                  float lengthxxxx = (float)Math.sqrt(camera.rightX * camera.rightX + camera.rightZ * camera.rightZ);
+                  rx = lengthxxxx > 1.0E-6F ? camera.rightX / lengthxxxx : 1.0F;
                   ry = 0.0F;
-                  rz = lengthxxxxx > 1.0E-6F ? camera.rightZ / lengthxxxxx : 0.0F;
+                  rz = lengthxxxx > 1.0E-6F ? camera.rightZ / lengthxxxx : 0.0F;
                   ux = 0.0F;
                   uy = 1.0F;
                   uz = 0.0F;
                   break;
                case LOOKAT_Y:
-                  float lengthxxxx = (float)Math.sqrt(fx * fx + fz * fz);
-                  float nx = lengthxxxx > 1.0E-6F ? fx / lengthxxxx : 0.0F;
-                  float nz = lengthxxxx > 1.0E-6F ? fz / lengthxxxx : 1.0F;
+                  float lengthxxx = (float)Math.sqrt(fx * fx + fz * fz);
+                  float nx = lengthxxx > 1.0E-6F ? fx / lengthxxx : 0.0F;
+                  float nz = lengthxxx > 1.0E-6F ? fz / lengthxxx : 1.0F;
                   rx = nz;
                   ry = 0.0F;
                   rz = -nx;
@@ -154,14 +154,14 @@ final class ParticleBillboards {
                   ux = dx;
                   uy = dy;
                   uz = dz;
-                  rx = dy * fz - dz * fy;
-                  ry = dz * fx - dx * fz;
-                  rz = dx * fy - dy * fx;
-                  float lengthxxx = (float)Math.sqrt(rx * rx + ry * ry + rz * rz);
-                  if (lengthxxx > 1.0E-6F) {
-                     rx /= lengthxxx;
-                     ry /= lengthxxx;
-                     rz /= lengthxxx;
+                  rx = uy * fz - uz * fy;
+                  ry = uz * fx - ux * fz;
+                  rz = ux * fy - uy * fx;
+                  float lengthxx = (float)Math.sqrt(rx * rx + ry * ry + rz * rz);
+                  if (lengthxx > 1.0E-6F) {
+                     rx /= lengthxx;
+                     ry /= lengthxx;
+                     rz /= lengthxx;
                   } else {
                      rx = camera.rightX;
                      ry = camera.rightY;
@@ -172,14 +172,15 @@ final class ParticleBillboards {
                   rx = dx;
                   ry = dy;
                   rz = dz;
-                  ux = -dx * dy;
-                  uy = 1.0F - dy * dy;
-                  uz = -dz * dy;
-                  float lengthxx = (float)Math.sqrt(ux * ux + uy * uy + uz * uz);
-                  if (lengthxx > 1.0E-6F) {
-                     ux /= lengthxx;
-                     uy /= lengthxx;
-                     uz /= lengthxx;
+                  float dot = dy;
+                  ux = -dx * dot;
+                  uy = 1.0F - dy * dot;
+                  uz = -dz * dot;
+                  float lengthx = (float)Math.sqrt(ux * ux + uy * uy + uz * uz);
+                  if (lengthx > 1.0E-6F) {
+                     ux /= lengthx;
+                     uy /= lengthx;
+                     uz /= lengthx;
                   } else {
                      ux = camera.upX;
                      uy = camera.upY;
@@ -190,14 +191,14 @@ final class ParticleBillboards {
                   ux = dx;
                   uy = dy;
                   uz = dz;
-                  rx = dy * fz - dz * fy;
-                  ry = dz * fx - dx * fz;
-                  rz = dx * fy - dy * fx;
-                  float lengthx = (float)Math.sqrt(rx * rx + ry * ry + rz * rz);
-                  if (lengthx > 1.0E-6F) {
-                     rx /= lengthx;
-                     ry /= lengthx;
-                     rz /= lengthx;
+                  rx = uy * fz - uz * fy;
+                  ry = uz * fx - ux * fz;
+                  rz = ux * fy - uy * fx;
+                  float length = (float)Math.sqrt(rx * rx + ry * ry + rz * rz);
+                  if (length > 1.0E-6F) {
+                     rx /= length;
+                     ry /= length;
+                     rz /= length;
                   } else {
                      rx = 1.0F;
                      ry = 0.0F;
@@ -205,14 +206,15 @@ final class ParticleBillboards {
                   }
                   break;
                case DIRECTION_Z:
-                  ux = -dx * dy;
-                  uy = 1.0F - dy * dy;
-                  uz = -dz * dy;
-                  float lengthx = (float)Math.sqrt(ux * ux + uy * uy + uz * uz);
-                  if (lengthx > 1.0E-6F) {
-                     ux /= lengthx;
-                     uy /= lengthx;
-                     uz /= lengthx;
+                  float dot2 = dy;
+                  ux = -dx * dot2;
+                  uy = 1.0F - dy * dot2;
+                  uz = -dz * dot2;
+                  float length2 = (float)Math.sqrt(ux * ux + uy * uy + uz * uz);
+                  if (length2 > 1.0E-6F) {
+                     ux /= length2;
+                     uy /= length2;
+                     uz /= length2;
                   } else {
                      ux = 0.0F;
                      uy = 0.0F;
@@ -224,18 +226,19 @@ final class ParticleBillboards {
                   rz = ux * dy - uy * dx;
                   break;
                default:
-                  float length = (float)Math.sqrt(fx * fx + fy * fy + fz * fz);
-                  if (length > 1.0E-6F) {
-                     fx /= length;
-                     fy /= length;
-                     fz /= length;
+                  float length3 = (float)Math.sqrt(fx * fx + fy * fy + fz * fz);
+                  if (length3 > 1.0E-6F) {
+                     fx /= length3;
+                     fy /= length3;
+                     fz /= length3;
                   }
 
+                  rx = fz;
                   ry = 0.0F;
                   rz = -fx;
-                  float right = (float)Math.sqrt(fz * fz + rz * rz);
+                  float right = (float)Math.sqrt(rx * rx + rz * rz);
                   if (right > 1.0E-4F) {
-                     rx = fz / right;
+                     rx /= right;
                      rz /= right;
                   } else {
                      rx = camera.rightX;
@@ -295,41 +298,41 @@ final class ParticleBillboards {
       MolangProgram[] constant = tint.color();
       if (constant != null) {
          return argb(constant[0].evaluate(env), constant[1].evaluate(env), constant[2].evaluate(env), constant[3].evaluate(env));
-      } else {
-         float[] keys = tint.keys();
-         MolangProgram[][] colors = tint.gradient();
-         if (keys.length == 0) {
-            return -1;
-         } else {
-            float t = tint.interpolant() != null ? tint.interpolant().evaluate(env) : 0.0F;
-            if (keys.length != 1 && !(t <= keys[0])) {
-               int last = keys.length - 1;
-               if (t >= keys[last]) {
-                  MolangProgram[] end = colors[last];
-                  return argb(end[0].evaluate(env), end[1].evaluate(env), end[2].evaluate(env), end[3].evaluate(env));
-               } else {
-                  int index = 0;
+      }
 
-                  while (index < last - 1 && t >= keys[index + 1]) {
-                     index++;
-                  }
+      float[] keys = tint.keys();
+      MolangProgram[][] colors = tint.gradient();
+      if (keys.length == 0) {
+         return -1;
+      }
 
-                  float span = keys[index + 1] - keys[index];
-                  float local = span > 0.0F ? (t - keys[index]) / span : 0.0F;
-                  MolangProgram[] from = colors[index];
-                  MolangProgram[] to = colors[index + 1];
-                  return argb(
-                     lerp(from[0].evaluate(env), to[0].evaluate(env), local),
-                     lerp(from[1].evaluate(env), to[1].evaluate(env), local),
-                     lerp(from[2].evaluate(env), to[2].evaluate(env), local),
-                     lerp(from[3].evaluate(env), to[3].evaluate(env), local)
-                  );
-               }
-            } else {
-               MolangProgram[] first = colors[0];
-               return argb(first[0].evaluate(env), first[1].evaluate(env), first[2].evaluate(env), first[3].evaluate(env));
-            }
+      float t = tint.interpolant() != null ? tint.interpolant().evaluate(env) : 0.0F;
+      if (keys.length != 1 && !(t <= keys[0])) {
+         int last = keys.length - 1;
+         if (t >= keys[last]) {
+            MolangProgram[] end = colors[last];
+            return argb(end[0].evaluate(env), end[1].evaluate(env), end[2].evaluate(env), end[3].evaluate(env));
          }
+
+         int index = 0;
+
+         while (index < last - 1 && t >= keys[index + 1]) {
+            index++;
+         }
+
+         float span = keys[index + 1] - keys[index];
+         float local = span > 0.0F ? (t - keys[index]) / span : 0.0F;
+         MolangProgram[] from = colors[index];
+         MolangProgram[] to = colors[index + 1];
+         return argb(
+            lerp(from[0].evaluate(env), to[0].evaluate(env), local),
+            lerp(from[1].evaluate(env), to[1].evaluate(env), local),
+            lerp(from[2].evaluate(env), to[2].evaluate(env), local),
+            lerp(from[3].evaluate(env), to[3].evaluate(env), local)
+         );
+      } else {
+         MolangProgram[] first = colors[0];
+         return argb(first[0].evaluate(env), first[1].evaluate(env), first[2].evaluate(env), first[3].evaluate(env));
       }
    }
 

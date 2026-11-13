@@ -41,18 +41,13 @@ public enum XboxProblem {
    OTHER("other", null, "xbox.failedsignin.body", "https://support.xbox.com", XboxProblem.Action.LINK);
 
    private final String id;
-   @Nullable
-   private final String bedrockTitleKey;
-   @Nullable
-   private final String bedrockBodyKey;
-   @Nullable
-   private final String link;
+   private final @Nullable String bedrockTitleKey;
+   private final @Nullable String bedrockBodyKey;
+   private final @Nullable String link;
    private final XboxProblem.Action action;
    private final long[] codes;
 
-   private XboxProblem(
-      String id, @Nullable String bedrockTitleKey, @Nullable String bedrockBodyKey, @Nullable String link, XboxProblem.Action action, long... codes
-   ) {
+   XboxProblem(String id, @Nullable String bedrockTitleKey, @Nullable String bedrockBodyKey, @Nullable String link, XboxProblem.Action action, long... codes) {
       this.id = id;
       this.bedrockTitleKey = bedrockTitleKey;
       this.bedrockBodyKey = bedrockBodyKey;
@@ -69,18 +64,15 @@ public enum XboxProblem {
       return "bedrocknative.accounts.problem." + this.id;
    }
 
-   @Nullable
-   public String bedrockTitleKey() {
+   public @Nullable String bedrockTitleKey() {
       return this.bedrockTitleKey;
    }
 
-   @Nullable
-   public String bedrockBodyKey() {
+   public @Nullable String bedrockBodyKey() {
       return this.bedrockBodyKey;
    }
 
-   @Nullable
-   public String link() {
+   public @Nullable String link() {
       return this.link;
    }
 
@@ -95,15 +87,15 @@ public enum XboxProblem {
    public static boolean isFixedLink(@Nullable String link) {
       if (link == null) {
          return false;
-      } else {
-         for (XboxProblem problem : values()) {
-            if (link.equals(problem.link)) {
-               return true;
-            }
-         }
-
-         return false;
       }
+
+      for (XboxProblem problem : values()) {
+         if (link.equals(problem.link)) {
+            return true;
+         }
+      }
+
+      return false;
    }
 
    public static XboxProblem.Diagnosis fromXErr(long code) {
@@ -120,29 +112,28 @@ public enum XboxProblem {
       return new XboxProblem.Diagnosis(OTHER, unsigned);
    }
 
-   @Nullable
-   public static Long parseCode(@Nullable String text) {
+   public static @Nullable Long parseCode(@Nullable String text) {
       if (text == null) {
          return null;
-      } else {
-         String value = text.strip();
+      }
 
-         try {
-            if (!value.startsWith("0x") && !value.startsWith("0X")) {
-               if (value.length() == 8
-                  && value.chars().anyMatch(c -> Character.toUpperCase(c) >= 65 && Character.toUpperCase(c) <= 70)
-                  && value.chars().allMatch(c -> Character.digit(c, 16) >= 0)) {
-                  return Long.parseLong(value, 16);
-               } else {
-                  long number = Long.parseLong(value);
-                  return number >= -2147483648L && number <= 4294967295L ? number & 4294967295L : null;
-               }
-            } else {
-               return Long.parseLong(value.substring(2), 16) & 4294967295L;
+      String value = text.strip();
+
+      try {
+         if (!value.startsWith("0x") && !value.startsWith("0X")) {
+            if (value.length() == 8
+               && value.chars().anyMatch(c -> Character.toUpperCase(c) >= 65 && Character.toUpperCase(c) <= 70)
+               && value.chars().allMatch(c -> Character.digit(c, 16) >= 0)) {
+               return Long.parseLong(value, 16);
             }
-         } catch (NumberFormatException var4) {
-            return null;
+
+            long number = Long.parseLong(value);
+            return number >= -2147483648L && number <= 4294967295L ? number & 4294967295L : null;
+         } else {
+            return Long.parseLong(value.substring(2), 16) & 4294967295L;
          }
+      } catch (NumberFormatException e) {
+         return null;
       }
    }
 
@@ -231,7 +222,7 @@ public enum XboxProblem {
       return url != null && url.getHost() != null ? url.getHost().toLowerCase(Locale.ROOT) : "";
    }
 
-   public static enum Action {
+   public enum Action {
       NONE,
       TRY_AGAIN,
       SIGN_IN,
@@ -243,8 +234,7 @@ public enum XboxProblem {
          return new XboxProblem.Diagnosis(problem, 0L);
       }
 
-      @Nullable
-      public String errorCode() {
+      public @Nullable String errorCode() {
          return this.code == 0L ? null : XboxProblem.hex(this.code);
       }
 

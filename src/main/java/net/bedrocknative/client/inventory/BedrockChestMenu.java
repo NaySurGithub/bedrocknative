@@ -17,8 +17,10 @@ import net.minecraft.world.item.ItemStack;
 
 public final class BedrockChestMenu extends ChestMenu {
    static final int MAX_SLOTS = 216;
-   public static final MenuType<BedrockChestMenu> TYPE = (MenuType<BedrockChestMenu>)Registry.register(
-      BuiltInRegistries.MENU, Identifier.fromNamespaceAndPath("bedrocknative", "bedrock_chest"), new MenuType(BedrockChestMenu::new, FeatureFlags.VANILLA_SET)
+   public static final MenuType<BedrockChestMenu> TYPE = Registry.register(
+      BuiltInRegistries.MENU,
+      Identifier.fromNamespaceAndPath("bedrocknative", "bedrock_chest"),
+      new MenuType<>(BedrockChestMenu::new, FeatureFlags.VANILLA_SET)
    );
    private static volatile int pending = -1;
    private final int realSize;
@@ -38,7 +40,7 @@ public final class BedrockChestMenu extends ChestMenu {
 
    public static void register() {
       Objects.requireNonNull(TYPE, "menu type");
-      MenuScreens.register(TYPE, (menu, inventory, title) -> new ContainerScreen(menu, inventory, title));
+      MenuScreens.<ChestMenu, ContainerScreen>register(TYPE, (menu, inventory, title) -> new ContainerScreen(menu, inventory, title));
    }
 
    public static BedrockChestMenu of(int containerId, Inventory inventory, int size) {
@@ -58,8 +60,9 @@ public final class BedrockChestMenu extends ChestMenu {
       return padded / 9;
    }
 
+   @Override
    public ItemStack quickMoveStack(Player player, int index) {
-      Slot slot = (Slot)this.slots.get(index);
+      Slot slot = this.slots.get(index);
       if (slot != null && slot.hasItem()) {
          ItemStack stack = slot.getItem();
          ItemStack copy = stack.copy();
@@ -80,10 +83,10 @@ public final class BedrockChestMenu extends ChestMenu {
 
          if (stack.getCount() == copy.getCount()) {
             return ItemStack.EMPTY;
-         } else {
-            slot.onTake(player, stack);
-            return copy;
          }
+
+         slot.onTake(player, stack);
+         return copy;
       } else {
          return ItemStack.EMPTY;
       }

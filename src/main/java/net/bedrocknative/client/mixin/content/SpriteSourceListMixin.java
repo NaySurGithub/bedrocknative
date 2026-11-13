@@ -12,22 +12,17 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
 
-@Mixin({SpriteSourceList.class})
+@Mixin(SpriteSourceList.class)
 public abstract class SpriteSourceListMixin {
    @Shadow
    @Final
    private List<SpriteSource> sources;
 
-   @ModifyVariable(
-      method = {"list"},
-      at = {@At("STORE")},
-      ordinal = 0,
-      require = 0
-   )
+   @ModifyVariable(method = "list", at = @At("STORE"), ordinal = 0, require = 0)
    private Output bedrocknative$bedrockTexturesLast(Output output) {
       try {
-         return (Output)(BedrockSpriteSource.runLast(this.sources) ? new SpriteProvenance(output) : output);
-      } catch (UnsupportedOperationException var3) {
+         return BedrockSpriteSource.runLast(this.sources) ? new SpriteProvenance(output) : output;
+      } catch (UnsupportedOperationException e) {
          return new SpriteProvenance(output);
       }
    }

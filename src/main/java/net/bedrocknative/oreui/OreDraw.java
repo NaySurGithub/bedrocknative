@@ -131,23 +131,23 @@ public final class OreDraw {
       if (!icon.mask()) {
          this.sprite(icon.sprite(), box, -1);
          return box;
-      } else {
-         float rem = icon.elementRem(widthTenths);
-         float w = this.scale().px(icon.maskWidthRem(rem));
-         float h = this.scale().px(icon.maskHeightRem(rem));
-         this.painter.pushClip(box);
-
-         try {
-            int[] size = this.painter.spriteSize(icon.sprite());
-            if (size != null) {
-               this.painter.mask(icon.sprite(), 0.0F, 0.0F, size[0], size[1], new OreBox(cx - w / 2.0F, cy - h / 2.0F, w, h), tint);
-            }
-         } finally {
-            this.painter.popClip();
-         }
-
-         return box;
       }
+
+      float rem = icon.elementRem(widthTenths);
+      float w = this.scale().px(icon.maskWidthRem(rem));
+      float h = this.scale().px(icon.maskHeightRem(rem));
+      this.painter.pushClip(box);
+
+      try {
+         int[] size = this.painter.spriteSize(icon.sprite());
+         if (size != null) {
+            this.painter.mask(icon.sprite(), 0.0F, 0.0F, size[0], size[1], new OreBox(cx - w / 2.0F, cy - h / 2.0F, w, h), tint);
+         }
+      } finally {
+         this.painter.popClip();
+      }
+
+      return box;
    }
 
    public void lines(OreBox box, int first, int second, float width, boolean top, boolean right, boolean bottom, boolean left) {
@@ -251,7 +251,7 @@ public final class OreDraw {
       return y;
    }
 
-   public static enum Align {
+   public enum Align {
       LEFT,
       CENTER,
       RIGHT;

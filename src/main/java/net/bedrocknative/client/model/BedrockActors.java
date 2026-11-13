@@ -41,8 +41,7 @@ import org.jspecify.annotations.Nullable;
 
 public final class BedrockActors {
    private static final boolean DEV_TEST = System.getProperty("bedrocknative.devTest") != null;
-   @Nullable
-   private static volatile BedrockActors current;
+   private static volatile @Nullable BedrockActors current;
    private static long frame;
    private final ActorPropertyTypes propertyTypes = new ActorPropertyTypes();
    private final Map<String, BedrockActors.ActorIdentifier> identifiers = new LinkedHashMap<>();
@@ -57,21 +56,18 @@ public final class BedrockActors {
    private final ActorFacing facing = new ActorFacing();
    private final List<String> emoteLog = Collections.synchronizedList(new ArrayList<>());
    private static final Set<String> MISSING_EMOTES = Collections.synchronizedSet(new HashSet<>());
-   private LongFunction<Entity> byUniqueId = id -> null;
-   @Nullable
-   private ActorState local;
+   private LongFunction<@Nullable Entity> byUniqueId = id -> null;
+   private @Nullable ActorState local;
 
    public BedrockActors() {
       current = this;
    }
 
-   @Nullable
-   public static BedrockActors current() {
+   public static @Nullable BedrockActors current() {
       return current;
    }
 
-   @Nullable
-   public static ActorState state(Entity entity) {
+   public static @Nullable ActorState state(Entity entity) {
       BedrockActors actors = current;
       return actors != null ? (ActorState)actors.byJavaId.get(entity.getId()) : null;
    }
@@ -133,7 +129,7 @@ public final class BedrockActors {
       }
    }
 
-   public void useUniqueIds(LongFunction<Entity> lookup) {
+   public void useUniqueIds(LongFunction<@Nullable Entity> lookup) {
       this.byUniqueId = lookup;
    }
 
@@ -312,14 +308,14 @@ public final class BedrockActors {
       ModelRegistry registry = BedrockModels.registry();
       if (registry == null) {
          return BedrockModels.loading();
-      } else {
-         boolean defined = registry.entity(identifier) != null;
-         if (!defined && this.loggedUndefined.add(identifier)) {
-            BedrockNative.LOGGER.info("No client entity for Bedrock actor {} in the pack stack: an invisible box of its size", identifier);
-         }
-
-         return defined;
       }
+
+      boolean defined = registry.entity(identifier) != null;
+      if (!defined && this.loggedUndefined.add(identifier)) {
+         BedrockNative.LOGGER.info("No client entity for Bedrock actor {} in the pack stack: an invisible box of its size", identifier);
+      }
+
+      return defined;
    }
 
    public boolean replacesJavaType(String identifier) {
@@ -466,8 +462,7 @@ public final class BedrockActors {
       return this.env;
    }
 
-   @Nullable
-   Entity byUniqueId(long uniqueId) {
+   @Nullable Entity byUniqueId(long uniqueId) {
       return this.byUniqueId.apply(uniqueId);
    }
 

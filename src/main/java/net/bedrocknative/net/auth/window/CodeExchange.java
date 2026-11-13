@@ -88,18 +88,16 @@ public final class CodeExchange {
       }
    }
 
-   @Nullable
-   private static JsonObject object(byte[] body) {
+   private static @Nullable JsonObject object(byte[] body) {
       try {
          JsonElement parsed = JsonParser.parseString(new String(body, StandardCharsets.UTF_8));
          return parsed.isJsonObject() ? parsed.getAsJsonObject() : null;
-      } catch (RuntimeException var2) {
+      } catch (RuntimeException e) {
          return null;
       }
    }
 
-   @Nullable
-   private static String text(JsonObject json, String key) {
+   private static @Nullable String text(JsonObject json, String key) {
       JsonElement value = json.get(key);
       return value != null && value.isJsonPrimitive() ? value.getAsString() : null;
    }
@@ -109,7 +107,7 @@ public final class CodeExchange {
 
       try {
          return value != null && value.isJsonPrimitive() ? value.getAsLong() : fallback;
-      } catch (NumberFormatException var6) {
+      } catch (NumberFormatException e) {
          return fallback;
       }
    }

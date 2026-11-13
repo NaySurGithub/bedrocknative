@@ -46,34 +46,31 @@ public final class PrepPool implements AutoCloseable {
    public PrepPool(String name, int workers, int priority, int maxQueued, long maxPreparedBytes, BiConsumer<String, Throwable> errors) {
       this.name = name;
       this.workers = Math.max(1, workers);
-      this.priority = Math.clamp((long)priority, 1, 10);
+      this.priority = Math.clamp(priority, 1, 10);
       this.maxQueued = Math.max(1, maxQueued);
       this.maxPreparedBytes = Math.max(0L, maxPreparedBytes);
       this.errors = errors;
    }
 
    public <R> PrepPool.Ticket submit(
-      PrepPool.Tier tier, long distance, boolean droppable, PrepPool.Work<R> work, @Nullable PrepPool.Finish<R> finish, ToLongFunction<? super R> bytes
+      PrepPool.Tier tier, long distance, boolean droppable, PrepPool.Work<R> work, PrepPool.@Nullable Finish<R> finish, ToLongFunction<? super R> bytes
    ) {
       this.lock.lock();
 
-      PrepPool.Ticket var9;
       try {
          PrepPool.Ticket ticket = new PrepPool.Ticket(this.sequence++, this.generation, tier, distance, true);
          this.submitted++;
          if (!this.closed && (!droppable || tier == PrepPool.Tier.NEAR || this.queue.size() < this.maxQueued)) {
-            this.enqueue(new PrepPool.Job(ticket, work, finish, bytes));
+            this.enqueue(new PrepPool.Job(ticket, work, finish, (ToLongFunction<Object>) (ToLongFunction<?>) bytes));
+            return ticket;
+         } else {
+            ticket.state = PrepPool.State.DROPPED;
+            this.dropped++;
             return ticket;
          }
-
-         ticket.state = PrepPool.State.DROPPED;
-         this.dropped++;
-         var9 = ticket;
       } finally {
          this.lock.unlock();
       }
-
-      return var9;
    }
 
    public Executor executor(PrepPool.Tier tier) {
@@ -113,34 +110,29 @@ public final class PrepPool implements AutoCloseable {
    public boolean promote(PrepPool.Ticket ticket, long distance) {
       this.lock.lock();
 
-      boolean var5;
       try {
          if (ticket.state == PrepPool.State.RUNNING) {
             ticket.tier = PrepPool.Tier.NEAR;
             ticket.distance = distance;
             this.promoted++;
             return true;
-         }
-
-         if (ticket.state == PrepPool.State.DONE) {
+         } else if (ticket.state == PrepPool.State.DONE) {
             return this.promoteWaiting(ticket, distance);
+         } else {
+            PrepPool.Job job = ticket.job;
+            if (ticket.state == PrepPool.State.QUEUED && job != null && this.queue.remove(job)) {
+               ticket.tier = PrepPool.Tier.NEAR;
+               ticket.distance = distance;
+               this.queue.add(job);
+               this.promoted++;
+               return true;
+            } else {
+               return false;
+            }
          }
-
-         PrepPool.Job job = ticket.job;
-         if (ticket.state == PrepPool.State.QUEUED && job != null && this.queue.remove(job)) {
-            ticket.tier = PrepPool.Tier.NEAR;
-            ticket.distance = distance;
-            this.queue.add(job);
-            this.promoted++;
-            return true;
-         }
-
-         var5 = false;
       } finally {
          this.lock.unlock();
       }
-
-      return var5;
    }
 
    private boolean promoteWaiting(PrepPool.Ticket ticket, long distance) {
@@ -155,14 +147,14 @@ public final class PrepPool implements AutoCloseable {
 
       if (found == null) {
          return false;
-      } else {
-         this.prepared.remove(found);
-         ticket.tier = PrepPool.Tier.NEAR;
-         ticket.distance = distance;
-         this.prepared.add(new PrepPool.Prepared(ticket, found.result(), found.finish(), found.bytes(), PrepPool.Tier.NEAR));
-         this.promoted++;
-         return true;
       }
+
+      this.prepared.remove(found);
+      ticket.tier = PrepPool.Tier.NEAR;
+      ticket.distance = distance;
+      this.prepared.add(new PrepPool.Prepared(ticket, found.result(), found.finish(), found.bytes(), PrepPool.Tier.NEAR));
+      this.promoted++;
+      return true;
    }
 
    public void cancel(PrepPool.Ticket ticket) {
@@ -258,8 +250,8 @@ public final class PrepPool implements AutoCloseable {
 
          try {
             result = job.work.run(job.ticket);
-         } catch (Throwable var18) {
-            failure = var18;
+         } catch (Throwable thrown) {
+            failure = thrown;
          }
 
          if (failure != null) {
@@ -270,7 +262,7 @@ public final class PrepPool implements AutoCloseable {
          if (failure == null && result != null && job.finish != null) {
             try {
                bytes = Math.max(0L, job.bytes.applyAsLong(result));
-            } catch (RuntimeException var17) {
+            } catch (RuntimeException e) {
                bytes = 0L;
             }
          }
@@ -339,8 +331,8 @@ public final class PrepPool implements AutoCloseable {
 
          try {
             item.finish().accept(item.result());
-         } catch (RuntimeException var19) {
-            this.report(this.name + ": handing a prepared result over failed", var19);
+         } catch (RuntimeException e) {
+            this.report(this.name + ": handing a prepared result over failed", e);
          }
 
          handed++;
@@ -384,7 +376,7 @@ public final class PrepPool implements AutoCloseable {
 
             try {
                this.idle.awaitNanos(left);
-            } catch (InterruptedException var12) {
+            } catch (InterruptedException e) {
                Thread.currentThread().interrupt();
                return false;
             }
@@ -399,9 +391,8 @@ public final class PrepPool implements AutoCloseable {
    public PrepPool.Stats stats() {
       this.lock.lock();
 
-      PrepPool.Stats var1;
       try {
-         var1 = new PrepPool.Stats(
+         return new PrepPool.Stats(
             this.queue.size(),
             this.running,
             this.prepared.size(),
@@ -416,21 +407,16 @@ public final class PrepPool implements AutoCloseable {
       } finally {
          this.lock.unlock();
       }
-
-      return var1;
    }
 
    public boolean hasWaiting() {
       this.lock.lock();
 
-      boolean var1;
       try {
-         var1 = !this.prepared.isEmpty();
+         return !this.prepared.isEmpty();
       } finally {
          this.lock.unlock();
       }
-
-      return var1;
    }
 
    public int workers() {
@@ -453,7 +439,7 @@ public final class PrepPool implements AutoCloseable {
       for (Thread thread : stopping) {
          try {
             thread.join(5000L);
-         } catch (InterruptedException var8) {
+         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             return;
          }
@@ -471,11 +457,10 @@ public final class PrepPool implements AutoCloseable {
    private static final class Job {
       final PrepPool.Ticket ticket;
       final PrepPool.Work<?> work;
-      @Nullable
-      final PrepPool.Finish<?> finish;
+      final PrepPool.@Nullable Finish<?> finish;
       final ToLongFunction<Object> bytes;
 
-      Job(PrepPool.Ticket ticket, PrepPool.Work<?> work, @Nullable PrepPool.Finish<?> finish, ToLongFunction<Object> bytes) {
+      Job(PrepPool.Ticket ticket, PrepPool.Work<?> work, PrepPool.@Nullable Finish<?> finish, ToLongFunction<Object> bytes) {
          this.ticket = ticket;
          this.work = work;
          this.finish = finish;
@@ -486,7 +471,7 @@ public final class PrepPool implements AutoCloseable {
    private record Prepared(PrepPool.Ticket ticket, Object result, PrepPool.Finish<Object> finish, long bytes, PrepPool.Tier tier) {
    }
 
-   public static enum State {
+   public enum State {
       QUEUED,
       RUNNING,
       DONE,
@@ -508,8 +493,7 @@ public final class PrepPool implements AutoCloseable {
       private volatile PrepPool.Tier tier;
       private volatile PrepPool.State state = PrepPool.State.QUEUED;
       private long distance;
-      @Nullable
-      private PrepPool.Job job;
+      private PrepPool.@Nullable Job job;
 
       private Ticket(long sequence, int generation, PrepPool.Tier tier, long distance, boolean cancellable) {
          this.sequence = sequence;
@@ -538,7 +522,7 @@ public final class PrepPool implements AutoCloseable {
       }
    }
 
-   public static enum Tier {
+   public enum Tier {
       NEAR,
       WARM,
       LISTED;
@@ -546,7 +530,6 @@ public final class PrepPool implements AutoCloseable {
 
    @FunctionalInterface
    public interface Work<R> {
-      @Nullable
-      R run(PrepPool.Ticket var1);
+      @Nullable R run(PrepPool.Ticket var1);
    }
 }

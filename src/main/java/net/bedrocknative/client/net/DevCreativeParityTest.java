@@ -59,9 +59,7 @@ final class DevCreativeParityTest {
       } else {
          Window window = this.minecraft.getWindow();
          int[] restore = new int[]{
-            this.<Integer>onClient(window::getScreenWidth),
-            this.onClient(() -> window.getScreenHeight()),
-            this.onClient(() -> (Integer)this.minecraft.options.guiScale().get())
+            this.onClient(window::getScreenWidth), this.onClient(() -> window.getScreenHeight()), this.onClient(() -> this.minecraft.options.guiScale().get())
          };
 
          try {
@@ -78,7 +76,7 @@ final class DevCreativeParityTest {
                   .gui
                   .setScreen(
                      new CreativeModeInventoryScreen(
-                        this.minecraft.player, this.minecraft.player.connection.enabledFeatures(), (Boolean)this.minecraft.options.operatorItemsTab().get()
+                        this.minecraft.player, this.minecraft.player.connection.enabledFeatures(), this.minecraft.options.operatorItemsTab().get()
                      )
                   )
             );
@@ -181,8 +179,8 @@ final class DevCreativeParityTest {
             }
 
             this.check("the creative screen is JSON UI's", false);
-         } catch (RuntimeException var11) {
-            BedrockNative.LOGGER.error("Dev creative parity: FAIL crashed", var11);
+         } catch (RuntimeException e) {
+            BedrockNative.LOGGER.error("Dev creative parity: FAIL crashed", e);
             this.failed++;
             return;
          } finally {
@@ -199,9 +197,7 @@ final class DevCreativeParityTest {
       } else {
          Window window = this.minecraft.getWindow();
          int[] restore = new int[]{
-            this.<Integer>onClient(window::getScreenWidth),
-            this.onClient(() -> window.getScreenHeight()),
-            this.onClient(() -> (Integer)this.minecraft.options.guiScale().get())
+            this.onClient(window::getScreenWidth), this.onClient(() -> window.getScreenHeight()), this.onClient(() -> this.minecraft.options.guiScale().get())
          };
 
          try {
@@ -219,7 +215,7 @@ final class DevCreativeParityTest {
                } else {
                   boolean french = french();
 
-                  for (InventoryReference.Result result : this.onClient(
+                  for (InventoryReference.Result result : this.<List<InventoryReference.Result>>onClient(
                      () -> {
                         if (!(this.minecraft.gui.screen() instanceof JsonUiContainerScreen json)) {
                            return List.of();
@@ -249,8 +245,8 @@ final class DevCreativeParityTest {
             }
 
             this.check("the survival inventory is JSON UI's", false);
-         } catch (RuntimeException var11) {
-            BedrockNative.LOGGER.error("Dev creative parity: FAIL crashed", var11);
+         } catch (RuntimeException e) {
+            BedrockNative.LOGGER.error("Dev creative parity: FAIL crashed", e);
             this.failed++;
             return;
          } finally {
@@ -266,7 +262,7 @@ final class DevCreativeParityTest {
       if (!sized) {
          log("SKIP the {} rects and pixels: the window isn't 1920x1080", name);
       } else {
-         for (InventoryReference.Result result : this.onClient(() -> {
+         for (InventoryReference.Result result : this.<List<InventoryReference.Result>>onClient(() -> {
             if (this.minecraft.gui.screen() instanceof JsonUiCreativeScreen json) {
                UiTextMeasurer var4x = JsonUi.environment(json.ui().instance().definitions()).measurer();
                return InventoryReference.compare(new InventoryReference.Found(json.ui().instance(), var4x), InventoryReference.of(layout), JsonUi.uiScale());
@@ -299,18 +295,18 @@ final class DevCreativeParityTest {
                InventoryReference.Mask var9x = InventoryReference.mask(layout, json.ui().instance());
                if (french) {
                   return var9x;
-               } else {
-                  List<float[]> exclude = new ArrayList<>(var9x.exclude());
-
-                  for (String label : List.of("creative_label", "crafting_label")) {
-                     UiControl control = json.ui().instance().find(label);
-                     if (control != null && control.visible()) {
-                        exclude.add(new float[]{control.x(), control.y(), control.x() + control.width(), control.y() + control.height()});
-                     }
-                  }
-
-                  return new InventoryReference.Mask(var9x.include(), exclude);
                }
+
+               List<float[]> exclude = new ArrayList<>(var9x.exclude());
+
+               for (String label : List.of("creative_label", "crafting_label")) {
+                  UiControl control = json.ui().instance().find(label);
+                  if (control != null && control.visible()) {
+                     exclude.add(new float[]{control.x(), control.y(), control.x() + control.width(), control.y() + control.height()});
+                  }
+               }
+
+               return new InventoryReference.Mask(var9x.include(), exclude);
             } else {
                return null;
             }
@@ -346,8 +342,8 @@ final class DevCreativeParityTest {
                   String.format(Locale.ROOT, "%s vs %s: %.2f%% of %d pixels match (at least %.0f%%)", layout, layout.picture, share, compared, 97.0),
                   compared > 10000L && share >= 97.0
                );
-            } catch (IOException var18) {
-               this.check(layout + " pixels: " + var18, false);
+            } catch (IOException e) {
+               this.check(layout + " pixels: " + e, false);
             }
          } else {
             this.check(layout + " pixels: the frame was read", false);
@@ -355,50 +351,31 @@ final class DevCreativeParityTest {
       }
    }
 
-   @Nullable
-   private int[][] frame() {
+   private int @Nullable [][] frame() {
       CompletableFuture<int[][]> pixels = new CompletableFuture<>();
       this.minecraft.execute(() -> Screenshot.takeScreenshot(this.minecraft.gameRenderer.mainRenderTarget(), image -> {
-         try {
-            NativeImage frame = image;
+         try (NativeImage frame = image) {
+            int[][] rows = new int[frame.getHeight()][frame.getWidth()];
 
-            try {
-               int[][] rows = new int[frame.getHeight()][frame.getWidth()];
-
-               for (int y = 0; y < frame.getHeight(); y++) {
-                  for (int x = 0; x < frame.getWidth(); x++) {
-                     rows[y][x] = frame.getPixel(x, y);
-                  }
+            for (int y = 0; y < frame.getHeight(); y++) {
+               for (int x = 0; x < frame.getWidth(); x++) {
+                  rows[y][x] = frame.getPixel(x, y);
                }
-
-               pixels.complete(rows);
-            } catch (Throwable var7) {
-               if (frame != null) {
-                  try {
-                     frame.close();
-                  } catch (Throwable var6) {
-                     var7.addSuppressed(var6);
-                  }
-               }
-
-               throw var7;
             }
 
-            if (frame != null) {
-               frame.close();
-            }
-         } catch (RuntimeException var8) {
-            pixels.completeExceptionally(var8);
+            pixels.complete(rows);
+         } catch (RuntimeException e) {
+            pixels.completeExceptionally(e);
          }
       }));
 
       try {
          return pixels.get(10L, TimeUnit.SECONDS);
-      } catch (InterruptedException var3) {
+      } catch (InterruptedException e) {
          Thread.currentThread().interrupt();
          return null;
-      } catch (TimeoutException | ExecutionException var4) {
-         log("the frame could not be read back: {}", var4.toString());
+      } catch (ExecutionException | TimeoutException e) {
+         log("the frame could not be read back: {}", e.toString());
          return null;
       }
    }
@@ -469,8 +446,8 @@ final class DevCreativeParityTest {
       }
 
       sleep(1000L);
-      int width = this.<Integer>onClient(window::getWidth);
-      int height = this.<Integer>onClient(window::getHeight);
+      int width = this.onClient(window::getWidth);
+      int height = this.onClient(window::getHeight);
       boolean ok = width == 1920 && height == 1080;
       this.check("the window is 1920x1080 (" + width + "x" + height + (this.borderless ? ", borderless" : "") + ")", ok);
       return ok;
@@ -545,7 +522,7 @@ final class DevCreativeParityTest {
    private static void sleep(long millis) {
       try {
          Thread.sleep(millis);
-      } catch (InterruptedException var3) {
+      } catch (InterruptedException e) {
          Thread.currentThread().interrupt();
       }
    }

@@ -22,13 +22,10 @@ public final class OreServerFormUi {
    private final OreInteraction interaction = new OreInteraction();
    private int focusedField = -1;
    private boolean dirty;
-   @Nullable
-   private OreModal modal;
-   @Nullable
-   private OreModal.Layout modalLayout;
+   private @Nullable OreModal modal;
+   private OreModal.@Nullable Layout modalLayout;
    private List<Runnable> modalChoices = List.of();
-   @Nullable
-   private OreServerFormUi.Layout layout;
+   private OreServerFormUi.@Nullable Layout layout;
    private float width;
    private float height;
    private int lastField = -1;
@@ -70,13 +67,11 @@ public final class OreServerFormUi {
       return this.modal != null;
    }
 
-   @Nullable
-   public OreModal modal() {
+   public @Nullable OreModal modal() {
       return this.modal;
    }
 
-   @Nullable
-   public OreModal.Layout modalLayout() {
+   public OreModal.@Nullable Layout modalLayout() {
       return this.modalLayout;
    }
 
@@ -88,8 +83,7 @@ public final class OreServerFormUi {
       return this.interaction;
    }
 
-   @Nullable
-   public OreServerFormUi.Layout layout() {
+   public OreServerFormUi.@Nullable Layout layout() {
       return this.layout;
    }
 
@@ -343,9 +337,11 @@ public final class OreServerFormUi {
          } else {
             return false;
          }
-      } else if (key != OreKey.TAB && key != OreKey.LEFT && key != OreKey.RIGHT && key != OreKey.UP && key != OreKey.DOWN) {
-         return false;
       } else {
+         if (key != OreKey.TAB && key != OreKey.LEFT && key != OreKey.RIGHT && key != OreKey.UP && key != OreKey.DOWN) {
+            return false;
+         }
+
          this.interaction.navigate(this.widgets(), key, shift);
          return true;
       }
@@ -485,44 +481,50 @@ public final class OreServerFormUi {
       return BedrockAddress.fromForm(this.fields[1].text(), port < 0 ? 19132 : port);
    }
 
-   @Nullable
-   public OreServerFormUi.Error check() {
+   public OreServerFormUi.@Nullable Error check() {
       if (this.fields[0].text().isBlank()) {
          return OreServerFormUi.Error.NAME_EMPTY;
-      } else {
-         String host = BedrockAddress.withoutPrefix(this.fields[1].text());
-         if (host.isEmpty()) {
-            return OreServerFormUi.Error.ADDRESS_EMPTY;
-         } else if (!validHost(host)) {
-            return OreServerFormUi.Error.INVALID_ADDRESS;
-         } else if (BedrockAddress.typedPort(this.fields[2].text()) < 0) {
-            return OreServerFormUi.Error.INVALID_PORT;
-         } else {
-            BedrockAddress address = this.address();
+      }
 
-            for (BedrockAddress other : this.actions.others()) {
-               if (other.sameServer(address)) {
-                  return OreServerFormUi.Error.DUPLICATE;
-               }
-            }
+      String host = BedrockAddress.withoutPrefix(this.fields[1].text());
+      if (host.isEmpty()) {
+         return OreServerFormUi.Error.ADDRESS_EMPTY;
+      }
 
-            return null;
+      if (!validHost(host)) {
+         return OreServerFormUi.Error.INVALID_ADDRESS;
+      }
+
+      if (BedrockAddress.typedPort(this.fields[2].text()) < 0) {
+         return OreServerFormUi.Error.INVALID_PORT;
+      }
+
+      BedrockAddress address = this.address();
+
+      for (BedrockAddress other : this.actions.others()) {
+         if (other.sameServer(address)) {
+            return OreServerFormUi.Error.DUPLICATE;
          }
       }
+
+      return null;
    }
 
    static boolean validHost(String typed) {
-      if (typed.length() > 2 && typed.startsWith("[") && typed.endsWith("]")) {
-         String host = typed.substring(1, typed.length() - 1);
+      String host = typed;
+      if (host.length() > 2 && host.startsWith("[") && host.endsWith("]")) {
+         host = host.substring(1, host.length() - 1);
          return host.indexOf(58) >= 0 && host.chars().allMatch(c -> Character.digit(c, 16) >= 0 || c == 58 || c == 46);
-      } else if (typed.indexOf(32) < 0 && typed.indexOf(91) < 0 && typed.indexOf(93) < 0 && typed.indexOf(47) < 0) {
-         int colons = (int)typed.chars().filter(c -> c == 58).count();
+      }
+
+      if (host.indexOf(32) < 0 && host.indexOf(91) < 0 && host.indexOf(93) < 0 && host.indexOf(47) < 0) {
+         int colons = (int)host.chars().filter(c -> c == 58).count();
          if (colons == 1) {
             return false;
          } else {
             return colons > 1
-               ? typed.chars().allMatch(c -> Character.digit(c, 16) >= 0 || c == 58 || c == 46)
-               : typed.chars().allMatch(c -> Character.isLetterOrDigit(c) || c == 46 || c == 45 || c == 95);
+               ? host.chars().allMatch(c -> Character.digit(c, 16) >= 0 || c == 58 || c == 46)
+               : host.chars().allMatch(c -> Character.isLetterOrDigit(c) || c == 46 || c == 45 || c == 95);
          }
       } else {
          return false;
@@ -564,7 +566,7 @@ public final class OreServerFormUi {
       void click();
    }
 
-   public static enum Error {
+   public enum Error {
       NAME_EMPTY(".nameError"),
       ADDRESS_EMPTY(".addressError"),
       INVALID_ADDRESS(".ipAddressError"),
@@ -573,7 +575,7 @@ public final class OreServerFormUi {
 
       private final String key;
 
-      private Error(String key) {
+      Error(String key) {
          this.key = key;
       }
 

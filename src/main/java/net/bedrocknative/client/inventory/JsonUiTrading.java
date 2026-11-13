@@ -35,8 +35,7 @@ public final class JsonUiTrading implements TradeData.Actions {
    private boolean[] affordable = new boolean[0];
    private final ItemStack[] seen;
    private final int[] seenCounts;
-   @Nullable
-   private MerchantOffers seenOffers;
+   private @Nullable MerchantOffers seenOffers;
    private int seenSelected = -2;
 
    JsonUiTrading(Minecraft minecraft, JsonUiContainerScreen screen, MerchantMenu menu, TradeData data, Workstations trades, Workstations.TradeView view) {
@@ -146,19 +145,19 @@ public final class JsonUiTrading implements TradeData.Actions {
 
          for (int offer = 0; offer < this.affordable.length; offer++) {
             int java = this.data.javaOffer(offer);
-            this.affordable[offer] = java >= 0 && java < offers.size() && this.canPay((MerchantOffer)offers.get(java));
+            this.affordable[offer] = java >= 0 && java < offers.size() && this.canPay(offers.get(java));
          }
 
          this.data.affordable(this.affordable);
          int chosen = this.data.javaOffer(this.data.selected());
-         MerchantOffer offer = chosen >= 0 && chosen < offers.size() ? (MerchantOffer)offers.get(chosen) : null;
+         MerchantOffer offer = chosen >= 0 && chosen < offers.size() ? offers.get(chosen) : null;
          this.data.slots(takes(offer, this.menu.getSlot(0).getItem()), takes(offer, this.menu.getSlot(1).getItem()), this.menu.getSlot(2).hasItem());
       }
    }
 
    private boolean canPay(MerchantOffer offer) {
       ItemCost first = offer.getItemCostA();
-      ItemCost second = (ItemCost)offer.getItemCostB().orElse(null);
+      ItemCost second = offer.getItemCostB().orElse(null);
       int needFirst = offer.getCostA().getCount();
       int needSecond = second == null ? 0 : offer.getCostB().getCount();
       int haveFirst = 0;
@@ -180,7 +179,7 @@ public final class JsonUiTrading implements TradeData.Actions {
 
    private static boolean takes(@Nullable MerchantOffer offer, ItemStack stack) {
       if (!stack.isEmpty() && offer != null) {
-         ItemCost second = (ItemCost)offer.getItemCostB().orElse(null);
+         ItemCost second = offer.getItemCostB().orElse(null);
          return offer.getItemCostA().test(stack) || second != null && second.test(stack);
       } else {
          return true;

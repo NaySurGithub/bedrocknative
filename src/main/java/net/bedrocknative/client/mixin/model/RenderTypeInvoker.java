@@ -5,7 +5,7 @@ import net.minecraft.client.renderer.rendertype.RenderType;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Invoker;
 
-@Mixin({RenderType.class})
+@Mixin(RenderType.class)
 public interface RenderTypeInvoker {
    @Invoker("create")
    static RenderType bedrocknative$create(String name, RenderSetup state) {

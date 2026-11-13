@@ -3,7 +3,7 @@ import java.security.MessageDigest
 import java.util.zip.*
 
 plugins {
-    id 'fabric-loom' version "${loom_version}"
+    id 'net.fabricmc.fabric-loom' version "${loom_version}"
     id 'java'
 }
 
@@ -27,28 +27,51 @@ repositories {
 
 dependencies {
     minecraft "com.mojang:minecraft:${minecraft_version}"
-    mappings loom.officialMojangMappings()
-    modImplementation "net.fabricmc:fabric-loader:${loader_version}"
-    modImplementation "net.fabricmc.fabric-api:fabric-api:${fabric_api_version}"
+    implementation "net.fabricmc:fabric-loader:${loader_version}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${fabric_api_version}"
 
-    // Libraries the original jar shaded in, bundled back with include(...). Exact
-    // versions come from the jar's pom.properties where present; the cloudburstmc
-    // protocol/netty/nbt, MinecraftAuth and libdatachannel ones are the latest
-    // published and may need pinning to the exact build the mod used.
-    implementation(include("org.cloudburstmc.protocol:bedrock-codec:${cloudburst_protocol_version}"))
-    implementation(include("org.cloudburstmc.protocol:bedrock-connection:${cloudburst_protocol_version}"))
-    implementation(include("org.cloudburstmc.protocol:common:${cloudburst_protocol_version}"))
-    implementation(include("org.cloudburstmc.netty:netty-transport-raknet:${cloudburst_netty_version}"))
-    implementation(include("org.cloudburstmc:nbt:${cloudburst_nbt_version}"))
-    implementation(include("org.cloudburstmc.math:api:${cloudburst_math_version}"))
-    implementation(include("org.cloudburstmc.math:immutable:${cloudburst_math_version}"))
-    implementation(include("org.bitbucket.b_c:jose4j:${jose4j_version}"))
-    implementation(include("net.raphimc:MinecraftAuth:${minecraftauth_version}"))
-    implementation(include("tel.schich:libdatachannel-java:${libdatachannel_version}"))
-    implementation(include("io.airlift:aircompressor:${aircompressor_version}"))
-    implementation(include("com.nukkitx:natives:${nukkitx_natives_version}"))
-    implementation(include("net.jodah:expiringmap:${expiringmap_version}"))
-    implementation(include("com.fasterxml.jackson.core:jackson-databind:${jackson_version}"))
+    // The third-party libraries exactly as the original jar shaded them (cloudburstmc
+    // protocol + netty with NetherNet, jose4j, MinecraftAuth, libdatachannel, ...).
+    // Published artifacts drift from the API the mod was built against, so this jar
+    // is extracted from bedrocknative-0.1.0.jar into libs/ (see extractShadedLibs).
+    implementation files('libs/bedrocknative-shaded.jar')
+}
+
+// shade the libraries into the mod jar, unrelocated, like the original build
+tasks.named('jar') {
+    from(zipTree('libs/bedrocknative-shaded.jar')) {
+        exclude 'META-INF/MANIFEST.MF'
+    }
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+loom {
+    accessWidenerPath = file('src/main/resources/bedrocknative.accesswidener')
+}
+
+// rebuilds libs/bedrocknative-shaded.jar from the original mod jar:
+//   ./gradlew extractShadedLibs -PoriginalJar=/path/to/bedrocknative-0.1.0.jar
+tasks.register('extractShadedLibs') {
+    doLast {
+        def source = file(project.findProperty('originalJar') ?: 'bedrocknative-0.1.0.jar')
+        def target = file('libs/bedrocknative-shaded.jar')
+        target.parentFile.mkdirs()
+        def skipPrefix = ['net/bedrocknative/', 'assets/', 'bedrocknative/']
+        def skipExact = ['fabric.mod.json', 'bedrocknative.accesswidener', 'bedrocknative.mixins.json',
+                         'bedrocknative.client.mixins.json', 'META-INF/MANIFEST.MF'] as Set
+        new ZipFile(source).withCloseable { zin ->
+            new ZipOutputStream(target.newOutputStream()).withCloseable { zout ->
+                zin.entries().each { e ->
+                    if (e.directory || skipPrefix.any { e.name.startsWith(it) } || e.name in skipExact
+                            || e.name ==~ /.*\.(SF|RSA|DSA)$/) return
+                    zout.putNextEntry(new ZipEntry(e.name))
+                    zout.write(zin.getInputStream(e).bytes)
+                    zout.closeEntry()
+                }
+            }
+        }
+        logger.lifecycle("extractShadedLibs: ${target}")
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -117,8 +140,10 @@ tasks.register('fetchBaseAssets') {
                     if (entry == null || !seen.add(rel)) continue
                     def bytes = zin.readAllBytes()
                     // integrity: the file must match the git-blob SHA-1 in the index
-                    def blob = "blob ${bytes.length}\0".getBytes('UTF-8') + bytes
-                    def sha1 = MessageDigest.getInstance('SHA-1').digest(blob).collect { String.format('%02x', it) }.join('')
+                    def md = MessageDigest.getInstance('SHA-1')
+                    md.update("blob ${bytes.length}\0".getBytes('UTF-8'))
+                    md.update(bytes)
+                    def sha1 = md.digest().collect { String.format('%02x', it) }.join('')
                     if (sha1 != entry[2]) throw new GradleException("SHA-1 mismatch for ${rel}")
                     def ze = new ZipEntry(rel); ze.time = 0
                     zout.putNextEntry(ze); zout.write(bytes); zout.closeEntry()
@@ -151,7 +176,6 @@ tasks.register('fetchBaseAssets') {
 
 // put the generated archive into the jar, unless disabled
 if (project.findProperty('baseBundle') != 'off') {
-    sourceSets.main.resources.srcDir generatedBase
     tasks.named('processResources') {
         dependsOn 'fetchBaseAssets'
         into('bedrocknative/base-pack') {
@@ -162,6 +186,7 @@ if (project.findProperty('baseBundle') != 'off') {
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
+    options.compilerArgs += ['-Xmaxerrs', '10000']
     options.release = 25
 }
 

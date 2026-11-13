@@ -17,19 +17,16 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin({CreativeModeTab.class})
+@Mixin(CreativeModeTab.class)
 public abstract class CreativeModeTabMixin {
    @Shadow
    private Collection<ItemStack> displayItems;
    @Shadow
    private Set<ItemStack> displayItemsSearchTab;
 
-   @Inject(
-      method = {"buildContents"},
-      at = {@At("TAIL")}
-   )
+   @Inject(method = "buildContents", at = @At("TAIL"))
    private void bedrocknative$bedrockContents(ItemDisplayParameters parameters, CallbackInfo ci) {
-      List<List<ItemStack>> bedrock = BedrockCreativeTabs.contents((CreativeModeTab)this);
+      List<List<ItemStack>> bedrock = BedrockCreativeTabs.contents((CreativeModeTab)(Object)this);
       if (bedrock != null) {
          this.displayItems = new ArrayList<>(bedrock.get(0));
          this.displayItemsSearchTab = ItemStackLinkedSet.createTypeAndComponentsSet();
@@ -37,21 +34,15 @@ public abstract class CreativeModeTabMixin {
       }
    }
 
-   @ModifyReturnValue(
-      method = {"getDisplayName"},
-      at = {@At("RETURN")}
-   )
+   @ModifyReturnValue(method = "getDisplayName", at = @At("RETURN"))
    private Component bedrocknative$bedrockName(Component original) {
-      Component name = BedrockCreativeTabs.name((CreativeModeTab)this);
+      Component name = BedrockCreativeTabs.name((CreativeModeTab)(Object)this);
       return name != null ? name : original;
    }
 
-   @ModifyReturnValue(
-      method = {"getIconItem"},
-      at = {@At("RETURN")}
-   )
+   @ModifyReturnValue(method = "getIconItem", at = @At("RETURN"))
    private ItemStack bedrocknative$bedrockIcon(ItemStack original) {
-      ItemStack icon = BedrockCreativeTabs.icon((CreativeModeTab)this);
+      ItemStack icon = BedrockCreativeTabs.icon((CreativeModeTab)(Object)this);
       return icon != null ? icon : original;
    }
 }

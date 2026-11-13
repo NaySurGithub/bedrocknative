@@ -21,11 +21,17 @@ public enum RenderKind {
    public static RenderKind of(MaterialTable.MaterialInfo material, boolean polish) {
       if (polish && material.depthOnly()) {
          return DEPTH_ONLY;
-      } else if (material.throughWalls()) {
+      }
+
+      if (material.throughWalls()) {
          return material.disableCulling() ? SEE_THROUGH : SEE_THROUGH_CULL;
-      } else if (material.onlyEmissive()) {
+      }
+
+      if (material.onlyEmissive()) {
          return EMISSIVE_ONLY;
-      } else if (!material.glint()) {
+      }
+
+      if (!material.glint()) {
          if (polish && material.additive()) {
             return ADDITIVE;
          } else if (material.blending()) {

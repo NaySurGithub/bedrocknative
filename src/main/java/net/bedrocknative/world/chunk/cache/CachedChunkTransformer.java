@@ -9,7 +9,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -46,7 +45,7 @@ public final class CachedChunkTransformer {
       this.tracker = new BlobTracker(store, nanos);
       this.output = output;
       this.nanos = nanos;
-      this.holds = new ColumnHolds(output::execute);
+      this.holds = new ColumnHolds((ColumnHolds.ColumnExecutor) output::execute);
    }
 
    public boolean deferIfHeld(int chunkX, int chunkZ, Runnable task) {
@@ -136,7 +135,6 @@ public final class CachedChunkTransformer {
       }
 
       private LevelChunkUnit(LevelChunkPacket packet, long[] references) {
-         Objects.requireNonNull(CachedChunkTransformer.this);
          super(references);
          this.references = references;
          this.chunkX = packet.getChunkX();
@@ -222,7 +220,6 @@ public final class CachedChunkTransformer {
       }
 
       private SubChunkUnit(SubChunkPacket packet, List<CachedChunkTransformer.Entry> entries) {
-         Objects.requireNonNull(CachedChunkTransformer.this);
          super(entries.stream().filter(CachedChunkTransformer.Entry::cached).mapToLong(CachedChunkTransformer.Entry::blobId).toArray());
          this.dimension = packet.getDimension();
          this.center = packet.getCenterPosition();
@@ -324,17 +321,12 @@ public final class CachedChunkTransformer {
 
    private abstract class Unit implements BlobTracker.Waiter {
       private final long[] references;
-      private final Map<Long, byte[]> blobs;
-      private final Set<Long> failed;
+      private final Map<Long, byte[]> blobs = new HashMap<>();
+      private final Set<Long> failed = new HashSet<>();
       private int remaining;
-      private long[] heldColumns;
+      private long[] heldColumns = new long[0];
 
       Unit(long[] references) {
-         Objects.requireNonNull(CachedChunkTransformer.this);
-         super();
-         this.blobs = new HashMap<>();
-         this.failed = new HashSet<>();
-         this.heldColumns = new long[0];
          this.references = references;
       }
 
@@ -376,25 +368,13 @@ public final class CachedChunkTransformer {
          }
       }
 
-      // $VF: Could not verify finally blocks. A semaphore variable has been added to preserve control flow.
-      // Please report this to the Vineflower issue tracker, at https://github.com/Vineflower/vineflower/issues with a copy of the class file (if you have the rights to distribute it!)
       private void finish() {
-         boolean var13 = false /* VF: Semaphore variable */;
-
          try {
-            var13 = true;
             this.complete(this.blobs, this.failed);
-            var13 = false;
          } finally {
-            if (var13) {
-               for (long column : this.heldColumns) {
-                  CachedChunkTransformer.this.holds.release(column);
-               }
+            for (long column : this.heldColumns) {
+               CachedChunkTransformer.this.holds.release(column);
             }
-         }
-
-         for (long column : this.heldColumns) {
-            CachedChunkTransformer.this.holds.release(column);
          }
       }
 

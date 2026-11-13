@@ -64,7 +64,6 @@ import net.minecraft.client.multiplayer.ServerList;
 import net.minecraft.client.multiplayer.ServerData.ServerPackStatus;
 import net.minecraft.commands.arguments.EntityAnchorArgument.Anchor;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Vec3i;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.numbers.StyledFormat;
@@ -111,8 +110,7 @@ public final class DevPrismaTest {
       "prisma:pickaxeofgod1",
       "prisma:meteorite_ore"
    );
-   @Nullable
-   private static volatile StackRequests requests;
+   private static volatile @Nullable StackRequests requests;
    private final Minecraft minecraft;
    private final String variant;
    private static final String BDS_TEST_PACK = "bd1ccd95-4246-4ee9-b0d7-f27b2fcae7de";
@@ -138,9 +136,9 @@ public final class DevPrismaTest {
          try {
             test.run();
             log("done");
-         } catch (RuntimeException var4) {
-            BedrockNative.LOGGER.error("Dev prisma test failed", var4);
-            log("done (failed: {})", var4.getMessage());
+         } catch (RuntimeException e) {
+            BedrockNative.LOGGER.error("Dev prisma test failed", e);
+            log("done (failed: {})", e.getMessage());
          }
       });
    }
@@ -500,7 +498,7 @@ public final class DevPrismaTest {
                ItemStack stack = items.getItem(slot);
                CustomItem custom = ItemMappings.custom(stack);
                if (custom != null) {
-                  Equippable equippable = (Equippable)stack.get(DataComponents.EQUIPPABLE);
+                  Equippable equippable = stack.get(DataComponents.EQUIPPABLE);
                   StackRequests session = requests;
                   CreativeItemData entry = session == null ? null : session.creative().find(stack);
                   log(
@@ -682,7 +680,7 @@ public final class DevPrismaTest {
             break;
          }
 
-         this.run(() -> this.minecraft.player.lookAt(Anchor.EYES, Vec3.atCenterOf((Vec3i)entry.getValue())));
+         this.run(() -> this.minecraft.player.lookAt(Anchor.EYES, Vec3.atCenterOf(entry.getValue())));
          sleep(1200L);
          this.screenshot("blocks-" + entry.getKey().replaceAll("[^a-z0-9_]+", "_"));
       }
@@ -737,8 +735,8 @@ public final class DevPrismaTest {
                   .findFirst()
                   .orElseThrow()
             );
-         } catch (ReflectiveOperationException var4) {
-            log("no {} tab: {}", name, var4.toString());
+         } catch (ReflectiveOperationException e) {
+            log("no {} tab: {}", name, e.toString());
          }
       }
    }
@@ -755,15 +753,15 @@ public final class DevPrismaTest {
    private static String armorOf(ItemStack stack, @Nullable Equippable equippable) {
       if (equippable == null) {
          return "-";
-      } else {
-         double[] armor = new double[]{0.0};
-         stack.forEachModifier(equippable.slot(), (attribute, modifier) -> {
-            if (attribute.is(Attributes.ARMOR)) {
-               armor[0] += modifier.amount();
-            }
-         });
-         return String.valueOf((int)armor[0]);
       }
+
+      double[] armor = new double[]{0.0};
+      stack.forEachModifier(equippable.slot(), (attribute, modifier) -> {
+         if (attribute.is(Attributes.ARMOR)) {
+            armor[0] += modifier.amount();
+         }
+      });
+      return String.valueOf((int)armor[0]);
    }
 
    private void reportArmor() {
@@ -791,8 +789,7 @@ public final class DevPrismaTest {
       );
    }
 
-   @Nullable
-   private Integer menuSlot(String identifier) {
+   private @Nullable Integer menuSlot(String identifier) {
       InventoryMenu menu = this.minecraft.player.inventoryMenu;
 
       for (int slot = 9; slot < 45; slot++) {
@@ -934,7 +931,8 @@ public final class DevPrismaTest {
                   int requestsBefore = requests == null ? 0 : requests.accepted();
                   this.quickMove(slot, menu);
                   sleep(1500L);
-                  moved = this.onClient(() -> this.findVaultSlot(movedStack) >= 0);
+                  ItemStack wanted = movedStack;
+                  moved = this.onClient(() -> this.findVaultSlot(wanted) >= 0);
                   log(
                      "chests: moved '{}' x{} from inventory slot {} into the vault: in the vault {}, requests accepted {} -> {}",
                      movedStack.getHoverName().getString(),
@@ -1092,14 +1090,14 @@ public final class DevPrismaTest {
    private String describe(@Nullable Screen screen) {
       if (screen == null) {
          return "none";
-      } else {
-         StringBuilder text = new StringBuilder(screen.getClass().getSimpleName());
-         if (screen instanceof DisconnectedScreen) {
-            screen.children().forEach(child -> text.append(' ').append(child));
-         }
-
-         return text.toString();
       }
+
+      StringBuilder text = new StringBuilder(screen.getClass().getSimpleName());
+      if (screen instanceof DisconnectedScreen) {
+         screen.children().forEach(child -> text.append(' ').append(child));
+      }
+
+      return text.toString();
    }
 
    private void askAgain() {
@@ -1115,42 +1113,34 @@ public final class DevPrismaTest {
    private void deleteCache() {
       Path cache = FabricLoader.getInstance().getConfigDir().resolve("bedrocknative").resolve("packs");
 
-      try {
-         try (Stream<Path> files = Files.exists(cache) ? Files.list(cache) : Stream.empty()) {
-            for (Path file : files.toList()) {
-               if (!file.getFileName().toString().startsWith("bd1ccd95-4246-4ee9-b0d7-f27b2fcae7de")) {
-                  Files.deleteIfExists(file);
-               }
+      try (Stream<Path> files = Files.exists(cache) ? Files.list(cache) : Stream.empty()) {
+         for (Path file : files.toList()) {
+            if (!file.getFileName().toString().startsWith("bd1ccd95-4246-4ee9-b0d7-f27b2fcae7de")) {
+               Files.deleteIfExists(file);
             }
          }
-      } catch (IOException var7) {
-         throw new IllegalStateException(var7);
+      } catch (IOException e) {
+         throw new IllegalStateException(e);
       }
    }
 
    private List<String> cacheFiles() {
       Path cache = FabricLoader.getInstance().getConfigDir().resolve("bedrocknative").resolve("packs");
 
-      try {
-         List var3;
-         try (Stream<Path> files = Files.exists(cache) ? Files.list(cache) : Stream.empty()) {
-            var3 = files.sorted(Comparator.naturalOrder()).map(file -> {
-               try {
-                  return file.getFileName() + " " + Files.size(file);
-               } catch (IOException var2x) {
-                  return file.getFileName().toString();
-               }
-            }).toList();
-         }
-
-         return var3;
-      } catch (IOException var7) {
+      try (Stream<Path> files = Files.exists(cache) ? Files.list(cache) : Stream.empty()) {
+         return files.sorted(Comparator.naturalOrder()).map(file -> {
+            try {
+               return file.getFileName() + " " + Files.size(file);
+            } catch (IOException e) {
+               return file.getFileName().toString();
+            }
+         }).toList();
+      } catch (IOException e) {
          return List.of();
       }
    }
 
-   @Nullable
-   private Screen screen() {
+   private @Nullable Screen screen() {
       return this.minecraft.gui == null ? null : this.minecraft.gui.screen();
    }
 
@@ -1380,8 +1370,7 @@ public final class DevPrismaTest {
       );
    }
 
-   @Nullable
-   private BedrockActorEntity nearestCarrier(String identifier) {
+   private @Nullable BedrockActorEntity nearestCarrier(String identifier) {
       BedrockActorEntity nearest = null;
 
       for (Entity entity : this.minecraft.level.entitiesForRendering()) {
@@ -1417,7 +1406,7 @@ public final class DevPrismaTest {
    private static void sleep(long millis) {
       try {
          Thread.sleep(millis);
-      } catch (InterruptedException var3) {
+      } catch (InterruptedException e) {
          Thread.currentThread().interrupt();
       }
    }

@@ -17,7 +17,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin({Camera.class})
+@Mixin(Camera.class)
 public abstract class BedrockCameraMixin {
    @Shadow
    private float xRot;
@@ -45,18 +45,12 @@ public abstract class BedrockCameraMixin {
    @Shadow
    protected abstract void setPosition(Vec3 var1);
 
-   @Inject(
-      method = {"alignWithEntity"},
-      at = {@At("HEAD")}
-   )
+   @Inject(method = "alignWithEntity", at = @At("HEAD"))
    private void bedrocknative$view(float partialTicks, CallbackInfo ci) {
       BedrockCamera.beforeAlign();
    }
 
-   @Inject(
-      method = {"alignWithEntity"},
-      at = {@At("TAIL")}
-   )
+   @Inject(method = "alignWithEntity", at = @At("TAIL"))
    private void bedrocknative$camera(float partialTicks, CallbackInfo ci) {
       Vec3 eye = new Vec3(
          Mth.lerp(partialTicks, this.entity.xo, this.entity.getX()),
@@ -91,14 +85,10 @@ public abstract class BedrockCameraMixin {
       }
    }
 
-   @Inject(
-      method = {"calculateFov"},
-      at = {@At("RETURN")},
-      cancellable = true
-   )
+   @Inject(method = "calculateFov", at = @At("RETURN"), cancellable = true)
    private void bedrocknative$fov(float partialTicks, CallbackInfoReturnable<Float> cir) {
       if (!this.isPanoramicMode) {
-         float factor = BedrockCamera.fovFactor(((Integer)this.minecraft.options.fov().get()).intValue());
+         float factor = BedrockCamera.fovFactor(this.minecraft.options.fov().get().intValue());
          if (factor != 1.0F) {
             cir.setReturnValue((Float)cir.getReturnValue() * factor);
          }

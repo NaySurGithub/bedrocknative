@@ -17,11 +17,11 @@ public final class ControlSchemes {
       float delta = CameraDirector.wrapDegrees(cameraYaw - playerYaw);
       if (Math.abs(delta) < 1.0E-4F) {
          return Vector2f.from(left, forward);
-      } else {
-         double radians = Math.toRadians(delta);
-         double sin = Math.sin(radians);
-         double cos = Math.cos(radians);
-         return Vector2f.from((float)(left * cos - forward * sin), (float)(forward * cos + left * sin));
       }
+
+      double radians = Math.toRadians(delta);
+      double sin = Math.sin(radians);
+      double cos = Math.cos(radians);
+      return Vector2f.from((float)(left * cos - forward * sin), (float)(forward * cos + left * sin));
    }
 }

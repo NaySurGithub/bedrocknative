@@ -31,8 +31,7 @@ public final class FogStack {
       return this.identifiers.isEmpty();
    }
 
-   @Nullable
-   public FogDefinition.Distance resolve(FogDefinition.Medium medium, FogDefinitions definitions) {
+   public FogDefinition.@Nullable Distance resolve(FogDefinition.Medium medium, FogDefinitions definitions) {
       for (int i = this.identifiers.size() - 1; i >= 0; i--) {
          FogDefinition fog = definitions.get(this.identifiers.get(i));
          if (fog != null) {

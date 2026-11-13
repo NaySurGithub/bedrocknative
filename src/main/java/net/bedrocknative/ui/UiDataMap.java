@@ -44,11 +44,11 @@ public class UiDataMap implements UiDataSource {
       List<UiDataMap.Item> previous = this.collections.get(name);
       if (previous != null && previous.equals(items)) {
          return this;
-      } else {
-         this.collections.put(name, new ArrayList<>(items));
-         this.version++;
-         return this;
       }
+
+      this.collections.put(name, new ArrayList<>(items));
+      this.version++;
+      return this;
    }
 
    public UiDataMap clearCollection(String name) {
@@ -86,9 +86,8 @@ public class UiDataMap implements UiDataSource {
       }
    }
 
-   @Nullable
    @Override
-   public String kind(String collection, int index) {
+   public @Nullable String kind(String collection, int index) {
       List<UiDataMap.Item> items = this.collections.get(collection);
       return items != null && index >= 0 && index < items.size() ? items.get(index).kind() : null;
    }

@@ -28,20 +28,13 @@ public final class UiInput implements UiScreenInstance.LayoutListener {
    static final int MAX_STEP_MARKS = 64;
    private static final float EPSILON = 0.01F;
    private final UiScreenInstance instance;
-   @Nullable
-   private UiInput.TextEditor editor;
-   @Nullable
-   private UiInput.Sounds sounds;
-   @Nullable
-   private UiControl hovered;
-   @Nullable
-   private UiControl hoveredThrough;
-   @Nullable
-   private UiControl captured;
-   @Nullable
-   private UiControl focused;
-   @Nullable
-   private UiControl modalAtPress;
+   private UiInput.@Nullable TextEditor editor;
+   private UiInput.@Nullable Sounds sounds;
+   private @Nullable UiControl hovered;
+   private @Nullable UiControl hoveredThrough;
+   private @Nullable UiControl captured;
+   private @Nullable UiControl focused;
+   private @Nullable UiControl modalAtPress;
    private UiInput.Drag drag = UiInput.Drag.NONE;
    private float grab;
    private float cursorX = Float.NaN;
@@ -51,17 +44,14 @@ public final class UiInput implements UiScreenInstance.LayoutListener {
    private List<UiControl> topmost = List.of();
    private long topmostPlacement = -1L;
    private long topmostTree = -1L;
-   @Nullable
-   private UiControl topModal;
+   private @Nullable UiControl topModal;
    private boolean topModalKnown;
-   @Nullable
-   private UiControl withinFor;
+   private @Nullable UiControl withinFor;
    private List<UiControl> withinOrder = List.of();
    private long withinPlacement = -1L;
    private long withinTree = -1L;
    private final Map<UiControl, String> stepMarks = new IdentityHashMap<>();
-   @Nullable
-   private UiDrawList keyedList;
+   private @Nullable UiDrawList keyedList;
    private long listKey = -2L;
 
    private UiInput(UiScreenInstance instance) {
@@ -74,26 +64,23 @@ public final class UiInput implements UiScreenInstance.LayoutListener {
       return input;
    }
 
-   public void editor(@Nullable UiInput.TextEditor textEditor) {
+   public void editor(UiInput.@Nullable TextEditor textEditor) {
       this.editor = textEditor;
    }
 
-   public void sounds(@Nullable UiInput.Sounds player) {
+   public void sounds(UiInput.@Nullable Sounds player) {
       this.sounds = player;
    }
 
-   @Nullable
-   public UiControl hovered() {
+   public @Nullable UiControl hovered() {
       return this.hovered;
    }
 
-   @Nullable
-   public UiControl hoveredThrough() {
+   public @Nullable UiControl hoveredThrough() {
       return this.hoveredThrough;
    }
 
-   @Nullable
-   public UiControl focused() {
+   public @Nullable UiControl focused() {
       return this.focused;
    }
 
@@ -151,88 +138,90 @@ public final class UiInput implements UiScreenInstance.LayoutListener {
    public boolean mouseDown(float x, float y, int button) {
       if (button != 0) {
          return false;
-      } else {
-         UiControl modal = this.topModal();
-         UiControl target = this.pick(x, y, modal);
-         if (modal != null && target == null && !contains(modal, x, y)) {
-            this.focus(null);
-            this.global(modal, "button.menu_select");
-            return true;
-         } else {
-            UiControl owner = owner(target);
-            if (this.focused != null && owner != this.focused) {
-               this.focus(null);
-            }
-
-            this.modalAtPress = modal;
-            if (owner == null) {
-               return modal != null;
-            } else if (!owner.enabled) {
-               return true;
-            } else {
-               switch (owner.type) {
-                  case EDIT_BOX:
-                     this.focus(owner);
-                     break;
-                  case SLIDER:
-                     this.captured = owner;
-                     this.drag = UiInput.Drag.SLIDER;
-                     this.state(owner, "hover");
-                     this.slide(owner, x, y);
-                     break;
-                  case SCROLLBAR_BOX:
-                     this.captured = owner;
-                     this.drag = UiInput.Drag.BOX;
-                     this.grab = y - owner.y;
-                     break;
-                  case SCROLL_TRACK:
-                  case SCROLLBAR_TRACK:
-                     this.jump(owner, y);
-                     this.drag = UiInput.Drag.TRACK;
-                     break;
-                  default:
-                     this.captured = owner;
-                     this.drag = UiInput.Drag.PRESS;
-                     this.state(owner, "pressed");
-               }
-
-               return true;
-            }
-         }
       }
+
+      UiControl modal = this.topModal();
+      UiControl target = this.pick(x, y, modal);
+      if (modal != null && target == null && !contains(modal, x, y)) {
+         this.focus(null);
+         this.global(modal, "button.menu_select");
+         return true;
+      }
+
+      UiControl owner = owner(target);
+      if (this.focused != null && owner != this.focused) {
+         this.focus(null);
+      }
+
+      this.modalAtPress = modal;
+      if (owner == null) {
+         return modal != null;
+      }
+
+      if (!owner.enabled) {
+         return true;
+      }
+
+      switch (owner.type) {
+         case EDIT_BOX:
+            this.focus(owner);
+            break;
+         case SLIDER:
+            this.captured = owner;
+            this.drag = UiInput.Drag.SLIDER;
+            this.state(owner, "hover");
+            this.slide(owner, x, y);
+            break;
+         case SCROLLBAR_BOX:
+            this.captured = owner;
+            this.drag = UiInput.Drag.BOX;
+            this.grab = y - owner.y;
+            break;
+         case SCROLL_TRACK:
+         case SCROLLBAR_TRACK:
+            this.jump(owner, y);
+            this.drag = UiInput.Drag.TRACK;
+            break;
+         default:
+            this.captured = owner;
+            this.drag = UiInput.Drag.PRESS;
+            this.state(owner, "pressed");
+      }
+
+      return true;
    }
 
    public boolean mouseUp(float x, float y, int button) {
       if (button != 0) {
          return false;
-      } else {
-         UiControl control = this.captured;
-         UiInput.Drag was = this.drag;
-         this.captured = null;
-         this.drag = UiInput.Drag.NONE;
-         boolean handled = control != null;
-         if (control != null && was == UiInput.Drag.PRESS) {
-            boolean inside = owner(this.pick(x, y, this.modalAtPress)) == control;
-            this.state(control, inside ? "hover" : "default");
-            if (inside && control.enabled) {
-               this.activate(control);
-            }
-         } else if (control != null && was == UiInput.Drag.SLIDER) {
-            this.slide(control, x, y);
-            this.state(control, "default");
-         }
-
-         UiControl modal = this.modalAtPress;
-         this.modalAtPress = null;
-         if (modal != null && modal.effectiveVisible && (was == UiInput.Drag.PRESS || was == UiInput.Drag.NONE)) {
-            this.global(modal, "button.menu_select");
-            handled = true;
-         }
-
-         this.hovered = null;
-         this.mouseMoved(x, y);
-         return handled;
       }
+
+      UiControl control = this.captured;
+      UiInput.Drag was = this.drag;
+      this.captured = null;
+      this.drag = UiInput.Drag.NONE;
+      boolean handled = control != null;
+      if (control != null && was == UiInput.Drag.PRESS) {
+         boolean inside = owner(this.pick(x, y, this.modalAtPress)) == control;
+         this.state(control, inside ? "hover" : "default");
+         if (inside && control.enabled) {
+            this.activate(control);
+         }
+      } else if (control != null && was == UiInput.Drag.SLIDER) {
+         this.slide(control, x, y);
+         this.state(control, "default");
+      }
+
+      UiControl modal = this.modalAtPress;
+      this.modalAtPress = null;
+      if (modal != null && modal.effectiveVisible && (was == UiInput.Drag.PRESS || was == UiInput.Drag.NONE)) {
+         this.global(modal, "button.menu_select");
+         handled = true;
+      }
+
+      this.hovered = null;
+      this.mouseMoved(x, y);
+      return handled;
    }
 
    public boolean mouseDragged(float x, float y, int button) {
@@ -245,8 +234,7 @@ public final class UiInput implements UiScreenInstance.LayoutListener {
       }
    }
 
-   @Nullable
-   public UiControl topmost(float x, float y) {
+   public @Nullable UiControl topmost(float x, float y) {
       return owner(this.pick(x, y, this.topModal()));
    }
 
@@ -264,11 +252,11 @@ public final class UiInput implements UiScreenInstance.LayoutListener {
    private boolean centre(UiControl control) {
       if (Float.isNaN(this.cursorX)) {
          return false;
-      } else {
-         float baseX = control.x - control.inputShiftX + control.w / 2.0F;
-         float baseY = control.y - control.inputShiftY + control.h / 2.0F;
-         return shift(control, this.cursorX - baseX, this.cursorY - baseY);
       }
+
+      float baseX = control.x - control.inputShiftX + control.w / 2.0F;
+      float baseY = control.y - control.inputShiftY + control.h / 2.0F;
+      return shift(control, this.cursorX - baseX, this.cursorY - baseY);
    }
 
    private List<UiControl> followers() {
@@ -293,12 +281,12 @@ public final class UiInput implements UiScreenInstance.LayoutListener {
       UiControl view = this.scrollViewAt(x, y, this.topModal());
       if (view == null) {
          return false;
-      } else {
-         float speed = (float)number(view.props.get("scroll_speed"), 15.0);
-         view.scroll -= notches * speed;
-         this.instance.invalidate();
-         return true;
       }
+
+      float speed = (float)number(view.props.get("scroll_speed"), 15.0);
+      view.scroll -= notches * speed;
+      this.instance.invalidate();
+      return true;
    }
 
    public boolean button(String id) {
@@ -321,23 +309,23 @@ public final class UiInput implements UiScreenInstance.LayoutListener {
       if (modal != null) {
          this.global(modal, id);
          return true;
-      } else {
-         for (UiControl control : this.topmostFirst(null)) {
-            for (JsonObject mappingx : control.buttonMappings) {
-               if (id.equals(string(mappingx.get("from_button_id")))
-                  && "global".equals(string(mappingx.get("mapping_type")))
-                  && !mappingx.has("handle_select")
-                  && !mappingx.has("handle_deselect")) {
-                  this.dispatch(string(mappingx.get("to_button_id")), control, mappingx);
-                  if (!mappingx.has("consume_event") || truthy(mappingx.get("consume_event"))) {
-                     return true;
-                  }
+      }
+
+      for (UiControl control : this.topmostFirst(null)) {
+         for (JsonObject mapping : control.buttonMappings) {
+            if (id.equals(string(mapping.get("from_button_id")))
+               && "global".equals(string(mapping.get("mapping_type")))
+               && !mapping.has("handle_select")
+               && !mapping.has("handle_deselect")) {
+               this.dispatch(string(mapping.get("to_button_id")), control, mapping);
+               if (!mapping.has("consume_event") || truthy(mapping.get("consume_event"))) {
+                  return true;
                }
             }
          }
-
-         return false;
       }
+
+      return false;
    }
 
    public void focus(@Nullable UiControl editBox) {
@@ -378,11 +366,11 @@ public final class UiInput implements UiScreenInstance.LayoutListener {
    static String filter(String text, @Nullable String textType) {
       if (!"NumberChars".equals(textType)) {
          return text;
-      } else {
-         StringBuilder digits = new StringBuilder(text.length());
-         text.chars().filter(c -> c >= 48 && c <= 57).forEach(c -> digits.append((char)c));
-         return digits.toString();
       }
+
+      StringBuilder digits = new StringBuilder(text.length());
+      text.chars().filter(c -> c >= 48 && c <= 57).forEach(c -> digits.append((char)c));
+      return digits.toString();
    }
 
    public void type(String text) {
@@ -405,8 +393,7 @@ public final class UiInput implements UiScreenInstance.LayoutListener {
       return length > 0.0 ? (int)Math.min(length, 32767.0) : 32767;
    }
 
-   @Nullable
-   public float[] caret(int cursor) {
+   public float @Nullable [] caret(int cursor) {
       UiControl box = this.focused;
       UiControl label = box == null ? null : this.textControl(box);
       if (label != null && label.effectiveVisible) {
@@ -415,9 +402,8 @@ public final class UiInput implements UiScreenInstance.LayoutListener {
          UiTextMeasurer measurer = this.instance.environment.measurer();
          float width = measurer.width(before, label.font);
          float full = measurer.width(text, label.font);
-         String var10 = label.alignment == null ? "left" : label.alignment;
 
-         float x = switch (var10) {
+         float x = switch (label.alignment == null ? "left" : label.alignment) {
             case "center" -> label.x + (label.w - full) / 2.0F;
             case "right" -> label.x + label.w - full;
             default -> label.x;
@@ -428,8 +414,7 @@ public final class UiInput implements UiScreenInstance.LayoutListener {
       }
    }
 
-   @Nullable
-   public UiControl textControl(UiControl editBox) {
+   public @Nullable UiControl textControl(UiControl editBox) {
       String name = string(editBox.props.get("text_control"));
       return find(editBox, name == null ? "display_text" : name);
    }
@@ -495,22 +480,22 @@ public final class UiInput implements UiScreenInstance.LayoutListener {
    private boolean place(UiControl c) {
       if (!c.ownVisible) {
          return false;
-      } else {
-         boolean changed = c.followsCursor() && this.centre(c);
-         if (c.type == UiType.SCROLL_VIEW) {
-            changed |= this.scrollView(c);
-         } else if (c.type == UiType.SLIDER) {
-            changed |= this.slider(c);
-         } else if (c.type == UiType.DROPDOWN) {
-            changed |= dropdownArea(c);
-         }
-
-         for (int i = 0; i < c.children.size(); i++) {
-            changed |= this.place(c.children.get(i));
-         }
-
-         return changed;
       }
+
+      boolean changed = c.followsCursor() && this.centre(c);
+      if (c.type == UiType.SCROLL_VIEW) {
+         changed |= this.scrollView(c);
+      } else if (c.type == UiType.SLIDER) {
+         changed |= this.slider(c);
+      } else if (c.type == UiType.DROPDOWN) {
+         changed |= dropdownArea(c);
+      }
+
+      for (int i = 0; i < c.children.size(); i++) {
+         changed |= this.place(c.children.get(i));
+      }
+
+      return changed;
    }
 
    private boolean scrollView(UiControl view) {
@@ -606,12 +591,12 @@ public final class UiInput implements UiScreenInstance.LayoutListener {
          String key = signature.toString();
          if (key.equals(this.stepMarks.getOrDefault(slider, ""))) {
             return false;
-         } else {
-            this.stepMarks.put(slider, key);
-            this.instance.respawn(slider, children);
-            this.instance.touch();
-            return true;
          }
+
+         this.stepMarks.put(slider, key);
+         this.instance.respawn(slider, children);
+         this.instance.touch();
+         return true;
       } else {
          return false;
       }
@@ -649,34 +634,33 @@ public final class UiInput implements UiScreenInstance.LayoutListener {
    private static boolean shift(UiControl control, float x, float y) {
       if (Math.abs(control.inputShiftX - x) < 0.01F && Math.abs(control.inputShiftY - y) < 0.01F) {
          return false;
-      } else {
-         control.inputShiftX = x;
-         control.inputShiftY = y;
-         return true;
       }
+
+      control.inputShiftX = x;
+      control.inputShiftY = y;
+      return true;
    }
 
    private static boolean size(UiControl control, float height) {
       if (!Float.isNaN(control.inputHeight) && Math.abs(control.inputHeight - height) < 0.01F) {
          return false;
-      } else {
-         control.inputHeight = height;
-         return true;
       }
+
+      control.inputHeight = height;
+      return true;
    }
 
    private boolean bag(UiControl control, String name, UiValue value) {
       UiValue previous = control.bag.put(name, value);
       if (previous != null && previous.isNumber() && !(Math.abs(previous.asNumber() - value.asNumber()) > 1.0E-4)) {
          return false;
-      } else {
-         this.changed(control);
-         return true;
       }
+
+      this.changed(control);
+      return true;
    }
 
-   @Nullable
-   private UiControl scrollViewAt(float x, float y, @Nullable UiControl modal) {
+   private @Nullable UiControl scrollViewAt(float x, float y, @Nullable UiControl modal) {
       UiControl fallback = null;
 
       for (UiControl control : this.topmostFirst(modal)) {
@@ -771,9 +755,9 @@ public final class UiInput implements UiScreenInstance.LayoutListener {
 
       List<UiControl> members = new ArrayList<>();
       if (scope != null) {
-         scope.walk(cx -> {
-            if (cx.type == UiType.TOGGLE && truthy(cx.props.get("radio_toggle_group")) && Objects.equals(name, string(cx.props.get("toggle_name")))) {
-               members.add(cx);
+         scope.walk(c -> {
+            if (c.type == UiType.TOGGLE && truthy(c.props.get("radio_toggle_group")) && Objects.equals(name, string(c.props.get("toggle_name")))) {
+               members.add(c);
             }
          });
       }
@@ -826,8 +810,7 @@ public final class UiInput implements UiScreenInstance.LayoutListener {
       }
    }
 
-   @Nullable
-   private static String collectionOf(UiControl control, JsonObject mapping) {
+   private static @Nullable String collectionOf(UiControl control, JsonObject mapping) {
       if (mapping.get("collection_index") instanceof JsonPrimitive primitive && primitive.isString() && !primitive.getAsString().isEmpty()) {
          return primitive.getAsString();
       } else {
@@ -873,8 +856,8 @@ public final class UiInput implements UiScreenInstance.LayoutListener {
             }
          }
 
-         for (UiControl dropdownx : matching.isEmpty() ? open : matching) {
-            this.write(dropdownx, "#toggle_state", UiValue.FALSE);
+         for (UiControl dropdown : matching.isEmpty() ? open : matching) {
+            this.write(dropdown, "#toggle_state", UiValue.FALSE);
          }
       }
    }
@@ -943,8 +926,7 @@ public final class UiInput implements UiScreenInstance.LayoutListener {
       return fired;
    }
 
-   @Nullable
-   public UiControl firing(String buttonId, @Nullable String collection, int index) {
+   public @Nullable UiControl firing(String buttonId, @Nullable String collection, int index) {
       for (UiControl control : this.topmostFirst(null)) {
          for (JsonObject mapping : control.buttonMappings) {
             if ("button.menu_select".equals(string(mapping.get("from_button_id")))
@@ -963,8 +945,7 @@ public final class UiInput implements UiScreenInstance.LayoutListener {
       return null;
    }
 
-   @Nullable
-   UiControl pick(float x, float y, @Nullable UiControl modal) {
+   @Nullable UiControl pick(float x, float y, @Nullable UiControl modal) {
       for (UiControl control : this.topmostFirst(modal)) {
          if (interactive(control) && contains(control, x, y) && !passesThrough(control)) {
             return control;
@@ -974,8 +955,7 @@ public final class UiInput implements UiScreenInstance.LayoutListener {
       return null;
    }
 
-   @Nullable
-   private UiControl passingThrough(float x, float y, @Nullable UiControl modal, @Nullable UiControl below) {
+   private @Nullable UiControl passingThrough(float x, float y, @Nullable UiControl modal, @Nullable UiControl below) {
       for (UiControl control : this.topmostFirst(modal)) {
          if (control == below) {
             return null;
@@ -993,24 +973,24 @@ public final class UiInput implements UiScreenInstance.LayoutListener {
       UiValue consume = control.props.get("consume_event");
       if (consume != null && !consume.isNull() && !consume.truthy()) {
          return true;
-      } else {
-         UiValue hover = control.props.get("consume_hover_events");
-         return control.type == UiType.BUTTON && hover != null && !hover.isNull() && !hover.truthy() && control.buttonMappings.isEmpty();
       }
+
+      UiValue hover = control.props.get("consume_hover_events");
+      return control.type == UiType.BUTTON && hover != null && !hover.isNull() && !hover.truthy() && control.buttonMappings.isEmpty();
    }
 
    private long orderKey() {
       if (RenderSwitches.inputOrderCache) {
          return this.instance.placementVersion();
-      } else {
-         UiDrawList list = this.instance.drawList();
-         if (list != this.keyedList) {
-            this.keyedList = list;
-            this.listKey--;
-         }
-
-         return this.listKey;
       }
+
+      UiDrawList list = this.instance.drawList();
+      if (list != this.keyedList) {
+         this.keyedList = list;
+         this.listKey--;
+      }
+
+      return this.listKey;
    }
 
    private List<UiControl> topmostFirst(@Nullable UiControl within) {
@@ -1018,37 +998,39 @@ public final class UiInput implements UiScreenInstance.LayoutListener {
       long tree = this.instance.treeVersion();
       if (within == null && this.topmostPlacement == placement && this.topmostTree == tree) {
          return this.topmost;
-      } else if (within != null && within == this.withinFor && this.withinPlacement == placement && this.withinTree == tree) {
-         return this.withinOrder;
-      } else {
-         UiControl root = within != null ? within : this.instance.root();
-         List<UiControl> list = new ArrayList<>();
-         if (root != null) {
-            collect(root, list);
-         }
-
-         List<UiControl> ordered = new ArrayList<>(list);
-         Map<UiControl, Integer> order = new IdentityHashMap<>();
-
-         for (int i = 0; i < list.size(); i++) {
-            order.put(list.get(i), i);
-         }
-
-         ordered.sort(Comparator.<UiControl>comparingDouble(c -> c.z).thenComparing(order::get).reversed());
-         if (within == null) {
-            this.topmost = ordered;
-            this.topmostPlacement = placement;
-            this.topmostTree = tree;
-            this.topModalKnown = false;
-         } else {
-            this.withinFor = within;
-            this.withinOrder = ordered;
-            this.withinPlacement = placement;
-            this.withinTree = tree;
-         }
-
-         return ordered;
       }
+
+      if (within != null && within == this.withinFor && this.withinPlacement == placement && this.withinTree == tree) {
+         return this.withinOrder;
+      }
+
+      UiControl root = within != null ? within : this.instance.root();
+      List<UiControl> list = new ArrayList<>();
+      if (root != null) {
+         collect(root, list);
+      }
+
+      List<UiControl> ordered = new ArrayList<>(list);
+      Map<UiControl, Integer> order = new IdentityHashMap<>();
+
+      for (int i = 0; i < list.size(); i++) {
+         order.put(list.get(i), i);
+      }
+
+      ordered.sort(Comparator.<UiControl>comparingDouble(c -> c.z).thenComparing(order::get).reversed());
+      if (within == null) {
+         this.topmost = ordered;
+         this.topmostPlacement = placement;
+         this.topmostTree = tree;
+         this.topModalKnown = false;
+      } else {
+         this.withinFor = within;
+         this.withinOrder = ordered;
+         this.withinPlacement = placement;
+         this.withinTree = tree;
+      }
+
+      return ordered;
    }
 
    private static void collect(UiControl control, List<UiControl> list) {
@@ -1061,25 +1043,24 @@ public final class UiInput implements UiScreenInstance.LayoutListener {
       }
    }
 
-   @Nullable
-   private UiControl topModal() {
+   private @Nullable UiControl topModal() {
       List<UiControl> ordered = this.topmostFirst(null);
       if (this.topModalKnown) {
          return this.topModal;
-      } else {
-         UiControl top = null;
-
-         for (UiControl control : ordered) {
-            if (truthy(control.props.get("modal"))) {
-               top = control;
-               break;
-            }
-         }
-
-         this.topModal = top;
-         this.topModalKnown = true;
-         return top;
       }
+
+      UiControl top = null;
+
+      for (UiControl control : ordered) {
+         if (truthy(control.props.get("modal"))) {
+            top = control;
+            break;
+         }
+      }
+
+      this.topModal = top;
+      this.topModalKnown = true;
+      return top;
    }
 
    static boolean contains(UiControl control, float x, float y) {
@@ -1115,8 +1096,7 @@ public final class UiInput implements UiScreenInstance.LayoutListener {
       return false;
    }
 
-   @Nullable
-   private static UiControl owner(@Nullable UiControl hit) {
+   private static @Nullable UiControl owner(@Nullable UiControl hit) {
       if (hit != null && hit.type == UiType.SLIDER_BOX) {
          UiControl slider = ancestor(hit, UiType.SLIDER);
          return slider != null ? slider : hit;
@@ -1125,8 +1105,7 @@ public final class UiInput implements UiScreenInstance.LayoutListener {
       }
    }
 
-   @Nullable
-   private static UiControl ancestor(UiControl control, UiType type) {
+   private static @Nullable UiControl ancestor(UiControl control, UiType type) {
       for (UiControl c = control.parent; c != null; c = c.parent) {
          if (c.type == type) {
             return c;
@@ -1136,8 +1115,7 @@ public final class UiInput implements UiScreenInstance.LayoutListener {
       return null;
    }
 
-   @Nullable
-   static UiControl part(UiControl view, String property) {
+   static @Nullable UiControl part(UiControl view, String property) {
       String name = string(view.props.get(property));
       if (name != null && !name.isEmpty()) {
          Deque<UiControl> queue = new ArrayDeque<>(view.children);
@@ -1159,13 +1137,11 @@ public final class UiInput implements UiScreenInstance.LayoutListener {
       }
    }
 
-   @Nullable
-   private static UiControl find(UiControl from, @Nullable String name) {
+   private static @Nullable UiControl find(UiControl from, @Nullable String name) {
       return name != null && !name.isEmpty() ? from.find(name) : null;
    }
 
-   @Nullable
-   private static String string(@Nullable Object value) {
+   private static @Nullable String string(@Nullable Object value) {
       if (value instanceof UiValue ui) {
          return ui.isNull() ? null : ui.asString();
       } else {
@@ -1189,7 +1165,7 @@ public final class UiInput implements UiScreenInstance.LayoutListener {
       return Math.max(0.0F, Math.min(1.0F, value));
    }
 
-   private static enum Drag {
+   private enum Drag {
       NONE,
       PRESS,
       SLIDER,

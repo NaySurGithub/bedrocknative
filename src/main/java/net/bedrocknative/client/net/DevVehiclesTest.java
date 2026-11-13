@@ -583,24 +583,24 @@ final class DevVehiclesTest {
       Entity vehicle = this.minecraft.player.getVehicle();
       if (vehicle == null) {
          return "no vehicle";
-      } else {
-         BlockPos base = vehicle.blockPosition();
-         StringBuilder out = new StringBuilder();
+      }
 
-         for (int dy = -1; dy <= 0; dy++) {
-            for (int dx = -3; dx <= 3; dx += 3) {
-               for (int dz = -16; dz <= 3; dz++) {
-                  BlockPos pos = base.offset(dx, dy, dz);
-                  FluidState fluid = this.minecraft.level.getFluidState(pos);
-                  if (!fluid.isEmpty()) {
-                     out.append(pos.toShortString()).append("=").append(fluid.getAmount()).append(fluid.isSource() ? "s " : " ");
-                  }
+      BlockPos base = vehicle.blockPosition();
+      StringBuilder out = new StringBuilder();
+
+      for (int dy = -1; dy <= 0; dy++) {
+         for (int dx = -3; dx <= 3; dx += 3) {
+            for (int dz = -16; dz <= 3; dz++) {
+               BlockPos pos = base.offset(dx, dy, dz);
+               FluidState fluid = this.minecraft.level.getFluidState(pos);
+               if (!fluid.isEmpty()) {
+                  out.append(pos.toShortString()).append("=").append(fluid.getAmount()).append(fluid.isSource() ? "s " : " ");
                }
             }
          }
-
-         return out.length() == 0 ? "none" : out.toString();
       }
+
+      return out.length() == 0 ? "none" : out.toString();
    }
 
    private Vec3 vehiclePosition() {

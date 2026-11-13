@@ -19,8 +19,7 @@ public final class TransportRegistry {
          return false;
       }
    };
-   @Nullable
-   private static volatile BedrockTransport netherNet;
+   private static volatile @Nullable BedrockTransport netherNet;
    private static volatile NetherNetProbe probe = NO_PROBE;
 
    private TransportRegistry() {
@@ -29,11 +28,11 @@ public final class TransportRegistry {
    public static synchronized void useNetherNet(BedrockTransport transport, NetherNetProbe signalingProbe) {
       if (transport.kind() != TransportKind.NETHERNET) {
          throw new IllegalArgumentException("Not a NetherNet transport: " + transport.kind());
-      } else {
-         netherNet = transport;
-         probe = signalingProbe;
-         BedrockNative.LOGGER.info("NetherNet transport available");
       }
+
+      netherNet = transport;
+      probe = signalingProbe;
+      BedrockNative.LOGGER.info("NetherNet transport available");
    }
 
    static synchronized void forgetNetherNet() {
@@ -42,7 +41,7 @@ public final class TransportRegistry {
    }
 
    public static BedrockTransport transport(TransportKind kind) {
-      return (BedrockTransport)(switch (kind) {
+      return switch (kind) {
          case RAKNET -> RakNetTransport.INSTANCE;
          case NETHERNET -> {
             BedrockTransport wired = netherNet;
@@ -53,7 +52,7 @@ public final class TransportRegistry {
             yield wired;
          }
          case JAVA -> throw new IllegalArgumentException("Java servers are joined by vanilla's own connection, not a Bedrock transport");
-      });
+      };
    }
 
    public static NetherNetProbe netherNetProbe() {

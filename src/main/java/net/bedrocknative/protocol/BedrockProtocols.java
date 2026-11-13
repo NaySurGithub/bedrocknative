@@ -24,8 +24,7 @@ public final class BedrockProtocols {
       return V26_63;
    }
 
-   @Nullable
-   public static BedrockProtocol exact(int protocol) {
+   public static @Nullable BedrockProtocol exact(int protocol) {
       for (BedrockProtocol candidate : NEWEST_FIRST) {
          if (candidate.protocol() == protocol) {
             return candidate;

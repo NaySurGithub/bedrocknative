@@ -5,7 +5,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import net.bedrocknative.world.block.BedrockBlockState;
 import net.minecraft.core.Direction;
 import net.minecraft.world.phys.shapes.Shapes;
@@ -32,8 +31,7 @@ public final class CustomBlockState {
    private final int lightDampening;
    private final float destroyTime;
    private final float friction;
-   @Nullable
-   private final String soundType;
+   private final @Nullable String soundType;
    private final boolean interactable;
    private final VoxelShape collisionShape;
    private final VoxelShape selectionShape;
@@ -99,8 +97,7 @@ public final class CustomBlockState {
          || components.get("minecraft:on_interact") instanceof NbtMap;
    }
 
-   @Nullable
-   static String soundType(@Nullable Object component) {
+   static @Nullable String soundType(@Nullable Object component) {
       return (component instanceof NbtMap nbt ? nbt.getOrDefault("sound", nbt.get("value")) : component) instanceof String name && !name.isBlank()
          ? name.trim().toLowerCase(Locale.ROOT)
          : null;
@@ -118,7 +115,7 @@ public final class CustomBlockState {
 
          boolean legacyTop = flag(nbt.get("legacyTopRotation")) || flag(nbt.get("needsLegacyTopRotation"));
          String culling = nbt.get("culling") instanceof String name ? name.trim().toLowerCase(Locale.ROOT) : "";
-         String layer = nbt.get("culling_layer") instanceof String namex ? BlockCullingRules.layer(namex) : null;
+         String layer = nbt.get("culling_layer") instanceof String name ? BlockCullingRules.layer(name) : null;
          return new CustomBlockState.Geometry(
             identifier.isEmpty() ? "minecraft:geometry.full_block" : identifier, Map.copyOf(visibility), legacyTop, culling, layer
          );
@@ -128,12 +125,10 @@ public final class CustomBlockState {
    }
 
    private static boolean visible(Object value, Map<String, ?> states) {
-      Objects.requireNonNull(value);
-
       return switch (value) {
-         case String expressionx -> StateCondition.test(expressionx, states);
+         case String expression -> StateCondition.test(expression, states);
          case NbtMap nbt when nbt.get("expression") instanceof String expression -> StateCondition.test(expression, states);
-         case NbtMap nbtx -> !nbtx.containsKey("value") || flag(nbtx.get("value"));
+         case NbtMap nbt -> !nbt.containsKey("value") || flag(nbt.get("value"));
          default -> flag(value);
       };
    }
@@ -163,7 +158,9 @@ public final class CustomBlockState {
    static List<CustomBlockState.Box> boxes(@Nullable Object component, float maxHeight) {
       if (component == null) {
          return List.of(CustomBlockState.Box.FULL);
-      } else if (component instanceof List<?> list) {
+      }
+
+      if (component instanceof List<?> list) {
          List<CustomBlockState.Box> boxes = new ArrayList<>();
 
          for (Object item : list) {
@@ -175,9 +172,11 @@ public final class CustomBlockState {
          return boxes;
       } else if (!(component instanceof NbtMap nbt)) {
          return flag(component) ? List.of(CustomBlockState.Box.FULL) : List.of();
-      } else if (nbt.containsKey("enabled") && !flag(nbt.get("enabled"))) {
-         return List.of();
       } else {
+         if (nbt.containsKey("enabled") && !flag(nbt.get("enabled"))) {
+            return List.of();
+         }
+
          List<CustomBlockState.Box> boxes = new ArrayList<>();
          if (!nbt.containsKey("boxes")) {
             if (!nbt.containsKey("min") && !nbt.containsKey("max")) {
@@ -263,7 +262,7 @@ public final class CustomBlockState {
    }
 
    private static int level(@Nullable Object component, String key, int fallback) {
-      return Math.clamp((long)((int)Math.round(value(component, key, fallback))), 0, 15);
+      return Math.clamp((int)Math.round(value(component, key, fallback)), 0, 15);
    }
 
    static float destroyTime(@Nullable Object component) {
@@ -347,8 +346,7 @@ public final class CustomBlockState {
       return this.interactable;
    }
 
-   @Nullable
-   public String soundType() {
+   public @Nullable String soundType() {
       return this.soundType;
    }
 

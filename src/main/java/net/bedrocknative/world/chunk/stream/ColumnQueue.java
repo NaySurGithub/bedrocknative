@@ -91,10 +91,10 @@ public final class ColumnQueue<T> {
          ColumnQueue.Column column = (ColumnQueue.Column)this.columns.get(key(x, z));
          if (column == null) {
             return false;
-         } else {
-            column.events.add(new ColumnQueue.Event(task));
-            return true;
          }
+
+         column.events.add(new ColumnQueue.Event(task));
+         return true;
       }
    }
 
@@ -146,15 +146,15 @@ public final class ColumnQueue<T> {
          ColumnQueue.Column column = (ColumnQueue.Column)this.columns.get(key(x, z));
          if (column == null) {
             return ColumnQueue.State.NONE;
-         } else {
-            for (ColumnQueue.Event event : column.events) {
-               if (event.task == null) {
-                  return event.ready ? ColumnQueue.State.READY : ColumnQueue.State.DECODING;
-               }
-            }
-
-            return ColumnQueue.State.NONE;
          }
+
+         for (ColumnQueue.Event event : column.events) {
+            if (event.task == null) {
+               return event.ready ? ColumnQueue.State.READY : ColumnQueue.State.DECODING;
+            }
+         }
+
+         return ColumnQueue.State.NONE;
       }
    }
 
@@ -264,8 +264,8 @@ public final class ColumnQueue<T> {
                         target.apply(column.x, column.z, (T)data);
                         appliedData = true;
                      }
-                  } catch (RuntimeException var30) {
-                     target.failed(column.x, column.z, var30);
+                  } catch (RuntimeException e) {
+                     target.failed(column.x, column.z, e);
                   }
                }
 
@@ -289,8 +289,8 @@ public final class ColumnQueue<T> {
 
             try {
                target.finish();
-            } catch (RuntimeException var29) {
-               target.failed(priority.playerX(), priority.playerZ(), var29);
+            } catch (RuntimeException e) {
+               target.failed(priority.playerX(), priority.playerZ(), e);
             }
 
             finishNanos = this.nanoTime.getAsLong() - finishStarted;
@@ -359,10 +359,8 @@ public final class ColumnQueue<T> {
    }
 
    private static final class Event {
-      @Nullable
-      final Runnable task;
-      @Nullable
-      Object data;
+      final @Nullable Runnable task;
+      @Nullable Object data;
       boolean ready;
       boolean dropped;
 
@@ -391,7 +389,7 @@ public final class ColumnQueue<T> {
       }
    }
 
-   public static enum State {
+   public enum State {
       NONE,
       DECODING,
       READY;

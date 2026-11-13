@@ -39,18 +39,19 @@ import org.cloudburstmc.protocol.bedrock.data.LevelEvent;
 import org.cloudburstmc.protocol.bedrock.packet.BedrockPacket;
 import org.cloudburstmc.protocol.bedrock.packet.LevelEventPacket;
 import org.cloudburstmc.protocol.bedrock.packet.SpawnParticleEffectPacket;
+import org.jspecify.annotations.Nullable;
 
 public final class BedrockParticles {
    private static final boolean VERBOSE = Boolean.getBoolean("bedrocknative.devScreenshot");
    private static final Set<String> LOGGED = ConcurrentHashMap.newKeySet();
    private final Minecraft minecraft;
    private final Predicate<BlockPos> brokenLocally;
-   private final LongFunction<Entity> byUniqueId;
+   private final LongFunction<@Nullable Entity> byUniqueId;
    private int shown;
    private int shownBedrock;
    private int unmapped;
 
-   public BedrockParticles(Minecraft minecraft, Predicate<BlockPos> brokenLocally, LongFunction<Entity> byUniqueId) {
+   public BedrockParticles(Minecraft minecraft, Predicate<BlockPos> brokenLocally, LongFunction<@Nullable Entity> byUniqueId) {
       this.minecraft = minecraft;
       this.brokenLocally = brokenLocally;
       this.byUniqueId = byUniqueId;
@@ -86,19 +87,19 @@ public final class BedrockParticles {
                this.burst(level, particle, pos, effect.getIdentifier().endsWith("emitter") ? 8 : 1, 0.25);
             }
          } else if (packet instanceof LevelEventPacket event) {
-            Vec3 posx = new Vec3(event.getPosition().getX(), event.getPosition().getY(), event.getPosition().getZ());
+            Vec3 pos = new Vec3(event.getPosition().getX(), event.getPosition().getY(), event.getPosition().getZ());
             if (event.getType() instanceof org.cloudburstmc.protocol.bedrock.data.ParticleType type) {
-               if (this.bedrockLegacy(type, posx)) {
+               if (this.bedrockLegacy(type, pos)) {
                   return;
                }
 
-               ParticleOptions particlex = this.typed(type, event.getData());
-               this.report("particle event " + type + " data " + event.getData(), particlex, posx);
-               if (particlex != null) {
-                  level.addParticle(particlex, posx.x, posx.y, posx.z, 0.0, 0.0, 0.0);
+               ParticleOptions particle = this.typed(type, event.getData());
+               this.report("particle event " + type + " data " + event.getData(), particle, pos);
+               if (particle != null) {
+                  level.addParticle(particle, pos.x, pos.y, pos.z, 0.0, 0.0, 0.0);
                }
             } else {
-               this.onParticleEvent(level, (LevelEvent)event.getType(), posx, event.getData());
+               this.onParticleEvent(level, (LevelEvent)event.getType(), pos, event.getData());
             }
          }
       }
@@ -150,26 +151,26 @@ public final class BedrockParticles {
    private boolean bedrockLegacy(org.cloudburstmc.protocol.bedrock.data.ParticleType type, Vec3 pos) {
       if (!BedrockParticleEngine.vanilla()) {
          return false;
-      } else {
-         ParticleEffects effects = BedrockParticleEngine.effects();
-         String identifier = LegacyParticleEffects.of(type);
-         ParticleEffect effect = effects != null && identifier != null ? effects.get(identifier) : null;
-         if (effect != null && !effect.texture().startsWith("atlas.")) {
-            if (effect.emitter().rate() == ParticleEffect.Rate.MANUAL) {
-               BedrockParticleEngine.emitManual(effect, pos.x, pos.y, pos.z);
-            } else {
-               BedrockParticleEngine.spawn(effect, pos.x, pos.y, pos.z, null, null, null);
-            }
+      }
 
-            this.shownBedrock++;
-            if (VERBOSE) {
-               BedrockNative.LOGGER.info("Bedrock particle event {} at {} -> bedrock {}", new Object[]{type, pos, identifier});
-            }
-
-            return true;
+      ParticleEffects effects = BedrockParticleEngine.effects();
+      String identifier = LegacyParticleEffects.of(type);
+      ParticleEffect effect = effects != null && identifier != null ? effects.get(identifier) : null;
+      if (effect != null && !effect.texture().startsWith("atlas.")) {
+         if (effect.emitter().rate() == ParticleEffect.Rate.MANUAL) {
+            BedrockParticleEngine.emitManual(effect, pos.x, pos.y, pos.z);
          } else {
-            return false;
+            BedrockParticleEngine.spawn(effect, pos.x, pos.y, pos.z, null, null, null);
          }
+
+         this.shownBedrock++;
+         if (VERBOSE) {
+            BedrockNative.LOGGER.info("Bedrock particle event {} at {} -> bedrock {}", new Object[]{type, pos, identifier});
+         }
+
+         return true;
+      } else {
+         return false;
       }
    }
 
@@ -254,7 +255,7 @@ public final class BedrockParticles {
             break;
          case PARTICLE_CRIT:
             this.report(what, ParticleTypes.CRIT, pos);
-            this.burst(level, ParticleTypes.CRIT, pos, Math.clamp((long)data, 1, 30), 0.5);
+            this.burst(level, ParticleTypes.CRIT, pos, Math.clamp(data, 1, 30), 0.5);
             break;
          case PARTICLE_DEATH_SMOKE:
          case PARTICLE_GENERIC_SPAWN:
@@ -355,19 +356,13 @@ public final class BedrockParticles {
    }
 
    private ParticleOptions typed(org.cloudburstmc.protocol.bedrock.data.ParticleType type, int data) {
-      return (ParticleOptions)(switch (type) {
-         case TERRAIN -> {
-            BlockState var5 = block(data);
-            yield var5 instanceof BlockState ? new BlockParticleOption(ParticleTypes.BLOCK, var5) : null;
-         }
+      return switch (type) {
+         case TERRAIN -> block(data) instanceof BlockState state ? new BlockParticleOption(ParticleTypes.BLOCK, state) : null;
          case RED_DUST -> new DustParticleOptions(data & 16777215, 1.0F);
          case MOB_SPELL, MOB_SPELL_AMBIENT -> ColorParticleOption.create(ParticleTypes.ENTITY_EFFECT, data);
-         case FALLING_DUST -> {
-            BlockState var4 = block(data);
-            yield var4 instanceof BlockState ? new BlockParticleOption(ParticleTypes.FALLING_DUST, var4) : null;
-         }
+         case FALLING_DUST -> block(data) instanceof BlockState state ? new BlockParticleOption(ParticleTypes.FALLING_DUST, state) : null;
          default -> simple(ParticleMappings.get().byEventType(type.name()));
-      });
+      };
    }
 
    private void burst(ClientLevel level, ParticleOptions particle, Vec3 pos, int count, double spread) {

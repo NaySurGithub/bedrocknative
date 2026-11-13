@@ -17,23 +17,25 @@ public final class SpriteProvenance implements Output {
       this.output = output;
    }
 
+   @Override
    public void add(Identifier id, Resource resource) {
       this.files.put(id, resource);
       this.output.add(id, resource);
    }
 
+   @Override
    public void add(Identifier id, DiscardableLoader sprite) {
       this.files.remove(id);
       this.output.add(id, sprite);
    }
 
+   @Override
    public void removeAll(Predicate<Identifier> predicate) {
       this.files.keySet().removeIf(predicate);
       this.output.removeAll(predicate);
    }
 
-   @Nullable
-   Resource file(Identifier id) {
+   @Nullable Resource file(Identifier id) {
       return this.files.get(id);
    }
 }

@@ -2,7 +2,6 @@ package net.bedrocknative.client.inventory;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import net.bedrocknative.world.recipe.BookRecipe;
 import net.bedrocknative.world.recipe.CraftPlanner;
 import org.cloudburstmc.protocol.bedrock.data.definitions.SimpleItemDefinition;
@@ -93,15 +92,10 @@ final class AutoCraftRequest {
       return list;
    }
 
-   @Nullable
-   private static ItemDescriptor wire(ItemDescriptor descriptor) {
-      Objects.requireNonNull(descriptor);
-
-      return (ItemDescriptor)(switch (descriptor) {
+   private static @Nullable ItemDescriptor wire(ItemDescriptor descriptor) {
+      return switch (descriptor) {
          case DefaultDescriptor exact when exact.getItemId() == null || exact.getItemId().getIdentifier() == null -> null;
-         case DefaultDescriptor exactx -> exactx.getAuxValue() >= 0 && exactx.getAuxValue() <= 32767
-            ? exactx
-            : new DefaultDescriptor(exactx.getItemId(), 32767);
+         case DefaultDescriptor exact -> exact.getAuxValue() >= 0 && exact.getAuxValue() <= 32767 ? exact : new DefaultDescriptor(exact.getItemId(), 32767);
          case DeferredDescriptor named -> new DefaultDescriptor(
             new SimpleItemDefinition(named.getFullName(), 0, false), named.getAuxValue() >= 0 && named.getAuxValue() <= 32767 ? named.getAuxValue() : 32767
          );
@@ -109,7 +103,7 @@ final class AutoCraftRequest {
          case ItemTagDescriptor tag -> tag;
          case MolangDescriptor molang -> molang;
          default -> null;
-      });
+      };
    }
 
    record Output(BedrockSlot slot, int count) {

@@ -86,8 +86,8 @@ public final class DevAccountsTest {
 
          try {
             test.run();
-         } catch (Throwable var5) {
-            BedrockNative.LOGGER.error("Dev accounts test: FAIL crashed", var5);
+         } catch (Throwable e) {
+            BedrockNative.LOGGER.error("Dev accounts test: FAIL crashed", e);
             test.failed++;
          } finally {
             AccountManager.useStore(null);
@@ -497,9 +497,9 @@ public final class DevAccountsTest {
 
             try {
                Thread.sleep(600000L);
-            } catch (InterruptedException var5x) {
+            } catch (InterruptedException e) {
                codeInterrupted.set(true);
-               throw var5x;
+               throw e;
             }
 
             return synthetic("Never", "0");
@@ -545,9 +545,9 @@ public final class DevAccountsTest {
 
          try {
             Thread.sleep(600000L);
-         } catch (InterruptedException var3x) {
+         } catch (InterruptedException e) {
             windowInterrupted.set(true);
-            throw var3x;
+            throw e;
          }
 
          return synthetic("Never", "0");
@@ -625,9 +625,9 @@ public final class DevAccountsTest {
 
                   try {
                      Thread.sleep(600000L);
-                  } catch (InterruptedException var4x) {
+                  } catch (InterruptedException e) {
                      codeInterrupted.set(true);
-                     throw var4x;
+                     throw e;
                   }
 
                   return synthetic("Never", "0");
@@ -711,17 +711,17 @@ public final class DevAccountsTest {
    private static boolean sameModules(QrCode a, QrCode b) {
       if (a.size() != b.size()) {
          return false;
-      } else {
-         for (int y = 0; y < a.size(); y++) {
-            for (int x = 0; x < a.size(); x++) {
-               if (a.dark(x, y) != b.dark(x, y)) {
-                  return false;
-               }
+      }
+
+      for (int y = 0; y < a.size(); y++) {
+         for (int x = 0; x < a.size(); x++) {
+            if (a.dark(x, y) != b.dark(x, y)) {
+               return false;
             }
          }
-
-         return true;
       }
+
+      return true;
    }
 
    private void clickBedrock(AccountsScreen screen, String name) {
@@ -756,7 +756,7 @@ public final class DevAccountsTest {
       boolean loads;
       try {
          loads = entry != null && "VaultPlayer".equals(store.load(entry.id()).getMinecraftMultiplayerToken().getCached().getDisplayName());
-      } catch (XboxAccountStore.AccountException var8) {
+      } catch (XboxAccountStore.AccountException e) {
          loads = false;
       }
 
@@ -824,8 +824,8 @@ public final class DevAccountsTest {
 
             try {
                code = outcome.kind() == RedirectCapture.Outcome.Kind.REDIRECT ? request.read(outcome.redirect()).code() : null;
-            } catch (SignInFailure var20) {
-               log("the handed-over address was refused: {}", var20.getMessage());
+            } catch (SignInFailure e) {
+               log("the handed-over address was refused: {}", e.getMessage());
             }
 
             this.check(
@@ -838,8 +838,8 @@ public final class DevAccountsTest {
             Thread waiting = Thread.ofVirtual().start(() -> {
                try {
                   capture.capture(page + "stay", stay);
-               } catch (Throwable var5x) {
-                  thrown.set(var5x);
+               } catch (Throwable e) {
+                  thrown.set(e);
                }
             });
             this.waitUntil(stay.opened::get, 10000L);
@@ -874,22 +874,15 @@ public final class DevAccountsTest {
    }
 
    private static long runFolders() {
-      try {
-         long var8;
-         try (DirectoryStream<Path> list = Files.newDirectoryStream(
-               Path.of(System.getProperty("java.io.tmpdir")), "bnsi-" + ProcessHandle.current().pid() + "-*"
-            )) {
-            long count = 0L;
+      try (DirectoryStream<Path> list = Files.newDirectoryStream(Path.of(System.getProperty("java.io.tmpdir")), "bnsi-" + ProcessHandle.current().pid() + "-*")) {
+         long count = 0L;
 
-            for (Path ignored : list) {
-               count++;
-            }
-
-            var8 = count;
+         for (Path ignored : list) {
+            count++;
          }
 
-         return var8;
-      } catch (IOException var7) {
+         return count;
+      } catch (IOException e) {
          return -1L;
       }
    }
@@ -904,9 +897,9 @@ public final class DevAccountsTest {
 
          try {
             release.get();
-         } catch (InterruptedException var7) {
+         } catch (InterruptedException e) {
             interrupted.set(true);
-            throw var7;
+            throw e;
          }
 
          return synthetic(gamertag, xuid);
@@ -975,7 +968,7 @@ public final class DevAccountsTest {
                   .filter(Button.class::isInstance)
                   .map(Button.class::cast)
                   .anyMatch(button -> button.active && button.getMessage().getString().equals(Component.translatable(key).getString()));
-            } catch (RuntimeException var3) {
+            } catch (RuntimeException e) {
                return false;
             }
          }
@@ -1078,7 +1071,7 @@ public final class DevAccountsTest {
    private void sleep(long millis) {
       try {
          Thread.sleep(millis);
-      } catch (InterruptedException var4) {
+      } catch (InterruptedException e) {
          Thread.currentThread().interrupt();
       }
    }

@@ -42,14 +42,15 @@ public final class DevNetherNetLoadTest {
 
          try {
             test.run();
-         } catch (Throwable var7) {
-            BedrockNative.LOGGER.error("Dev nethernet-load test: FAIL crashed", var7);
+         } catch (Throwable e) {
+            BedrockNative.LOGGER.error("Dev nethernet-load test: FAIL crashed", e);
             test.failed++;
          } finally {
             BedrockNative.LOGGER.info("Dev nethernet-load test: SUMMARY {} passed, {} failed", test.passed, test.failed);
             BedrockNative.LOGGER.info("Dev nethernet-load test: done");
             sleep(500L);
-            minecraft.execute(minecraft::stop);
+            Minecraft game = minecraft;
+            game.execute(game::stop);
          }
       });
    }
@@ -67,9 +68,9 @@ public final class DevNetherNetLoadTest {
          try {
             Class.forName(name, true, DevNetherNetLoadTest.class.getClassLoader());
             this.check("class " + name + " loads", true);
-         } catch (LinkageError | ClassNotFoundException var9) {
-            BedrockNative.LOGGER.warn("Dev nethernet-load test: {} did not load", name, var9);
-            this.check("class " + name + " loads (" + var9 + ")", false);
+         } catch (ClassNotFoundException | LinkageError e) {
+            BedrockNative.LOGGER.warn("Dev nethernet-load test: {} did not load", name, e);
+            this.check("class " + name + " loads (" + e + ")", false);
          }
       }
 
@@ -107,7 +108,7 @@ public final class DevNetherNetLoadTest {
    private static void sleep(long millis) {
       try {
          Thread.sleep(millis);
-      } catch (InterruptedException var3) {
+      } catch (InterruptedException e) {
          Thread.currentThread().interrupt();
       }
    }

@@ -12,7 +12,9 @@ public final class LobbyCatchUp {
    ) {
       if (kind == LobbyCatchUp.Kind.OTHER || kind == LobbyCatchUp.Kind.LOBBY || inWorld || !lobbyOn || triedThisScreen || recentCatches >= 4) {
          return LobbyCatchUp.Action.NONE;
-      } else if (!overlay && definitionsReady) {
+      }
+
+      if (!overlay && definitionsReady) {
          return switch (kind) {
             case JAVA_TITLE -> LobbyCatchUp.Action.START;
             case JAVA_MULTIPLAYER -> LobbyCatchUp.Action.PLAY_SERVERS;
@@ -24,7 +26,7 @@ public final class LobbyCatchUp {
       }
    }
 
-   public static enum Action {
+   public enum Action {
       NONE,
       WAIT,
       START,
@@ -32,7 +34,7 @@ public final class LobbyCatchUp {
       PLAY_WORLDS;
    }
 
-   public static enum Kind {
+   public enum Kind {
       JAVA_TITLE,
       JAVA_MULTIPLAYER,
       JAVA_WORLDS,

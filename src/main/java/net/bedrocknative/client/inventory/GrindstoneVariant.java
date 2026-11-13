@@ -105,7 +105,7 @@ public record GrindstoneVariant(String name, GrindstoneVariant.Id id, Grindstone
       active = fromProperty();
    }
 
-   public static enum Cost {
+   public enum Cost {
       RESULT,
       INPUT,
       ZERO,
@@ -114,7 +114,7 @@ public record GrindstoneVariant(String name, GrindstoneVariant.Id id, Grindstone
       FIVE;
    }
 
-   public static enum Id {
+   public enum Id {
       INPUT,
       ADDITIONAL,
       REQUEST,

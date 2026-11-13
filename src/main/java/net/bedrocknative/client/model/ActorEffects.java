@@ -48,7 +48,7 @@ final class ActorEffects implements EffectSink {
 
    @Override
    public EffectSink forDefinition(ClientEntityDef other) {
-      return (EffectSink)(other == this.definition ? this : this.scoped.computeIfAbsent(other, key -> new ActorEffects.Scoped(this, key)));
+      return other == this.definition ? this : this.scoped.computeIfAbsent(other, key -> new ActorEffects.Scoped(this, key));
    }
 
    @Override

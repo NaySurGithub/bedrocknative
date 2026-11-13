@@ -22,16 +22,16 @@ public final class MolangNames {
       Integer existing = IDS.get(key);
       if (existing != null) {
          return existing;
-      } else {
-         int id = next++;
-         if (id >= names.length) {
-            names = Arrays.copyOf(names, names.length * 2);
-         }
-
-         names[id] = key;
-         IDS.put(key, id);
-         return id;
       }
+
+      int id = next++;
+      if (id >= names.length) {
+         names = Arrays.copyOf(names, names.length * 2);
+      }
+
+      names[id] = key;
+      IDS.put(key, id);
+      return id;
    }
 
    public static synchronized String name(int id) {

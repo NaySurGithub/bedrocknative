@@ -7,7 +7,7 @@ import net.minecraft.resources.Identifier;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 
-@Mixin({FontManager.class})
+@Mixin(FontManager.class)
 public interface FontManagerAccessor {
    @Accessor("fontSets")
    Map<Identifier, FontSet> bedrocknative$fontSets();

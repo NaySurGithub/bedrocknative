@@ -15,8 +15,8 @@ final class FetchRun {
    final AtomicLong bytes = new AtomicLong();
    final AtomicInteger requests = new AtomicInteger();
    final Set<String> done = ConcurrentHashMap.newKeySet();
-   private final AtomicReference<String> stopReason = new AtomicReference<>();
-   private final AtomicReference<String> firstFailure = new AtomicReference<>();
+   private final AtomicReference<@Nullable String> stopReason = new AtomicReference<>();
+   private final AtomicReference<@Nullable String> firstFailure = new AtomicReference<>();
    private final List<String> notes = new CopyOnWriteArrayList<>();
    static final int NO_ANSWER_LIMIT = 8;
    private final AtomicInteger noAnswer = new AtomicInteger();
@@ -29,8 +29,7 @@ final class FetchRun {
       this.stopReason.compareAndSet(null, reason);
    }
 
-   @Nullable
-   String stopReason() {
+   @Nullable String stopReason() {
       return this.stopReason.get();
    }
 
@@ -39,8 +38,7 @@ final class FetchRun {
       this.firstFailure.compareAndSet(null, path + ": " + reason);
    }
 
-   @Nullable
-   String firstFailure() {
+   @Nullable String firstFailure() {
       return this.firstFailure.get();
    }
 

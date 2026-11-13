@@ -150,8 +150,8 @@ final class DevLookTest {
          this.report("end");
          this.frames(cpu, meshesBefore);
          this.missingTexturePixels();
-      } catch (RuntimeException var5) {
-         BedrockNative.LOGGER.error("Dev look test failed", var5);
+      } catch (RuntimeException e) {
+         BedrockNative.LOGGER.error("Dev look test failed", e);
       }
 
       log("done");
@@ -227,7 +227,7 @@ final class DevLookTest {
       File[] files = new File(this.minecraft.gameDirectory, "screenshots")
          .listFiles((dir, filex) -> filex.startsWith(this.name + "-") && filex.endsWith(".png"));
       if (files != null) {
-         Arrays.sort((Object[])files);
+         Arrays.sort(files);
          long total = 0L;
          int worst = 0;
          String worstFile = "-";
@@ -251,8 +251,8 @@ final class DevLookTest {
                   worst = count;
                   worstFile = file.getName();
                }
-            } catch (RuntimeException | IOException var15) {
-               log("cannot read {}: {}", file.getName(), var15.toString());
+            } catch (IOException | RuntimeException e) {
+               log("cannot read {}: {}", file.getName(), e.toString());
             }
          }
 
@@ -277,8 +277,8 @@ final class DevLookTest {
                         Files.write(out, data.get());
                         files++;
                      }
-                  } catch (IOException var10) {
-                     log("dump failed for {}: {}", path, var10.toString());
+                  } catch (IOException e) {
+                     log("dump failed for {}: {}", path, e.toString());
                   }
                }
 
@@ -316,7 +316,7 @@ final class DevLookTest {
             sleep(1000L);
          }
 
-         int initial = this.onClient(() -> (Integer)this.minecraft.options.renderDistance().get());
+         int initial = this.onClient(() -> this.minecraft.options.renderDistance().get());
 
          for (String value : list.split(",")) {
             int distance = Integer.parseInt(value.trim());
@@ -331,10 +331,11 @@ final class DevLookTest {
                last = now;
             }
 
+            int loaded = last;
             log(
                "render distance {}: {} chunks loaded, effective distance {}, view distance of the client {}",
                distance,
-               last,
+               loaded,
                this.onClient(() -> this.minecraft.options.getEffectiveRenderDistance()),
                distance
             );
@@ -384,7 +385,7 @@ final class DevLookTest {
       for (int slot = 9; slot <= 44; slot++) {
          int from = slot;
          int target = this.onClient(() -> {
-            Equippable equippable = (Equippable)this.minecraft.player.inventoryMenu.getSlot(from).getItem().get(DataComponents.EQUIPPABLE);
+            Equippable equippable = this.minecraft.player.inventoryMenu.getSlot(from).getItem().get(DataComponents.EQUIPPABLE);
             byte var10000;
             if (equippable == null) {
                var10000 = -1;
@@ -424,9 +425,9 @@ final class DevLookTest {
       }
 
       int worn = this.onClient(() -> {
-         for (int slotx = 5; slotx <= 8; slotx++) {
-            if (!this.minecraft.player.inventoryMenu.getSlot(slotx).getItem().isEmpty()) {
-               return slotx;
+         for (int slot = 5; slot <= 8; slot++) {
+            if (!this.minecraft.player.inventoryMenu.getSlot(slot).getItem().isEmpty()) {
+               return slot;
             }
          }
 
@@ -439,9 +440,9 @@ final class DevLookTest {
          boolean off = this.shiftClick(worn);
          sleep(2500L);
          int now = this.onClient(() -> {
-            for (int slotx = 9; slotx <= 44; slotx++) {
-               if (ItemStack.isSameItemSameComponents(piece, this.minecraft.player.inventoryMenu.getSlot(slotx).getItem())) {
-                  return slotx;
+            for (int slot = 9; slot <= 44; slot++) {
+               if (ItemStack.isSameItemSameComponents(piece, this.minecraft.player.inventoryMenu.getSlot(slot).getItem())) {
+                  return slot;
                }
             }
 
@@ -470,8 +471,8 @@ final class DevLookTest {
          }
 
          this.onClient(() -> {
-            for (int slotx = 5; slotx <= 8; slotx++) {
-               log("armour: slot {} ends as {}", slotx, this.minecraft.player.inventoryMenu.getSlot(slotx).getItem());
+            for (int slot = 5; slot <= 8; slot++) {
+               log("armour: slot {} ends as {}", slot, this.minecraft.player.inventoryMenu.getSlot(slot).getItem());
             }
 
             return null;
@@ -1190,7 +1191,7 @@ final class DevLookTest {
    private static void sleep(long millis) {
       try {
          Thread.sleep(millis);
-      } catch (InterruptedException var3) {
+      } catch (InterruptedException e) {
          Thread.currentThread().interrupt();
       }
    }

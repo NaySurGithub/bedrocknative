@@ -79,11 +79,11 @@ final class ParticleShapes {
             float bx = ny * az - nz * ay;
             float by = nz * ax - nx * az;
             float bz = nx * ay - ny * ax;
-            float radius = emitter.radius().evaluate(env);
-            float angle = (float)(random.nextDouble() * Math.PI * 2.0);
-            float distance = surface ? radius : radius * (float)Math.sqrt(random.nextDouble());
-            float cos = (float)Math.cos(angle) * distance;
-            float sin = (float)Math.sin(angle) * distance;
+            float radius2 = emitter.radius().evaluate(env);
+            float angle2 = (float)(random.nextDouble() * Math.PI * 2.0);
+            float distance2 = surface ? radius2 : radius2 * (float)Math.sqrt(random.nextDouble());
+            float cos = (float)Math.cos(angle2) * distance2;
+            float sin = (float)Math.sin(angle2) * distance2;
             px = ax * cos + bx * sin;
             py = ay * cos + by * sin;
             pz = az * cos + bz * sin;
@@ -121,11 +121,11 @@ final class ParticleShapes {
          }
       }
 
-      float lengthx = (float)Math.sqrt(dx * dx + dy * dy + dz * dz);
-      if (lengthx > 1.0E-6F) {
-         dx /= lengthx;
-         dy /= lengthx;
-         dz /= lengthx;
+      float length = (float)Math.sqrt(dx * dx + dy * dy + dz * dz);
+      if (length > 1.0E-6F) {
+         dx /= length;
+         dy /= length;
+         dz /= length;
       }
 
       out[0] = ox + px;

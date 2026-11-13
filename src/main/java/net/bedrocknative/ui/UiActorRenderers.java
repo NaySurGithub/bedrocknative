@@ -16,8 +16,7 @@ public final class UiActorRenderers {
       return "live_horse_renderer".equals(renderer) || "live_player_renderer".equals(renderer) || "paper_doll_renderer".equals(renderer);
    }
 
-   @Nullable
-   public static Long entityId(@Nullable UiValue value) {
+   public static @Nullable Long entityId(@Nullable UiValue value) {
       if (value == null || value.isNull()) {
          return null;
       } else if (value.isNumber()) {
@@ -29,26 +28,25 @@ public final class UiActorRenderers {
       }
    }
 
-   @Nullable
-   public static Long entityId(String text) {
+   public static @Nullable Long entityId(String text) {
       String digits = UiFormatting.strip(text).strip();
       if (!digits.isEmpty() && digits.length() <= 20) {
          int start = digits.charAt(0) != '-' && digits.charAt(0) != '+' ? 0 : 1;
          if (start == digits.length()) {
             return null;
-         } else {
-            for (int i = start; i < digits.length(); i++) {
-               char c = digits.charAt(i);
-               if (c < '0' || c > '9') {
-                  return null;
-               }
-            }
+         }
 
-            try {
-               return Long.parseLong(digits);
-            } catch (NumberFormatException var5) {
+         for (int i = start; i < digits.length(); i++) {
+            char c = digits.charAt(i);
+            if (c < '0' || c > '9') {
                return null;
             }
+         }
+
+         try {
+            return Long.parseLong(digits);
+         } catch (NumberFormatException e) {
+            return null;
          }
       } else {
          return null;

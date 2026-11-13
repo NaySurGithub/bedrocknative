@@ -88,9 +88,9 @@ final class DevNpcsTest {
          }
 
          this.fail("the model registry never loaded");
-      } catch (RuntimeException var13) {
-         this.fail("exception: " + var13);
-         BedrockNative.LOGGER.error("Dev npcs test failed with an exception", var13);
+      } catch (RuntimeException e) {
+         this.fail("exception: " + e);
+         BedrockNative.LOGGER.error("Dev npcs test failed with an exception", e);
          return;
       } finally {
          for (long id : this.injected) {
@@ -437,8 +437,7 @@ final class DevNpcsTest {
       });
    }
 
-   @Nullable
-   private ActorState named(String name) {
+   private @Nullable ActorState named(String name) {
       return this.onClient(() -> {
          for (ActorState state : BedrockActors.current().states()) {
             if (name.equals(state.data().value(EntityDataTypes.NAME))) {
@@ -454,8 +453,7 @@ final class DevNpcsTest {
       return Float.isFinite(value) && Math.abs(Mth.wrapDegrees(value - expected)) <= 2.0F;
    }
 
-   @Nullable
-   private Player player(DevNpcsTest.Npc npc) {
+   private @Nullable Player player(DevNpcsTest.Npc npc) {
       for (Entity entity : this.minecraft.level.entitiesForRendering()) {
          if (entity instanceof Player player && player.getUUID().equals(npc.uuid())) {
             return player;
@@ -465,8 +463,7 @@ final class DevNpcsTest {
       return null;
    }
 
-   @Nullable
-   private SkinModel model(DevNpcsTest.Npc npc) {
+   private @Nullable SkinModel model(DevNpcsTest.Npc npc) {
       Player player = this.player(npc);
       return player != null ? BedrockPlayers.model(player) : null;
    }
@@ -484,18 +481,17 @@ final class DevNpcsTest {
       }));
    }
 
-   @Nullable
-   private SerializedSkin classic(String texture, boolean slim) {
+   private @Nullable SerializedSkin classic(String texture, boolean slim) {
       if (!Files.isRegularFile(SKIN_PACK.resolve(texture))) {
          return null;
-      } else {
-         try {
-            JsonObject claims = BedrockSkin.classicFromSkinPack(SKIN_PACK, texture, slim).claims();
-            return SkinClaims.toSerialized(claims);
-         } catch (Exception var4) {
-            this.fail("reading " + texture + " from the skin pack: " + var4);
-            return null;
-         }
+      }
+
+      try {
+         JsonObject claims = BedrockSkin.classicFromSkinPack(SKIN_PACK, texture, slim).claims();
+         return SkinClaims.toSerialized(claims);
+      } catch (Exception e) {
+         this.fail("reading " + texture + " from the skin pack: " + e);
+         return null;
       }
    }
 
@@ -593,7 +589,7 @@ final class DevNpcsTest {
    private static void sleep(long millis) {
       try {
          Thread.sleep(millis);
-      } catch (InterruptedException var3) {
+      } catch (InterruptedException e) {
          Thread.currentThread().interrupt();
       }
    }

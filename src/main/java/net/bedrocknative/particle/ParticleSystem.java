@@ -45,8 +45,7 @@ public final class ParticleSystem {
       return this.world;
    }
 
-   @Nullable
-   public ParticleEmitter spawn(
+   public @Nullable ParticleEmitter spawn(
       ParticleEffect effect,
       double x,
       double y,
@@ -58,60 +57,57 @@ public final class ParticleSystem {
       if (this.emitters.size() + this.added.size() >= this.maxEmitters) {
          this.dropped++;
          return null;
-      } else {
-         ParticleEmitter emitter = new ParticleEmitter(this, effect, x, y, z, anchor, false);
-         if (preEffect != null) {
-            this.env.variables = emitter.variables();
-            this.env.actor = emitter.actor();
-            preEffect.evaluate(this.env);
-         }
-
-         if (setup != null) {
-            setup.accept(emitter.variables());
-         }
-
-         this.spawned++;
-         if (this.ticking) {
-            this.added.add(emitter);
-         } else {
-            this.emitters.add(emitter);
-         }
-
-         return emitter;
       }
+
+      ParticleEmitter emitter = new ParticleEmitter(this, effect, x, y, z, anchor, false);
+      if (preEffect != null) {
+         this.env.variables = emitter.variables();
+         this.env.actor = emitter.actor();
+         preEffect.evaluate(this.env);
+      }
+
+      if (setup != null) {
+         setup.accept(emitter.variables());
+      }
+
+      this.spawned++;
+      if (this.ticking) {
+         this.added.add(emitter);
+      } else {
+         this.emitters.add(emitter);
+      }
+
+      return emitter;
    }
 
    public boolean emitManual(ParticleEffect effect, double x, double y, double z, float vx, float vy, float vz) {
       if (this.emitDepth >= 8) {
          this.dropped++;
          return false;
-      } else {
-         ParticleEmitter emitter = this.manual.get(effect);
-         if (emitter == null) {
-            if (this.emitters.size() + this.added.size() >= this.maxEmitters) {
-               this.dropped++;
-               return false;
-            }
+      }
 
-            emitter = new ParticleEmitter(this, effect, x, y, z, null, true);
-            this.manual.put(effect, emitter);
-            if (this.ticking) {
-               this.added.add(emitter);
-            } else {
-               this.emitters.add(emitter);
-            }
+      ParticleEmitter emitter = this.manual.get(effect);
+      if (emitter == null) {
+         if (this.emitters.size() + this.added.size() >= this.maxEmitters) {
+            this.dropped++;
+            return false;
          }
 
-         this.emitDepth++;
-
-         boolean var12;
-         try {
-            var12 = emitter.emitManual(x, y, z, vx, vy, vz);
-         } finally {
-            this.emitDepth--;
+         emitter = new ParticleEmitter(this, effect, x, y, z, null, true);
+         this.manual.put(effect, emitter);
+         if (this.ticking) {
+            this.added.add(emitter);
+         } else {
+            this.emitters.add(emitter);
          }
+      }
 
-         return var12;
+      this.emitDepth++;
+
+      try {
+         return emitter.emitManual(x, y, z, vx, vy, vz);
+      } finally {
+         this.emitDepth--;
       }
    }
 
@@ -193,21 +189,20 @@ public final class ParticleSystem {
       }
    }
 
-   @Nullable
-   ParticleInstance obtain() {
+   @Nullable ParticleInstance obtain() {
       if (this.live >= this.maxParticles) {
          this.dropped++;
          return null;
-      } else {
-         this.live++;
-         ParticleInstance particle = this.pool.poll();
-         if (particle == null) {
-            particle = new ParticleInstance();
-         }
-
-         particle.reset();
-         return particle;
       }
+
+      this.live++;
+      ParticleInstance particle = this.pool.poll();
+      if (particle == null) {
+         particle = new ParticleInstance();
+      }
+
+      particle.reset();
+      return particle;
    }
 
    void release(ParticleInstance particle) {

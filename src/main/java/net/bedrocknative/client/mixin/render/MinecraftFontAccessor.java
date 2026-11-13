@@ -5,7 +5,7 @@ import net.minecraft.client.gui.font.FontManager;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 
-@Mixin({Minecraft.class})
+@Mixin(Minecraft.class)
 public interface MinecraftFontAccessor {
    @Accessor("fontManager")
    FontManager bedrocknative$fontManager();

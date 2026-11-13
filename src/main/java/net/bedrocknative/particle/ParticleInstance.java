@@ -27,8 +27,7 @@ final class ParticleInstance {
    float random4;
    int timelineIndex;
    float killSide;
-   @Nullable
-   VariableStore variables;
+   @Nullable VariableStore variables;
 
    void reset() {
       this.x = this.y = this.z = this.prevX = this.prevY = this.prevZ = 0.0;

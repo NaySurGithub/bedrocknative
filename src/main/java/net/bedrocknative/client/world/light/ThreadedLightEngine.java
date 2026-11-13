@@ -126,16 +126,16 @@ public final class ThreadedLightEngine extends LevelLightEngine {
          }
       }
 
-      for (int ix = 0; ix < sky.size(); ix++) {
-         this.collector.source.onLightUpdate(LightLayer.SKY, SectionPos.of(sky.getLong(ix)));
+      for (int i = 0; i < sky.size(); i++) {
+         this.collector.source.onLightUpdate(LightLayer.SKY, SectionPos.of(sky.getLong(i)));
       }
 
-      for (int ix = 0; ix < block.size(); ix++) {
-         this.collector.source.onLightUpdate(LightLayer.BLOCK, SectionPos.of(block.getLong(ix)));
+      for (int i = 0; i < block.size(); i++) {
+         this.collector.source.onLightUpdate(LightLayer.BLOCK, SectionPos.of(block.getLong(i)));
       }
 
-      for (int ix = 0; ix < accepted.size(); ix++) {
-         lit.accept(accepted.getLong(ix));
+      for (int i = 0; i < accepted.size(); i++) {
+         lit.accept(accepted.getLong(i));
       }
    }
 
@@ -162,15 +162,18 @@ public final class ThreadedLightEngine extends LevelLightEngine {
       );
    }
 
+   @Override
    public void checkBlock(BlockPos pos) {
       BlockPos copy = pos.immutable();
       this.post(() -> super.checkBlock(copy));
    }
 
+   @Override
    public void updateSectionStatus(SectionPos pos, boolean sectionEmpty) {
       this.post(() -> super.updateSectionStatus(pos, sectionEmpty));
    }
 
+   @Override
    public void setLightEnabled(ChunkPos pos, boolean enable) {
       if (!enable) {
          this.litColumns.remove(SectionPos.getZeroNode(pos.x(), pos.z()));
@@ -180,6 +183,7 @@ public final class ThreadedLightEngine extends LevelLightEngine {
       this.post(() -> super.setLightEnabled(pos, enable));
    }
 
+   @Override
    public void propagateLightSources(ChunkPos pos) {
       long key = pos.pack();
       long mine = this.expectLit(pos);
@@ -193,10 +197,12 @@ public final class ThreadedLightEngine extends LevelLightEngine {
       });
    }
 
+   @Override
    public void queueSectionData(LightLayer layer, SectionPos pos, @Nullable DataLayer data) {
       this.post(() -> super.queueSectionData(layer, pos, data));
    }
 
+   @Override
    public void retainData(ChunkPos pos, boolean retain) {
       this.post(() -> super.retainData(pos, retain));
    }
@@ -208,6 +214,7 @@ public final class ThreadedLightEngine extends LevelLightEngine {
       return mine;
    }
 
+   @Override
    public int runLightUpdates() {
       if (this.closed) {
          synchronized (this.engineLock) {
@@ -221,20 +228,24 @@ public final class ThreadedLightEngine extends LevelLightEngine {
       }
    }
 
+   @Override
    public boolean hasLightWork() {
       return this.pending.get() > 0 || super.hasLightWork();
    }
 
+   @Override
    public boolean lightOnInColumn(long sectionZeroNode) {
       return this.litColumns.contains(sectionZeroNode);
    }
 
+   @Override
    public String getDebugData(LightLayer layer, SectionPos pos) {
       synchronized (this.engineLock) {
          return super.getDebugData(layer, pos);
       }
    }
 
+   @Override
    public SectionType getDebugSectionType(LightLayer layer, SectionPos pos) {
       synchronized (this.engineLock) {
          return super.getDebugSectionType(layer, pos);
@@ -267,8 +278,8 @@ public final class ThreadedLightEngine extends LevelLightEngine {
             if (run) {
                try {
                   task.run();
-               } catch (RuntimeException var8) {
-                  BedrockNative.LOGGER.error("Light engine: a queued task failed; the light may be wrong around it", var8);
+               } catch (RuntimeException e) {
+                  BedrockNative.LOGGER.error("Light engine: a queued task failed; the light may be wrong around it", e);
                }
             }
          }
@@ -280,8 +291,8 @@ public final class ThreadedLightEngine extends LevelLightEngine {
          if (run && n > 0) {
             try {
                super.runLightUpdates();
-            } catch (RuntimeException var7) {
-               BedrockNative.LOGGER.error("Light engine: the final pass failed", var7);
+            } catch (RuntimeException e) {
+               BedrockNative.LOGGER.error("Light engine: the final pass failed", e);
             }
          }
 
@@ -306,15 +317,15 @@ public final class ThreadedLightEngine extends LevelLightEngine {
 
                      try {
                         task.run();
-                     } catch (RuntimeException var21) {
-                        BedrockNative.LOGGER.error("Light thread: a task failed; the light may be wrong around it", var21);
+                     } catch (RuntimeException e) {
+                        BedrockNative.LOGGER.error("Light thread: a task failed; the light may be wrong around it", e);
                      }
                   }
 
                   try {
                      super.runLightUpdates();
-                  } catch (RuntimeException var20) {
-                     BedrockNative.LOGGER.error("Light thread: a pass failed; the light may be wrong around it", var20);
+                  } catch (RuntimeException e) {
+                     BedrockNative.LOGGER.error("Light thread: a pass failed; the light may be wrong around it", e);
                   }
 
                   this.publish();
@@ -330,8 +341,8 @@ public final class ThreadedLightEngine extends LevelLightEngine {
                this.longestPass.accumulateAndGet(took, Math::max);
             }
          }
-      } catch (Throwable var23) {
-         BedrockNative.LOGGER.error("Light thread died; the queued light work runs on the client thread from now on", var23);
+      } catch (Throwable t) {
+         BedrockNative.LOGGER.error("Light thread died; the queued light work runs on the client thread from now on", t);
       } finally {
          boolean died = !this.closed;
          this.closed = true;
@@ -341,8 +352,8 @@ public final class ThreadedLightEngine extends LevelLightEngine {
 
          try {
             this.finishQueue(died);
-         } catch (Throwable var19) {
-            BedrockNative.LOGGER.error("Light thread: the queue could not be finished", var19);
+         } catch (Throwable t) {
+            BedrockNative.LOGGER.error("Light thread: the queue could not be finished", t);
          }
       }
    }
@@ -376,15 +387,17 @@ public final class ThreadedLightEngine extends LevelLightEngine {
          this.source = source;
       }
 
-      @Nullable
-      public LightChunk getChunkForLighting(int chunkX, int chunkZ) {
+      @Override
+      public @Nullable LightChunk getChunkForLighting(int chunkX, int chunkZ) {
          return this.source.getChunkForLighting(chunkX, chunkZ);
       }
 
+      @Override
       public BlockGetter getLevel() {
          return this.source.getLevel();
       }
 
+      @Override
       public void onLightUpdate(LightLayer layer, SectionPos pos) {
          (layer == LightLayer.SKY ? this.dirtySky : this.dirtyBlock).add(pos.asLong());
       }

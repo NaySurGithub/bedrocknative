@@ -23,8 +23,7 @@ public final class GeometryLibrary {
    private final Set<String> baseWinners = new HashSet<>();
    private final Map<String, GeometryDef> resolved = new HashMap<>();
    private long version;
-   @Nullable
-   private final GeometryLibrary parent;
+   private final @Nullable GeometryLibrary parent;
 
    public GeometryLibrary() {
       this(null);
@@ -79,8 +78,7 @@ public final class GeometryLibrary {
       return this.raws.size();
    }
 
-   @Nullable
-   public GeometryDef get(String identifier) {
+   public @Nullable GeometryDef get(String identifier) {
       String key = identifier.toLowerCase(Locale.ROOT);
       GeometryParser.Raw raw;
       JsonObject json;
@@ -104,18 +102,18 @@ public final class GeometryLibrary {
 
       if (raw == null) {
          return this.parent != null ? this.parent.get(identifier) : null;
-      } else {
-         GeometryDef geometryx = GeometryParser.parse(raw.identifier(), raw.formatVersion(), json);
-         synchronized (this) {
-            if (asked == this.version) {
-               GeometryDef first = this.resolved.putIfAbsent(key, geometryx);
-               if (first != null) {
-                  return first;
-               }
-            }
+      }
 
-            return geometryx;
+      GeometryDef geometry = GeometryParser.parse(raw.identifier(), raw.formatVersion(), json);
+      synchronized (this) {
+         if (asked == this.version) {
+            GeometryDef first = this.resolved.putIfAbsent(key, geometry);
+            if (first != null) {
+               return first;
+            }
          }
+
+         return geometry;
       }
    }
 
@@ -158,28 +156,27 @@ public final class GeometryLibrary {
       }
    }
 
-   @Nullable
-   private static JsonElement earliest(List<JsonObject> older, JsonObject bone, String field) {
+   private static @Nullable JsonElement earliest(List<JsonObject> older, JsonObject bone, String field) {
       String name = ModelJson.string(bone, "name");
       if (name == null) {
          return null;
-      } else {
-         for (JsonObject json : older) {
-            JsonElement var7 = json.get("bones");
-            if (var7 instanceof JsonArray) {
-               for (JsonElement element : (JsonArray)var7) {
-                  if (element instanceof JsonObject candidate && name.equalsIgnoreCase(ModelJson.string(candidate, "name"))) {
-                     if (sameJoint(bone, candidate) && candidate.has(field)) {
-                        return candidate.get(field);
-                     }
-                     break;
+      }
+
+      for (JsonObject json : older) {
+         JsonElement var7 = json.get("bones");
+         if (var7 instanceof JsonArray) {
+            for (JsonElement element : (JsonArray)var7) {
+               if (element instanceof JsonObject candidate && name.equalsIgnoreCase(ModelJson.string(candidate, "name"))) {
+                  if (sameJoint(bone, candidate) && candidate.has(field)) {
+                     return candidate.get(field);
                   }
+                  break;
                }
             }
          }
-
-         return null;
       }
+
+      return null;
    }
 
    private static boolean sameJoint(JsonObject bone, JsonObject other) {
@@ -201,32 +198,32 @@ public final class GeometryLibrary {
       }
    }
 
-   @Nullable
-   private JsonObject resolvedJson(String key, Set<String> visiting) {
+   private @Nullable JsonObject resolvedJson(String key, Set<String> visiting) {
       GeometryParser.Raw raw = this.raws.get(key);
       if (raw == null) {
          return this.parent != null ? this.parent.inheritedJson(key, visiting) : null;
-      } else if (raw.parent() == null) {
+      }
+
+      if (raw.parent() == null) {
          return raw.json();
-      } else {
-         String parentKey = raw.parent().toLowerCase(Locale.ROOT);
-         if (visiting.add(key) && !visiting.contains(parentKey)) {
-            JsonObject parent = this.resolvedJson(parentKey, visiting);
-            if (parent == null) {
-               BedrockNative.LOGGER.debug("Geometry {} inherits unknown {}", raw.identifier(), raw.parent());
-               return raw.json();
-            } else {
-               return GeometryParser.merge(parent, raw.json());
-            }
-         } else {
-            BedrockNative.LOGGER.debug("Geometry inheritance loop at {}", raw.identifier());
+      }
+
+      String parentKey = raw.parent().toLowerCase(Locale.ROOT);
+      if (visiting.add(key) && !visiting.contains(parentKey)) {
+         JsonObject parent = this.resolvedJson(parentKey, visiting);
+         if (parent == null) {
+            BedrockNative.LOGGER.debug("Geometry {} inherits unknown {}", raw.identifier(), raw.parent());
             return raw.json();
+         } else {
+            return GeometryParser.merge(parent, raw.json());
          }
+      } else {
+         BedrockNative.LOGGER.debug("Geometry inheritance loop at {}", raw.identifier());
+         return raw.json();
       }
    }
 
-   @Nullable
-   private synchronized JsonObject inheritedJson(String key, Set<String> visiting) {
+   private synchronized @Nullable JsonObject inheritedJson(String key, Set<String> visiting) {
       return this.resolvedJson(key, visiting);
    }
 }

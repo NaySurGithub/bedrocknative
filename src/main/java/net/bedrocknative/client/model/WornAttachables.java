@@ -33,7 +33,7 @@ public final class WornAttachables {
    private static final WearerView view = new WearerView();
    private static boolean loggedFailure;
 
-   private static void closeEffects(@Nullable WornAttachables.Running running) {
+   private static void closeEffects(WornAttachables.@Nullable Running running) {
       if (running != null) {
          running.close();
       }
@@ -64,8 +64,7 @@ public final class WornAttachables {
       wearers.clear();
    }
 
-   @Nullable
-   public static WornAttachables.Worn extractArmor(LivingEntity entity, float partialTick) {
+   public static WornAttachables.@Nullable Worn extractArmor(LivingEntity entity, float partialTick) {
       ModelRegistry registry = BedrockModels.registry();
       if (registry != null && wearsCarrier(entity)) {
          WornAttachables.Wearer wearer = wearers.computeIfAbsent(entity, key -> new WornAttachables.Wearer());
@@ -84,8 +83,7 @@ public final class WornAttachables {
       }
    }
 
-   @Nullable
-   public static WornAttachables.Frame extractHeld(
+   public static WornAttachables.@Nullable Frame extractHeld(
       LivingEntity entity, WornAttachables.Slot slot, ItemStack stack, boolean firstPerson, boolean rightArm, float partialTick
    ) {
       ModelRegistry registry = BedrockModels.registry();
@@ -114,15 +112,13 @@ public final class WornAttachables {
       }
    }
 
-   @Nullable
-   public static WornAttachables.Frame frame(LivingEntity entity, WornAttachables.Slot slot, boolean firstPerson) {
+   public static WornAttachables.@Nullable Frame frame(LivingEntity entity, WornAttachables.Slot slot, boolean firstPerson) {
       WornAttachables.Wearer wearer = wearers.get(entity);
       WornAttachables.Running running = wearer == null ? null : (firstPerson ? wearer.firstPerson : wearer.thirdPerson)[slot.ordinal()];
       return running != null && running.attachable != null ? running.frame : null;
    }
 
-   @Nullable
-   public static String definition(LivingEntity entity, WornAttachables.Slot slot, boolean firstPerson) {
+   public static @Nullable String definition(LivingEntity entity, WornAttachables.Slot slot, boolean firstPerson) {
       WornAttachables.Wearer wearer = wearers.get(entity);
       WornAttachables.Running running = wearer == null ? null : (firstPerson ? wearer.firstPerson : wearer.thirdPerson)[slot.ordinal()];
       return running != null && running.attachable != null ? running.attachable.definition().identifier() : null;
@@ -143,8 +139,7 @@ public final class WornAttachables {
       return false;
    }
 
-   @Nullable
-   private static WornAttachables.Frame evaluate(
+   private static WornAttachables.@Nullable Frame evaluate(
       ModelRegistry registry,
       WornAttachables.Wearer wearer,
       LivingEntity entity,
@@ -160,46 +155,42 @@ public final class WornAttachables {
          long now = System.nanoTime();
          if (counter == frame.frame && frame.last != null && now - frame.nanos < 100000000L) {
             return frame;
-         } else {
-            float deltaTime = frame.nanos == 0L ? 0.0F : Math.min((float)(now - frame.nanos) / 1.0E9F, 1.0F);
-            frame.nanos = now;
-            frame.frame = counter;
-            long perf = PerfProbe.start();
+         }
 
-            Object snapshot;
-            try {
-               view.prepare(entity, firstPerson, partialTick);
-               env.effects = running.effects(entity);
-               DrawList list = running.attachable.frame(env, view, stack.hasFoil(), deltaTime, partialTick);
-               ActorSnapshot snapshotx = frame.snapshots[frame.next];
-               frame.next ^= 1;
-               snapshotx.fill(list, 1.0F);
-               frame.last = snapshotx;
-               PerfProbe.end(PerfProbe.Part.MODELS, perf);
-               return frame;
-            } catch (RuntimeException var22) {
-               running.failed = true;
-               frame.last = null;
-               if (!loggedFailure) {
-                  loggedFailure = true;
-                  BedrockNative.LOGGER.error("The attachable of {} failed and is no longer drawn", running.itemId, var22);
-               }
+         float deltaTime = frame.nanos == 0L ? 0.0F : Math.min((float)(now - frame.nanos) / 1.0E9F, 1.0F);
+         frame.nanos = now;
+         frame.frame = counter;
+         long perf = PerfProbe.start();
 
-               snapshot = null;
-            } finally {
-               env.effects = null;
-               view.detach();
+         try {
+            view.prepare(entity, firstPerson, partialTick);
+            env.effects = running.effects(entity);
+            DrawList list = running.attachable.frame(env, view, stack.hasFoil(), deltaTime, partialTick);
+            ActorSnapshot snapshot = frame.snapshots[frame.next];
+            frame.next ^= 1;
+            snapshot.fill(list, 1.0F);
+            frame.last = snapshot;
+            PerfProbe.end(PerfProbe.Part.MODELS, perf);
+            return frame;
+         } catch (RuntimeException e) {
+            running.failed = true;
+            frame.last = null;
+            if (!loggedFailure) {
+               loggedFailure = true;
+               BedrockNative.LOGGER.error("The attachable of {} failed and is no longer drawn", running.itemId, e);
             }
 
-            return (WornAttachables.Frame)snapshot;
+            return null;
+         } finally {
+            env.effects = null;
+            view.detach();
          }
       } else {
          return null;
       }
    }
 
-   @Nullable
-   private static WornAttachables.Running running(
+   private static WornAttachables.@Nullable Running running(
       ModelRegistry registry, WornAttachables.Wearer wearer, LivingEntity entity, WornAttachables.Slot slot, ItemStack stack, boolean firstPerson
    ) {
       WornAttachables.Running[] slots = firstPerson ? wearer.firstPerson : wearer.thirdPerson;
@@ -208,32 +199,32 @@ public final class WornAttachables {
          closeEffects(slots[slot.ordinal()]);
          slots[slot.ordinal()] = null;
          return null;
-      } else {
-         WornAttachables.Running running = slots[slot.ordinal()];
-         if (running != null && running.registry == registry && running.itemId.equals(custom.identifier())) {
-            return running;
-         } else {
-            closeEffects(running);
-            WornAttachable attachable = null;
-            if (allows(registry, entity, slot)) {
-               try {
-                  view.prepare(entity, firstPerson, 0.0F);
-                  ClientEntityDef definition = WornAttachable.resolve(registry, custom.identifier(), slot.bedrock(), firstPerson, view, env, scratch);
-                  if (definition != null) {
-                     attachable = new WornAttachable(registry, definition, custom.identifier(), slot.bedrock(), firstPerson);
-                  }
-               } catch (RuntimeException var14) {
-                  BedrockNative.LOGGER.warn("Couldn't set up the attachable of {}", custom.identifier(), var14);
-               } finally {
-                  view.detach();
-               }
-            }
+      }
 
-            running = new WornAttachables.Running(custom.identifier(), registry, attachable, slot, firstPerson);
-            slots[slot.ordinal()] = running;
-            return running;
+      WornAttachables.Running running = slots[slot.ordinal()];
+      if (running != null && running.registry == registry && running.itemId.equals(custom.identifier())) {
+         return running;
+      }
+
+      closeEffects(running);
+      WornAttachable attachable = null;
+      if (allows(registry, entity, slot)) {
+         try {
+            view.prepare(entity, firstPerson, 0.0F);
+            ClientEntityDef definition = WornAttachable.resolve(registry, custom.identifier(), slot.bedrock(), firstPerson, view, env, scratch);
+            if (definition != null) {
+               attachable = new WornAttachable(registry, definition, custom.identifier(), slot.bedrock(), firstPerson);
+            }
+         } catch (RuntimeException e) {
+            BedrockNative.LOGGER.warn("Couldn't set up the attachable of {}", custom.identifier(), e);
+         } finally {
+            view.detach();
          }
       }
+
+      running = new WornAttachables.Running(custom.identifier(), registry, attachable, slot, firstPerson);
+      slots[slot.ordinal()] = running;
+      return running;
    }
 
    private static boolean allows(ModelRegistry registry, LivingEntity entity, WornAttachables.Slot slot) {
@@ -244,8 +235,7 @@ public final class WornAttachables {
 
    public static final class Frame {
       private final ActorSnapshot[] snapshots = new ActorSnapshot[]{new ActorSnapshot(), new ActorSnapshot()};
-      @Nullable
-      private ActorSnapshot last;
+      private @Nullable ActorSnapshot last;
       private int next;
       private long frame = -1L;
       private long nanos;
@@ -258,8 +248,7 @@ public final class WornAttachables {
          this.firstPerson = firstPerson;
       }
 
-      @Nullable
-      public ActorSnapshot snapshot() {
+      public @Nullable ActorSnapshot snapshot() {
          return this.last;
       }
 
@@ -279,12 +268,10 @@ public final class WornAttachables {
    private static final class Running {
       final String itemId;
       final ModelRegistry registry;
-      @Nullable
-      final WornAttachable attachable;
+      final @Nullable WornAttachable attachable;
       final WornAttachables.Frame frame;
       boolean failed;
-      @Nullable
-      private ActorEffects effects;
+      private @Nullable ActorEffects effects;
 
       Running(String itemId, ModelRegistry registry, @Nullable WornAttachable attachable, WornAttachables.Slot slot, boolean firstPerson) {
          this.itemId = itemId;
@@ -293,8 +280,7 @@ public final class WornAttachables {
          this.frame = new WornAttachables.Frame(slot, firstPerson);
       }
 
-      @Nullable
-      ActorEffects effects(LivingEntity wearer) {
+      @Nullable ActorEffects effects(LivingEntity wearer) {
          if (this.effects == null && this.attachable != null) {
             this.effects = new ActorEffects(this.attachable.definition(), wearer);
          }
@@ -310,7 +296,7 @@ public final class WornAttachables {
       }
    }
 
-   public static enum Slot {
+   public enum Slot {
       HEAD("head", EquipmentSlot.HEAD),
       CHEST("chest", EquipmentSlot.CHEST),
       LEGS("legs", EquipmentSlot.LEGS),
@@ -322,7 +308,7 @@ public final class WornAttachables {
       private final String bedrock;
       private final EquipmentSlot equipment;
 
-      private Slot(String bedrock, EquipmentSlot equipment) {
+      Slot(String bedrock, EquipmentSlot equipment) {
          this.bedrock = bedrock;
          this.equipment = equipment;
       }
@@ -339,8 +325,7 @@ public final class WornAttachables {
          return this != MAIN_HAND && this != OFF_HAND;
       }
 
-      @Nullable
-      public static WornAttachables.Slot of(EquipmentSlot slot) {
+      public static WornAttachables.@Nullable Slot of(EquipmentSlot slot) {
          for (WornAttachables.Slot value : values()) {
             if (value.equipment == slot) {
                return value;
@@ -352,16 +337,15 @@ public final class WornAttachables {
    }
 
    private static final class Wearer {
-      final WornAttachables.Running[] thirdPerson = new WornAttachables.Running[WornAttachables.Slot.values().length];
-      final WornAttachables.Running[] firstPerson = new WornAttachables.Running[WornAttachables.Slot.values().length];
+      final WornAttachables.@Nullable Running[] thirdPerson = new WornAttachables.Running[WornAttachables.Slot.values().length];
+      final WornAttachables.@Nullable Running[] firstPerson = new WornAttachables.Running[WornAttachables.Slot.values().length];
       final WornAttachables.Worn worn = new WornAttachables.Worn();
    }
 
    public static final class Worn {
-      private final WornAttachables.Frame[] slots = new WornAttachables.Frame[WornAttachables.Slot.values().length];
+      private final WornAttachables.@Nullable Frame[] slots = new WornAttachables.Frame[WornAttachables.Slot.values().length];
 
-      @Nullable
-      public WornAttachables.Frame slot(WornAttachables.Slot slot) {
+      public WornAttachables.@Nullable Frame slot(WornAttachables.Slot slot) {
          return this.slots[slot.ordinal()];
       }
 

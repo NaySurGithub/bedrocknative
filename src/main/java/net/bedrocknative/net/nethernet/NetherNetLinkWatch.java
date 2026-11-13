@@ -10,16 +10,11 @@ import tel.schich.libdatachannel.IceState;
 import tel.schich.libdatachannel.PeerState;
 
 public final class NetherNetLinkWatch implements NetherChannelMetrics {
-   @Nullable
-   private volatile PeerState peer;
-   @Nullable
-   private volatile IceState ice;
-   @Nullable
-   private volatile String localType;
-   @Nullable
-   private volatile String remoteType;
-   @Nullable
-   private volatile NetherConnectionFailure failure;
+   private volatile @Nullable PeerState peer;
+   private volatile @Nullable IceState ice;
+   private volatile @Nullable String localType;
+   private volatile @Nullable String remoteType;
+   private volatile @Nullable NetherConnectionFailure failure;
    private final AtomicLong bytesIn = new AtomicLong();
    private final AtomicLong bytesOut = new AtomicLong();
    private final AtomicLong fragmentsIn = new AtomicLong();
@@ -72,23 +67,19 @@ public final class NetherNetLinkWatch implements NetherChannelMetrics {
       this.decodeFails.addAndGet(count);
    }
 
-   @Nullable
-   public PeerState peer() {
+   public @Nullable PeerState peer() {
       return this.peer;
    }
 
-   @Nullable
-   public IceState ice() {
+   public @Nullable IceState ice() {
       return this.ice;
    }
 
-   @Nullable
-   public String pairTypes() {
+   public @Nullable String pairTypes() {
       return this.localType == null ? null : this.localType + "/" + this.remoteType;
    }
 
-   @Nullable
-   public NetherConnectionFailure failure() {
+   public @Nullable NetherConnectionFailure failure() {
       return this.failure;
    }
 
@@ -125,11 +116,10 @@ public final class NetherNetLinkWatch implements NetherChannelMetrics {
          + this.traffic();
    }
 
-   @Nullable
-   public static String describe(Channel channel) {
+   public static @Nullable String describe(Channel channel) {
       try {
          return channel.config().getOption(NetherChannelOption.NETHER_METRICS) instanceof NetherNetLinkWatch watch ? watch.describe() : null;
-      } catch (RuntimeException var3) {
+      } catch (RuntimeException e) {
          return null;
       }
    }

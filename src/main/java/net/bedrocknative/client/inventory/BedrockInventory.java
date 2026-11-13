@@ -7,7 +7,6 @@ import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.LongFunction;
@@ -102,7 +101,7 @@ public final class BedrockInventory {
    private ItemData reportedItem = ItemData.AIR;
    private ItemData reportedOffhand = ItemData.AIR;
    private BiConsumer<BedrockSlot, ItemData> serverUpdates = (slot, item) -> {};
-   private LongFunction<Entity> entities = id -> null;
+   private LongFunction<@Nullable Entity> entities = id -> null;
    private int equipWindow = -1;
    private long equipEntity;
 
@@ -147,36 +146,34 @@ public final class BedrockInventory {
       JsonUiScreens.reset();
    }
 
-   @Nullable
-   public BedrockInventory.HeldReport takeHeldReport() {
+   public BedrockInventory.@Nullable HeldReport takeHeldReport() {
       int slot = this.selectedSlot();
       ItemData item = this.held();
       boolean sameSlot = slot == this.reportedSlot;
       if (sameSlot && sameStack(item, this.reportedItem)) {
          return null;
-      } else {
-         boolean otherItem = item.isNull() != this.reportedItem.isNull() || !item.isNull() && item.getDefinition() != this.reportedItem.getDefinition();
-         this.reportedSlot = slot;
-         this.reportedItem = item;
-         return new BedrockInventory.HeldReport(this.equipment(this.runtimeId, slot), otherItem);
       }
+
+      boolean otherItem = item.isNull() != this.reportedItem.isNull() || !item.isNull() && item.getDefinition() != this.reportedItem.getDefinition();
+      this.reportedSlot = slot;
+      this.reportedItem = item;
+      return new BedrockInventory.HeldReport(this.equipment(this.runtimeId, slot), otherItem);
    }
 
-   @Nullable
-   public MobEquipmentPacket takeOffhandReport() {
+   public @Nullable MobEquipmentPacket takeOffhandReport() {
       ItemData item = this.get(BedrockSlot.offhand());
       if (sameStack(item, this.reportedOffhand)) {
          return null;
-      } else {
-         this.reportedOffhand = item;
-         MobEquipmentPacket packet = new MobEquipmentPacket();
-         packet.setRuntimeEntityId(this.runtimeId);
-         packet.setItem(withoutStackId(item));
-         packet.setInventorySlot(1);
-         packet.setHotbarSlot(0);
-         packet.setContainerId(119);
-         return packet;
       }
+
+      this.reportedOffhand = item;
+      MobEquipmentPacket packet = new MobEquipmentPacket();
+      packet.setRuntimeEntityId(this.runtimeId);
+      packet.setItem(withoutStackId(item));
+      packet.setInventorySlot(1);
+      packet.setHotbarSlot(0);
+      packet.setContainerId(119);
+      return packet;
    }
 
    private static boolean sameStack(ItemData a, ItemData b) {
@@ -188,13 +185,11 @@ public final class BedrockInventory {
    }
 
    public void apply(BedrockPacket packet) {
-      Objects.requireNonNull(packet);
       BedrockPacket var2 = packet;
       byte var3 = 0;
 
       while (true) {
-         switch (SwitchBootstraps.typeSwitch<"typeSwitch",InventoryContentPacket,InventorySlotPacket,InventoryContentPacket,InventorySlotPacket,PlayerHotbarPacket,ContainerOpenPacket,ContainerClosePacket,ContainerSetDataPacket,PlayerArmorDamagePacket,InventoryTransactionPacket>(
-            var2, var3
+         switch (net.bedrocknative.TypeSwitchHelper.index(new Class<?>[]{InventoryContentPacket.class, InventorySlotPacket.class, InventoryContentPacket.class, InventorySlotPacket.class, PlayerHotbarPacket.class, ContainerOpenPacket.class, ContainerClosePacket.class, ContainerSetDataPacket.class, PlayerArmorDamagePacket.class, InventoryTransactionPacket.class}, var2, var3
          )) {
             case 0: {
                InventoryContentPacket content = (InventoryContentPacket)var2;
@@ -433,24 +428,22 @@ public final class BedrockInventory {
       return this.open == null ? null : this.open.type;
    }
 
-   @Nullable
-   public ContainerLayout openLayout() {
+   public @Nullable ContainerLayout openLayout() {
       return this.open == null ? null : this.open.layout;
    }
 
-   @Nullable
-   public BlockPos openPosition() {
+   public @Nullable BlockPos openPosition() {
       return this.open == null ? null : this.open.pos;
    }
 
    public boolean openTrade(int id, boolean newUi) {
       if (this.open != null && this.open.id == id && this.open.type == ContainerType.TRADE) {
          return false;
-      } else {
-         this.open = new BedrockInventory.OpenContainer(id, ContainerType.TRADE, BlockPos.ZERO, 0L);
-         this.open.layout = ContainerLayout.trade(newUi);
-         return true;
       }
+
+      this.open = new BedrockInventory.OpenContainer(id, ContainerType.TRADE, BlockPos.ZERO, 0L);
+      this.open.layout = ContainerLayout.trade(newUi);
+      return true;
    }
 
    public ItemData item(int slot) {
@@ -552,12 +545,12 @@ public final class BedrockInventory {
          }
       }
 
-      for (int slotx = 0; slotx < items.size(); slotx++) {
-         this.fromServer(new BedrockSlot(containerId, slotx, null), items.get(slotx), false);
+      for (int slot = 0; slot < items.size(); slot++) {
+         this.fromServer(new BedrockSlot(containerId, slot, null), items.get(slot), false);
       }
 
-      for (int slotx = 0; slotx < items.size(); slotx++) {
-         this.show(new BedrockSlot(containerId, slotx, null));
+      for (int slot = 0; slot < items.size(); slot++) {
+         this.show(new BedrockSlot(containerId, slot, null));
       }
    }
 
@@ -686,13 +679,13 @@ public final class BedrockInventory {
             actorOwned ? this.actorName(this.open.entityId) : null,
             !actorOwned && this.minecraft.level != null ? BedrockBlockNames.customNameAt(this.minecraft.level, this.open.pos) : null
          );
-         Component title = (Component)(customName != null
+         Component title = customName != null
             ? ContainerNames.title(customName)
             : (
                layout.menu() == MenuType.GENERIC_9x6 && block instanceof ChestBlock
                   ? Component.translatable("container.chestDouble")
                   : (block == Blocks.AIR ? Component.translatable("container.chest") : block.getName())
-            ));
+            );
          if (actorOwned || customName != null) {
             BedrockNative.LOGGER
                .info(
@@ -754,8 +747,7 @@ public final class BedrockInventory {
       }
    }
 
-   @Nullable
-   public ToggleCrafterSlotRequestPacket onSlotState(int slot, int containerId, boolean enabledAfter) {
+   public @Nullable ToggleCrafterSlotRequestPacket onSlotState(int slot, int containerId, boolean enabledAfter) {
       if (this.open != null && this.open.type == ContainerType.CRAFTER && this.open.id == containerId && slot >= 0 && slot < 9) {
          BedrockCrafters.toggled(this.open.pos, slot, !enabledAfter);
          this.pushCrafterState();
@@ -765,8 +757,7 @@ public final class BedrockInventory {
       }
    }
 
-   @Nullable
-   private String actorName(long uniqueId) {
+   private @Nullable String actorName(long uniqueId) {
       Entity entity = this.entities.apply(uniqueId);
       BedrockNameTag tag = entity == null ? null : BedrockNameTag.of(entity);
       return tag != null && !tag.name().isEmpty() ? tag.name() : null;
@@ -776,18 +767,18 @@ public final class BedrockInventory {
       Entity entity = this.entities.apply(uniqueId);
       if (entity == null) {
          return "actor " + uniqueId + " (not known here)";
-      } else {
-         String type = entity instanceof BedrockActorEntity actor ? actor.bedrockIdentifier() : String.valueOf(EntityType.getKey(entity.getType()));
-         return "actor " + uniqueId + " (" + type + ")";
       }
+
+      String type = entity instanceof BedrockActorEntity actor ? actor.bedrockIdentifier() : String.valueOf(EntityType.getKey(entity.getType()));
+      return "actor " + uniqueId + " (" + type + ")";
    }
 
    private static ContainerScreens.Block kind(Block block) {
       return switch (block) {
          case ShulkerBoxBlock ignored -> ContainerScreens.Block.SHULKER_BOX;
-         case BarrelBlock ignoredx -> ContainerScreens.Block.BARREL;
-         case EnderChestBlock ignoredxx -> ContainerScreens.Block.ENDER_CHEST;
-         case ChestBlock ignoredxxx -> ContainerScreens.Block.CHEST;
+         case BarrelBlock ignored -> ContainerScreens.Block.BARREL;
+         case EnderChestBlock ignored -> ContainerScreens.Block.ENDER_CHEST;
+         case ChestBlock ignored -> ContainerScreens.Block.CHEST;
          default -> ContainerScreens.Block.OTHER;
       };
    }
@@ -821,7 +812,7 @@ public final class BedrockInventory {
       }
    }
 
-   public void useEntities(LongFunction<Entity> byUniqueId) {
+   public void useEntities(LongFunction<@Nullable Entity> byUniqueId) {
       this.entities = byUniqueId;
    }
 

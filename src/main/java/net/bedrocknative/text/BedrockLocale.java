@@ -66,17 +66,17 @@ public final class BedrockLocale {
       String nearest = NEAREST.get(code);
       if (nearest != null) {
          return nearest;
-      } else {
-         int split = code.indexOf(95);
-         String base = split < 0 ? code : code.substring(0, split);
-
-         for (String languagex : LANGUAGES) {
-            if (languagex.startsWith(base + "_")) {
-               return languagex;
-            }
-         }
-
-         return "en_US";
       }
+
+      int split = code.indexOf(95);
+      String base = split < 0 ? code : code.substring(0, split);
+
+      for (String language : LANGUAGES) {
+         if (language.startsWith(base + "_")) {
+            return language;
+         }
+      }
+
+      return "en_US";
    }
 }

@@ -10,14 +10,11 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin({TextureAtlas.class})
+@Mixin(TextureAtlas.class)
 public abstract class TextureAtlasMixin {
-   @Inject(
-      method = {"upload"},
-      at = {@At("TAIL")}
-   )
+   @Inject(method = "upload", at = @At("TAIL"))
    private void bedrocknative$serverBlockTextures(Preparations preparations, CallbackInfo ci) {
-      TextureAtlas atlas = (TextureAtlas)this;
+      TextureAtlas atlas = (TextureAtlas)(Object)this;
       ImageLimits.gpuMaxSide(atlas.maxSupportedTextureSize());
       if (atlas.location().equals(TextureAtlas.LOCATION_BLOCKS)) {
          AtlasReload.blockAtlasUploaded();
@@ -25,12 +22,9 @@ public abstract class TextureAtlasMixin {
       }
    }
 
-   @Inject(
-      method = {"cycleAnimationFrames"},
-      at = {@At("TAIL")}
-   )
+   @Inject(method = "cycleAnimationFrames", at = @At("TAIL"))
    private void bedrocknative$serverBlockFlipbooks(CallbackInfo ci) {
-      TextureAtlas atlas = (TextureAtlas)this;
+      TextureAtlas atlas = (TextureAtlas)(Object)this;
       if (atlas.location().equals(TextureAtlas.LOCATION_BLOCKS)) {
          BedrockBlockModels.animate(atlas);
       }

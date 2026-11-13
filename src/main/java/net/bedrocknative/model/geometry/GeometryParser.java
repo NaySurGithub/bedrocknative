@@ -52,15 +52,15 @@ public final class GeometryParser {
          return geometries;
       } else {
          for (Entry<String, JsonElement> entry : file.entrySet()) {
-            if (!entry.getKey().equals("format_version") && entry.getValue() instanceof JsonObject geometryx) {
+            if (!entry.getKey().equals("format_version") && entry.getValue() instanceof JsonObject geometry) {
                String key = entry.getKey();
                int colon = key.indexOf(58);
                String identifier = (colon >= 0 ? key.substring(0, colon) : key).trim();
                String parent = colon >= 0 ? key.substring(colon + 1).trim() : null;
-               JsonObject normalizedx = geometryx.deepCopy();
-               rename(normalizedx, "texturewidth", "texture_width");
-               rename(normalizedx, "textureheight", "texture_height");
-               geometries.add(new GeometryParser.Raw(identifier, parent != null && !parent.isEmpty() ? parent : null, format, normalizedx));
+               JsonObject normalized = geometry.deepCopy();
+               rename(normalized, "texturewidth", "texture_width");
+               rename(normalized, "textureheight", "texture_height");
+               geometries.add(new GeometryParser.Raw(identifier, parent != null && !parent.isEmpty() ? parent : null, format, normalized));
             }
          }
 
@@ -174,8 +174,8 @@ public final class GeometryParser {
       List<TextureMeshDef> textureMeshes = new ArrayList<>();
       JsonArray meshArray = ModelJson.array(json, "texture_meshes");
       if (meshArray != null) {
-         for (JsonElement elementx : meshArray) {
-            if (elementx instanceof JsonObject mesh) {
+         for (JsonElement element : meshArray) {
+            if (element instanceof JsonObject mesh) {
                textureMeshes.add(
                   new TextureMeshDef(
                      String.valueOf(ModelJson.string(mesh, "texture")),
@@ -254,86 +254,85 @@ public final class GeometryParser {
    private static List<LocatorDef> locators(@Nullable JsonObject json) {
       if (json == null) {
          return List.of();
-      } else {
-         List<LocatorDef> locators = new ArrayList<>();
-
-         for (Entry<String, JsonElement> entry : json.entrySet()) {
-            if (entry.getValue() instanceof JsonObject locator) {
-               locators.add(
-                  new LocatorDef(
-                     entry.getKey(),
-                     ModelJson.vec(locator, "offset", new float[3]),
-                     ModelJson.vec(locator, "rotation", new float[3]),
-                     ModelJson.bool(locator, "ignore_inherited_scale", false)
-                  )
-               );
-            } else {
-               locators.add(new LocatorDef(entry.getKey(), ModelJson.vec(entry.getValue(), new float[3]), new float[3], false));
-            }
-         }
-
-         return List.copyOf(locators);
       }
+
+      List<LocatorDef> locators = new ArrayList<>();
+
+      for (Entry<String, JsonElement> entry : json.entrySet()) {
+         if (entry.getValue() instanceof JsonObject locator) {
+            locators.add(
+               new LocatorDef(
+                  entry.getKey(),
+                  ModelJson.vec(locator, "offset", new float[3]),
+                  ModelJson.vec(locator, "rotation", new float[3]),
+                  ModelJson.bool(locator, "ignore_inherited_scale", false)
+               )
+            );
+         } else {
+            locators.add(new LocatorDef(entry.getKey(), ModelJson.vec(entry.getValue(), new float[3]), new float[3], false));
+         }
+      }
+
+      return List.copyOf(locators);
    }
 
-   @Nullable
-   private static PolyMeshDef polyMesh(@Nullable JsonObject json) {
+   private static @Nullable PolyMeshDef polyMesh(@Nullable JsonObject json) {
       if (json == null) {
          return null;
-      } else {
-         float[] positions = flatten(ModelJson.array(json, "positions"), 3);
-         float[] normals = flatten(ModelJson.array(json, "normals"), 3);
-         float[] uvs = flatten(ModelJson.array(json, "uvs"), 2);
-         List<int[]> polygons = new ArrayList<>();
-         JsonElement polys = json.get("polys");
-         if (polys instanceof JsonPrimitive mode) {
-            int perPolygon = mode.getAsString().toLowerCase(Locale.ROOT).equals("tri_list") ? 3 : 4;
-            int vertices = positions.length / 3;
+      }
 
-            for (int start = 0; start + perPolygon <= vertices; start += perPolygon) {
-               int[] polygon = new int[perPolygon * 3];
+      float[] positions = flatten(ModelJson.array(json, "positions"), 3);
+      float[] normals = flatten(ModelJson.array(json, "normals"), 3);
+      float[] uvs = flatten(ModelJson.array(json, "uvs"), 2);
+      List<int[]> polygons = new ArrayList<>();
+      JsonElement polys = json.get("polys");
+      if (polys instanceof JsonPrimitive mode) {
+         int perPolygon = mode.getAsString().toLowerCase(Locale.ROOT).equals("tri_list") ? 3 : 4;
+         int vertices = positions.length / 3;
 
-               for (int i = 0; i < perPolygon; i++) {
-                  polygon[i * 3] = polygon[i * 3 + 1] = polygon[i * 3 + 2] = start + i;
+         for (int start = 0; start + perPolygon <= vertices; start += perPolygon) {
+            int[] polygon = new int[perPolygon * 3];
+
+            for (int i = 0; i < perPolygon; i++) {
+               polygon[i * 3] = polygon[i * 3 + 1] = polygon[i * 3 + 2] = start + i;
+            }
+
+            polygons.add(polygon);
+         }
+      } else if (polys instanceof JsonArray array) {
+         for (JsonElement element : array) {
+            if (element instanceof JsonArray polygonJson && polygonJson.size() >= 3) {
+               int[] polygon = new int[Math.min(4, polygonJson.size()) * 3];
+
+               for (int i = 0; i < polygon.length / 3; i++) {
+                  float[] indices = ModelJson.vec(polygonJson.get(i), new float[3]);
+
+                  for (int j = 0; j < 3; j++) {
+                     polygon[i * 3 + j] = (int)indices[j];
+                  }
                }
 
                polygons.add(polygon);
             }
-         } else if (polys instanceof JsonArray array) {
-            for (JsonElement element : array) {
-               if (element instanceof JsonArray polygonJson && polygonJson.size() >= 3) {
-                  int[] polygon = new int[Math.min(4, polygonJson.size()) * 3];
-
-                  for (int i = 0; i < polygon.length / 3; i++) {
-                     float[] indices = ModelJson.vec(polygonJson.get(i), new float[3]);
-
-                     for (int j = 0; j < 3; j++) {
-                        polygon[i * 3 + j] = (int)indices[j];
-                     }
-                  }
-
-                  polygons.add(polygon);
-               }
-            }
          }
-
-         return new PolyMeshDef(ModelJson.bool(json, "normalized_uvs", false), positions, normals, uvs, polygons.toArray(new int[0][]));
       }
+
+      return new PolyMeshDef(ModelJson.bool(json, "normalized_uvs", false), positions, normals, uvs, polygons.toArray(new int[0][]));
    }
 
    private static float[] flatten(@Nullable JsonArray array, int width) {
       if (array == null) {
          return new float[0];
-      } else {
-         float[] values = new float[array.size() * width];
-
-         for (int i = 0; i < array.size(); i++) {
-            float[] vector = ModelJson.vec(array.get(i), new float[width]);
-            System.arraycopy(vector, 0, values, i * width, width);
-         }
-
-         return values;
       }
+
+      float[] values = new float[array.size() * width];
+
+      for (int i = 0; i < array.size(); i++) {
+         float[] vector = ModelJson.vec(array.get(i), new float[width]);
+         System.arraycopy(vector, 0, values, i * width, width);
+      }
+
+      return values;
    }
 
    private static JsonArray wrap(JsonElement element) {
@@ -352,8 +351,7 @@ public final class GeometryParser {
       return value > 0.0F ? value : fallback;
    }
 
-   @Nullable
-   private static String emptyToNull(@Nullable String value) {
+   private static @Nullable String emptyToNull(@Nullable String value) {
       return value != null && !value.isBlank() ? value : null;
    }
 

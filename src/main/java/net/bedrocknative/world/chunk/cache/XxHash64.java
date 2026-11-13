@@ -42,9 +42,12 @@ public final class XxHash64 {
          h = 2870177450012600261L;
       }
 
-      for (h += length; p + 8 <= end; p += 8) {
+      h += length;
+
+      while (p + 8 <= end) {
          h ^= round(0L, readLong(data, p));
          h = Long.rotateLeft(h, 27) * -7046029288634856825L + -8796714831421723037L;
+         p += 8;
       }
 
       if (p + 4 <= end) {

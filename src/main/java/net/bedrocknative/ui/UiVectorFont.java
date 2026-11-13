@@ -16,7 +16,7 @@ public interface UiVectorFont {
    default void warm() {
    }
 
-   public record Glyph(int width, int height, int left, int top, int[] argb) {
+   record Glyph(int width, int height, int left, int top, int[] argb) {
       public static final UiVectorFont.Glyph EMPTY = new UiVectorFont.Glyph(0, 0, 0, 0, new int[0]);
    }
 }

@@ -115,9 +115,9 @@ final class DevActorBurstTest {
          }
 
          this.fail("the model registry never loaded");
-      } catch (RuntimeException var7) {
-         this.fail("exception: " + var7);
-         BedrockNative.LOGGER.error("Dev actor-burst test failed with an exception", var7);
+      } catch (RuntimeException e) {
+         this.fail("exception: " + e);
+         BedrockNative.LOGGER.error("Dev actor-burst test failed with an exception", e);
          return;
       } finally {
          this.cleanup();
@@ -128,7 +128,7 @@ final class DevActorBurstTest {
       }
    }
 
-   private static String describe(@Nullable RegistryWarmer.Summary warmed) {
+   private static String describe(RegistryWarmer.@Nullable Summary warmed) {
       return warmed == null
          ? "none"
          : String.format(
@@ -485,24 +485,18 @@ final class DevActorBurstTest {
       return builder.build();
    }
 
-   @Nullable
-   private static SerializedSkin persona() {
-      try {
-         SerializedSkin var3;
-         try (InputStream raw = DevActorBurstTest.class.getResourceAsStream("/assets/bedrocknative/skins/steve.json.gz")) {
-            if (raw == null) {
-               return null;
-            }
-
-            try (InputStreamReader reader = new InputStreamReader(new GZIPInputStream(raw), StandardCharsets.UTF_8)) {
-               JsonObject claims = JsonParser.parseReader(reader).getAsJsonObject();
-               var3 = SkinClaims.toSerialized(claims);
-            }
+   private static @Nullable SerializedSkin persona() {
+      try (InputStream raw = DevActorBurstTest.class.getResourceAsStream("/assets/bedrocknative/skins/steve.json.gz")) {
+         if (raw == null) {
+            return null;
          }
 
-         return var3;
-      } catch (RuntimeException | IOException var8) {
-         BedrockNative.LOGGER.warn("Dev actor-burst test: the bundled persona skin is unreadable", var8);
+         try (InputStreamReader reader = new InputStreamReader(new GZIPInputStream(raw), StandardCharsets.UTF_8)) {
+            JsonObject claims = JsonParser.parseReader(reader).getAsJsonObject();
+            return SkinClaims.toSerialized(claims);
+         }
+      } catch (IOException | RuntimeException e) {
+         BedrockNative.LOGGER.warn("Dev actor-burst test: the bundled persona skin is unreadable", e);
          return null;
       }
    }
@@ -533,8 +527,7 @@ final class DevActorBurstTest {
          .build();
    }
 
-   @Nullable
-   private Player player(UUID uuid) {
+   private @Nullable Player player(UUID uuid) {
       for (Entity entity : this.minecraft.level.entitiesForRendering()) {
          if (entity instanceof Player player && player.getUUID().equals(uuid)) {
             return player;
@@ -602,7 +595,7 @@ final class DevActorBurstTest {
    private static void sleep(long millis) {
       try {
          Thread.sleep(millis);
-      } catch (InterruptedException var3) {
+      } catch (InterruptedException e) {
          Thread.currentThread().interrupt();
       }
    }

@@ -23,7 +23,7 @@ public final class BaseConsent {
       if (value != null && !value.isBlank()) {
          try {
             return BaseConsent.Policy.valueOf(value.trim().toUpperCase(Locale.ROOT));
-         } catch (IllegalArgumentException var2) {
+         } catch (IllegalArgumentException e) {
             return BaseConsent.Policy.ASK;
          }
       } else {
@@ -31,12 +31,11 @@ public final class BaseConsent {
       }
    }
 
-   @Nullable
-   public static BaseConsent.Answer stored(Path configFolder) {
+   public static BaseConsent.@Nullable Answer stored(Path configFolder) {
       try {
          JsonObject json = JsonParser.parseString(Files.readString(configFolder.resolve("base-download.json"), StandardCharsets.UTF_8)).getAsJsonObject();
          return BaseConsent.Answer.valueOf(json.get("answer").getAsString().trim().toUpperCase(Locale.ROOT));
-      } catch (RuntimeException | IOException var2) {
+      } catch (IOException | RuntimeException e) {
          return null;
       }
    }
@@ -63,19 +62,19 @@ public final class BaseConsent {
    public static boolean shouldAsk(Path configFolder) {
       if (policy() != BaseConsent.Policy.ASK) {
          return false;
-      } else {
-         BaseConsent.Answer answer = stored(configFolder);
-         return answer == null || answer == BaseConsent.Answer.LATER;
       }
+
+      BaseConsent.Answer answer = stored(configFolder);
+      return answer == null || answer == BaseConsent.Answer.LATER;
    }
 
-   public static enum Answer {
+   public enum Answer {
       YES,
       NO,
       LATER;
    }
 
-   public static enum Policy {
+   public enum Policy {
       AUTO,
       ASK,
       OFF;

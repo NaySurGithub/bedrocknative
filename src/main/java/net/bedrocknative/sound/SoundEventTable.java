@@ -30,8 +30,7 @@ public final class SoundEventTable {
    private final Map<String, SoundEventTable.Event> individual = new HashMap<>();
    private final Map<String, SoundEventTable.Event> named = new HashMap<>();
    private final Map<String, Boolean> serverEntities = new HashMap<>();
-   @Nullable
-   private volatile Set<String> blockEvents;
+   private volatile @Nullable Set<String> blockEvents;
 
    private SoundEventTable() {
    }
@@ -116,29 +115,30 @@ public final class SoundEventTable {
       );
    }
 
-   @Nullable
-   private static SoundEventTable.Variants mergeVariants(@Nullable SoundEventTable.Variants below, @Nullable JsonObject json, JsonObject entity, boolean server) {
+   private static SoundEventTable.@Nullable Variants mergeVariants(
+      SoundEventTable.@Nullable Variants below, @Nullable JsonObject json, JsonObject entity, boolean server
+   ) {
       if (json == null) {
          return below;
-      } else {
-         String source = ModelJson.string(json, "key");
-         MolangVersion version = entity.get("__molang_version") instanceof JsonPrimitive number && number.isNumber()
-            ? MolangVersion.ofProtocol(number.getAsInt())
-            : MolangVersion.LATEST;
-         MolangProgram key = source != null && !source.isBlank() ? Molang.compile(source, version) : (below != null ? below.key() : null);
-         Map<String, SoundEventTable.Group> map = new HashMap<>(below != null ? below.map() : Map.of());
-         JsonObject variants = ModelJson.object(json, "map");
-         if (variants != null) {
-            for (Entry<String, JsonElement> entry : variants.entrySet()) {
-               if (entry.getValue() instanceof JsonObject object) {
-                  String name = entry.getKey().toLowerCase(Locale.ROOT);
-                  map.put(name, mergeGroup(map.getOrDefault(name, SoundEventTable.Group.EMPTY), object, server));
-               }
+      }
+
+      String source = ModelJson.string(json, "key");
+      MolangVersion version = entity.get("__molang_version") instanceof JsonPrimitive number && number.isNumber()
+         ? MolangVersion.ofProtocol(number.getAsInt())
+         : MolangVersion.LATEST;
+      MolangProgram key = source != null && !source.isBlank() ? Molang.compile(source, version) : (below != null ? below.key() : null);
+      Map<String, SoundEventTable.Group> map = new HashMap<>(below != null ? below.map() : Map.of());
+      JsonObject variants = ModelJson.object(json, "map");
+      if (variants != null) {
+         for (Entry<String, JsonElement> entry : variants.entrySet()) {
+            if (entry.getValue() instanceof JsonObject object) {
+               String name = entry.getKey().toLowerCase(Locale.ROOT);
+               map.put(name, mergeGroup(map.getOrDefault(name, SoundEventTable.Group.EMPTY), object, server));
             }
          }
-
-         return new SoundEventTable.Variants(key, Map.copyOf(map));
       }
+
+      return new SoundEventTable.Variants(key, Map.copyOf(map));
    }
 
    private static SoundEventTable.Interactive mergeInteractive(SoundEventTable.Interactive below, JsonObject json, boolean server) {
@@ -177,8 +177,7 @@ public final class SoundEventTable {
       }
    }
 
-   @Nullable
-   private static SoundEventTable.Event event(JsonElement element, boolean server) {
+   private static SoundEventTable.@Nullable Event event(JsonElement element, boolean server) {
       if (element instanceof JsonPrimitive primitive && primitive.isString()) {
          return new SoundEventTable.Event(primitive.getAsString().toLowerCase(Locale.ROOT), null, null, server);
       } else if (element instanceof JsonObject object) {
@@ -193,8 +192,7 @@ public final class SoundEventTable {
       }
    }
 
-   @Nullable
-   static SoundEventTable.Range range(@Nullable JsonElement element) {
+   static SoundEventTable.@Nullable Range range(@Nullable JsonElement element) {
       if (element instanceof JsonArray array && array.size() >= 2) {
          float min = ModelJson.number(array.get(0), Float.NaN);
          float max = ModelJson.number(array.get(1), Float.NaN);
@@ -205,13 +203,13 @@ public final class SoundEventTable {
       }
    }
 
-   @Nullable
-   public SoundEventTable.Resolved entity(String identifier, String event, @Nullable String blockType, RandomGenerator random) {
+   public SoundEventTable.@Nullable Resolved entity(String identifier, String event, @Nullable String blockType, RandomGenerator random) {
       return this.entity(identifier, event, blockType, SoundEventTable.VariantKeys.NONE, random);
    }
 
-   @Nullable
-   public SoundEventTable.Resolved entity(String identifier, String event, @Nullable String blockType, SoundEventTable.VariantKeys keys, RandomGenerator random) {
+   public SoundEventTable.@Nullable Resolved entity(
+      String identifier, String event, @Nullable String blockType, SoundEventTable.VariantKeys keys, RandomGenerator random
+   ) {
       String key = event.toLowerCase(Locale.ROOT);
       SoundEventTable.Group own = lookup(this.entities, identifier);
       SoundEventTable.Variants variants = own != null ? own.variants() : null;
@@ -227,52 +225,52 @@ public final class SoundEventTable {
       SoundEventTable.Event found = own != null ? own.events().get(key) : null;
       if (found != null) {
          return resolve(found, own.volume(), own.pitch(), random);
-      } else {
-         if (blockType != null) {
-            SoundEventTable.Interactive interactive = lookup(this.interactiveEntities, identifier);
-            Map<String, SoundEventTable.Event> byBlock = interactive != null ? interactive.events().get(key) : null;
-            SoundEventTable.Interactive scope = interactive;
-            if (byBlock == null) {
-               byBlock = this.interactiveDefaults.events().get(key);
-               scope = this.interactiveDefaults;
+      }
+
+      if (blockType != null) {
+         SoundEventTable.Interactive interactive = lookup(this.interactiveEntities, identifier);
+         Map<String, SoundEventTable.Event> byBlock = interactive != null ? interactive.events().get(key) : null;
+         SoundEventTable.Interactive scope = interactive;
+         if (byBlock == null) {
+            byBlock = this.interactiveDefaults.events().get(key);
+            scope = this.interactiveDefaults;
+         }
+
+         if (byBlock != null) {
+            SoundEventTable.Event chosen = byBlock.get(blockType.toLowerCase(Locale.ROOT));
+            if (chosen == null) {
+               chosen = byBlock.get("default");
             }
 
-            if (byBlock != null) {
-               SoundEventTable.Event chosen = byBlock.get(blockType.toLowerCase(Locale.ROOT));
-               if (chosen == null) {
-                  chosen = byBlock.get("default");
+            if (chosen != null) {
+               if (!chosen.sound().isEmpty()) {
+                  return resolve(chosen, scope.volume(), scope.pitch(), random);
                }
 
-               if (chosen != null) {
-                  if (!chosen.sound().isEmpty()) {
-                     return resolve(chosen, scope.volume(), scope.pitch(), random);
-                  }
-
-                  SoundEventTable.Resolved block = this.interactiveBlock(blockType, key, random);
-                  if (block != null && !block.silent()) {
-                     float volume = (chosen.volume() != null ? chosen.volume() : (scope.volume() != null ? scope.volume() : ONE)).pick(random);
-                     float pitch = (chosen.pitch() != null ? chosen.pitch() : (scope.pitch() != null ? scope.pitch() : ONE)).pick(random);
-                     return new SoundEventTable.Resolved(block.sound(), block.volume() * volume, block.pitch() * pitch, block.serverPack());
-                  }
+               SoundEventTable.Resolved block = this.interactiveBlock(blockType, key, random);
+               if (block != null && !block.silent()) {
+                  float volume = (chosen.volume() != null ? chosen.volume() : (scope.volume() != null ? scope.volume() : ONE)).pick(random);
+                  float pitch = (chosen.pitch() != null ? chosen.pitch() : (scope.pitch() != null ? scope.pitch() : ONE)).pick(random);
+                  return new SoundEventTable.Resolved(block.sound(), block.volume() * volume, block.pitch() * pitch, block.serverPack());
                }
-            }
-
-            SoundEventTable.Resolved block = this.interactiveBlock(blockType, key, random);
-            if (block != null) {
-               return block;
             }
          }
 
-         SoundEventTable.Event fallback = this.entityDefaults.events().get(key);
-         return fallback == null
-            ? null
-            : resolve(
-               fallback,
-               own != null && own.volume() != null ? own.volume() : this.entityDefaults.volume(),
-               own != null && own.pitch() != null ? own.pitch() : this.entityDefaults.pitch(),
-               random
-            );
+         SoundEventTable.Resolved block = this.interactiveBlock(blockType, key, random);
+         if (block != null) {
+            return block;
+         }
       }
+
+      SoundEventTable.Event fallback = this.entityDefaults.events().get(key);
+      return fallback == null
+         ? null
+         : resolve(
+            fallback,
+            own != null && own.volume() != null ? own.volume() : this.entityDefaults.volume(),
+            own != null && own.pitch() != null ? own.pitch() : this.entityDefaults.pitch(),
+            random
+         );
    }
 
    public boolean hasEntity(String identifier) {
@@ -284,8 +282,7 @@ public final class SoundEventTable {
       return this.serverEntities.containsKey(key) || key.startsWith("minecraft:") && this.serverEntities.containsKey(key.substring(10));
    }
 
-   @Nullable
-   public SoundEventTable.Resolved block(String blockType, String event, RandomGenerator random) {
+   public SoundEventTable.@Nullable Resolved block(String blockType, String event, RandomGenerator random) {
       String key = event.toLowerCase(Locale.ROOT);
       SoundEventTable.Group group = this.blocks.get(blockType.toLowerCase(Locale.ROOT));
       if (group == null) {
@@ -294,18 +291,17 @@ public final class SoundEventTable {
 
       if (group == null) {
          return null;
-      } else {
-         SoundEventTable.Event found = group.events().get(key);
-         if (found == null) {
-            found = group.events().get("default");
-         }
-
-         return found == null ? null : resolve(found, group.volume(), group.pitch(), random);
       }
+
+      SoundEventTable.Event found = group.events().get(key);
+      if (found == null) {
+         found = group.events().get("default");
+      }
+
+      return found == null ? null : resolve(found, group.volume(), group.pitch(), random);
    }
 
-   @Nullable
-   public SoundEventTable.Resolved interactiveBlock(String blockType, String event, RandomGenerator random) {
+   public SoundEventTable.@Nullable Resolved interactiveBlock(String blockType, String event, RandomGenerator random) {
       String key = event.toLowerCase(Locale.ROOT);
       SoundEventTable.Group group = this.interactiveBlocks.get(blockType.toLowerCase(Locale.ROOT));
       if (group == null) {
@@ -338,14 +334,12 @@ public final class SoundEventTable {
       return names.contains(event.toLowerCase(Locale.ROOT));
    }
 
-   @Nullable
-   public SoundEventTable.Resolved individual(String event, RandomGenerator random) {
+   public SoundEventTable.@Nullable Resolved individual(String event, RandomGenerator random) {
       SoundEventTable.Event found = this.individual.get(event.toLowerCase(Locale.ROOT));
       return found == null ? null : resolve(found, null, null, random);
    }
 
-   @Nullable
-   public SoundEventTable.Resolved named(String name, RandomGenerator random) {
+   public SoundEventTable.@Nullable Resolved named(String name, RandomGenerator random) {
       SoundEventTable.Event found = this.named.get(name.toLowerCase(Locale.ROOT));
       return found == null ? null : resolve(found, null, null, random);
    }
@@ -360,15 +354,14 @@ public final class SoundEventTable {
    }
 
    private static SoundEventTable.Resolved resolve(
-      SoundEventTable.Event event, @Nullable SoundEventTable.Range groupVolume, @Nullable SoundEventTable.Range groupPitch, RandomGenerator random
+      SoundEventTable.Event event, SoundEventTable.@Nullable Range groupVolume, SoundEventTable.@Nullable Range groupPitch, RandomGenerator random
    ) {
       SoundEventTable.Range volume = event.volume() != null ? event.volume() : (groupVolume != null ? groupVolume : ONE);
       SoundEventTable.Range pitch = event.pitch() != null ? event.pitch() : (groupPitch != null ? groupPitch : ONE);
       return new SoundEventTable.Resolved(event.sound(), volume.pick(random), pitch.pick(random), event.serverPack());
    }
 
-   @Nullable
-   private static <T> T lookup(Map<String, T> map, String identifier) {
+   private static <T> @Nullable T lookup(Map<String, T> map, String identifier) {
       String key = identifier.toLowerCase(Locale.ROOT);
       T found = map.get(key);
       if (found == null && key.startsWith("minecraft:")) {
@@ -378,19 +371,19 @@ public final class SoundEventTable {
       return found;
    }
 
-   public record Event(String sound, @Nullable SoundEventTable.Range volume, @Nullable SoundEventTable.Range pitch, boolean serverPack) {
+   public record Event(String sound, SoundEventTable.@Nullable Range volume, SoundEventTable.@Nullable Range pitch, boolean serverPack) {
    }
 
    record Group(
-      @Nullable SoundEventTable.Range volume,
-      @Nullable SoundEventTable.Range pitch,
+      SoundEventTable.@Nullable Range volume,
+      SoundEventTable.@Nullable Range pitch,
       Map<String, SoundEventTable.Event> events,
-      @Nullable SoundEventTable.Variants variants
+      SoundEventTable.@Nullable Variants variants
    ) {
       static final SoundEventTable.Group EMPTY = new SoundEventTable.Group(null, null, Map.of(), null);
    }
 
-   record Interactive(@Nullable SoundEventTable.Range volume, @Nullable SoundEventTable.Range pitch, Map<String, Map<String, SoundEventTable.Event>> events) {
+   record Interactive(SoundEventTable.@Nullable Range volume, SoundEventTable.@Nullable Range pitch, Map<String, Map<String, SoundEventTable.Event>> events) {
       static final SoundEventTable.Interactive EMPTY = new SoundEventTable.Interactive(null, null, Map.of());
    }
 
@@ -410,8 +403,7 @@ public final class SoundEventTable {
    public interface VariantKeys {
       SoundEventTable.VariantKeys NONE = key -> null;
 
-      @Nullable
-      String evaluate(MolangProgram var1);
+      @Nullable String evaluate(MolangProgram var1);
    }
 
    record Variants(@Nullable MolangProgram key, Map<String, SoundEventTable.Group> map) {

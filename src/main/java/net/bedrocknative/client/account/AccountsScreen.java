@@ -46,37 +46,23 @@ public final class AccountsScreen extends Screen {
    private Component notice;
    private int noticeColor = -1;
    private boolean signInOnOpen;
-   @Nullable
-   private String preselect;
+   private @Nullable String preselect;
    private HeaderAndFooterLayout layout;
-   private AccountsScreen.AccountList list;
-   @Nullable
-   private Button use;
-   @Nullable
-   private Button signInAgain;
-   @Nullable
-   private Button remove;
-   @Nullable
-   private Button openLink;
-   @Nullable
-   private Button copyCode;
-   @Nullable
-   private Button codeInstead;
-   @Nullable
-   private Button problemAction;
-   @Nullable
-   private XboxSignInFlow flow;
+   private AccountsScreen.@Nullable AccountList list;
+   private @Nullable Button use;
+   private @Nullable Button signInAgain;
+   private @Nullable Button remove;
+   private @Nullable Button openLink;
+   private @Nullable Button copyCode;
+   private @Nullable Button codeInstead;
+   private @Nullable Button problemAction;
+   private @Nullable XboxSignInFlow flow;
    private AccountsScreen.Panel signInPanel = AccountsScreen.Panel.WINDOW;
    private long copiedAt;
-   @Nullable
-   private XboxProblem.Diagnosis noticeProblem;
+   private XboxProblem.@Nullable Diagnosis noticeProblem;
    private boolean noticeFromSignIn;
    private boolean lastActivate;
    private final JsonUiSignIn bedrock = new JsonUiSignIn(new JsonUiSignIn.Host() {
-      {
-         Objects.requireNonNull(AccountsScreen.this);
-      }
-
       @Override
       public void close(SignInData.View view) {
          switch (view) {
@@ -130,11 +116,9 @@ public final class AccountsScreen extends Screen {
       }
    });
    private boolean bedrockShown;
-   @Nullable
-   private XboxAccountStore.Entry welcome;
+   private XboxAccountStore.@Nullable Entry welcome;
    private String welcomeScore = "";
-   @Nullable
-   private XboxProblem.Diagnosis problemModal;
+   private XboxProblem.@Nullable Diagnosis problemModal;
 
    public AccountsScreen(Screen parent) {
       this(parent, Component.empty(), -1, false, null);
@@ -162,28 +146,23 @@ public final class AccountsScreen extends Screen {
       return screen;
    }
 
-   @Nullable
-   public SignInData.View bedrockView() {
+   public SignInData.@Nullable View bedrockView() {
       return this.bedrock.view();
    }
 
-   @Nullable
-   public SignInData bedrockData() {
+   public @Nullable SignInData bedrockData() {
       return this.bedrock.data();
    }
 
-   @Nullable
-   public UiControl bedrockControl(String name) {
+   public @Nullable UiControl bedrockControl(String name) {
       return this.bedrock.control(name);
    }
 
-   @Nullable
-   public XboxProblem.Diagnosis noticeProblem() {
+   public XboxProblem.@Nullable Diagnosis noticeProblem() {
       return this.noticeProblem;
    }
 
-   @Nullable
-   public Button problemButton() {
+   public @Nullable Button problemButton() {
       return this.problemAction;
    }
 
@@ -196,9 +175,8 @@ public final class AccountsScreen extends Screen {
       return entries;
    }
 
-   @Nullable
-   public XboxAccountStore.Entry selected() {
-      return this.list != null && this.list.getSelected() != null ? ((AccountsScreen.AccountRow)this.list.getSelected()).entry : null;
+   public XboxAccountStore.@Nullable Entry selected() {
+      return this.list != null && this.list.getSelected() != null ? this.list.getSelected().entry : null;
    }
 
    public void select(String id) {
@@ -211,18 +189,15 @@ public final class AccountsScreen extends Screen {
       return this.flow != null;
    }
 
-   @Nullable
-   public XboxSignInFlow.Snapshot signInSnapshot() {
+   public XboxSignInFlow.@Nullable Snapshot signInSnapshot() {
       return this.flow == null ? null : this.flow.snapshot();
    }
 
-   @Nullable
-   public Button useButton() {
+   public @Nullable Button useButton() {
       return this.use;
    }
 
-   @Nullable
-   public Button removeButton() {
+   public @Nullable Button removeButton() {
       return this.remove;
    }
 
@@ -230,6 +205,7 @@ public final class AccountsScreen extends Screen {
       return this.notice;
    }
 
+   @Override
    protected void init() {
       if (this.signInOnOpen && this.flow == null) {
          this.beginSignIn(AccountManager.canSwitch(this.minecraft), true);
@@ -340,8 +316,7 @@ public final class AccountsScreen extends Screen {
       return this.bedrock.show(SignInData.View.PROBLEM, title + "\n" + body + "\n" + left + "\n" + right, data -> data.modal(title, body, left, right));
    }
 
-   @Nullable
-   private XboxAccountStore.Entry selectedOrActive() {
+   private XboxAccountStore.@Nullable Entry selectedOrActive() {
       XboxAccountStore.Entry selected = this.selected();
       return selected != null ? selected : AccountManager.store().active().orElse(null);
    }
@@ -371,8 +346,8 @@ public final class AccountsScreen extends Screen {
                      }
                   }
                });
-            } catch (Exception var4) {
-               BedrockNative.LOGGER.info("The welcome screen shows the gamertag only: the Xbox profile did not answer ({})", var4.getClass().getSimpleName());
+            } catch (Exception e) {
+               BedrockNative.LOGGER.info("The welcome screen shows the gamertag only: the Xbox profile did not answer ({})", e.getClass().getSimpleName());
             }
          }, "Xbox profile");
          thread.setDaemon(true);
@@ -381,34 +356,32 @@ public final class AccountsScreen extends Screen {
    }
 
    private void buildList() {
-      this.list = (AccountsScreen.AccountList)this.layout
+      this.list = this.layout
          .addToContents(new AccountsScreen.AccountList(this.minecraft, this.width, this.layout.getContentHeight(), this.layout.getHeaderHeight()));
       this.fillList(this.preselect);
       this.preselect = null;
-      LinearLayout footer = (LinearLayout)this.layout.addToFooter(LinearLayout.vertical().spacing(4));
+      LinearLayout footer = this.layout.addToFooter(LinearLayout.vertical().spacing(4));
       footer.defaultCellSetting().alignHorizontallyCenter();
-      LinearLayout top = (LinearLayout)footer.addChild(LinearLayout.horizontal().spacing(4));
-      LinearLayout bottom = (LinearLayout)footer.addChild(LinearLayout.horizontal().spacing(4));
-      this.use = (Button)top.addChild(Button.builder(Component.translatable("bedrocknative.accounts.use"), button -> this.useSelected()).width(100).build());
+      LinearLayout top = footer.addChild(LinearLayout.horizontal().spacing(4));
+      LinearLayout bottom = footer.addChild(LinearLayout.horizontal().spacing(4));
+      this.use = top.addChild(Button.builder(Component.translatable("bedrocknative.accounts.use"), button -> this.useSelected()).width(100).build());
       top.addChild(
          Button.builder(Component.translatable("bedrocknative.accounts.add"), button -> this.startSignIn(AccountManager.canSwitch(this.minecraft)))
             .width(100)
             .build()
       );
-      this.signInAgain = (Button)top.addChild(Button.builder(Component.translatable("bedrocknative.accounts.signin_again"), button -> {
+      this.signInAgain = top.addChild(Button.builder(Component.translatable("bedrocknative.accounts.signin_again"), button -> {
          XboxAccountStore.Entry entry = this.selected();
          if (entry != null) {
             this.startSignIn(false);
          }
       }).width(100).build());
-      this.remove = (Button)bottom.addChild(
-         Button.builder(Component.translatable("bedrocknative.accounts.remove"), button -> this.confirmRemove()).width(100).build()
-      );
+      this.remove = bottom.addChild(Button.builder(Component.translatable("bedrocknative.accounts.remove"), button -> this.confirmRemove()).width(100).build());
       bottom.addChild(Button.builder(CommonComponents.GUI_BACK, button -> this.onClose()).width(100).build());
       XboxProblem.Diagnosis problem = this.noticeProblem;
       String label = problem == null ? null : AccountProblems.text(problem, this.selected()).action();
       if (label != null) {
-         this.problemAction = (Button)bottom.addChild(
+         this.problemAction = bottom.addChild(
             Button.builder(Component.literal(label), button -> this.problemAction(problem)).width(Math.max(100, this.font.width(label) + 12)).build()
          );
       }
@@ -441,23 +414,23 @@ public final class AccountsScreen extends Screen {
    }
 
    private void buildSignInFooter() {
-      LinearLayout footer = (LinearLayout)this.layout.addToFooter(LinearLayout.horizontal().spacing(4));
+      LinearLayout footer = this.layout.addToFooter(LinearLayout.horizontal().spacing(4));
       this.signInPanel = AccountsScreen.Panel.of(this.flow == null ? null : this.flow.snapshot());
       if (this.signInPanel == AccountsScreen.Panel.WINDOW) {
          Component label = Component.translatable("bedrocknative.accounts.code_instead");
-         this.codeInstead = (Button)footer.addChild(Button.builder(label, button -> {
+         this.codeInstead = footer.addChild(Button.builder(label, button -> {
             if (this.flow != null && this.flow.useCodeInstead()) {
                button.active = false;
             }
          }).width(Math.max(100, this.font.width(label) + 12)).build());
       } else if (this.signInPanel == AccountsScreen.Panel.CODE) {
-         this.openLink = (Button)footer.addChild(Button.builder(Component.translatable("bedrocknative.accounts.open_link"), button -> {
+         this.openLink = footer.addChild(Button.builder(Component.translatable("bedrocknative.accounts.open_link"), button -> {
             XboxSignInFlow.Snapshot snapshot = this.flow == null ? null : this.flow.snapshot();
             if (snapshot != null && snapshot.directUri() != null) {
                AccountManager.signInActions().openBrowser(snapshot.directUri());
             }
          }).width(100).build());
-         this.copyCode = (Button)footer.addChild(Button.builder(Component.translatable("bedrocknative.accounts.copy_code"), button -> {
+         this.copyCode = footer.addChild(Button.builder(Component.translatable("bedrocknative.accounts.copy_code"), button -> {
             XboxSignInFlow.Snapshot snapshot = this.flow == null ? null : this.flow.snapshot();
             if (snapshot != null && snapshot.code() != null) {
                this.minecraft.keyboardHandler.setClipboard(snapshot.code());
@@ -501,13 +474,13 @@ public final class AccountsScreen extends Screen {
       if (entry != null && AccountManager.canSwitch(this.minecraft) && !isActive(entry)) {
          try {
             AccountManager.store().setActive(entry.id());
-         } catch (UncheckedIOException var3) {
-            BedrockNative.LOGGER.warn("Couldn't switch the Xbox account: {}", var3.getCause().getMessage());
-            this.setNotice(Component.translatable("bedrocknative.accounts.switch_failed", new Object[]{String.valueOf(var3.getCause().getMessage())}), -43691);
+         } catch (UncheckedIOException e) {
+            BedrockNative.LOGGER.warn("Couldn't switch the Xbox account: {}", e.getCause().getMessage());
+            this.setNotice(Component.translatable("bedrocknative.accounts.switch_failed", String.valueOf(e.getCause().getMessage())), -43691);
             return;
          }
 
-         this.setNotice(Component.translatable("bedrocknative.accounts.switched", new Object[]{AccountManager.name(entry)}), -11141291);
+         this.setNotice(Component.translatable("bedrocknative.accounts.switched", AccountManager.name(entry)), -11141291);
          if (AccountManager.autoVerify()) {
             AccountManager.verifyAsync(entry.id());
          }
@@ -525,12 +498,10 @@ public final class AccountsScreen extends Screen {
                      if (confirmed) {
                         try {
                            AccountManager.store().remove(entry.id());
-                           this.setNotice(Component.translatable("bedrocknative.accounts.removed", new Object[]{AccountManager.name(entry)}), -1);
-                        } catch (Exception var4) {
-                           BedrockNative.LOGGER.warn("Couldn't remove the Xbox account: {}", var4.getMessage());
-                           this.setNotice(
-                              Component.translatable("bedrocknative.accounts.remove_failed", new Object[]{String.valueOf(var4.getMessage())}), -43691
-                           );
+                           this.setNotice(Component.translatable("bedrocknative.accounts.removed", AccountManager.name(entry)), -1);
+                        } catch (Exception e) {
+                           BedrockNative.LOGGER.warn("Couldn't remove the Xbox account: {}", e.getMessage());
+                           this.setNotice(Component.translatable("bedrocknative.accounts.remove_failed", String.valueOf(e.getMessage())), -43691);
                         }
 
                         this.fillList(null);
@@ -539,7 +510,7 @@ public final class AccountsScreen extends Screen {
                      this.minecraft.gui.setScreen(this);
                   },
                   Component.translatable("bedrocknative.accounts.remove.title"),
-                  Component.translatable("bedrocknative.accounts.remove.message", new Object[]{AccountManager.name(entry)}),
+                  Component.translatable("bedrocknative.accounts.remove.message", AccountManager.name(entry)),
                   Component.translatable("bedrocknative.accounts.remove"),
                   CommonComponents.GUI_CANCEL
                )
@@ -592,9 +563,7 @@ public final class AccountsScreen extends Screen {
                   this.preselect = entry.id();
                   boolean nowActive = isActive(entry);
                   this.setNotice(
-                     Component.translatable(
-                        nowActive ? "bedrocknative.accounts.added_active" : "bedrocknative.accounts.added", new Object[]{AccountManager.name(entry)}
-                     ),
+                     Component.translatable(nowActive ? "bedrocknative.accounts.added_active" : "bedrocknative.accounts.added", AccountManager.name(entry)),
                      -11141291
                   );
                   if (JsonUiSignIn.wanted(SignInData.View.WELCOME)) {
@@ -615,7 +584,7 @@ public final class AccountsScreen extends Screen {
                         this.problemModal = snapshot.problem();
                      }
                   } else {
-                     this.setNotice(Component.translatable("bedrocknative.accounts.signin_failed", new Object[]{String.valueOf(snapshot.error())}), -43691);
+                     this.setNotice(Component.translatable("bedrocknative.accounts.signin_failed", String.valueOf(snapshot.error())), -43691);
                   }
                   break;
                default:
@@ -637,7 +606,7 @@ public final class AccountsScreen extends Screen {
       this.setNotice(notice, color, null, false);
    }
 
-   private void setNotice(Component notice, int color, @Nullable XboxProblem.Diagnosis problem, boolean fromSignIn) {
+   private void setNotice(Component notice, int color, XboxProblem.@Nullable Diagnosis problem, boolean fromSignIn) {
       boolean resize = this.font.split(this.notice, Math.max(1, this.width - 40)).size() != this.font.split(notice, Math.max(1, this.width - 40)).size()
          || this.notice.getString().isEmpty() != notice.getString().isEmpty()
          || !Objects.equals(this.noticeProblem, problem);
@@ -650,6 +619,7 @@ public final class AccountsScreen extends Screen {
       }
    }
 
+   @Override
    public void tick() {
       super.tick();
       if (this.bedrockShown) {
@@ -681,6 +651,7 @@ public final class AccountsScreen extends Screen {
       }
    }
 
+   @Override
    public void mouseMoved(double x, double y) {
       if (this.bedrockShown) {
          this.bedrock.mouseMoved(x, y);
@@ -689,26 +660,32 @@ public final class AccountsScreen extends Screen {
       }
    }
 
+   @Override
    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
       return this.bedrockShown ? this.bedrock.mouseClicked(event) : super.mouseClicked(event, doubleClick);
    }
 
+   @Override
    public boolean mouseReleased(MouseButtonEvent event) {
       return this.bedrockShown ? this.bedrock.mouseReleased(event) : super.mouseReleased(event);
    }
 
+   @Override
    public boolean mouseDragged(MouseButtonEvent event, double dx, double dy) {
       return this.bedrockShown ? this.bedrock.mouseDragged(event) : super.mouseDragged(event, dx, dy);
    }
 
+   @Override
    public boolean mouseScrolled(double x, double y, double scrollX, double scrollY) {
       return this.bedrockShown ? this.bedrock.mouseScrolled(x, y, scrollY) : super.mouseScrolled(x, y, scrollX, scrollY);
    }
 
+   @Override
    public boolean keyPressed(KeyEvent event) {
       return this.bedrockShown && this.bedrock.keyPressed(event) ? true : super.keyPressed(event);
    }
 
+   @Override
    public boolean charTyped(CharacterEvent event) {
       return this.bedrockShown ? this.bedrock.charTyped(event) : super.charTyped(event);
    }
@@ -745,6 +722,7 @@ public final class AccountsScreen extends Screen {
       }
    }
 
+   @Override
    protected void repositionElements() {
       if (this.layout != null) {
          this.layout.arrangeElements();
@@ -754,6 +732,7 @@ public final class AccountsScreen extends Screen {
       }
    }
 
+   @Override
    public void onClose() {
       if (this.flow != null) {
          this.cancelSignIn();
@@ -762,6 +741,7 @@ public final class AccountsScreen extends Screen {
       }
    }
 
+   @Override
    public void removed() {
       if (this.flow != null) {
          this.flow.cancel();
@@ -769,6 +749,7 @@ public final class AccountsScreen extends Screen {
       }
    }
 
+   @Override
    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
       super.extractRenderState(graphics, mouseX, mouseY, a);
       if (this.bedrockShown) {
@@ -800,8 +781,7 @@ public final class AccountsScreen extends Screen {
       }
    }
 
-   @Nullable
-   private Component codeHint() {
+   private @Nullable Component codeHint() {
       XboxSignInFlow.Snapshot snapshot = this.flow == null ? null : this.flow.snapshot();
       if (this.bedrock.view() == SignInData.View.CODE && snapshot != null) {
          MutableComponent line = Component.translatable(
@@ -847,30 +827,26 @@ public final class AccountsScreen extends Screen {
             break;
          case WAITING_FOR_CODE_ENTRY:
             Component instruction = Component.translatable(snapshot.browserOpened() ? "bedrocknative.accounts.code.opened" : "bedrocknative.accounts.code.open");
-            int lineY = y;
+            int lineY2 = y;
 
             for (FormattedCharSequence line : this.font.split(instruction, this.width - 40).stream().limit(2L).toList()) {
-               graphics.centeredText(this.font, line, middle, lineY, -1);
-               lineY += 10;
+               graphics.centeredText(this.font, line, middle, lineY2, -1);
+               lineY2 += 10;
             }
 
-            graphics.centeredText(
-               this.font, Component.literal(snapshot.uri()).withStyle(new ChatFormatting[]{ChatFormatting.AQUA, ChatFormatting.UNDERLINE}), middle, y + 24, -1
-            );
+            graphics.centeredText(this.font, Component.literal(snapshot.uri()).withStyle(ChatFormatting.AQUA, ChatFormatting.UNDERLINE), middle, y + 24, -1);
             graphics.centeredText(this.font, Component.translatable("bedrocknative.accounts.code.enter"), middle, y + 44, -6250336);
             graphics.pose().pushMatrix();
             graphics.pose().translate(middle, y + 58);
             graphics.pose().scale(2.0F, 2.0F);
-            graphics.centeredText(
-               this.font, Component.literal(snapshot.code()).withStyle(new ChatFormatting[]{ChatFormatting.YELLOW, ChatFormatting.BOLD}), 0, 0, -1
-            );
+            graphics.centeredText(this.font, Component.literal(snapshot.code()).withStyle(ChatFormatting.YELLOW, ChatFormatting.BOLD), 0, 0, -1);
             graphics.pose().popMatrix();
             if (System.currentTimeMillis() - this.copiedAt < 2000L) {
                graphics.centeredText(this.font, Component.translatable("bedrocknative.accounts.code.copied"), middle, y + 76, -11141291);
             }
 
-            int dots = (int)(System.currentTimeMillis() / 500L % 4L);
-            graphics.centeredText(this.font, Component.translatable("bedrocknative.accounts.code.waiting").append(".".repeat(dots)), middle, y + 92, -6250336);
+            int dots2 = (int)(System.currentTimeMillis() / 500L % 4L);
+            graphics.centeredText(this.font, Component.translatable("bedrocknative.accounts.code.waiting").append(".".repeat(dots2)), middle, y + 92, -6250336);
             break;
          case DONE:
          case FAILED:
@@ -884,7 +860,6 @@ public final class AccountsScreen extends Screen {
 
    private final class AccountList extends ObjectSelectionList<AccountsScreen.AccountRow> {
       AccountList(Minecraft minecraft, int width, int height, int y) {
-         Objects.requireNonNull(AccountsScreen.this);
          super(minecraft, width, height, y, 30);
       }
 
@@ -892,6 +867,7 @@ public final class AccountsScreen extends Screen {
          this.centerScrollOn(row);
       }
 
+      @Override
       public int getRowWidth() {
          return Math.min(this.width - 20, 300);
       }
@@ -901,11 +877,10 @@ public final class AccountsScreen extends Screen {
       private final XboxAccountStore.Entry entry;
 
       AccountRow(XboxAccountStore.Entry entry) {
-         Objects.requireNonNull(AccountsScreen.this);
-         super();
          this.entry = entry;
       }
 
+      @Override
       public void extractContent(GuiGraphicsExtractor graphics, int mouseX, int mouseY, boolean hovered, float a) {
          graphics.text(AccountsScreen.this.font, AccountManager.name(this.entry), this.getContentX() + 3, this.getContentY() + 4, -1);
          if (AccountsScreen.isActive(this.entry)) {
@@ -915,15 +890,15 @@ public final class AccountsScreen extends Screen {
 
          AccountManager.Status status = AccountManager.status(this.entry.id());
 
-         Component line = (Component)(switch (status.check()) {
+         Component line = switch (status.check()) {
             case UNKNOWN -> Component.translatable("bedrocknative.accounts.status.unknown");
             case CHECKING -> Component.translatable("bedrocknative.accounts.status.checking");
             case OK -> Component.translatable("bedrocknative.accounts.status.ok");
             case SIGN_IN_REQUIRED -> Component.translatable("bedrocknative.accounts.status.signin");
             case FAILED -> status.diagnosis() != null
                ? AccountProblems.shortLine(status.diagnosis(), this.entry)
-               : Component.translatable("bedrocknative.accounts.status.failed", new Object[]{status.detail()});
-         });
+               : Component.translatable("bedrocknative.accounts.status.failed", status.detail());
+         };
 
          int color = switch (status.check()) {
             case OK -> -11141291;
@@ -935,6 +910,7 @@ public final class AccountsScreen extends Screen {
          graphics.text(AccountsScreen.this.font, text, this.getContentX() + 3, this.getContentY() + 16, color);
       }
 
+      @Override
       public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
          AccountsScreen.this.list.setSelected(this);
          if (doubleClick) {
@@ -944,17 +920,18 @@ public final class AccountsScreen extends Screen {
          return super.mouseClicked(event, doubleClick);
       }
 
+      @Override
       public Component getNarration() {
-         return Component.translatable("narrator.select", new Object[]{AccountManager.name(this.entry)});
+         return Component.translatable("narrator.select", AccountManager.name(this.entry));
       }
    }
 
-   private static enum Panel {
+   private enum Panel {
       WINDOW,
       CODE,
       PLAIN;
 
-      static AccountsScreen.Panel of(@Nullable XboxSignInFlow.Snapshot snapshot) {
+      static AccountsScreen.Panel of(XboxSignInFlow.@Nullable Snapshot snapshot) {
          if (snapshot != null && !snapshot.windowPart()) {
             return snapshot.state() != XboxSignInFlow.State.REQUESTING_CODE && snapshot.state() != XboxSignInFlow.State.WAITING_FOR_CODE_ENTRY ? PLAIN : CODE;
          } else {

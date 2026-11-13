@@ -6,8 +6,7 @@ import net.bedrocknative.molang.MolangProgram;
 import org.jspecify.annotations.Nullable;
 
 public record ControllerDef(String name, String initialState, Map<String, ControllerDef.State> states, int formatVersion) {
-   @Nullable
-   public ControllerDef.State state(String name) {
+   public ControllerDef.@Nullable State state(String name) {
       return this.states.get(name);
    }
 
@@ -16,7 +15,7 @@ public record ControllerDef(String name, String initialState, Map<String, Contro
       List<ControllerDef.StateAnimation> animations,
       List<ControllerDef.Transition> transitions,
       float blendTransition,
-      @Nullable float[] blendCurve,
+      float @Nullable [] blendCurve,
       boolean blendViaShortestPath,
       List<MolangProgram> onEntry,
       List<MolangProgram> onExit,

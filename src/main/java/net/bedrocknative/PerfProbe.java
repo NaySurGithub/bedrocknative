@@ -11,13 +11,12 @@ public final class PerfProbe {
    private static final PerfProbe.Part[] PARTS = PerfProbe.Part.values();
    private static final AtomicLongArray NANOS = new AtomicLongArray(PARTS.length);
    private static final AtomicLongArray CALLS = new AtomicLongArray(PARTS.length);
-   @Nullable
-   private static volatile PerfProbe.FrameSink frameSink;
+   private static volatile PerfProbe.@Nullable FrameSink frameSink;
 
    private PerfProbe() {
    }
 
-   public static void frameSink(@Nullable PerfProbe.FrameSink sink) {
+   public static void frameSink(PerfProbe.@Nullable FrameSink sink) {
       frameSink = sink;
    }
 
@@ -60,7 +59,7 @@ public final class PerfProbe {
       void add(PerfProbe.Part var1, long var2);
    }
 
-   public static enum Part {
+   public enum Part {
       MODELS(true),
       HUD(true),
       SCREENS(true),
@@ -71,7 +70,7 @@ public final class PerfProbe {
 
       private final boolean frame;
 
-      private Part(boolean frame) {
+      Part(boolean frame) {
          this.frame = frame;
       }
    }

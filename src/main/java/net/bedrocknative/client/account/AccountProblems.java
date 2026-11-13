@@ -11,25 +11,23 @@ import net.minecraft.network.chat.Component;
 import org.jspecify.annotations.Nullable;
 
 final class AccountProblems {
-   @Nullable
-   private static volatile Map<String, String> bedrock;
-   @Nullable
-   private static volatile String bedrockLanguage;
+   private static volatile @Nullable Map<String, String> bedrock;
+   private static volatile @Nullable String bedrockLanguage;
 
    private AccountProblems() {
    }
 
-   static XboxProblemText.Text text(XboxProblem.Diagnosis diagnosis, @Nullable XboxAccountStore.Entry account) {
+   static XboxProblemText.Text text(XboxProblem.Diagnosis diagnosis, XboxAccountStore.@Nullable Entry account) {
       Map<String, String> install = bedrockTexts();
       Language language = Language.getInstance();
       return XboxProblemText.of(diagnosis, XboxProblemText.texts(install::get, language::getOrDefault), AccountManager.name(account).getString());
    }
 
-   static Component message(XboxProblem.Diagnosis diagnosis, @Nullable XboxAccountStore.Entry account) {
+   static Component message(XboxProblem.Diagnosis diagnosis, XboxAccountStore.@Nullable Entry account) {
       return Component.literal(text(diagnosis, account).full());
    }
 
-   static Component shortLine(XboxProblem.Diagnosis diagnosis, @Nullable XboxAccountStore.Entry account) {
+   static Component shortLine(XboxProblem.Diagnosis diagnosis, XboxAccountStore.@Nullable Entry account) {
       return Component.literal(text(diagnosis, account).body());
    }
 

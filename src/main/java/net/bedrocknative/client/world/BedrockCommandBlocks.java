@@ -26,9 +26,7 @@ public final class BedrockCommandBlocks {
    public static void load(ClientLevel level, BlockPos pos, NbtMap tag) {
       EXTRAS.put(
          pos.asLong(),
-         new BedrockCommandBlocks.Extras(
-            (long)Math.max(0, tag.getInt("TickDelay", 0)), tag.getBoolean("ExecuteOnFirstTick", true), tag.getString("CustomName", "")
-         )
+         new BedrockCommandBlocks.Extras(Math.max(0, tag.getInt("TickDelay", 0)), tag.getBoolean("ExecuteOnFirstTick", true), tag.getString("CustomName", ""))
       );
       if (level.getBlockEntity(pos) instanceof CommandBlockEntity commandBlock) {
          BaseCommandBlock command = commandBlock.getCommandBlock();
@@ -53,7 +51,6 @@ public final class BedrockCommandBlocks {
          case SEQUENCE -> CommandBlockMode.CHAIN;
          case AUTO -> CommandBlockMode.REPEATING;
          case REDSTONE -> CommandBlockMode.NORMAL;
-         default -> throw new MatchException(null, null);
       });
       packet.setRedstoneMode(!done.isAutomatic());
       packet.setConditional(done.isConditional());

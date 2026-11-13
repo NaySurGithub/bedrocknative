@@ -22,8 +22,7 @@ final class GuiQuadBatch implements GuiElementRenderState {
    static final int FLOATS = 8;
    private final TextureSetup textureSetup;
    private final Matrix3x2fc pose;
-   @Nullable
-   private final ScreenRectangle scissor;
+   private final @Nullable ScreenRectangle scissor;
    private final float[] quads;
    private final int[] colors;
    private final int count;
@@ -62,6 +61,7 @@ final class GuiQuadBatch implements GuiElementRenderState {
          && Arrays.equals(builderQuads, 0, builderCount * 8, this.quads, 0, this.count * 8);
    }
 
+   @Override
    public void buildVertices(VertexConsumer consumer) {
       for (int i = 0; i < this.count; i++) {
          int at = i * 8;
@@ -81,19 +81,22 @@ final class GuiQuadBatch implements GuiElementRenderState {
       }
    }
 
+   @Override
    public RenderPipeline pipeline() {
       return RenderPipelines.GUI_TEXTURED;
    }
 
+   @Override
    public TextureSetup textureSetup() {
       return this.textureSetup;
    }
 
-   @Nullable
-   public ScreenRectangle scissorArea() {
+   @Override
+   public @Nullable ScreenRectangle scissorArea() {
       return this.scissor;
    }
 
+   @Override
    public ScreenRectangle bounds() {
       return this.bounds;
    }
@@ -104,10 +107,8 @@ final class GuiQuadBatch implements GuiElementRenderState {
       private float[] quads = new float[512];
       private int[] colors = new int[64];
       private int count;
-      @Nullable
-      private TextureSetup texture;
-      @Nullable
-      private ScreenRectangle scissor;
+      private @Nullable TextureSetup texture;
+      private @Nullable ScreenRectangle scissor;
       private final Matrix3x2f pose = new Matrix3x2f();
       private int left;
       private int top;

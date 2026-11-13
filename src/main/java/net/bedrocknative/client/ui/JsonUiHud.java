@@ -62,45 +62,34 @@ public final class JsonUiHud {
    private static final int BAR_TOP = 29;
    private static final HudData DATA = new HudData();
    private static final HeartTracker HEARTS = new HeartTracker();
-   @Nullable
-   private static UiScreenInstance instance;
-   @Nullable
-   private static UiDefinitionSet instanceDefinitions;
-   @Nullable
-   private static Map<String, UiValue> instanceVariables;
+   private static @Nullable UiScreenInstance instance;
+   private static @Nullable UiDefinitionSet instanceDefinitions;
+   private static @Nullable Map<String, UiValue> instanceVariables;
    private static boolean failed;
    private static final boolean TRACE = "hud".equals(System.getProperty("bedrocknative.jsonUiTrace"));
    private static double nextTrace = Double.NaN;
    private static int tracesLeft;
-   @Nullable
-   private static JsonUiDiagnostics diagnostics;
+   private static @Nullable JsonUiDiagnostics diagnostics;
    private static double clock;
    private static long lastFrame;
    private static ItemStack lastHighlight = ItemStack.EMPTY;
    private static boolean showCoordinates;
    private static boolean showDaysPlayed;
    private static boolean drawingLocator;
-   @Nullable
-   private static DeltaTracker frameDelta;
+   private static @Nullable DeltaTracker frameDelta;
    private static volatile String lastChat = "";
-   @Nullable
-   private static Map<String, UiValue> builtVariables;
+   private static @Nullable Map<String, UiValue> builtVariables;
    private static double builtOpacity;
    private static double builtScale;
    private static double builtSpacing;
-   @Nullable
-   private static String positionText;
-   @Nullable
-   private static String positionTemplate;
+   private static @Nullable String positionText;
+   private static @Nullable String positionTemplate;
    private static int positionX;
    private static int positionY;
    private static int positionZ;
-   @Nullable
-   private static JsonUiHud.HotbarItems hotbarItems;
-   @Nullable
-   private static String daysText;
-   @Nullable
-   private static String daysTemplate;
+   private static JsonUiHud.@Nullable HotbarItems hotbarItems;
+   private static @Nullable String daysText;
+   private static @Nullable String daysTemplate;
    private static long daysShown;
 
    private JsonUiHud() {
@@ -144,8 +133,7 @@ public final class JsonUiHud {
       showDaysPlayed = false;
    }
 
-   @Nullable
-   public static UiScreenInstance instance() {
+   public static @Nullable UiScreenInstance instance() {
       return instance;
    }
 
@@ -199,9 +187,9 @@ public final class JsonUiHud {
    }
 
    private static Map<String, UiValue> variables(Options options) {
-      double opacity = (Double)options.textBackgroundOpacity().get();
-      double scale = (Double)options.chatScale().get();
-      double spacing = (Double)options.chatLineSpacing().get() * 10.0;
+      double opacity = options.textBackgroundOpacity().get();
+      double scale = options.chatScale().get();
+      double spacing = options.chatLineSpacing().get() * 10.0;
       Map<String, UiValue> built = builtVariables;
       if (built == null || opacity != builtOpacity || scale != builtScale || spacing != builtSpacing) {
          built = HudData.engineVariables(opacity, scale, spacing);
@@ -317,9 +305,9 @@ public final class JsonUiHud {
                   }
 
                   DATA.drainEvents();
-               } catch (RuntimeException var19) {
+               } catch (RuntimeException e) {
                   failed = true;
-                  BedrockNative.LOGGER.warn("JSON UI HUD failed; the Java HUD is back for this session", var19);
+                  BedrockNative.LOGGER.warn("JSON UI HUD failed; the Java HUD is back for this session", e);
                   return;
                } finally {
                   frameDelta = null;
@@ -411,7 +399,7 @@ public final class JsonUiHud {
    private static String format(String template, Object... values) {
       try {
          return String.format(Locale.ROOT, template, values);
-      } catch (IllegalFormatException var3) {
+      } catch (IllegalFormatException e) {
          return template;
       }
    }

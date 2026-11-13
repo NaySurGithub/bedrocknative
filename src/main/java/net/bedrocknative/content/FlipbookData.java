@@ -48,8 +48,8 @@ public final class FlipbookData {
          Optional<byte[]> data;
          try {
             data = pack.read("textures/flipbook_textures.json");
-         } catch (IOException var16) {
-            BedrockNative.LOGGER.warn("Couldn't read {} from {}", new Object[]{"textures/flipbook_textures.json", pack, var16});
+         } catch (IOException e) {
+            BedrockNative.LOGGER.warn("Couldn't read {} from {}", new Object[]{"textures/flipbook_textures.json", pack, e});
             continue;
          }
 
@@ -59,8 +59,8 @@ public final class FlipbookData {
                JsonReader reader = new JsonReader(new StringReader(new String(data.get(), StandardCharsets.UTF_8)));
                reader.setStrictness(Strictness.LENIENT);
                root = JsonParser.parseReader(reader);
-            } catch (RuntimeException var15) {
-               BedrockNative.LOGGER.warn("Unreadable Bedrock JSON {} in {}: {}", new Object[]{"textures/flipbook_textures.json", pack, var15.getMessage()});
+            } catch (RuntimeException e) {
+               BedrockNative.LOGGER.warn("Unreadable Bedrock JSON {} in {}: {}", new Object[]{"textures/flipbook_textures.json", pack, e.getMessage()});
                continue;
             }
 
@@ -82,8 +82,7 @@ public final class FlipbookData {
       return new FlipbookData.Views(new FlipbookData(Map.copyOf(byTile), Set.copyOf(allPaths)), new FlipbookData(Map.copyOf(baseByTile), Set.copyOf(basePaths)));
    }
 
-   @Nullable
-   public FlipbookData.Flipbook get(String tile, int index) {
+   public FlipbookData.@Nullable Flipbook get(String tile, int index) {
       return this.byTile.get(key(tile, index));
    }
 
@@ -116,8 +115,7 @@ public final class FlipbookData {
             }
          }
 
-         JsonElement var14 = entry.get("blend_frames");
-         boolean blend = !(var14 instanceof JsonElement) || !var14.isJsonPrimitive() || bool(var14);
+         boolean blend = !(entry.get("blend_frames") instanceof JsonElement blendFramesx && blendFramesx.isJsonPrimitive() && !bool(blendFramesx));
          byTile.putIfAbsent(key(tile, index), new FlipbookData.Flipbook(texture, ticks, List.copyOf(frames), blend));
       }
    }
@@ -126,8 +124,7 @@ public final class FlipbookData {
       return tile + "#" + index;
    }
 
-   @Nullable
-   private static String string(@Nullable JsonElement element) {
+   private static @Nullable String string(@Nullable JsonElement element) {
       return element != null && element.isJsonPrimitive() ? element.getAsString() : null;
    }
 
@@ -135,7 +132,7 @@ public final class FlipbookData {
       if (element != null && element.isJsonPrimitive()) {
          try {
             return (int)element.getAsDouble();
-         } catch (NumberFormatException var3) {
+         } catch (NumberFormatException e) {
             return fallback;
          }
       } else {
@@ -146,10 +143,10 @@ public final class FlipbookData {
    private static boolean bool(JsonElement element) {
       if (element.getAsJsonPrimitive().isBoolean()) {
          return element.getAsBoolean();
-      } else {
-         String text = element.getAsString();
-         return !text.equalsIgnoreCase("false") && !text.equals("0");
       }
+
+      String text = element.getAsString();
+      return !text.equalsIgnoreCase("false") && !text.equals("0");
    }
 
    public record Flipbook(String texture, int ticksPerFrame, List<Integer> frames, boolean blendFrames) {

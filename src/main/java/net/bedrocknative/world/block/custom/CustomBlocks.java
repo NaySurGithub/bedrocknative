@@ -19,8 +19,8 @@ import net.minecraft.world.level.block.state.BlockBehaviour.Properties;
 
 public final class CustomBlocks {
    public static final ResourceKey<Block> KEY = ResourceKey.create(Registries.BLOCK, Identifier.fromNamespaceAndPath("bedrocknative", "custom_block"));
-   public static final Block CARRIER = (Block)Registry.register(BuiltInRegistries.BLOCK, KEY, new CarrierBlock(Properties.of().setId(KEY).strength(1.5F)));
-   private static final int REFRESH_HELPERS = Math.clamp((long)(Runtime.getRuntime().availableProcessors() - 1), 0, 3);
+   public static final Block CARRIER = Registry.register(BuiltInRegistries.BLOCK, KEY, new CarrierBlock(Properties.of().setId(KEY).strength(1.5F)));
+   private static final int REFRESH_HELPERS = Math.clamp(Runtime.getRuntime().availableProcessors() - 1, 0, 3);
    private static final Executor REFRESH_HELPERS_EXECUTOR = task -> Thread.ofVirtual().name("BedrockNative block states").start(task);
    private static int refreshed;
    private static volatile SoundType[] soundTypes = new SoundType[0];
@@ -49,7 +49,7 @@ public final class CustomBlocks {
    }
 
    public static BlockState state(int slot) {
-      return (BlockState)CARRIER.defaultBlockState().setValue(CarrierBlock.SLOT, slot);
+      return CARRIER.defaultBlockState().setValue(CarrierBlock.SLOT, slot);
    }
 
    public static void resetCollisionTops() {

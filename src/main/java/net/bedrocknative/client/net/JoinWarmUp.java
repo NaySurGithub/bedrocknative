@@ -66,8 +66,8 @@ public final class JoinWarmUp {
          BedrockCrypto.verifySelfSignedJwt(BedrockCrypto.signJwt(pair, "{}"));
          BedrockCrypto.deriveKey(pair.getPrivate(), pair.getPublic(), BedrockCrypto.randomBytes(16));
          return "login cryptography ready in " + (System.nanoTime() - started) / 1000000L + " ms";
-      } catch (RuntimeException | GeneralSecurityException var3) {
-         return "login cryptography left to the join (" + var3.getClass().getSimpleName() + ")";
+      } catch (GeneralSecurityException | RuntimeException e) {
+         return "login cryptography left to the join (" + e.getClass().getSimpleName() + ")";
       }
    }
 
@@ -79,7 +79,7 @@ public final class JoinWarmUp {
          try {
             Class.forName("net.minecraft.network.protocol.game.GameProtocols", true, JoinWarmUp.class.getClassLoader());
             return "game protocol initialized in " + (System.nanoTime() - started) / 1000000L + " ms";
-         } catch (ClassNotFoundException var5) {
+         } catch (ClassNotFoundException e) {
             return "no game protocol class in this game";
          }
       } else {
@@ -100,8 +100,8 @@ public final class JoinWarmUp {
          }
 
          bedrockCosts(why, textsMillis);
-      } catch (Throwable var5) {
-         BedrockNative.LOGGER.warn("Join warm-up ({}) stopped: {}", why, var5.toString());
+      } catch (Throwable e) {
+         BedrockNative.LOGGER.warn("Join warm-up ({}) stopped: {}", why, e.toString());
       }
    }
 
@@ -147,8 +147,8 @@ public final class JoinWarmUp {
                      crypto
                   }
                );
-         } catch (LinkageError | Exception var12) {
-            BedrockNative.LOGGER.warn("Join warm-up ({}) stopped: {}", why, var12.toString());
+         } catch (Exception | LinkageError e) {
+            BedrockNative.LOGGER.warn("Join warm-up ({}) stopped: {}", why, e.toString());
          }
       }
    }

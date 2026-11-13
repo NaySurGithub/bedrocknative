@@ -72,7 +72,7 @@ public enum MolangVersion {
          for (int i = 0; i < Math.min(3, parts.length); i++) {
             try {
                numbers[i] = Math.min(999, Integer.parseInt(parts[i].trim()));
-            } catch (NumberFormatException var5) {
+            } catch (NumberFormatException e) {
                return i == 0 ? 0 : version(numbers[0], numbers[1], numbers[2]);
             }
          }

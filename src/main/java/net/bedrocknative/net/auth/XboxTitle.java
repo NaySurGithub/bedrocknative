@@ -13,7 +13,7 @@ public enum XboxTitle {
    private final String clientId;
    private final String deviceType;
 
-   private XboxTitle(String clientId, String deviceType) {
+   XboxTitle(String clientId, String deviceType) {
       this.clientId = clientId;
       this.deviceType = deviceType;
    }

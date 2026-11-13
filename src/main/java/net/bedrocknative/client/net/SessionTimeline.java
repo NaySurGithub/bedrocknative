@@ -33,14 +33,10 @@ public final class SessionTimeline {
    public static final String START_SCREEN = "start screen";
    public static final String PLAY_SCREEN = "play screen";
    public static final String SCREEN = "screen";
-   @Nullable
-   private static volatile PhaseClock join;
-   @Nullable
-   private static volatile PhaseClock lastJoin;
-   @Nullable
-   private static volatile PhaseClock leave;
-   @Nullable
-   private static volatile PhaseClock lastLeave;
+   private static volatile @Nullable PhaseClock join;
+   private static volatile @Nullable PhaseClock lastJoin;
+   private static volatile @Nullable PhaseClock leave;
+   private static volatile @Nullable PhaseClock lastLeave;
    private static volatile int joins;
    private static volatile int leaves;
    private static final long LEAVE_OPEN_MS = 30000L;
@@ -113,13 +109,11 @@ public final class SessionTimeline {
       }
    }
 
-   @Nullable
-   public static PhaseClock lastJoin() {
+   public static @Nullable PhaseClock lastJoin() {
       return lastJoin;
    }
 
-   @Nullable
-   public static PhaseClock lastLeave() {
+   public static @Nullable PhaseClock lastLeave() {
       return lastLeave;
    }
 

@@ -13,21 +13,19 @@ import org.jspecify.annotations.Nullable;
 
 public final class DownloadedBase {
    public static final String FOLDER_PROPERTY = "bedrocknative.baseFolder";
-   @Nullable
-   private static volatile DownloadedBase.Readiness cached;
+   private static volatile DownloadedBase.@Nullable Readiness cached;
 
    private DownloadedBase() {
    }
 
-   @Nullable
-   public static Path folder() {
+   public static @Nullable Path folder() {
       String configured = System.getProperty("bedrocknative.baseFolder");
       if (configured != null && !configured.isBlank()) {
          return Path.of(configured.trim());
-      } else {
-         BaseTable table = BaseTable.bundled();
-         return table == null ? null : dataRoot().resolve("base-pack").resolve(table.folderName());
       }
+
+      BaseTable table = BaseTable.bundled();
+      return table == null ? null : dataRoot().resolve("base-pack").resolve(table.folderName());
    }
 
    static Path dataRoot() {
@@ -43,15 +41,15 @@ public final class DownloadedBase {
       Path folder = folder();
       if (folder == null) {
          return Optional.empty();
-      } else {
-         DownloadedBase.Readiness known = cached;
-         if (known == null || !known.folder().equals(folder)) {
-            known = new DownloadedBase.Readiness(folder, check(folder, BaseTable.bundled()));
-            cached = known;
-         }
-
-         return known.ready() ? Optional.of(folder) : Optional.empty();
       }
+
+      DownloadedBase.Readiness known = cached;
+      if (known == null || !known.folder().equals(folder)) {
+         known = new DownloadedBase.Readiness(folder, check(folder, BaseTable.bundled()));
+         cached = known;
+      }
+
+      return known.ready() ? Optional.of(folder) : Optional.empty();
    }
 
    public static Optional<Path> override() {
@@ -64,7 +62,7 @@ public final class DownloadedBase {
          try {
             JsonObject state = JsonParser.parseString(Files.readString(stateFile(folder), StandardCharsets.UTF_8)).getAsJsonObject();
             return "complete".equals(string(state, "core")) && table.digest().equals(string(state, "table"));
-         } catch (RuntimeException | IOException var3) {
+         } catch (IOException | RuntimeException e) {
             return false;
          }
       } else {
@@ -72,8 +70,7 @@ public final class DownloadedBase {
       }
    }
 
-   @Nullable
-   private static String string(JsonObject object, String key) {
+   private static @Nullable String string(JsonObject object, String key) {
       return object.has(key) && object.get(key).isJsonPrimitive() ? object.get(key).getAsString() : null;
    }
 

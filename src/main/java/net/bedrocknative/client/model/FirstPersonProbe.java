@@ -13,10 +13,8 @@ import org.jspecify.annotations.Nullable;
 public final class FirstPersonProbe {
    private static final boolean ENABLED = System.getProperty("bedrocknative.devTest") != null;
    private static final float NEAR = 0.05F;
-   @Nullable
-   private static FirstPersonProbe.Box arm;
-   @Nullable
-   private static FirstPersonProbe.Box item;
+   private static FirstPersonProbe.@Nullable Box arm;
+   private static FirstPersonProbe.@Nullable Box item;
 
    private FirstPersonProbe() {
    }
@@ -25,13 +23,11 @@ public final class FirstPersonProbe {
       return ENABLED;
    }
 
-   @Nullable
-   public static FirstPersonProbe.Box arm() {
+   public static FirstPersonProbe.@Nullable Box arm() {
       return arm;
    }
 
-   @Nullable
-   public static FirstPersonProbe.Box item() {
+   public static FirstPersonProbe.@Nullable Box item() {
       return item;
    }
 
@@ -68,8 +64,7 @@ public final class FirstPersonProbe {
    }
 
    private static final class Bounds implements DrawSnapshot.VertexSink {
-      @Nullable
-      final Matrix4f camera;
+      final @Nullable Matrix4f camera;
       private final float tanHalf;
       private final float aspect;
       private final int width;
@@ -101,8 +96,7 @@ public final class FirstPersonProbe {
          }
       }
 
-      @Nullable
-      FirstPersonProbe.Box box() {
+      FirstPersonProbe.@Nullable Box box() {
          return !(this.minX > this.maxX) && !(this.maxX < 0.0F) && !(this.maxY < 0.0F) && !(this.minX > this.width - 1) && !(this.minY > this.height - 1)
             ? new FirstPersonProbe.Box(
                clamp(this.minX, this.width), clamp(this.minY, this.height), clamp(this.maxX, this.width), clamp(this.maxY, this.height), System.nanoTime()
@@ -111,7 +105,7 @@ public final class FirstPersonProbe {
       }
 
       private static int clamp(float value, int size) {
-         return Math.clamp((long)Math.round(value), 0, size - 1);
+         return Math.clamp(Math.round(value), 0, size - 1);
       }
    }
 

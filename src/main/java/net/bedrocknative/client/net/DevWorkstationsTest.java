@@ -57,14 +57,13 @@ import net.minecraft.world.inventory.StonecutterMenu;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.crafting.SelectableRecipe.SingleInputEntry;
 import net.minecraft.world.item.crafting.display.SlotDisplay.ItemStackSlotDisplay;
-import net.minecraft.world.item.enchantment.ItemEnchantments;
 import net.minecraft.world.item.trading.MerchantOffer;
 import net.minecraft.world.level.block.entity.BannerPattern;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.Vec3;
+import org.cloudburstmc.protocol.bedrock.data.inventory.itemstack.response.ItemStackResponseStatus;
 import org.jspecify.annotations.Nullable;
 
 final class DevWorkstationsTest {
@@ -79,8 +78,7 @@ final class DevWorkstationsTest {
    private int failed;
    private int known;
    private String station = "";
-   @Nullable
-   private String knownProblem;
+   private @Nullable String knownProblem;
    private final List<String> notes = new ArrayList<>();
    private int stationFailures;
    private int stationKnown;
@@ -92,10 +90,8 @@ final class DevWorkstationsTest {
    private int jsonUiClicks;
    private int jsonUiMisses;
    private int jsonUiAround;
-   @Nullable
-   private Holder<MobEffect> beaconPrimary;
-   @Nullable
-   private Holder<MobEffect> beaconSecondary;
+   private @Nullable Holder<MobEffect> beaconPrimary;
+   private @Nullable Holder<MobEffect> beaconSecondary;
 
    DevWorkstationsTest(Minecraft minecraft, StackRequests requests) {
       this.minecraft = minecraft;
@@ -255,32 +251,27 @@ final class DevWorkstationsTest {
    private long logSize() {
       try {
          return Files.size(this.log);
-      } catch (IOException var2) {
+      } catch (IOException e) {
          return 0L;
       }
    }
 
    private String chatSince(long offset) {
-      try {
-         String var14;
-         try (RandomAccessFile file = new RandomAccessFile(this.log.toFile(), "r")) {
-            file.seek(Math.min(offset, file.length()));
-            byte[] bytes = new byte[(int)(file.length() - file.getFilePointer())];
-            file.readFully(bytes);
-            StringBuilder chat = new StringBuilder();
+      try (RandomAccessFile file = new RandomAccessFile(this.log.toFile(), "r")) {
+         file.seek(Math.min(offset, file.length()));
+         byte[] bytes = new byte[(int)(file.length() - file.getFilePointer())];
+         file.readFully(bytes);
+         StringBuilder chat = new StringBuilder();
 
-            for (String line : new String(bytes, StandardCharsets.UTF_8).split("\n")) {
-               int index = line.indexOf("[CHAT]");
-               if (index >= 0) {
-                  chat.append(line.substring(index + 7).trim()).append(" | ");
-               }
+         for (String line : new String(bytes, StandardCharsets.UTF_8).split("\n")) {
+            int index = line.indexOf("[CHAT]");
+            if (index >= 0) {
+               chat.append(line.substring(index + 7).trim()).append(" | ");
             }
-
-            var14 = chat.toString();
          }
 
-         return var14;
-      } catch (IOException var13) {
+         return chat.toString();
+      } catch (IOException e) {
          return "";
       }
    }
@@ -414,9 +405,7 @@ final class DevWorkstationsTest {
             sleep(600L);
             this.open(grindstone, "grindstone");
             this.clickItem(
-               stack -> stack.is(Items.IRON_SWORD)
-                  && stack.has(DataComponents.ENCHANTMENTS)
-                  && !((ItemEnchantments)stack.get(DataComponents.ENCHANTMENTS)).isEmpty(),
+               stack -> stack.is(Items.IRON_SWORD) && stack.has(DataComponents.ENCHANTMENTS) && !stack.get(DataComponents.ENCHANTMENTS).isEmpty(),
                "pick up the enchanted sword"
             );
             this.click(0, ContainerInput.PICKUP, "put it into the grindstone");
@@ -434,7 +423,7 @@ final class DevWorkstationsTest {
             this.click(2, ContainerInput.QUICK_MOVE, "take the disenchanted sword");
             sleep(1200L);
             int[] afterCraft = this.counters();
-            String status = String.valueOf(this.minecraft.submit(() -> this.requests.lastStatus()).join());
+            String status = String.valueOf(this.minecraft.<ItemStackResponseStatus>submit(() -> this.requests.lastStatus()).join());
             boolean ok = afterCraft[0] > beforeCraft[0] && afterCraft[1] == beforeCraft[1];
             BedrockNative.LOGGER
                .info(
@@ -465,14 +454,14 @@ final class DevWorkstationsTest {
    }
 
    private int[] counters() {
-      return (int[])this.minecraft.submit(() -> new int[]{this.requests.accepted(), this.requests.rejected()}).join();
+      return this.minecraft.<int[]>submit(() -> new int[]{this.requests.accepted(), this.requests.rejected()}).join();
    }
 
    private void grindstone(int swords) {
       BlockPos grindstone = this.place(-1, "grindstone");
       this.open(grindstone, "grindstone", "grindstone", "grindstone.grindstone_screen", 3);
       this.clickItem(
-         stack -> stack.is(Items.IRON_SWORD) && stack.has(DataComponents.ENCHANTMENTS) && !((ItemEnchantments)stack.get(DataComponents.ENCHANTMENTS)).isEmpty(),
+         stack -> stack.is(Items.IRON_SWORD) && stack.has(DataComponents.ENCHANTMENTS) && !stack.get(DataComponents.ENCHANTMENTS).isEmpty(),
          "pick up the enchanted sword"
       );
       this.click(0, ContainerInput.PICKUP, "put it into the grindstone");
@@ -504,7 +493,7 @@ final class DevWorkstationsTest {
    }
 
    private static int enchantments(ItemStack stack) {
-      return stack.has(DataComponents.ENCHANTMENTS) ? ((ItemEnchantments)stack.get(DataComponents.ENCHANTMENTS)).size() : 0;
+      return stack.has(DataComponents.ENCHANTMENTS) ? stack.get(DataComponents.ENCHANTMENTS).size() : 0;
    }
 
    private void stonecutter() {
@@ -521,8 +510,8 @@ final class DevWorkstationsTest {
                int found = -1;
 
                for (int i = 0; i < menu.getVisibleRecipes().size(); i++) {
-                  Item item = ((SingleInputEntry)menu.getVisibleRecipes().entries().get(i)).recipe().optionDisplay() instanceof ItemStackSlotDisplay stack
-                     ? (Item)stack.stack().item().value()
+                  Item item = menu.getVisibleRecipes().entries().get(i).recipe().optionDisplay() instanceof ItemStackSlotDisplay stack
+                     ? stack.stack().item().value()
                      : Items.AIR;
                   shown.add(BuiltInRegistries.ITEM.getKey(item).getPath());
                   if (item == Items.STONE_BRICKS) {
@@ -557,9 +546,9 @@ final class DevWorkstationsTest {
       this.commands("give @s banner 1 15", "give @s red_dye 1");
       BlockPos loom = this.place(1, "loom");
       this.open(loom, "loom", "loom", "loom.loom_screen", 4);
-      this.clickItem(stack -> stack.is((Item)Items.BANNER.white()), "pick up the banner");
+      this.clickItem(stack -> stack.is(Items.BANNER.white()), "pick up the banner");
       this.click(0, ContainerInput.PICKUP, "put it into the loom");
-      this.clickItem(stack -> stack.is((Item)Items.DYE.red()), "pick up the dye");
+      this.clickItem(stack -> stack.is(Items.DYE.red()), "pick up the dye");
       this.click(1, ContainerInput.PICKUP, "put it into the dye slot");
       sleep(600L);
       int border = this.onClient(() -> {
@@ -874,7 +863,7 @@ final class DevWorkstationsTest {
       for (Holder<MobEffect> effect : powers) {
          boolean has = false;
 
-         for (int ix = 0; ix < 24 && !has; ix++) {
+         for (int i = 0; i < 24 && !has; i++) {
             has = this.onClient(() -> this.minecraft.player.hasEffect(effect));
             if (!has) {
                sleep(500L);
@@ -966,7 +955,7 @@ final class DevWorkstationsTest {
             .execute(
                () -> {
                   if (this.minecraft.player.containerMenu instanceof MerchantMenu menu && !menu.getOffers().isEmpty()) {
-                     MerchantOffer offer = (MerchantOffer)menu.getOffers().getFirst();
+                     MerchantOffer offer = menu.getOffers().getFirst();
                      cost[0] = BuiltInRegistries.ITEM.getKey(offer.getCostA().getItem()).getPath();
                      cost[1] = String.valueOf(offer.getCostA().getCount());
                      cost[2] = BuiltInRegistries.ITEM.getKey(offer.getResult().getItem()).getPath() + " " + offer.getResult().getCount();
@@ -1245,8 +1234,7 @@ final class DevWorkstationsTest {
       }
    }
 
-   @Nullable
-   private JsonUiContainerScreen jsonUiScreen() {
+   private @Nullable JsonUiContainerScreen jsonUiScreen() {
       return this.minecraft.gui.screen() instanceof JsonUiContainerScreen screen && screen.getMenu() == this.minecraft.player.containerMenu ? screen : null;
    }
 
@@ -1295,8 +1283,7 @@ final class DevWorkstationsTest {
       sleep(600L);
    }
 
-   @Nullable
-   private static UiControl optionButton(JsonUiContainerScreen screen, int index) {
+   private static @Nullable UiControl optionButton(JsonUiContainerScreen screen, int index) {
       UiControl root = screen.ui().instance().root();
       if (root == null) {
          return null;
@@ -1342,8 +1329,7 @@ final class DevWorkstationsTest {
       sleep(600L);
    }
 
-   @Nullable
-   private static UiControl editBox(JsonUiContainerScreen screen) {
+   private static @Nullable UiControl editBox(JsonUiContainerScreen screen) {
       UiControl[] found = new UiControl[]{null};
       UiControl root = screen.ui().instance().root();
       if (root != null) {

@@ -17,14 +17,14 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin({FirstPersonHandsAndItemsRenderer.class})
+@Mixin(FirstPersonHandsAndItemsRenderer.class)
 public abstract class FirstPersonHandsMixin {
    @Inject(
-      method = {"submitArmWithItem"},
-      at = {@At(
+      method = "submitArmWithItem",
+      at = @At(
          value = "INVOKE",
          target = "Lnet/minecraft/client/renderer/item/ItemStackRenderState;submit(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;III)V"
-      )}
+      )
    )
    private void bedrocknative$probeHeldItem(
       PlayerRenderState playerState,
@@ -45,11 +45,7 @@ public abstract class FirstPersonHandsMixin {
       }
    }
 
-   @Inject(
-      method = {"renderPlayerArm"},
-      at = {@At("HEAD")},
-      cancellable = true
-   )
+   @Inject(method = "renderPlayerArm", at = @At("HEAD"), cancellable = true)
    private void bedrocknative$bedrockArm(
       PoseStack poseStack,
       SubmitNodeCollector collector,
@@ -65,11 +61,7 @@ public abstract class FirstPersonHandsMixin {
       }
    }
 
-   @Inject(
-      method = {"renderPlayerHand"},
-      at = {@At("HEAD")},
-      cancellable = true
-   )
+   @Inject(method = "renderPlayerHand", at = @At("HEAD"), cancellable = true)
    private void bedrocknative$bedrockMapArm(
       PoseStack poseStack, SubmitNodeCollector collector, int lightCoords, HumanoidArm arm, PlayerRenderState playerState, CallbackInfo info
    ) {
@@ -79,12 +71,8 @@ public abstract class FirstPersonHandsMixin {
    }
 
    @ModifyArg(
-      method = {"submitHandsWithItems"},
-      at = {@At(
-         value = "INVOKE",
-         target = "Lcom/mojang/blaze3d/vertex/PoseStack;rotateDegrees(Lcom/mojang/math/Axis;F)V",
-         ordinal = 0
-      )},
+      method = "submitHandsWithItems",
+      at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/vertex/PoseStack;rotateDegrees(Lcom/mojang/math/Axis;F)V", ordinal = 0),
       index = 1
    )
    private float bedrocknative$noPitchSway(float angle) {
@@ -92,12 +80,8 @@ public abstract class FirstPersonHandsMixin {
    }
 
    @ModifyArg(
-      method = {"submitHandsWithItems"},
-      at = {@At(
-         value = "INVOKE",
-         target = "Lcom/mojang/blaze3d/vertex/PoseStack;rotateDegrees(Lcom/mojang/math/Axis;F)V",
-         ordinal = 1
-      )},
+      method = "submitHandsWithItems",
+      at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/vertex/PoseStack;rotateDegrees(Lcom/mojang/math/Axis;F)V", ordinal = 1),
       index = 1
    )
    private float bedrocknative$noYawSway(float angle) {

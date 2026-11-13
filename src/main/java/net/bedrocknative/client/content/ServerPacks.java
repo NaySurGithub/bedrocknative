@@ -26,8 +26,7 @@ public final class ServerPacks {
    private final Screen connecting;
    private final Runnable leave;
    private final Runnable stackApplied;
-   @Nullable
-   private volatile PackProgress progress;
+   private volatile @Nullable PackProgress progress;
    private volatile boolean leaving;
    private volatile boolean closed;
    private boolean applied;

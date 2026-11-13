@@ -46,11 +46,8 @@ public final class BedrockDecoratedPots {
       }
    }
 
-   @Nullable
-   public static WobbleStyle wobble(NbtMap tag) {
-      Number animation;
-
-      return switch (tag.get("animation") instanceof animation ? animation.intValue() : 0) {
+   public static @Nullable WobbleStyle wobble(NbtMap tag) {
+      return switch (tag.get("animation") instanceof Number animation ? animation.intValue() : 0) {
          case 1 -> WobbleStyle.NEGATIVE;
          case 2 -> WobbleStyle.POSITIVE;
          default -> null;

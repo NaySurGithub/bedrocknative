@@ -12,8 +12,7 @@ import net.bedrocknative.content.own.OwnUi;
 import org.jspecify.annotations.Nullable;
 
 public final class BaseContent {
-   @Nullable
-   private static volatile BaseContent.Snapshot snapshot;
+   private static volatile BaseContent.@Nullable Snapshot snapshot;
 
    private BaseContent() {
    }
@@ -32,19 +31,17 @@ public final class BaseContent {
       Optional<Path> install = BedrockInstall.vanillaResourcePack();
       if (install.isPresent()) {
          return new BaseContent.Snapshot(BaseContent.Kind.INSTALL, install.get(), hasUi(install.get()), null);
-      } else {
-         Optional<Path> folder = DownloadedBase.override();
-         if (folder.isPresent()) {
-            return new BaseContent.Snapshot(BaseContent.Kind.EMBEDDED, folder.get(), hasUi(folder.get()), null);
-         } else {
-            Optional<EmbeddedBase.Opened> embedded = EmbeddedBase.ready();
-            return embedded.isPresent()
-               ? new BaseContent.Snapshot(
-                  BaseContent.Kind.EMBEDDED, embedded.get().root(), embedded.get().pack().has("ui/_ui_defs.json"), embedded.get().pack()
-               )
-               : new BaseContent.Snapshot(BaseContent.Kind.NONE, null, false, null);
-         }
       }
+
+      Optional<Path> folder = DownloadedBase.override();
+      if (folder.isPresent()) {
+         return new BaseContent.Snapshot(BaseContent.Kind.EMBEDDED, folder.get(), hasUi(folder.get()), null);
+      }
+
+      Optional<EmbeddedBase.Opened> embedded = EmbeddedBase.ready();
+      return embedded.isPresent()
+         ? new BaseContent.Snapshot(BaseContent.Kind.EMBEDDED, embedded.get().root(), embedded.get().pack().has("ui/_ui_defs.json"), embedded.get().pack())
+         : new BaseContent.Snapshot(BaseContent.Kind.NONE, null, false, null);
    }
 
    static boolean hasUi(Path vanilla) {
@@ -143,7 +140,7 @@ public final class BaseContent {
       };
    }
 
-   public static enum Kind {
+   public enum Kind {
       INSTALL,
       EMBEDDED,
       NONE;
@@ -152,7 +149,7 @@ public final class BaseContent {
    public record Snapshot(BaseContent.Kind kind, @Nullable Path vanilla, boolean hasUi, @Nullable PackSource pack) {
    }
 
-   public static enum UiSource {
+   public enum UiSource {
       INSTALL,
       EMBEDDED,
       OWN,

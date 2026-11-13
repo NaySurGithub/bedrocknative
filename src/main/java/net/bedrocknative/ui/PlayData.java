@@ -28,8 +28,7 @@ public final class PlayData implements UiDataSource {
    static final String EXIT = "button.menu_exit";
    static final String TAB_LEFT = "button.menu_tab_left";
    static final String TAB_RIGHT = "button.menu_tab_right";
-   @Nullable
-   private PlayData.Actions actions;
+   private PlayData.@Nullable Actions actions;
    private List<PlayData.World> worlds = List.of();
    private List<PlayData.Lan> lan = List.of();
    private List<PlayData.Server> servers = List.of();
@@ -40,10 +39,10 @@ public final class PlayData implements UiDataSource {
    private long version = 1L;
 
    public PlayData(int tab) {
-      this.tab = Math.clamp((long)tab, 0, 2);
+      this.tab = Math.clamp(tab, 0, 2);
    }
 
-   public void actions(@Nullable PlayData.Actions target) {
+   public void actions(PlayData.@Nullable Actions target) {
       this.actions = target;
    }
 
@@ -52,7 +51,7 @@ public final class PlayData implements UiDataSource {
    }
 
    public void tab(int newTab) {
-      int clamped = Math.clamp((long)newTab, 0, 2);
+      int clamped = Math.clamp(newTab, 0, 2);
       if (clamped != this.tab) {
          this.tab = clamped;
          this.version++;
@@ -134,14 +133,12 @@ public final class PlayData implements UiDataSource {
       return !this.featured.isEmpty();
    }
 
-   @Nullable
-   private PlayData.Server selectedServer() {
+   private PlayData.@Nullable Server selectedServer() {
       int index = this.selected - 1000;
       return this.selected >= 1000 && this.selected < 100000 && index < this.servers.size() ? this.servers.get(index) : null;
    }
 
-   @Nullable
-   private PlayData.Server selectedFeatured() {
+   private PlayData.@Nullable Server selectedFeatured() {
       int index = this.selected - 100000;
       return this.selected >= 100000 && index < this.featured.size() ? this.featured.get(index) : null;
    }
@@ -326,9 +323,8 @@ public final class PlayData implements UiDataSource {
       };
    }
 
-   @Nullable
    @Override
-   public String kind(String collection, int index) {
+   public @Nullable String kind(String collection, int index) {
       return null;
    }
 
@@ -469,7 +465,7 @@ public final class PlayData implements UiDataSource {
    public record Server(String name, String address, PlayData.Status status) {
    }
 
-   public static enum State {
+   public enum State {
       UNKNOWN,
       PINGING,
       ONLINE,

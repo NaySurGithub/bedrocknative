@@ -27,9 +27,7 @@ public final class PartnerConsent {
             if (JsonParser.parseString(Files.readString(file, StandardCharsets.UTF_8)) instanceof JsonObject object
                && object.get("answer") instanceof JsonPrimitive answer
                && answer.isString()) {
-               String var11 = answer.getAsString();
-
-               return switch (var11) {
+               return switch (answer.getAsString()) {
                   case "refused" -> PartnerConsent.Answer.REFUSED;
                   case "accepted" -> {
                      if (object.get("host") instanceof JsonPrimitive named
@@ -48,7 +46,7 @@ public final class PartnerConsent {
          } else {
             return PartnerConsent.Answer.NONE;
          }
-      } catch (JsonParseException | IllegalStateException | IOException var10) {
+      } catch (IOException | JsonParseException | IllegalStateException e) {
          return PartnerConsent.Answer.NONE;
       }
    }
@@ -66,7 +64,7 @@ public final class PartnerConsent {
       Files.move(temp, file, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
    }
 
-   public static enum Answer {
+   public enum Answer {
       NONE,
       ACCEPTED,
       REFUSED;

@@ -23,8 +23,7 @@ public final class FrameWatch {
    private static final long APPLY_PARTS_NANOS = 2000000L;
    private final Consumer<String> hitchLog;
    private final Consumer<String> secondLog;
-   @Nullable
-   private final LongSupplier gcClock;
+   private final @Nullable LongSupplier gcClock;
    private long frameStart;
    private long frameGcStart;
    private long frameGcNanos;
@@ -523,7 +522,7 @@ public final class FrameWatch {
       return text.isEmpty() ? "" : text.append(" ms").toString();
    }
 
-   public static enum ApplyPart {
+   public enum ApplyPart {
       INSERT("insert"),
       SKY_SOURCES("sky sources"),
       EVICT("evict"),
@@ -533,7 +532,7 @@ public final class FrameWatch {
 
       private final String label;
 
-      private ApplyPart(String label) {
+      ApplyPart(String label) {
          this.label = label;
       }
 
@@ -542,7 +541,7 @@ public final class FrameWatch {
       }
    }
 
-   public static enum Bucket {
+   public enum Bucket {
       CHUNK_APPLY("chunk apply"),
       LIGHT("light"),
       LIGHT_UPDATES("light updates"),
@@ -570,7 +569,7 @@ public final class FrameWatch {
 
       private final String label;
 
-      private Bucket(String label) {
+      Bucket(String label) {
          this.label = label;
       }
 
@@ -621,33 +620,33 @@ public final class FrameWatch {
       public String slowFrames(int atMost) {
          if (this.slowFrames == 0) {
             return "no frame over 10 ms";
-         } else {
-            List<FrameWatch.Part> parts = new ArrayList<>();
-            long named = this.slowTickNanos;
-
-            for (FrameWatch.Bucket bucket : FrameWatch.BUCKETS) {
-               named += this.slowBucketNanos[bucket.ordinal()];
-               if (this.slowBucketNanos[bucket.ordinal()] >= 1000000L) {
-                  parts.add(new FrameWatch.Part(bucket.label, this.slowBucketNanos[bucket.ordinal()], 0));
-               }
-            }
-
-            if (this.slowTickNanos >= 1000000L) {
-               parts.add(new FrameWatch.Part("client ticks", this.slowTickNanos, 0));
-            }
-
-            parts.add(new FrameWatch.Part("other", Math.max(0L, this.slowFrameNanos - named), 0));
-            parts.sort(Comparator.comparingLong(FrameWatch.Part::nanos).reversed());
-            StringBuilder text = new StringBuilder(
-               String.format(Locale.ROOT, "%d frames over %d ms (%.0f ms): ", this.slowFrames, 10L, this.slowFrameNanos / 1000000.0)
-            );
-
-            for (int i = 0; i < Math.min(atMost, parts.size()); i++) {
-               text.append(i == 0 ? "" : ", ").append(parts.get(i).label()).append(' ').append(Math.round(parts.get(i).nanos() / 1000000.0));
-            }
-
-            return text.append(String.format(Locale.ROOT, " ms; GC %.0f ms", this.slowGcNanos / 1000000.0)).toString();
          }
+
+         List<FrameWatch.Part> parts = new ArrayList<>();
+         long named = this.slowTickNanos;
+
+         for (FrameWatch.Bucket bucket : FrameWatch.BUCKETS) {
+            named += this.slowBucketNanos[bucket.ordinal()];
+            if (this.slowBucketNanos[bucket.ordinal()] >= 1000000L) {
+               parts.add(new FrameWatch.Part(bucket.label, this.slowBucketNanos[bucket.ordinal()], 0));
+            }
+         }
+
+         if (this.slowTickNanos >= 1000000L) {
+            parts.add(new FrameWatch.Part("client ticks", this.slowTickNanos, 0));
+         }
+
+         parts.add(new FrameWatch.Part("other", Math.max(0L, this.slowFrameNanos - named), 0));
+         parts.sort(Comparator.comparingLong(FrameWatch.Part::nanos).reversed());
+         StringBuilder text = new StringBuilder(
+            String.format(Locale.ROOT, "%d frames over %d ms (%.0f ms): ", this.slowFrames, 10L, this.slowFrameNanos / 1000000.0)
+         );
+
+         for (int i = 0; i < Math.min(atMost, parts.size()); i++) {
+            text.append(i == 0 ? "" : ", ").append(parts.get(i).label()).append(' ').append(Math.round(parts.get(i).nanos() / 1000000.0));
+         }
+
+         return text.append(String.format(Locale.ROOT, " ms; GC %.0f ms", this.slowGcNanos / 1000000.0)).toString();
       }
 
       void slowFrame(long nanos, long[] frameBuckets, long tickNanos, long gcNanos) {

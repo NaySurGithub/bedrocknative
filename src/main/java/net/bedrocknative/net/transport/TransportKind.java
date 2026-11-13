@@ -11,7 +11,7 @@ public enum TransportKind {
    private final String id;
    private final String shown;
 
-   private TransportKind(String id, String shown) {
+   TransportKind(String id, String shown) {
       this.id = id;
       this.shown = shown;
    }
@@ -32,20 +32,19 @@ public enum TransportKind {
       return this != JAVA;
    }
 
-   @Nullable
-   public static TransportKind byId(@Nullable String id) {
+   public static @Nullable TransportKind byId(@Nullable String id) {
       if (id == null) {
          return null;
-      } else {
-         String lower = id.trim().toLowerCase(Locale.ROOT);
-
-         for (TransportKind kind : values()) {
-            if (kind.id.equals(lower)) {
-               return kind;
-            }
-         }
-
-         return null;
       }
+
+      String lower = id.trim().toLowerCase(Locale.ROOT);
+
+      for (TransportKind kind : values()) {
+         if (kind.id.equals(lower)) {
+            return kind;
+         }
+      }
+
+      return null;
    }
 }

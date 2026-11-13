@@ -1,6 +1,5 @@
 package net.bedrocknative.net.auth;
 
-import java.util.Objects;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 import net.bedrocknative.BedrockNative;
@@ -20,13 +19,8 @@ public final class XboxSignInFlow {
    private volatile boolean cancelled;
    private volatile boolean codeInstead;
    private boolean saving;
-   @Nullable
-   private Thread thread;
+   private @Nullable Thread thread;
    private final XboxBrowserSignIn.Listener windowListener = new XboxBrowserSignIn.Listener() {
-      {
-         Objects.requireNonNull(XboxSignInFlow.this);
-      }
-
       @Override
       public void opened(RedirectCapture.Window window) {
          XboxSignInFlow.this.publish(XboxSignInFlow.Snapshot.window(window));
@@ -46,8 +40,8 @@ public final class XboxSignInFlow {
       public boolean openInBrowser(String url) {
          try {
             return !XboxSignInFlow.this.cancelled && XboxSignInFlow.this.actions.openBrowser(url);
-         } catch (RuntimeException var3) {
-            BedrockNative.LOGGER.warn("Couldn't open the sign-in page: {}", var3.getClass().getSimpleName());
+         } catch (RuntimeException e) {
+            BedrockNative.LOGGER.warn("Couldn't open the sign-in page: {}", e.getClass().getSimpleName());
             return false;
          }
       }
@@ -57,9 +51,8 @@ public final class XboxSignInFlow {
          return XboxSignInFlow.this.actions.windowTitle();
       }
 
-      @Nullable
       @Override
-      public String language() {
+      public @Nullable String language() {
          return XboxSignInFlow.this.actions.languageTag();
       }
    };
@@ -89,11 +82,11 @@ public final class XboxSignInFlow {
    public synchronized void start() {
       if (this.thread != null) {
          throw new IllegalStateException("Already started");
-      } else {
-         this.thread = new Thread(this::run, "Xbox sign-in");
-         this.thread.setDaemon(true);
-         this.thread.start();
       }
+
+      this.thread = new Thread(this::run, "Xbox sign-in");
+      this.thread.setDaemon(true);
+      this.thread.start();
    }
 
    public synchronized boolean cancel() {
@@ -112,10 +105,10 @@ public final class XboxSignInFlow {
    public boolean useCodeInstead() {
       if (!this.snapshot.windowPart()) {
          return false;
-      } else {
-         this.codeInstead = true;
-         return true;
       }
+
+      this.codeInstead = true;
+      return true;
    }
 
    public void join(long millis) throws InterruptedException {
@@ -134,10 +127,6 @@ public final class XboxSignInFlow {
 
       try {
          BedrockAuthManager account = this.signer.signIn(new XboxAccount.CodePrompt() {
-            {
-               Objects.requireNonNull(XboxSignInFlow.this);
-            }
-
             @Override
             public void show(XboxTitle title, MsaDeviceCode code) {
                this.show(title, code, DeviceCodeLink.direct(code.getVerificationUri(), code.getUserCode(), null));
@@ -166,15 +155,13 @@ public final class XboxSignInFlow {
          this.publish(XboxSignInFlow.Snapshot.of(XboxSignInFlow.State.SAVING));
          XboxAccountStore.Entry entry = this.store.add(account, this.activate);
          this.publish(new XboxSignInFlow.Snapshot(XboxSignInFlow.State.DONE, null, null, null, false, entry, null, null, null));
-      } catch (Exception var4) {
-         if (!this.cancelled
-            && !(var4 instanceof InterruptedException)
-            && !(var4 instanceof SignInFailure window && window.reason() == SignInFailure.Reason.CLOSED)) {
-            XboxProblem.Diagnosis problem = XboxProblem.classify(var4);
-            BedrockNative.LOGGER.warn("Xbox sign-in failed: {} ({})", problem, var4.getClass().getSimpleName());
+      } catch (Exception e) {
+         if (!this.cancelled && !(e instanceof InterruptedException) && !(e instanceof SignInFailure window && window.reason() == SignInFailure.Reason.CLOSED)) {
+            XboxProblem.Diagnosis problem = XboxProblem.classify(e);
+            BedrockNative.LOGGER.warn("Xbox sign-in failed: {} ({})", problem, e.getClass().getSimpleName());
             this.publish(
                XboxSignInFlow.Snapshot.failed(
-                  var4 instanceof TimeoutException ? "The code expired before it was entered" : String.valueOf(var4.getMessage()), problem
+                  e instanceof TimeoutException ? "The code expired before it was entered" : String.valueOf(e.getMessage()), problem
                )
             );
          } else {
@@ -188,14 +175,14 @@ public final class XboxSignInFlow {
       if (!this.cancelled) {
          try {
             opened = this.actions.openBrowser(directUri);
-         } catch (RuntimeException var6) {
-            BedrockNative.LOGGER.warn("Couldn't open the sign-in page: {}", var6.getMessage());
+         } catch (RuntimeException e) {
+            BedrockNative.LOGGER.warn("Couldn't open the sign-in page: {}", e.getMessage());
          }
 
          try {
             this.actions.copyToClipboard(code.getUserCode());
-         } catch (RuntimeException var5) {
-            BedrockNative.LOGGER.warn("Couldn't copy the sign-in code: {}", var5.getMessage());
+         } catch (RuntimeException e) {
+            BedrockNative.LOGGER.warn("Couldn't copy the sign-in code: {}", e.getMessage());
          }
       }
 
@@ -209,10 +196,10 @@ public final class XboxSignInFlow {
    private synchronized boolean beginSaving() {
       if (this.cancelled) {
          return false;
-      } else {
-         this.saving = true;
-         return true;
       }
+
+      this.saving = true;
+      return true;
    }
 
    private void publish(XboxSignInFlow.Snapshot next) {
@@ -232,10 +219,10 @@ public final class XboxSignInFlow {
       @Nullable String directUri,
       @Nullable String code,
       boolean browserOpened,
-      @Nullable XboxAccountStore.Entry account,
+      XboxAccountStore.@Nullable Entry account,
       @Nullable String error,
-      @Nullable XboxProblem.Diagnosis problem,
-      @Nullable RedirectCapture.Window window
+      XboxProblem.@Nullable Diagnosis problem,
+      RedirectCapture.@Nullable Window window
    ) {
       public boolean finished() {
          return this.state == XboxSignInFlow.State.DONE || this.state == XboxSignInFlow.State.FAILED || this.state == XboxSignInFlow.State.CANCELLED;
@@ -258,7 +245,7 @@ public final class XboxSignInFlow {
       }
    }
 
-   public static enum State {
+   public enum State {
       STARTING,
       WAITING_FOR_WINDOW,
       SIGNING_IN,

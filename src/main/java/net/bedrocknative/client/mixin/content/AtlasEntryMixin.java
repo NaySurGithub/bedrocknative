@@ -14,19 +14,13 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(
-   targets = {"net.minecraft.client.resources.model.sprite.AtlasManager$AtlasEntry"}
-)
+@Mixin(targets = "net.minecraft.client.resources.model.sprite.AtlasManager$AtlasEntry")
 public abstract class AtlasEntryMixin {
    @Shadow
    @Final
    private AtlasConfig config;
 
-   @Inject(
-      method = {"scheduleLoad"},
-      at = {@At("HEAD")},
-      cancellable = true
-   )
+   @Inject(method = "scheduleLoad", at = @At("HEAD"), cancellable = true)
    private void bedrocknative$keepUntouchedAtlases(
       ResourceManager resourceManager, Executor executor, int maxMipmapLevels, CallbackInfoReturnable<CompletableFuture<Preparations>> cir
    ) {
@@ -35,11 +29,7 @@ public abstract class AtlasEntryMixin {
       }
    }
 
-   @Inject(
-      method = {"scheduleLoad"},
-      at = {@At("RETURN")},
-      cancellable = true
-   )
+   @Inject(method = "scheduleLoad", at = @At("RETURN"), cancellable = true)
    private void bedrocknative$composeRestitchedAtlases(
       ResourceManager resourceManager, Executor executor, int maxMipmapLevels, CallbackInfoReturnable<CompletableFuture<Preparations>> cir
    ) {

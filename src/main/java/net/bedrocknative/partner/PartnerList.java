@@ -55,7 +55,7 @@ public final class PartnerList {
          if (reader.peek() != JsonToken.END_DOCUMENT) {
             throw new IOException("text after the JSON document");
          }
-      } catch (JsonParseException | IllegalStateException | StackOverflowError | IOException var15) {
+      } catch (IOException | JsonParseException | IllegalStateException | StackOverflowError e) {
          throw new IOException("not JSON");
       }
 
@@ -68,7 +68,7 @@ public final class PartnerList {
                throw new IOException("no \"servers\" array");
             } else {
                ArrayList var17 = new ArrayList();
-               ArrayList kept = new ArrayList();
+               ArrayList<PartnerList.Indexed> kept = new ArrayList<>();
                String listHost = listUri.getHost() == null ? "" : listUri.getHost().toLowerCase(Locale.ROOT);
 
                for (int i = 0; i < array.size(); i++) {
@@ -82,8 +82,8 @@ public final class PartnerList {
                      if (entry != null) {
                         kept.add(new PartnerList.Indexed(i, entry));
                      }
-                  } catch (IOException var14) {
-                     var17.add("entry " + i + " dropped: " + var14.getMessage());
+                  } catch (IOException e) {
+                     var17.add("entry " + i + " dropped: " + e.getMessage());
                   }
                }
 
@@ -106,8 +106,7 @@ public final class PartnerList {
       }
    }
 
-   @Nullable
-   private static PartnerList.Entry entry(JsonElement element, Instant now, String listHost, PartnerGuard guard, List<String> problems, int index) throws IOException {
+   private static PartnerList.@Nullable Entry entry(JsonElement element, Instant now, String listHost, PartnerGuard guard, List<String> problems, int index) throws IOException {
       if (!(element instanceof JsonObject entry)) {
          throw new IOException("not an object");
       } else {
@@ -172,16 +171,16 @@ public final class PartnerList {
             text = text.strip();
             if (text.codePointCount(0, text.length()) > max) {
                throw new IOException(key + " longer than " + max + " characters");
-            } else {
-               for (int i = 0; i < text.length(); i++) {
-                  char c = text.charAt(i);
-                  if (Character.isISOControl(c) || c == 167 || c >= 8203 && c <= 8207 || c >= 8232 && c <= 8238 || c >= 8294 && c <= 8297 || c == '\ufeff') {
-                     throw new IOException(key + " has a control, formatting or direction character");
-                  }
-               }
-
-               return text;
             }
+
+            for (int i = 0; i < text.length(); i++) {
+               char c = text.charAt(i);
+               if (Character.isISOControl(c) || c == 167 || c >= 8203 && c <= 8207 || c >= 8232 && c <= 8238 || c >= 8294 && c <= 8297 || c == '\ufeff') {
+                  throw new IOException(key + " has a control, formatting or direction character");
+               }
+            }
+
+            return text;
          } else {
             throw new IOException(key + " must be a string");
          }
@@ -190,13 +189,12 @@ public final class PartnerList {
       }
    }
 
-   @Nullable
-   static Integer integer(@Nullable JsonElement value) {
+   static @Nullable Integer integer(@Nullable JsonElement value) {
       if (value instanceof JsonPrimitive primitive && primitive.isNumber()) {
          try {
             BigDecimal number = primitive.getAsBigDecimal();
             return number.stripTrailingZeros().scale() <= 0 ? number.intValueExact() : null;
-         } catch (NumberFormatException | ArithmeticException var3) {
+         } catch (ArithmeticException | NumberFormatException e) {
             return null;
          }
       } else {
@@ -204,8 +202,7 @@ public final class PartnerList {
       }
    }
 
-   @Nullable
-   private static Instant date(JsonObject entry, String key, boolean end) throws IOException {
+   private static @Nullable Instant date(JsonObject entry, String key, boolean end) throws IOException {
       JsonElement value = entry.get(key);
       if (value != null && !value.isJsonNull()) {
          if (value instanceof JsonPrimitive primitive && primitive.isString()) {
@@ -218,7 +215,7 @@ public final class PartnerList {
                } else {
                   return OffsetDateTime.parse(text).toInstant();
                }
-            } catch (DateTimeParseException var7) {
+            } catch (DateTimeParseException e) {
                throw new IOException(key + " is not a date (YYYY-MM-DD or 2026-11-30T23:00:00+01:00)");
             }
          } else {
@@ -229,8 +226,7 @@ public final class PartnerList {
       }
    }
 
-   @Nullable
-   private static PartnerList.ImageRef image(
+   private static PartnerList.@Nullable ImageRef image(
       JsonObject entry, String key, PartnerImage.Kind kind, String listHost, PartnerGuard guard, List<String> problems, int index
    ) {
       JsonElement value = entry.get(key);
@@ -240,31 +236,35 @@ public final class PartnerList {
                String text = primitive.getAsString().strip();
                if (text.isEmpty()) {
                   return null;
-               } else if (PartnerImage.isDataUri(text)) {
+               }
+
+               if (PartnerImage.isDataUri(text)) {
                   PartnerImage.decodeDataUri(text, kind);
                   return new PartnerList.ImageRef(text, true);
-               } else if (text.length() > 512) {
-                  throw new IOException("URL longer than 512 characters");
-               } else {
-                  URI uri;
-                  try {
-                     uri = new URI(text);
-                  } catch (URISyntaxException var12) {
-                     throw new IOException("not a URL");
-                  }
+               }
 
-                  guard.checkForm(uri);
-                  if (!uri.getHost().toLowerCase(Locale.ROOT).equals(listHost)) {
-                     throw new IOException("pictures by URL must be on the list's own host (" + listHost + ")");
-                  } else {
-                     return new PartnerList.ImageRef(uri.toString(), false);
-                  }
+               if (text.length() > 512) {
+                  throw new IOException("URL longer than 512 characters");
+               }
+
+               URI uri;
+               try {
+                  uri = new URI(text);
+               } catch (URISyntaxException e) {
+                  throw new IOException("not a URL");
+               }
+
+               guard.checkForm(uri);
+               if (!uri.getHost().toLowerCase(Locale.ROOT).equals(listHost)) {
+                  throw new IOException("pictures by URL must be on the list's own host (" + listHost + ")");
+               } else {
+                  return new PartnerList.ImageRef(uri.toString(), false);
                }
             } else {
                throw new IOException("must be a string");
             }
-         } catch (IOException var13) {
-            problems.add("entry " + index + " " + key + " dropped: " + var13.getMessage());
+         } catch (IOException e) {
+            problems.add("entry " + index + " " + key + " dropped: " + e.getMessage());
             return null;
          }
       } else {
@@ -288,34 +288,36 @@ public final class PartnerList {
 
       if (address.isEmpty() || address.length() > 253) {
          throw new IOException("address is empty or too long");
-      } else if (address.indexOf(58) < 0 && !IPV4.matcher(address).matches()) {
+      }
+
+      if (address.indexOf(58) < 0 && !IPV4.matcher(address).matches()) {
          String[] labels = address.split("\\.", -1);
          if (labels.length < 2) {
             throw new IOException("address needs a domain (play.example.net)");
-         } else {
-            for (String label : labels) {
-               if (!LABEL.matcher(label).matches()) {
-                  throw new IOException("address has an invalid label \"" + label + "\"");
-               }
-            }
+         }
 
-            if (labels[labels.length - 1].chars().allMatch(Character::isDigit)) {
-               throw new IOException("address has a numeric top-level domain");
-            } else {
-               for (String suffix : PRIVATE_SUFFIXES) {
-                  if (address.equals(suffix) || address.endsWith("." + suffix)) {
-                     throw new IOException("address is a local-network name (." + suffix + ")");
-                  }
-               }
-
-               return address;
+         for (String label : labels) {
+            if (!LABEL.matcher(label).matches()) {
+               throw new IOException("address has an invalid label \"" + label + "\"");
             }
          }
+
+         if (labels[labels.length - 1].chars().allMatch(Character::isDigit)) {
+            throw new IOException("address has a numeric top-level domain");
+         }
+
+         for (String suffix : PRIVATE_SUFFIXES) {
+            if (address.equals(suffix) || address.endsWith("." + suffix)) {
+               throw new IOException("address is a local-network name (." + suffix + ")");
+            }
+         }
+
+         return address;
       } else {
          InetAddress literal;
          try {
             literal = InetAddress.ofLiteral(address);
-         } catch (IllegalArgumentException var8) {
+         } catch (IllegalArgumentException e) {
             throw new IOException("address is not a valid IP literal");
          }
 
@@ -334,8 +336,8 @@ public final class PartnerList {
       int order,
       String message,
       String description,
-      @Nullable PartnerList.ImageRef icon,
-      @Nullable PartnerList.ImageRef banner,
+      PartnerList.@Nullable ImageRef icon,
+      PartnerList.@Nullable ImageRef banner,
       @Nullable Instant starts,
       @Nullable Instant ends
    ) {
@@ -348,11 +350,9 @@ public final class PartnerList {
    }
 
    public record Result(List<PartnerList.Entry> entries, List<String> problems) {
-      public Result(List<PartnerList.Entry> entries, List<String> problems) {
+      public Result {
          entries = List.copyOf(entries);
          problems = List.copyOf(problems);
-         this.entries = entries;
-         this.problems = problems;
       }
    }
 }

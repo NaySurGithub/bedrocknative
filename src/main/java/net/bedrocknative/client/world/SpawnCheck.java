@@ -32,17 +32,14 @@ public final class SpawnCheck {
    private static final int GIVE_UP_TICKS = 200;
    private static final int SETTLE_TICKS = 10;
    private static final int GROUND_SEARCH = 64;
-   @Nullable
-   private static volatile SpawnCheck.Look last;
-   @Nullable
-   private String pending;
+   private static volatile SpawnCheck.@Nullable Look last;
+   private @Nullable String pending;
    private int lines;
    private int waited;
    private int settled;
    private static final Set<Integer> TRACED_CUSTOM_SLOTS = ConcurrentHashMap.newKeySet();
 
-   @Nullable
-   public static SpawnCheck.Look last() {
+   public static SpawnCheck.@Nullable Look last() {
       return last;
    }
 
@@ -166,9 +163,9 @@ public final class SpawnCheck {
          public String name(int x, int y, int z) {
             BlockState state = level.getBlockState(new BlockPos(x, y, z));
             String name = BuiltInRegistries.BLOCK.getKey(state.getBlock()).toString();
-            String values = state.getValues().<CharSequence>map(Value::toString).collect(Collectors.joining(","));
+            String values = state.getValues().map(Value::toString).collect(Collectors.joining(","));
             if (state.getBlock() instanceof CarrierBlock) {
-               int slot = (Integer)state.getValue(CarrierBlock.SLOT);
+               int slot = state.getValue(CarrierBlock.SLOT);
                if (SpawnCheck.TRACED_CUSTOM_SLOTS.add(slot)) {
                   CustomBlockState data = CarrierBlock.data(state);
                   BedrockNative.LOGGER

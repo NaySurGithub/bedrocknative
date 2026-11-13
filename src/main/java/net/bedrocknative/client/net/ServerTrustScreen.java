@@ -28,10 +28,8 @@ public final class ServerTrustScreen extends Screen {
    private final TrustPrompt prompt;
    private final Component message;
    private final Component keyLine;
-   @Nullable
-   private Button trust;
-   @Nullable
-   private Button doNotTrust;
+   private @Nullable Button trust;
+   private @Nullable Button doNotTrust;
 
    private ServerTrustScreen(ConnectScreen connecting, UntrustedServerException untrusted, TrustPrompt prompt) {
       super(Component.literal(untrusted.keyChanged() ? "The server's key changed" : text("permissions.servertrust.title", "Trust this server?", List.of())));
@@ -88,28 +86,27 @@ public final class ServerTrustScreen extends Screen {
    private static String text(String key, String english, List<String> parameters) {
       return BedrockText.lookupKey(key) != null
          ? BedrockText.translate(key, parameters)
-         : english.replace("%1$s", (CharSequence)(parameters.isEmpty() ? "" : parameters.getFirst()));
+         : english.replace("%1$s", parameters.isEmpty() ? "" : parameters.getFirst());
    }
 
+   @Override
    protected void init() {
       if (this.untrusted.keyChanged()) {
          int left = this.width / 2 - 140;
          int y = this.height / 2 + 12;
-         this.doNotTrust = (Button)this.addRenderableWidget(
-            Button.builder(Component.literal("Cancel"), button -> this.refuse()).bounds(left, y, 280, 20).build()
-         );
-         this.trust = (Button)this.addRenderableWidget(
+         this.doNotTrust = this.addRenderableWidget(Button.builder(Component.literal("Cancel"), button -> this.refuse()).bounds(left, y, 280, 20).build());
+         this.trust = this.addRenderableWidget(
             Button.builder(Component.literal("Trust the new key and replace the old one"), button -> this.trust()).bounds(left, y + 24, 280, 20).build()
          );
       } else {
          int y = this.height / 2 + 20;
          int left = this.width / 2 - 150 - 4;
-         this.trust = (Button)this.addRenderableWidget(
+         this.trust = this.addRenderableWidget(
             Button.builder(Component.literal(text("permissions.servertrust.button.trust", "Trust and Join", List.of())), button -> this.trust())
                .bounds(left, y, 150, 20)
                .build()
          );
-         this.doNotTrust = (Button)this.addRenderableWidget(
+         this.doNotTrust = this.addRenderableWidget(
             Button.builder(Component.literal(text("permissions.servertrust.button.doNotTrust", "Don't Trust", List.of())), button -> this.refuse())
                .bounds(this.width / 2 + 4, y, 150, 20)
                .build()
@@ -117,6 +114,7 @@ public final class ServerTrustScreen extends Screen {
       }
    }
 
+   @Override
    protected void setInitialFocus() {
       if (this.doNotTrust != null) {
          this.setInitialFocus(this.doNotTrust);
@@ -125,13 +123,11 @@ public final class ServerTrustScreen extends Screen {
       }
    }
 
-   @Nullable
-   public Button trustButton() {
+   public @Nullable Button trustButton() {
       return this.trust;
    }
 
-   @Nullable
-   public Button doNotTrustButton() {
+   public @Nullable Button doNotTrustButton() {
       return this.doNotTrust;
    }
 
@@ -158,10 +154,12 @@ public final class ServerTrustScreen extends Screen {
       this.prompt.decide(false);
    }
 
+   @Override
    public void onClose() {
       this.refuse();
    }
 
+   @Override
    public void removed() {
       super.removed();
       if (!this.prompt.isDone()) {
@@ -169,6 +167,7 @@ public final class ServerTrustScreen extends Screen {
       }
    }
 
+   @Override
    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
       super.extractRenderState(graphics, mouseX, mouseY, a);
       int y = this.height / 2 - 50;

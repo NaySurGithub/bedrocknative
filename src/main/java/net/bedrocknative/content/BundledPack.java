@@ -22,13 +22,10 @@ public final class BundledPack implements PackSource {
       String normalized = PackStack.normalize(path);
       if (normalized == null) {
          return Optional.empty();
-      } else {
-         Optional var4;
-         try (InputStream in = this.loader.getResourceAsStream(this.root + "/" + normalized)) {
-            var4 = in == null ? Optional.empty() : Optional.of(in.readAllBytes());
-         }
+      }
 
-         return var4;
+      try (InputStream in = this.loader.getResourceAsStream(this.root + "/" + normalized)) {
+         return in == null ? Optional.empty() : Optional.of(in.readAllBytes());
       }
    }
 

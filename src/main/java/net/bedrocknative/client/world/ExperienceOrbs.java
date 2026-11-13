@@ -50,7 +50,9 @@ public final class ExperienceOrbs {
                orb -> {
                   if (orb.isRemoved()) {
                      return true;
-                  } else if (player.isAlive()
+                  }
+
+                  if (player.isAlive()
                      && !player.isSpectator()
                      && orb.distanceToSqr(player.getX(), player.getY() + player.getBbHeight() / 2.0F, player.getZ()) < 1.0) {
                      this.minecraft.getConnection().handleTakeItemEntity(new ClientboundTakeItemEntityPacket(orb.getId(), player.getId(), 1));

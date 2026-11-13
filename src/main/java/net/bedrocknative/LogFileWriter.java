@@ -56,7 +56,7 @@ final class LogFileWriter {
 
             try {
                TimeUnit.NANOSECONDS.timedWait(this.written, left);
-            } catch (InterruptedException var12) {
+            } catch (InterruptedException e) {
                Thread.currentThread().interrupt();
                return false;
             }
@@ -124,10 +124,10 @@ final class LogFileWriter {
                this.written.notifyAll();
             }
          }
-      } catch (InterruptedException var19) {
+      } catch (InterruptedException e) {
          Thread.currentThread().interrupt();
-      } catch (RuntimeException | IOException var20) {
-         this.fail(var20);
+      } catch (IOException | RuntimeException e) {
+         this.fail(e);
       } finally {
          if (file != null) {
             try {

@@ -5,6 +5,5 @@ import org.jspecify.annotations.Nullable;
 public interface UiTextures {
    UiTextures NONE = (texture, fileSystem) -> null;
 
-   @Nullable
-   UiTextureInfo info(String var1, String var2);
+   @Nullable UiTextureInfo info(String var1, String var2);
 }

@@ -39,8 +39,7 @@ public final class UiLength {
       return new UiLength(UiLength.Kind.TERMS, pixels, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F);
    }
 
-   @Nullable
-   public static UiLength parse(@Nullable JsonElement element) {
+   public static @Nullable UiLength parse(@Nullable JsonElement element) {
       if (element != null && !element.isJsonNull()) {
          if (element instanceof JsonPrimitive primitive) {
             if (primitive.isNumber()) {
@@ -58,8 +57,7 @@ public final class UiLength {
       }
    }
 
-   @Nullable
-   public static UiLength parse(UiValue value) {
+   public static @Nullable UiLength parse(UiValue value) {
       return switch (value.kind()) {
          case NUMBER -> px((float)value.asNumber());
          case STRING -> parse(value.asString());
@@ -67,8 +65,7 @@ public final class UiLength {
       };
    }
 
-   @Nullable
-   public static UiLength[] pair(UiValue value) {
+   public static UiLength @Nullable [] pair(UiValue value) {
       JsonArray array = value.array();
       if (array != null && array.size() == 2) {
          UiLength x = parse(array.get(0));
@@ -79,8 +76,7 @@ public final class UiLength {
       }
    }
 
-   @Nullable
-   public static UiLength parse(String text) {
+   public static @Nullable UiLength parse(String text) {
       UiLength known = PARSED.get(text);
       if (known == null) {
          UiLength parsed = parseText(text);
@@ -93,87 +89,88 @@ public final class UiLength {
       return known == UNPARSED ? null : known;
    }
 
-   @Nullable
-   private static UiLength parseText(String text) {
+   private static @Nullable UiLength parseText(String text) {
       String s = text.trim();
       if (s.equalsIgnoreCase("default")) {
          return DEFAULT;
-      } else if (s.equalsIgnoreCase("fill")) {
+      }
+
+      if (s.equalsIgnoreCase("fill")) {
          return FILL;
-      } else {
-         float[] terms = new float[7];
-         int i = 0;
-         int length = s.length();
-         boolean first = true;
+      }
 
-         while (true) {
-            i = skipSpaces(s, i);
-            if (i >= length) {
-               if (first) {
-                  return null;
-               }
+      float[] terms = new float[7];
+      int i = 0;
+      int length = s.length();
+      boolean first = true;
 
-               return new UiLength(UiLength.Kind.TERMS, terms[0], terms[1], terms[2], terms[3], terms[4], terms[5], terms[6]);
-            }
-
-            float sign = 1.0F;
-            char c = s.charAt(i);
-            if (c != '+' && c != '-') {
-               if (!first) {
-                  return null;
-               }
-            } else {
-               sign = c == '-' ? -1.0F : 1.0F;
-               i = skipSpaces(s, i + 1);
-            }
-
-            int start = i;
-
-            while (i < length && (Character.isDigit(s.charAt(i)) || s.charAt(i) == '.')) {
-               i++;
-            }
-
-            if (start == i) {
+      while (true) {
+         i = skipSpaces(s, i);
+         if (i >= length) {
+            if (first) {
                return null;
             }
 
-            float number;
-            try {
-               number = Float.parseFloat(s.substring(start, i)) * sign;
-            } catch (NumberFormatException var11) {
-               return null;
-            }
-
-            i = skipSpaces(s, i);
-            int unit;
-            if (s.startsWith("%cm", i)) {
-               unit = 3;
-               i += 3;
-            } else if (s.startsWith("%sm", i)) {
-               unit = 4;
-               i += 3;
-            } else if (s.startsWith("%c", i)) {
-               unit = 2;
-               i += 2;
-            } else if (s.startsWith("%x", i)) {
-               unit = 5;
-               i += 2;
-            } else if (s.startsWith("%y", i)) {
-               unit = 6;
-               i += 2;
-            } else if (s.startsWith("%", i)) {
-               unit = 1;
-               i++;
-            } else if (s.startsWith("px", i)) {
-               unit = 0;
-               i += 2;
-            } else {
-               unit = 0;
-            }
-
-            terms[unit] += unit == 0 ? number : number / 100.0F;
-            first = false;
+            return new UiLength(UiLength.Kind.TERMS, terms[0], terms[1], terms[2], terms[3], terms[4], terms[5], terms[6]);
          }
+
+         float sign = 1.0F;
+         char c = s.charAt(i);
+         if (c != '+' && c != '-') {
+            if (!first) {
+               return null;
+            }
+         } else {
+            sign = c == '-' ? -1.0F : 1.0F;
+            i = skipSpaces(s, i + 1);
+         }
+
+         int start = i;
+
+         while (i < length && (Character.isDigit(s.charAt(i)) || s.charAt(i) == '.')) {
+            i++;
+         }
+
+         if (start == i) {
+            return null;
+         }
+
+         float number;
+         try {
+            number = Float.parseFloat(s.substring(start, i)) * sign;
+         } catch (NumberFormatException e) {
+            return null;
+         }
+
+         i = skipSpaces(s, i);
+         int unit;
+         if (s.startsWith("%cm", i)) {
+            unit = 3;
+            i += 3;
+         } else if (s.startsWith("%sm", i)) {
+            unit = 4;
+            i += 3;
+         } else if (s.startsWith("%c", i)) {
+            unit = 2;
+            i += 2;
+         } else if (s.startsWith("%x", i)) {
+            unit = 5;
+            i += 2;
+         } else if (s.startsWith("%y", i)) {
+            unit = 6;
+            i += 2;
+         } else if (s.startsWith("%", i)) {
+            unit = 1;
+            i++;
+         } else if (s.startsWith("px", i)) {
+            unit = 0;
+            i += 2;
+         } else {
+            unit = 0;
+         }
+
+         terms[unit] += unit == 0 ? number : number / 100.0F;
+         first = false;
       }
    }
 
@@ -234,17 +231,17 @@ public final class UiLength {
    public String toString() {
       if (this.kind != UiLength.Kind.TERMS) {
          return this.kind.name().toLowerCase();
-      } else {
-         StringBuilder text = new StringBuilder();
-         append(text, this.px, "px");
-         append(text, this.parent * 100.0F, "%");
-         append(text, this.children * 100.0F, "%c");
-         append(text, this.largestChild * 100.0F, "%cm");
-         append(text, this.largestSibling * 100.0F, "%sm");
-         append(text, this.width * 100.0F, "%x");
-         append(text, this.height * 100.0F, "%y");
-         return text.isEmpty() ? "0px" : text.toString();
       }
+
+      StringBuilder text = new StringBuilder();
+      append(text, this.px, "px");
+      append(text, this.parent * 100.0F, "%");
+      append(text, this.children * 100.0F, "%c");
+      append(text, this.largestChild * 100.0F, "%cm");
+      append(text, this.largestSibling * 100.0F, "%sm");
+      append(text, this.width * 100.0F, "%x");
+      append(text, this.height * 100.0F, "%y");
+      return text.isEmpty() ? "0px" : text.toString();
    }
 
    private static void append(StringBuilder text, float value, String unit) {
@@ -259,7 +256,7 @@ public final class UiLength {
       }
    }
 
-   public static enum Kind {
+   public enum Kind {
       DEFAULT,
       FILL,
       TERMS;

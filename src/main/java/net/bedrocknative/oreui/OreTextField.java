@@ -59,25 +59,25 @@ public final class OreTextField {
       String clean = this.filter(typed);
       if (clean.isEmpty()) {
          return false;
-      } else {
-         int from = Math.min(this.cursor, this.anchor);
-         int to = Math.max(this.cursor, this.anchor);
-         String next = this.text.substring(0, from) + clean + this.text.substring(to);
-         if (next.length() > this.maxLength) {
-            int room = this.maxLength - (this.text.length() - (to - from));
-            if (room <= 0) {
-               return false;
-            }
+      }
 
-            clean = clean.substring(0, Math.min(clean.length(), room));
-            next = this.text.substring(0, from) + clean + this.text.substring(to);
+      int from = Math.min(this.cursor, this.anchor);
+      int to = Math.max(this.cursor, this.anchor);
+      String next = this.text.substring(0, from) + clean + this.text.substring(to);
+      if (next.length() > this.maxLength) {
+         int room = this.maxLength - (this.text.length() - (to - from));
+         if (room <= 0) {
+            return false;
          }
 
-         this.text = next;
-         this.cursor = from + clean.length();
-         this.anchor = this.cursor;
-         return true;
+         clean = clean.substring(0, Math.min(clean.length(), room));
+         next = this.text.substring(0, from) + clean + this.text.substring(to);
       }
+
+      this.text = next;
+      this.cursor = from + clean.length();
+      this.anchor = this.cursor;
+      return true;
    }
 
    public boolean key(OreKey key, boolean shift, boolean control, Supplier<String> clipboard, Consumer<String> copy) {
@@ -284,8 +284,7 @@ public final class OreTextField {
       return this.text;
    }
 
-   @Nullable
-   public String selected() {
+   public @Nullable String selected() {
       return this.hasSelection() ? this.selection() : null;
    }
 }

@@ -8,31 +8,29 @@ public sealed interface UiDrawCommand permits UiDrawCommand.Image, UiDrawCommand
 
    float z();
 
-   @Nullable
-   float[] clip();
+   float @Nullable [] clip();
 
-   public static enum Alignment {
+   enum Alignment {
       LEFT,
       CENTER,
       RIGHT;
    }
 
-   public record Custom(UiControl control, String renderer, float x, float y, float w, float h, int argb, @Nullable float[] clip, float z)
-      implements UiDrawCommand {
+   record Custom(UiControl control, String renderer, float x, float y, float w, float h, int argb, float @Nullable [] clip, float z) implements UiDrawCommand {
    }
 
-   public record Fill(UiControl control, float x, float y, float w, float h, int argb, @Nullable float[] clip, float z) implements UiDrawCommand {
+   record Fill(UiControl control, float x, float y, float w, float h, int argb, float @Nullable [] clip, float z) implements UiDrawCommand {
    }
 
-   public record Image(
-      UiControl control, UiTextureInfo texture, List<UiDrawCommand.Quad> quads, int argb, boolean bilinear, boolean grayscale, @Nullable float[] clip, float z
+   record Image(
+      UiControl control, UiTextureInfo texture, List<UiDrawCommand.Quad> quads, int argb, boolean bilinear, boolean grayscale, float @Nullable [] clip, float z
    ) implements UiDrawCommand {
    }
 
-   public record Quad(float x, float y, float w, float h, float u0, float v0, float u1, float v1) {
+   record Quad(float x, float y, float w, float h, float u0, float v0, float u1, float v1) {
    }
 
-   public record Text(
+   record Text(
       UiControl control,
       List<String> lines,
       float x,
@@ -44,7 +42,7 @@ public sealed interface UiDrawCommand permits UiDrawCommand.Image, UiDrawCommand
       UiFont font,
       int argb,
       boolean shadow,
-      @Nullable float[] clip,
+      float @Nullable [] clip,
       float z
    ) implements UiDrawCommand {
    }

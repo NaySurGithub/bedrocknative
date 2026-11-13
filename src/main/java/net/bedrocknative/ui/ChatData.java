@@ -20,13 +20,12 @@ public final class ChatData implements UiDataSource {
    private static final String PANEL = "auto_complete_panel";
    private static final String GRID = "auto_complete_grid";
    private static final String ROW_BUTTON = "autocomplete_button";
-   @Nullable
-   private ChatData.Actions actions;
+   private ChatData.@Nullable Actions actions;
    private String text = "";
    private List<ChatData.Line> lines = List.of();
    private long version = 1L;
 
-   public void actions(@Nullable ChatData.Actions target) {
+   public void actions(ChatData.@Nullable Actions target) {
       this.actions = target;
    }
 
@@ -74,24 +73,27 @@ public final class ChatData implements UiDataSource {
    public UiValue item(String collection, int index, String name) {
       if (!collection.equals("auto_complete")) {
          return UiValue.NULL;
-      } else if (index < 0) {
-         return name.equals("#get_grid_size") ? UiValue.array(1.0, this.lines.size()) : UiValue.NULL;
-      } else if (index >= this.lines.size()) {
-         return UiValue.NULL;
-      } else {
-         ChatData.Line line = this.lines.get(index);
-
-         return switch (name) {
-            case "#auto_complete_text" -> UiValue.of(line.text());
-            case "#is_autocomplete_suggestion" -> UiValue.of(line.suggestion());
-            default -> UiValue.NULL;
-         };
       }
+
+      if (index < 0) {
+         return name.equals("#get_grid_size") ? UiValue.array(1.0, this.lines.size()) : UiValue.NULL;
+      }
+
+      if (index >= this.lines.size()) {
+         return UiValue.NULL;
+      }
+
+      ChatData.Line line = this.lines.get(index);
+
+      return switch (name) {
+         case "#auto_complete_text" -> UiValue.of(line.text());
+         case "#is_autocomplete_suggestion" -> UiValue.of(line.suggestion());
+         default -> UiValue.NULL;
+      };
    }
 
-   @Nullable
    @Override
-   public String kind(String collection, int index) {
+   public @Nullable String kind(String collection, int index) {
       return null;
    }
 
@@ -132,14 +134,12 @@ public final class ChatData implements UiDataSource {
       }
    }
 
-   @Nullable
-   public static float[] autocompleteArea(UiScreenInstance instance) {
+   public static float @Nullable [] autocompleteArea(UiScreenInstance instance) {
       UiControl grid = instance.find("auto_complete_grid");
       return grid != null && grid.visible() && grid.height() > 0.0F ? new float[]{grid.x(), grid.y(), grid.width(), grid.height()} : null;
    }
 
-   @Nullable
-   public static UiControl rowButton(UiScreenInstance instance, int index) {
+   public static @Nullable UiControl rowButton(UiScreenInstance instance, int index) {
       UiControl grid = instance.find("auto_complete_grid");
       if (grid != null && index >= 0) {
          for (UiControl item : grid.children()) {

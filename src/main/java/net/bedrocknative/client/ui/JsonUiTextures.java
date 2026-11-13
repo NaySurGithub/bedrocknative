@@ -17,26 +17,29 @@ final class JsonUiTextures implements UiTextures {
       this.pack = pack;
    }
 
-   @Nullable
    @Override
-   public UiTextureInfo info(String texture, String fileSystem) {
+   public @Nullable UiTextureInfo info(String texture, String fileSystem) {
       if (texture.isEmpty()) {
          return null;
-      } else if ("Internet".equalsIgnoreCase(fileSystem)) {
+      }
+
+      if ("Internet".equalsIgnoreCase(fileSystem)) {
          Optional<BedrockTextures.Texture> image = BedrockTextures.url(texture).texture();
          return image.<UiTextureInfo>map(found -> new UiTextureInfo("url:" + texture, found.width(), found.height(), found.width(), found.height(), null))
             .orElse(null);
-      } else if ("RawPath".equalsIgnoreCase(fileSystem)) {
+      }
+
+      if ("RawPath".equalsIgnoreCase(fileSystem)) {
          Optional<BedrockTextures.Texture> image = BedrockTextures.file(texture);
          return image.<UiTextureInfo>map(found -> new UiTextureInfo("file:" + texture, found.width(), found.height(), found.width(), found.height(), null))
             .orElse(null);
-      } else {
-         try {
-            return this.pack.info(texture, fileSystem);
-         } catch (RuntimeException var4) {
-            BedrockNative.LOGGER.debug("JSON UI texture {} not readable", texture, var4);
-            return null;
-         }
+      }
+
+      try {
+         return this.pack.info(texture, fileSystem);
+      } catch (RuntimeException e) {
+         BedrockNative.LOGGER.debug("JSON UI texture {} not readable", texture, e);
+         return null;
       }
    }
 }

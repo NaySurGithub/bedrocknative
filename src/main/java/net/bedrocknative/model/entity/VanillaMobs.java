@@ -111,28 +111,28 @@ public final class VanillaMobs {
       String identifier = definition.identifier();
       if (definition.renderControllers().isEmpty()) {
          return new VanillaMobs.Support(identifier, false, List.of("no render controller"), List.of());
-      } else {
-         DefinitionNeeds.Needs needs = DefinitionNeeds.of(registry, definition);
-         List<String> missing = new ArrayList<>();
-         if (!needs.anyGeometry()) {
-            missing.add("geometry " + definition.geometries().values());
-         }
-
-         needs.missingRenderControllers().forEach(name -> missing.add("render controller " + name));
-
-         for (String query : needs.queries()) {
-            QueryRegistry.Entry entry = QueryRegistry.get(query);
-            if ((entry == null || entry.stub()) && !HARMLESS_QUERIES.contains(query)) {
-               missing.add("query." + query);
-            }
-         }
-
-         Set<String> engine = new TreeSet<>(needs.engineVariables());
-         engine.removeAll(COMMON);
-         engine.removeAll(kindVariables);
-         engine.forEach(name -> missing.add("variable." + name));
-         return new VanillaMobs.Support(identifier, missing.isEmpty(), List.copyOf(missing), needs.missingAnimations());
       }
+
+      DefinitionNeeds.Needs needs = DefinitionNeeds.of(registry, definition);
+      List<String> missing = new ArrayList<>();
+      if (!needs.anyGeometry()) {
+         missing.add("geometry " + definition.geometries().values());
+      }
+
+      needs.missingRenderControllers().forEach(name -> missing.add("render controller " + name));
+
+      for (String query : needs.queries()) {
+         QueryRegistry.Entry entry = QueryRegistry.get(query);
+         if ((entry == null || entry.stub()) && !HARMLESS_QUERIES.contains(query)) {
+            missing.add("query." + query);
+         }
+      }
+
+      Set<String> engine = new TreeSet<>(needs.engineVariables());
+      engine.removeAll(COMMON);
+      engine.removeAll(kindVariables);
+      engine.forEach(name -> missing.add("variable." + name));
+      return new VanillaMobs.Support(identifier, missing.isEmpty(), List.copyOf(missing), needs.missingAnimations());
    }
 
    public record Support(String identifier, boolean drawn, List<String> missing, List<String> skipped) {

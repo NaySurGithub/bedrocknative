@@ -29,23 +29,15 @@ public final class CameraDirector {
    private static final float THIRD_PERSON_DISTANCE = 4.0F;
    private final CameraPresetBook presets = new CameraPresetBook();
    private final Map<String, CameraSplineInstruction> splines = new HashMap<>();
-   @Nullable
-   private CameraDirector.Setting setting;
-   @Nullable
-   private CameraDirector.Ease ease;
-   @Nullable
-   private CameraDirector.SplineRun spline;
-   @Nullable
-   private Long target;
+   private CameraDirector.@Nullable Setting setting;
+   private CameraDirector.@Nullable Ease ease;
+   private CameraDirector.@Nullable SplineRun spline;
+   private @Nullable Long target;
    private Vector3f targetOffset = Vector3f.ZERO;
-   @Nullable
-   private Long attached;
-   @Nullable
-   private CameraDirector.FadeRun fade;
-   @Nullable
-   private CameraDirector.FovRun fov;
-   @Nullable
-   private CameraDirector.Pose last;
+   private @Nullable Long attached;
+   private CameraDirector.@Nullable FadeRun fade;
+   private CameraDirector.@Nullable FovRun fov;
+   private CameraDirector.@Nullable Pose last;
    private ControlScheme serverScheme = ControlSchemes.DEFAULT;
    private boolean open = true;
 
@@ -121,7 +113,7 @@ public final class CameraDirector {
             CameraFovInstruction instruction = packet.getFovInstruction();
             this.fov = new CameraDirector.FovRun(
                now,
-               (double)Math.max(instruction.getEaseTime(), 0.0F),
+               Math.max(instruction.getEaseTime(), 0.0F),
                instruction.getEaseType() == null ? CameraEase.LINEAR : instruction.getEaseType(),
                this.fov(now, playerFov),
                instruction.isClear() ? null : instruction.getFov()
@@ -187,7 +179,7 @@ public final class CameraDirector {
          this.spline = null;
          EaseData easeData = set.getEase();
          this.ease = easeData != null && easeData.getTime() > 0.0F
-            ? new CameraDirector.Ease(now, (double)easeData.getTime(), easeData.getEaseType() == null ? CameraEase.LINEAR : easeData.getEaseType(), current)
+            ? new CameraDirector.Ease(now, easeData.getTime(), easeData.getEaseType() == null ? CameraEase.LINEAR : easeData.getEaseType(), current)
             : null;
       }
    }
@@ -208,8 +200,8 @@ public final class CameraDirector {
 
    private void startSpline(CameraSplineInstruction instruction, double now, CameraDirector.Pose current) {
       CameraSplineInstruction path = instruction;
-      if ((instruction.getCurve() == null || instruction.getCurve().isEmpty()) && instruction.getSplineIdentifier() != null) {
-         CameraSplineInstruction named = this.splines.get(instruction.getSplineIdentifier());
+      if ((path.getCurve() == null || path.getCurve().isEmpty()) && path.getSplineIdentifier() != null) {
+         CameraSplineInstruction named = this.splines.get(path.getSplineIdentifier());
          if (named != null) {
             path = named;
          }
@@ -247,18 +239,15 @@ public final class CameraDirector {
       return this.setting != null || this.spline != null;
    }
 
-   @Nullable
-   public CameraPresetBook.Kind kind() {
+   public CameraPresetBook.@Nullable Kind kind() {
       return this.spline != null ? CameraPresetBook.Kind.FREE : (this.setting == null ? null : this.setting.preset().kind());
    }
 
-   @Nullable
-   public String presetName() {
+   public @Nullable String presetName() {
       return this.setting == null ? null : this.setting.preset().identifier();
    }
 
-   @Nullable
-   public CameraAudioListener listener() {
+   public @Nullable CameraAudioListener listener() {
       return this.setting == null ? null : this.setting.preset().listener();
    }
 
@@ -284,22 +273,24 @@ public final class CameraDirector {
       return this.spline != null && !this.spline.path().finished(now - this.spline.start());
    }
 
-   @Nullable
-   public Long target() {
+   public @Nullable Long target() {
       return this.target;
    }
 
-   @Nullable
-   public Long attached() {
+   public @Nullable Long attached() {
       return this.attached;
    }
 
    public CameraDirector.View view(double now) {
       if (this.spline != null) {
          return CameraDirector.View.DETACHED;
-      } else if (this.setting == null) {
+      }
+
+      if (this.setting == null) {
          return CameraDirector.View.PLAYER;
-      } else if (!this.easing(now) && this.attached == null) {
+      }
+
+      if (!this.easing(now) && this.attached == null) {
          return switch (this.setting.preset().kind()) {
             case FIRST_PERSON -> CameraDirector.View.FIRST_PERSON;
             case THIRD_PERSON -> CameraDirector.View.THIRD_PERSON;
@@ -381,11 +372,11 @@ public final class CameraDirector {
    private static CameraDirector.Pose viewOffset(CameraDirector.Pose pose, Vector2f offset) {
       if (offset.equals(Vector2f.ZERO)) {
          return pose;
-      } else {
-         Vector3d right = right(pose.yaw());
-         Vector3d up = right.cross(forward(pose.yaw(), pose.pitch()));
-         return new CameraDirector.Pose(pose.position().add(right.mul(offset.getX())).add(up.mul(offset.getY())), pose.yaw(), pose.pitch());
       }
+
+      Vector3d right = right(pose.yaw());
+      Vector3d up = right.cross(forward(pose.yaw(), pose.pitch()));
+      return new CameraDirector.Pose(pose.position().add(right.mul(offset.getX())).add(up.mul(offset.getY())), pose.yaw(), pose.pitch());
    }
 
    private static CameraDirector.Pose behind(CameraDirector.World world, Vector3d pivot, float yaw, float pitch, float distance) {
@@ -402,29 +393,28 @@ public final class CameraDirector {
          : new CameraDirector.Pose(position, wrapDegrees(rotation[1]), rotation[0]);
    }
 
-   @Nullable
-   public CameraDirector.Fade fade(double now) {
+   public CameraDirector.@Nullable Fade fade(double now) {
       CameraDirector.FadeRun run = this.fade;
       if (run == null) {
          return null;
-      } else {
-         double t = now - run.start();
-         float alpha;
-         if (t < run.in()) {
-            alpha = (float)(t / run.in());
-         } else if (t < run.in() + run.hold()) {
-            alpha = 1.0F;
-         } else {
-            if (!(t < run.in() + run.hold() + run.out())) {
-               this.fade = null;
-               return null;
-            }
+      }
 
-            alpha = (float)(1.0 - (t - run.in() - run.hold()) / run.out());
+      double t = now - run.start();
+      float alpha;
+      if (t < run.in()) {
+         alpha = (float)(t / run.in());
+      } else if (t < run.in() + run.hold()) {
+         alpha = 1.0F;
+      } else {
+         if (!(t < run.in() + run.hold() + run.out())) {
+            this.fade = null;
+            return null;
          }
 
-         return new CameraDirector.Fade(run.red(), run.green(), run.blue(), Math.clamp(alpha, 0.0F, 1.0F));
+         alpha = (float)(1.0 - (t - run.in() - run.hold()) / run.out());
       }
+
+      return new CameraDirector.Fade(run.red(), run.green(), run.blue(), Math.clamp(alpha, 0.0F, 1.0F));
    }
 
    public float fov(double now, float playerFov) {
@@ -455,11 +445,11 @@ public final class CameraDirector {
       double horizontal = Math.sqrt(d.getX() * d.getX() + d.getZ() * d.getZ());
       if (horizontal < 1.0E-7 && Math.abs(d.getY()) < 1.0E-7) {
          return new float[]{0.0F, 0.0F};
-      } else {
-         float yaw = (float)Math.toDegrees(Math.atan2(-d.getX(), d.getZ()));
-         float pitch = (float)(-Math.toDegrees(Math.atan2(d.getY(), horizontal)));
-         return new float[]{yaw, pitch};
       }
+
+      float yaw = (float)Math.toDegrees(Math.atan2(-d.getX(), d.getZ()));
+      float pitch = (float)(-Math.toDegrees(Math.atan2(d.getY(), horizontal)));
+      return new float[]{yaw, pitch};
    }
 
    public static Vector3d forward(float yaw, float pitch) {
@@ -515,7 +505,7 @@ public final class CameraDirector {
    private record SplineRun(CameraSplinePath path, double start, CameraDirector.Pose from) {
    }
 
-   public static enum View {
+   public enum View {
       PLAYER,
       FIRST_PERSON,
       THIRD_PERSON,
@@ -524,11 +514,9 @@ public final class CameraDirector {
    }
 
    public interface World {
-      @Nullable
-      Vector3d eyeOf(long var1);
+      @Nullable Vector3d eyeOf(long var1);
 
-      @Nullable
-      Vector3d centreOf(long var1);
+      @Nullable Vector3d centreOf(long var1);
 
       Vector3d clip(Vector3d var1, Vector3d var2);
    }

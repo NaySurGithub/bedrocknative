@@ -184,18 +184,17 @@ final class DevRecipeBookTest {
             log("inventory screen {}, recipe book part {}", screen == null ? "none" : screen.getClass().getSimpleName(), part != null);
             if (part == null) {
                return false;
-            } else {
-               JsonUiContainerScreen jsonx = (JsonUiContainerScreen)screen;
-               RecipeBookData data = part.data();
-               log("the server's inventory options: {}", this.options());
-               this.check(
-                  "the inventory opens on the server's layout (" + data.layout() + ", BDS: the recipe book)",
-                  data.layout() == RecipeBookData.Layout.RECIPE_BOOK
-               );
-               this.check("the book shows " + part.cells().size() + " cells", visible(jsonx, "recipe_book") && !part.cells().isEmpty());
-               this.check("no unresolved JSON UI bases", jsonx.ui().instance().problems().count("unresolved-base") == 0);
-               return true;
             }
+
+            JsonUiContainerScreen json = (JsonUiContainerScreen)screen;
+            RecipeBookData data = part.data();
+            log("the server's inventory options: {}", this.options());
+            this.check(
+               "the inventory opens on the server's layout (" + data.layout() + ", BDS: the recipe book)", data.layout() == RecipeBookData.Layout.RECIPE_BOOK
+            );
+            this.check("the book shows " + part.cells().size() + " cells", visible(json, "recipe_book") && !part.cells().isEmpty());
+            this.check("no unresolved JSON UI bases", json.ui().instance().problems().count("unresolved-base") == 0);
+            return true;
          }
       );
       this.screenshot("open");
@@ -353,8 +352,7 @@ final class DevRecipeBookTest {
       this.commands(hasItem(made, 1), hasItem(container, containers));
    }
 
-   @Nullable
-   private JsonUiRecipeBook part() {
+   private @Nullable JsonUiRecipeBook part() {
       return this.minecraft.gui.screen() instanceof JsonUiContainerScreen json ? json.recipeBook() : null;
    }
 
@@ -401,18 +399,18 @@ final class DevRecipeBookTest {
          JsonUiRecipeBook part = this.part();
          if (part == null) {
             return -1;
-         } else {
-            List<RecipeBook.Cell> cells = part.cells();
-
-            for (int i = 0; i < cells.size(); i++) {
-               RecipeBook.Entry entry = cells.get(i).entry();
-               if (entry != null && entry.result().getDefinition().getIdentifier().equals(result)) {
-                  return i;
-               }
-            }
-
-            return -1;
          }
+
+         List<RecipeBook.Cell> cells = part.cells();
+
+         for (int i = 0; i < cells.size(); i++) {
+            RecipeBook.Entry entry = cells.get(i).entry();
+            if (entry != null && entry.result().getDefinition().getIdentifier().equals(result)) {
+               return i;
+            }
+         }
+
+         return -1;
       });
       if (index < 0) {
          this.check("a cell makes " + result, false);
@@ -459,8 +457,7 @@ final class DevRecipeBookTest {
       }
    }
 
-   @Nullable
-   private static UiControl grid(JsonUiContainerScreen json) {
+   private static @Nullable UiControl grid(JsonUiContainerScreen json) {
       UiControl[] found = new UiControl[]{null};
       UiControl root = json.ui().instance().root();
       if (root != null) {
@@ -509,25 +506,24 @@ final class DevRecipeBookTest {
       });
    }
 
-   @Nullable
-   private static UiControl first(@Nullable UiControl from, UiType type) {
+   private static @Nullable UiControl first(@Nullable UiControl from, UiType type) {
       if (from == null) {
          return null;
-      } else {
-         ArrayDeque<UiControl> queue = new ArrayDeque<>();
-         queue.add(from);
+      }
 
-         while (!queue.isEmpty()) {
-            UiControl control = queue.poll();
-            if (control.type() == type && control.visible()) {
-               return control;
-            }
+      ArrayDeque<UiControl> queue = new ArrayDeque<>();
+      queue.add(from);
 
-            queue.addAll(control.children());
+      while (!queue.isEmpty()) {
+         UiControl control = queue.poll();
+         if (control.type() == type && control.visible()) {
+            return control;
          }
 
-         return null;
+         queue.addAll(control.children());
       }
+
+      return null;
    }
 
    private static void press(JsonUiContainerScreen screen, float[] at, int button, int modifiers) {
@@ -639,7 +635,7 @@ final class DevRecipeBookTest {
    private static void sleep(long millis) {
       try {
          Thread.sleep(millis);
-      } catch (InterruptedException var3) {
+      } catch (InterruptedException e) {
          Thread.currentThread().interrupt();
       }
    }

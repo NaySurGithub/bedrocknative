@@ -84,80 +84,74 @@ public final class JavaStatusProbe {
       InetSocketAddress address;
       try {
          address = resolver.resolve(host, port);
-      } catch (RuntimeException | IOException var34) {
-         return JavaStatus.none(null, "unknown host (" + var34.getClass().getSimpleName() + ")");
+      } catch (IOException | RuntimeException e) {
+         return JavaStatus.none(null, "unknown host (" + e.getClass().getSimpleName() + ")");
       }
 
       if (address != null && !address.isUnresolved()) {
          long start = System.nanoTime();
          long deadline = start + options.total().toNanos();
 
-         try {
-            JavaStatus var44;
-            try (Socket socket = new Socket()) {
-               if (open != null) {
-                  open.set(socket);
-               }
-
-               if (cancelled.getAsBoolean()) {
-                  return JavaStatus.none(address, "cancelled");
-               }
-
-               socket.setTcpNoDelay(true);
-               socket.connect(address, (int)Math.max(1L, Math.min(connectTimeout.toMillis(), remainingMillis(deadline))));
-               OutputStream out = socket.getOutputStream();
-               InputStream in = new JavaStatusProbe.DeadlineInput(socket, readTimeout.toMillis(), deadline);
-               ByteArrayOutputStream request = new ByteArrayOutputStream();
-               request.write(frame(handshake(protocol, host, port)));
-               request.write(frame(new byte[]{0}));
-               out.write(request.toByteArray());
-               out.flush();
-               long sent = System.nanoTime();
-               ByteBuffer response = ByteBuffer.wrap(readFrame(in));
-               if (readVarInt(response) != 0) {
-                  return JavaStatus.none(address, "not a Java status (another packet)");
-               }
-
-               int length = readVarInt(response);
-               if (length < 0 || length > response.remaining()) {
-                  return JavaStatus.none(address, "not a Java status (bad string)");
-               }
-
-               String json = new String(response.array(), response.position(), length, StandardCharsets.UTF_8);
-               long latency = millisSince(sent);
-               JavaStatus status = JavaStatus.parse(json, address, latency);
-               if (!status.answered() || !options.ping()) {
-                  return status;
-               }
-
-               long payload = System.currentTimeMillis();
-
-               try {
-                  ByteBuffer ping = ByteBuffer.allocate(9).put((byte)1).putLong(payload);
-                  out.write(frame(ping.array()));
-                  out.flush();
-                  long pingSent = System.nanoTime();
-                  ByteBuffer pong = ByteBuffer.wrap(readFrame(in));
-                  if (readVarInt(pong) == 1 && pong.remaining() >= 8 && pong.getLong() == payload) {
-                     latency = millisSince(pingSent);
-                  }
-               } catch (IOException var33) {
-               }
-
-               var44 = new JavaStatus(true, address, status.motd(), status.online(), status.max(), status.version(), status.protocol(), latency, "");
+         try (Socket socket = new Socket()) {
+            if (open != null) {
+               open.set(socket);
             }
 
-            return var44;
-         } catch (SocketTimeoutException var36) {
+            if (cancelled.getAsBoolean()) {
+               return JavaStatus.none(address, "cancelled");
+            }
+
+            socket.setTcpNoDelay(true);
+            socket.connect(address, (int)Math.max(1L, Math.min(connectTimeout.toMillis(), remainingMillis(deadline))));
+            OutputStream out = socket.getOutputStream();
+            InputStream in = new JavaStatusProbe.DeadlineInput(socket, readTimeout.toMillis(), deadline);
+            ByteArrayOutputStream request = new ByteArrayOutputStream();
+            request.write(frame(handshake(protocol, host, port)));
+            request.write(frame(new byte[]{0}));
+            out.write(request.toByteArray());
+            out.flush();
+            long sent = System.nanoTime();
+            ByteBuffer response = ByteBuffer.wrap(readFrame(in));
+            if (readVarInt(response) != 0) {
+               return JavaStatus.none(address, "not a Java status (another packet)");
+            }
+
+            int length = readVarInt(response);
+            if (length < 0 || length > response.remaining()) {
+               return JavaStatus.none(address, "not a Java status (bad string)");
+            }
+
+            String json = new String(response.array(), response.position(), length, StandardCharsets.UTF_8);
+            long latency = millisSince(sent);
+            JavaStatus status = JavaStatus.parse(json, address, latency);
+            if (!status.answered() || !options.ping()) {
+               return status;
+            }
+
+            long payload = System.currentTimeMillis();
+
+            try {
+               ByteBuffer ping = ByteBuffer.allocate(9).put((byte)1).putLong(payload);
+               out.write(frame(ping.array()));
+               out.flush();
+               long pingSent = System.nanoTime();
+               ByteBuffer pong = ByteBuffer.wrap(readFrame(in));
+               if (readVarInt(pong) == 1 && pong.remaining() >= 8 && pong.getLong() == payload) {
+                  latency = millisSince(pingSent);
+               }
+            } catch (IOException var33) {
+            }
+
+            return new JavaStatus(true, address, status.motd(), status.online(), status.max(), status.version(), status.protocol(), latency, "");
+         } catch (SocketTimeoutException e) {
             return JavaStatus.none(address, "no answer in " + millisSince(start) + " ms");
-         } catch (ConnectException var37) {
+         } catch (ConnectException e) {
             return JavaStatus.none(address, "refused");
-         } catch (EOFException var38) {
+         } catch (EOFException e) {
             return JavaStatus.none(address, "closed without a Java status");
-         } catch (RuntimeException | IOException var39) {
+         } catch (IOException | RuntimeException e) {
             return JavaStatus.none(
-               address,
-               cancelled.getAsBoolean() ? "cancelled" : var39.getClass().getSimpleName() + (var39.getMessage() == null ? "" : ": " + var39.getMessage())
+               address, cancelled.getAsBoolean() ? "cancelled" : e.getClass().getSimpleName() + (e.getMessage() == null ? "" : ": " + e.getMessage())
             );
          }
       } else {
@@ -269,9 +263,9 @@ public final class JavaStatusProbe {
          long left = JavaStatusProbe.remainingMillis(this.deadline);
          if (left <= 0L) {
             throw new SocketTimeoutException("total deadline");
-         } else {
-            this.socket.setSoTimeout((int)Math.max(1L, Math.min(this.readMillis, left)));
          }
+
+         this.socket.setSoTimeout((int)Math.max(1L, Math.min(this.readMillis, left)));
       }
 
       @Override
@@ -294,7 +288,6 @@ public final class JavaStatusProbe {
 
    @FunctionalInterface
    public interface Resolver {
-      @Nullable
-      InetSocketAddress resolve(String var1, int var2) throws IOException;
+      @Nullable InetSocketAddress resolve(String var1, int var2) throws IOException;
    }
 }

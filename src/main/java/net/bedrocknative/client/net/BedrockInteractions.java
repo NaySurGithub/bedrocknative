@@ -122,19 +122,15 @@ final class BedrockInteractions {
    private boolean usedByJava;
    private boolean placedByJava;
    private long hovered;
-   @Nullable
-   private InventoryTransactionPacket pendingUse;
+   private @Nullable InventoryTransactionPacket pendingUse;
    private boolean pendingRepeat;
    private boolean pendingBlockTook;
    private int lastTicksUsing;
    private SwingSource useSwing = SwingSource.BUILD;
-   @Nullable
-   private BlockPos usingOn;
+   private @Nullable BlockPos usingOn;
    private boolean creativeAbortPending;
-   @Nullable
-   private BlockPos punchAbort;
-   @Nullable
-   private Vector3f hoveredAt;
+   private @Nullable BlockPos punchAbort;
+   private @Nullable Vector3f hoveredAt;
    private static final BlockDefinition AIR_CLICK = new BedrockInteractions.HashedBlock(0);
 
    BedrockInteractions(Minecraft minecraft, BedrockInventory inventory, BedrockEntities entities, Consumer<BedrockPacket> send) {
@@ -189,12 +185,12 @@ final class BedrockInteractions {
 
                this.acknowledgeLater(use.sequence());
                break;
-            case ServerboundUseItemPacket usex:
-               if (usex.hand() == InteractionHand.MAIN_HAND) {
+            case ServerboundUseItemPacket use:
+               if (use.hand() == InteractionHand.MAIN_HAND) {
                   this.useItem(player);
                }
 
-               this.acknowledgeLater(usex.sequence());
+               this.acknowledgeLater(use.sequence());
                break;
             case ServerboundAttackPacket attack:
                this.swing(SwingSource.ATTACK);
@@ -213,8 +209,8 @@ final class BedrockInteractions {
             case ServerboundPickItemFromBlockPacket pick:
                this.pickBlock(player, pick);
                break;
-            case ServerboundPickItemFromEntityPacket pickx:
-               this.pickEntity(player, pickx);
+            case ServerboundPickItemFromEntityPacket pick:
+               this.pickEntity(player, pick);
                break;
             case ServerboundPunchPacket ignored:
                HitResult hit = this.minecraft.hitResult;
@@ -480,7 +476,7 @@ final class BedrockInteractions {
    private void useItem(LocalPlayer player) {
       ItemStack held = player.getMainHandItem();
       if (player.isFallFlying() && held.is(Items.FIREWORK_ROCKET)) {
-         Fireworks fireworks = (Fireworks)held.get(DataComponents.FIREWORKS);
+         Fireworks fireworks = held.get(DataComponents.FIREWORKS);
          BedrockMovement.startGlideBoost(20 * ((fireworks == null ? 1 : fireworks.flightDuration()) + 1) + 6);
       }
 
@@ -552,26 +548,26 @@ final class BedrockInteractions {
       long target = this.entities.runtimeIdOf(javaId);
       if (target == -1L) {
          return false;
-      } else {
-         Entity entity = this.minecraft.level.getEntity(javaId);
-         Vec3 click = this.minecraft.hitResult instanceof EntityHitResult hit && hit.getEntity().getId() == javaId
-            ? hit.getLocation()
-            : (entity != null ? entity.position() : Vec3.ZERO);
-         InventoryTransactionPacket use = CombatPackets.onEntity(
-            actionType,
-            target,
-            this.inventory.selectedSlot(),
-            BedrockInventory.withoutStackId(this.inventory.held()),
-            eyePosition(player),
-            Vector3f.from(click.x, click.y, click.z)
-         );
-         if (actionType == 1) {
-            CombatTrace.lastAttack = use.toString();
-         }
-
-         this.sendTransaction(use);
-         return true;
       }
+
+      Entity entity = this.minecraft.level.getEntity(javaId);
+      Vec3 click = this.minecraft.hitResult instanceof EntityHitResult hit && hit.getEntity().getId() == javaId
+         ? hit.getLocation()
+         : (entity != null ? entity.position() : Vec3.ZERO);
+      InventoryTransactionPacket use = CombatPackets.onEntity(
+         actionType,
+         target,
+         this.inventory.selectedSlot(),
+         BedrockInventory.withoutStackId(this.inventory.held()),
+         eyePosition(player),
+         Vector3f.from(click.x, click.y, click.z)
+      );
+      if (actionType == 1) {
+         CombatTrace.lastAttack = use.toString();
+      }
+
+      this.sendTransaction(use);
+      return true;
    }
 
    private void sendTransaction(InventoryTransactionPacket transaction) {

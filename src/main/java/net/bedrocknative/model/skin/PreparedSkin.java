@@ -15,7 +15,7 @@ public record PreparedSkin(PlayerSkin skin, @Nullable ModelRegistry registry, @N
       return pixels * 4L;
    }
 
-   private static long pixels(@Nullable TextureMesher.Pixels image) {
+   private static long pixels(TextureMesher.@Nullable Pixels image) {
       return image != null ? (long)image.width() * image.height() : 0L;
    }
 }

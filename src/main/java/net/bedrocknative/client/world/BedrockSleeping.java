@@ -6,7 +6,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.AbstractBedBlock;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.state.BlockState;
@@ -28,11 +27,9 @@ public final class BedrockSleeping {
    private final Minecraft minecraft;
    private final Consumer<BedrockPacket> send;
    private volatile long runtimeId;
-   @Nullable
-   private Vector3i lastBed;
+   private @Nullable Vector3i lastBed;
    private boolean sleepFlagged;
-   @Nullable
-   private BlockPos pending;
+   private @Nullable BlockPos pending;
    private int pendingTicks;
    private int leaveIn = -1;
 
@@ -51,8 +48,7 @@ public final class BedrockSleeping {
       }
    }
 
-   @Nullable
-   static Byte combine(@Nullable Byte playerFlags, @Nullable Boolean sleepingFlag) {
+   static @Nullable Byte combine(@Nullable Byte playerFlags, @Nullable Boolean sleepingFlag) {
       return !Boolean.TRUE.equals(sleepingFlag) ? playerFlags : (byte)((playerFlags == null ? 0 : playerFlags) | 2);
    }
 
@@ -117,7 +113,7 @@ public final class BedrockSleeping {
 
    static BlockPos headOf(BlockState state, BlockPos pos) {
       return state.getBlock() instanceof AbstractBedBlock && state.getValue(AbstractBedBlock.PART) == BedPart.FOOT
-         ? pos.relative((Direction)state.getValue(HorizontalDirectionalBlock.FACING))
+         ? pos.relative(state.getValue(HorizontalDirectionalBlock.FACING))
          : pos;
    }
 
@@ -183,7 +179,7 @@ public final class BedrockSleeping {
       return packet;
    }
 
-   public static enum Change {
+   public enum Change {
       NONE,
       SLEEP,
       WAKE;

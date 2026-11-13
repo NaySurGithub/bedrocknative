@@ -107,18 +107,18 @@ public final class PixelArt {
       int outA = ta + ba * (255 - ta) / 255;
       if (outA == 0) {
          return 0;
-      } else {
-         int[] channels = new int[3];
-
-         for (int i = 0; i < 3; i++) {
-            int shift = 16 - 8 * i;
-            int tc = top >> shift & 0xFF;
-            int bc = bottom >> shift & 0xFF;
-            channels[i] = (tc * ta + bc * ba * (255 - ta) / 255) / outA;
-         }
-
-         return outA << 24 | channels[0] << 16 | channels[1] << 8 | channels[2];
       }
+
+      int[] channels = new int[3];
+
+      for (int i = 0; i < 3; i++) {
+         int shift = 16 - 8 * i;
+         int tc = top >> shift & 0xFF;
+         int bc = bottom >> shift & 0xFF;
+         channels[i] = (tc * ta + bc * ba * (255 - ta) / 255) / outA;
+      }
+
+      return outA << 24 | channels[0] << 16 | channels[1] << 8 | channels[2];
    }
 
    public static int rgb(int rgb) {
@@ -171,8 +171,8 @@ public final class PixelArt {
 
       try {
          ImageIO.write(buffered, "png", out);
-      } catch (IOException var4) {
-         throw new UncheckedIOException(var4);
+      } catch (IOException e) {
+         throw new UncheckedIOException(e);
       }
 
       return out.toByteArray();

@@ -24,8 +24,7 @@ public final class BlockItemDisplay {
       return new BlockItemDisplay(ItemDisplayTransforms.of(itemDisplayTransforms));
    }
 
-   @Nullable
-   public static ItemDisplayTransforms.Context context(ItemDisplayContext context) {
+   public static ItemDisplayTransforms.@Nullable Context context(ItemDisplayContext context) {
       return switch (context) {
          case GUI -> ItemDisplayTransforms.Context.GUI;
          case FIRST_PERSON_RIGHT_HAND -> ItemDisplayTransforms.Context.FIRST_PERSON_RIGHT_HAND;
@@ -37,7 +36,6 @@ public final class BlockItemDisplay {
          case HEAD -> ItemDisplayTransforms.Context.HEAD;
          case ON_SHELF -> ItemDisplayTransforms.Context.SHELF;
          case NONE -> null;
-         default -> throw new MatchException(null, null);
       };
    }
 
@@ -45,7 +43,7 @@ public final class BlockItemDisplay {
       return this.transforms.get(context);
    }
 
-   public Matrix4fc cachedLocal(ItemDisplayContext javaContext, BlockItemDisplay.JavaTransform java, @Nullable Vector3fc[] extents) {
+   public Matrix4fc cachedLocal(ItemDisplayContext javaContext, BlockItemDisplay.JavaTransform java, Vector3fc @Nullable [] extents) {
       Matrix4fc local = this.cached[javaContext.ordinal()];
       if (local == null) {
          local = this.local(javaContext, java, extents);
@@ -55,24 +53,24 @@ public final class BlockItemDisplay {
       return local;
    }
 
-   public Matrix4f local(ItemDisplayContext javaContext, BlockItemDisplay.JavaTransform java, @Nullable Vector3fc[] extents) {
+   public Matrix4f local(ItemDisplayContext javaContext, BlockItemDisplay.JavaTransform java, Vector3fc @Nullable [] extents) {
       ItemDisplayTransforms.Context context = context(javaContext);
       if (context == null) {
          return new Matrix4f();
-      } else {
-         boolean leftHand = javaContext.leftHand();
-         Matrix4f change = new Matrix4f(TO_BLOCKS)
-            .mul(this.transforms.get(context).matrix(leftHand))
-            .mul(new Matrix4f(DEFAULTS.get(context).matrix(leftHand)).invert())
-            .mul(TO_PIXELS);
-         Matrix4f javaFull = javaMatrix(java, leftHand);
-         Matrix4f local = new Matrix4f(javaFull).invert().mul(change).mul(javaFull);
-         if (context == ItemDisplayTransforms.Context.GUI && this.transforms.get(context).fitToFrame() && extents != null && extents.length > 0) {
-            local = fit(javaMatrix(java, false), local, extents);
-         }
-
-         return local;
       }
+
+      boolean leftHand = javaContext.leftHand();
+      Matrix4f change = new Matrix4f(TO_BLOCKS)
+         .mul(this.transforms.get(context).matrix(leftHand))
+         .mul(new Matrix4f(DEFAULTS.get(context).matrix(leftHand)).invert())
+         .mul(TO_PIXELS);
+      Matrix4f javaFull = javaMatrix(java, leftHand);
+      Matrix4f local = new Matrix4f(javaFull).invert().mul(change).mul(javaFull);
+      if (context == ItemDisplayTransforms.Context.GUI && this.transforms.get(context).fitToFrame() && extents != null && extents.length > 0) {
+         local = fit(javaMatrix(java, false), local, extents);
+      }
+
+      return local;
    }
 
    public static Matrix4f javaMatrix(BlockItemDisplay.JavaTransform java, boolean leftHand) {

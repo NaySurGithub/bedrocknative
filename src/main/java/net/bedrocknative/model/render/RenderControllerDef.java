@@ -14,19 +14,18 @@ public record RenderControllerDef(
    List<RenderControllerDef.PatternValue> materials,
    List<MolangProgram> textures,
    List<RenderControllerDef.PatternValue> partVisibility,
-   @Nullable RenderControllerDef.Color color,
-   @Nullable RenderControllerDef.Color overlayColor,
-   @Nullable RenderControllerDef.Color isHurtColor,
-   @Nullable RenderControllerDef.Color onFireColor,
-   @Nullable RenderControllerDef.UvAnimation uvAnimation,
+   RenderControllerDef.@Nullable Color color,
+   RenderControllerDef.@Nullable Color overlayColor,
+   RenderControllerDef.@Nullable Color isHurtColor,
+   RenderControllerDef.@Nullable Color onFireColor,
+   RenderControllerDef.@Nullable UvAnimation uvAnimation,
    @Nullable MolangProgram ignoreLighting,
    @Nullable MolangProgram lightColorMultiplier,
    boolean filterLighting,
    boolean rebuildAnimationMatrices
 ) implements MolangResources {
-   @Nullable
    @Override
-   public Object[] array(String name) {
+   public Object @Nullable [] array(String name) {
       return this.arrays.get(name);
    }
 

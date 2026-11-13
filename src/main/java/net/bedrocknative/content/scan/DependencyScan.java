@@ -56,31 +56,30 @@ public final class DependencyScan {
       return reports;
    }
 
-   @Nullable
-   public static DependencyScan.Resolved resolve(PackIndex.Ref ref, PackIndex self, List<PackIndex> mates, PackLookup base) {
+   public static DependencyScan.@Nullable Resolved resolve(PackIndex.Ref ref, PackIndex self, List<PackIndex> mates, PackLookup base) {
       if (builtin(ref.kind(), ref.key())) {
          return new DependencyScan.Resolved(ref, DependencyScan.Where.BUILTIN, null);
-      } else {
-         if (ref.kind() != PackIndex.Kind.UI_FILE_PATCH) {
-            PackLookup.Hit own = self.find(ref.kind(), ref.key());
-            if (own != null) {
-               return new DependencyScan.Resolved(ref, DependencyScan.Where.SELF, own);
-            }
-         }
+      }
 
-         for (PackIndex mate : mates) {
-            PackLookup.Hit hit = mate.find(ref.kind(), ref.key());
-            if (hit != null) {
-               return new DependencyScan.Resolved(ref, DependencyScan.Where.STACK, hit);
-            }
+      if (ref.kind() != PackIndex.Kind.UI_FILE_PATCH) {
+         PackLookup.Hit own = self.find(ref.kind(), ref.key());
+         if (own != null) {
+            return new DependencyScan.Resolved(ref, DependencyScan.Where.SELF, own);
          }
+      }
 
-         PackLookup.Hit hit = base.find(ref.kind(), ref.key());
+      for (PackIndex mate : mates) {
+         PackLookup.Hit hit = mate.find(ref.kind(), ref.key());
          if (hit != null) {
-            return new DependencyScan.Resolved(ref, DependencyScan.Where.BASE, hit);
-         } else {
-            return OPTIONAL.contains(ref.kind()) ? null : new DependencyScan.Resolved(ref, DependencyScan.Where.MISSING, null);
+            return new DependencyScan.Resolved(ref, DependencyScan.Where.STACK, hit);
          }
+      }
+
+      PackLookup.Hit hit = base.find(ref.kind(), ref.key());
+      if (hit != null) {
+         return new DependencyScan.Resolved(ref, DependencyScan.Where.BASE, hit);
+      } else {
+         return OPTIONAL.contains(ref.kind()) ? null : new DependencyScan.Resolved(ref, DependencyScan.Where.MISSING, null);
       }
    }
 
@@ -171,12 +170,13 @@ public final class DependencyScan {
       }
 
       missing.removeIf(idx -> idx.startsWith(PackIndex.Kind.FILE + " textures/") && idx.endsWith(".json"));
+      Map<String, PackLookup.Hit> sources = hits;
       return new DependencyScan.Closure(files, visited, missing, file -> {
-         PackLookup.Hit hitx = hits.get(PackIndex.clean(file.path()));
+         PackLookup.Hit hitx = sources.get(PackIndex.clean(file.path()));
 
          try {
             return hitx == null ? null : hitx.pack().pack().read(hitx.path()).orElse(null);
-         } catch (IOException var4x) {
+         } catch (IOException e) {
             return null;
          }
       });
@@ -189,7 +189,7 @@ public final class DependencyScan {
          byte[] data;
          try {
             data = hit.pack().pack().read(hit.path()).orElse(new byte[0]);
-         } catch (IOException var8) {
+         } catch (IOException e) {
             data = new byte[0];
          }
 
@@ -212,7 +212,7 @@ public final class DependencyScan {
             byte[] altData;
             try {
                altData = same.pack().pack().read(same.path()).orElse(new byte[0]);
-            } catch (IOException var14) {
+            } catch (IOException e) {
                altData = new byte[0];
             }
 
@@ -266,7 +266,7 @@ public final class DependencyScan {
                   ? false
                   : samePixels(BedrockImages.decode(own), BedrockImages.decode(altData));
             }
-         } catch (RuntimeException | IOException var6) {
+         } catch (IOException | RuntimeException e) {
             return false;
          }
       } else {
@@ -274,11 +274,10 @@ public final class DependencyScan {
       }
    }
 
-   @Nullable
-   private static JsonElement json(byte[] data) {
+   private static @Nullable JsonElement json(byte[] data) {
       try {
          return UiJson.parse(data);
-      } catch (UiJson.Error var2) {
+      } catch (UiJson.Error e) {
          return ModelJson.parse(data, "scan");
       }
    }
@@ -302,8 +301,8 @@ public final class DependencyScan {
    static String sha1(byte[] data) {
       try {
          return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-1").digest(data));
-      } catch (NoSuchAlgorithmException var2) {
-         throw new IllegalStateException(var2);
+      } catch (NoSuchAlgorithmException e) {
+         throw new IllegalStateException(e);
       }
    }
 
@@ -315,13 +314,15 @@ public final class DependencyScan {
    public record BaseFile(String path, String layer, long size, String sha1, Set<PackIndex.Kind> kinds, Set<String> origins, Set<String> provides) {
    }
 
-   public record Closure(Map<String, DependencyScan.BaseFile> files, Set<String> visited, Set<String> missing, Function<DependencyScan.BaseFile, byte[]> data) {
+   public record Closure(
+      Map<String, DependencyScan.BaseFile> files, Set<String> visited, Set<String> missing, Function<DependencyScan.BaseFile, byte @Nullable []> data
+   ) {
       public long size() {
          return this.files.values().stream().mapToLong(DependencyScan.BaseFile::size).sum();
       }
    }
 
-   public static enum Coverage {
+   public enum Coverage {
       SAME,
       EQUIVALENT,
       DIFFERENT,
@@ -346,13 +347,13 @@ public final class DependencyScan {
       }
    }
 
-   public record Resolved(PackIndex.Ref ref, DependencyScan.Where where, @Nullable PackLookup.Hit hit) {
+   public record Resolved(PackIndex.Ref ref, DependencyScan.Where where, PackLookup.@Nullable Hit hit) {
    }
 
    public record Root(PackIndex.Kind kind, String key, String origin) {
    }
 
-   public static enum Where {
+   public enum Where {
       SELF,
       STACK,
       BASE,

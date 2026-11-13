@@ -295,7 +295,7 @@ public record OreTheme(
       }
    }
 
-   public static enum Variant {
+   public enum Variant {
       PRIMARY,
       SECONDARY,
       DESTRUCTIVE,

@@ -57,8 +57,8 @@ public final class CustomBlockSet {
                CustomBlockState resolved;
                try {
                   resolved = definition != null ? definition.resolve(state) : CustomBlockState.read(state, Map.of());
-               } catch (RuntimeException var12) {
-                  BedrockNative.LOGGER.warn("Couldn't read custom block state {}; it keeps Bedrock's defaults", state.toStateString(), var12);
+               } catch (RuntimeException e) {
+                  BedrockNative.LOGGER.warn("Couldn't read custom block state {}; it keeps Bedrock's defaults", state.toStateString(), e);
                   resolved = CustomBlockState.read(state, Map.of());
                }
 
@@ -86,8 +86,7 @@ public final class CustomBlockSet {
       return this.slotByHash.get(hash);
    }
 
-   @Nullable
-   public CustomBlockState data(int slot) {
+   public @Nullable CustomBlockState data(int slot) {
       return slot >= 0 && slot < this.bySlot.length ? this.bySlot[slot] : null;
    }
 

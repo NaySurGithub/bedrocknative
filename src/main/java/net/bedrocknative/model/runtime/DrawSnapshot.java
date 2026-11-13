@@ -180,12 +180,10 @@ public final class DrawSnapshot {
    }
 
    public static final class Call {
-      @Nullable
-      private MeshedGeometry mesh;
+      private @Nullable MeshedGeometry mesh;
       private String controller = "";
-      @Nullable
-      private String texture;
-      private final String[] layers = new String[3];
+      private @Nullable String texture;
+      private final @Nullable String[] layers = new String[3];
       private int layerCount;
       private int tint = -1;
       private int tint2 = -1;
@@ -295,9 +293,9 @@ public final class DrawSnapshot {
             this.groupStart[group] = 0;
          }
 
-         for (int bonex = 0; bonex < count; bonex++) {
-            if (this.groupOf[bonex] >= 0) {
-               this.groupStart[this.groupOf[bonex] + 1]++;
+         for (int bone = 0; bone < count; bone++) {
+            if (this.groupOf[bone] >= 0) {
+               this.groupStart[this.groupOf[bone] + 1]++;
             }
          }
 
@@ -305,10 +303,10 @@ public final class DrawSnapshot {
             this.groupStart[group + 1] = this.groupStart[group + 1] + this.groupStart[group];
          }
 
-         for (int bonexx = 0; bonexx < count; bonexx++) {
-            int group = this.groupOf[bonexx];
+         for (int bone = 0; bone < count; bone++) {
+            int group = this.groupOf[bone];
             if (group >= 0) {
-               this.bones[this.groupStart[group]++] = bonexx;
+               this.bones[this.groupStart[group]++] = bone;
             }
          }
 
@@ -350,8 +348,7 @@ public final class DrawSnapshot {
          return this.controller;
       }
 
-      @Nullable
-      public String texture() {
+      public @Nullable String texture() {
          return this.texture;
       }
 
@@ -359,8 +356,7 @@ public final class DrawSnapshot {
          return this.layerCount;
       }
 
-      @Nullable
-      public String layer(int index) {
+      public @Nullable String layer(int index) {
          return this.layers[index];
       }
 
@@ -424,8 +420,7 @@ public final class DrawSnapshot {
          return this.rootOf[bone];
       }
 
-      @Nullable
-      public String binding(int root) {
+      public @Nullable String binding(int root) {
          return this.bindings[root];
       }
 
@@ -433,8 +428,7 @@ public final class DrawSnapshot {
          return this.hurtFlash;
       }
 
-      @Nullable
-      public float[] uvAnimation() {
+      public float @Nullable [] uvAnimation() {
          return this.hasUvAnimation ? this.uvAnimation : null;
       }
 

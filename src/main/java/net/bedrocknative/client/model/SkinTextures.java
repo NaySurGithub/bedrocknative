@@ -38,61 +38,60 @@ public final class SkinTextures {
       return path != null && path.startsWith("bedrocknative:skin/");
    }
 
-   @Nullable
-   static TextureMesher.Pixels pixels(String path) {
+   static TextureMesher.@Nullable Pixels pixels(String path) {
       int slash = path.indexOf(47, "bedrocknative:skin/".length());
       if (slash < 0) {
          return null;
-      } else {
-         SkinTextures.Images images = SKINS.get(path.substring("bedrocknative:skin/".length(), slash));
-         return images != null ? part(images.skin, path.substring(slash + 1)) : null;
       }
+
+      SkinTextures.Images images = SKINS.get(path.substring("bedrocknative:skin/".length(), slash));
+      return images != null ? part(images.skin, path.substring(slash + 1)) : null;
    }
 
-   @Nullable
-   static Identifier texture(String path) {
+   static @Nullable Identifier texture(String path) {
       int slash = path.indexOf(47, "bedrocknative:skin/".length());
       if (slash < 0) {
          return null;
-      } else {
-         SkinTextures.Images images = SKINS.get(path.substring("bedrocknative:skin/".length(), slash));
-         if (images == null) {
+      }
+
+      SkinTextures.Images images = SKINS.get(path.substring("bedrocknative:skin/".length(), slash));
+      if (images == null) {
+         return null;
+      }
+
+      String part = path.substring(slash + 1);
+      Identifier id = images.uploaded.get(part);
+      if (id == null) {
+         TextureMesher.Pixels pixels = part(images.skin, part);
+         if (pixels == null) {
             return null;
-         } else {
-            String part = path.substring(slash + 1);
-            Identifier id = images.uploaded.get(part);
-            if (id == null) {
-               TextureMesher.Pixels pixels = part(images.skin, part);
-               if (pixels == null) {
-                  return null;
-               }
-
-               id = BedrockTextures.registerArgb(
-                  "skin/" + images.skin.key() + "_" + part, pixels.width(), pixels.height(), pixels.argb(), "skin " + images.skin.key() + " " + part
-               );
-               images.uploaded.put(part, id);
-            }
-
-            return id;
          }
+
+         id = BedrockTextures.registerArgb(
+            "skin/" + images.skin.key() + "_" + part, pixels.width(), pixels.height(), pixels.argb(), "skin " + images.skin.key() + " " + part
+         );
+         images.uploaded.put(part, id);
       }
+
+      return id;
    }
 
-   @Nullable
-   private static TextureMesher.Pixels part(PlayerSkin skin, String part) {
+   private static TextureMesher.@Nullable Pixels part(PlayerSkin skin, String part) {
       if (part.equals("skin")) {
          return skin.image();
-      } else if (part.equals("cape")) {
-         return skin.cape();
-      } else {
-         for (PlayerSkin.Animation animation : skin.animations().values()) {
-            if (animation.type().part().equals(part)) {
-               return animation.image();
-            }
-         }
-
-         return null;
       }
+
+      if (part.equals("cape")) {
+         return skin.cape();
+      }
+
+      for (PlayerSkin.Animation animation : skin.animations().values()) {
+         if (animation.type().part().equals(part)) {
+            return animation.image();
+         }
+      }
+
+      return null;
    }
 
    public static int size() {

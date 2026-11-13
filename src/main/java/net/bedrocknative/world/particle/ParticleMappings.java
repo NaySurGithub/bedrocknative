@@ -73,19 +73,14 @@ public final class ParticleMappings {
    }
 
    private static ParticleMappings load() {
-      try {
-         ParticleMappings var1;
-         try (InputStream in = ParticleMappings.class.getResourceAsStream("/assets/bedrocknative/mappings/geyser-mappings/particles.json")) {
-            if (in == null) {
-               throw new IllegalStateException("Missing /assets/bedrocknative/mappings/geyser-mappings/particles.json");
-            }
-
-            var1 = build(JsonParser.parseReader(new InputStreamReader(in, StandardCharsets.UTF_8)).getAsJsonObject());
+      try (InputStream in = ParticleMappings.class.getResourceAsStream("/assets/bedrocknative/mappings/geyser-mappings/particles.json")) {
+         if (in == null) {
+            throw new IllegalStateException("Missing /assets/bedrocknative/mappings/geyser-mappings/particles.json");
+         } else {
+            return build(JsonParser.parseReader(new InputStreamReader(in, StandardCharsets.UTF_8)).getAsJsonObject());
          }
-
-         return var1;
-      } catch (IOException var5) {
-         throw new UncheckedIOException(var5);
+      } catch (IOException e) {
+         throw new UncheckedIOException(e);
       }
    }
 
@@ -97,14 +92,12 @@ public final class ParticleMappings {
          String java = entry.getKey().toLowerCase(Locale.ROOT);
          if (java(java) != null) {
             JsonObject mapping = entry.getValue().getAsJsonObject();
-            JsonElement var8 = mapping.get("bedrockId");
-            if (var8 instanceof JsonElement && var8.getAsString().startsWith("minecraft:")) {
-               byBedrockId.computeIfAbsent(var8.getAsString(), k -> new ArrayList<>()).add(java);
+            if (mapping.get("bedrockId") instanceof JsonElement id && id.getAsString().startsWith("minecraft:")) {
+               byBedrockId.computeIfAbsent(id.getAsString(), k -> new ArrayList<>()).add(java);
             }
 
-            var8 = mapping.get("eventType");
-            if (var8 instanceof JsonElement) {
-               byEventType.computeIfAbsent(var8.getAsString(), k -> new ArrayList<>()).add(java);
+            if (mapping.get("eventType") instanceof JsonElement type) {
+               byEventType.computeIfAbsent(type.getAsString(), k -> new ArrayList<>()).add(java);
             }
          }
       }
@@ -121,6 +114,6 @@ public final class ParticleMappings {
    }
 
    private static ParticleType<?> java(String name) {
-      return (ParticleType<?>)BuiltInRegistries.PARTICLE_TYPE.getValue(Identifier.withDefaultNamespace(name));
+      return BuiltInRegistries.PARTICLE_TYPE.getValue(Identifier.withDefaultNamespace(name));
    }
 }

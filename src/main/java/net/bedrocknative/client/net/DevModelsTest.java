@@ -202,8 +202,7 @@ final class DevModelsTest {
       }
    }
 
-   @Nullable
-   private Entity nearestGolem(@Nullable Entity except) {
+   private @Nullable Entity nearestGolem(@Nullable Entity except) {
       Entity nearest = null;
 
       for (Entity entity : this.minecraft.level.entitiesForRendering()) {
@@ -285,7 +284,7 @@ final class DevModelsTest {
    private static void sleep(long millis) {
       try {
          Thread.sleep(millis);
-      } catch (InterruptedException var3) {
+      } catch (InterruptedException e) {
          Thread.currentThread().interrupt();
       }
    }

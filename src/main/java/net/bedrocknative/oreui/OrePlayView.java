@@ -117,8 +117,7 @@ public final class OrePlayView {
       }
    }
 
-   @Nullable
-   private Path worldPicture(boolean lan, int index, OrePlayModel model) {
+   private @Nullable Path worldPicture(boolean lan, int index, OrePlayModel model) {
       if (!lan) {
          int world = index - model.lan().size();
          if (world >= 0 && world < model.worlds().size() && model.worlds().get(world).icon() != null) {
@@ -243,10 +242,10 @@ public final class OrePlayView {
    private static OreBorderImage orDefault(@Nullable OreBorderImage image, String sprite) {
       if (image != null) {
          return image;
-      } else {
-         float[] widths = new float[]{0.2F, 0.2F, 0.2F, 0.2F};
-         return new OreBorderImage(sprite, 1, 1, 1, 1, true, widths, new float[4], widths);
       }
+
+      float[] widths = new float[]{0.2F, 0.2F, 0.2F, 0.2F};
+      return new OreBorderImage(sprite, 1, 1, 1, 1, true, widths, new float[4], widths);
    }
 
    private void servers(OrePlayLayout.Frame frame, OrePlayModel model, @Nullable String selected, long now) {
@@ -341,7 +340,7 @@ public final class OrePlayView {
       OreComponents.button(this.d, saved.edit(), this.states.apply("edit-server"));
    }
 
-   private void featured(OrePlayLayout.FeaturedDetails details, @Nullable OrePlayModel.Featured partner, long now) {
+   private void featured(OrePlayLayout.FeaturedDetails details, OrePlayModel.@Nullable Featured partner, long now) {
       OreTheme theme = this.d.theme();
       float b2 = this.d.scale().b2();
       OreTheme.Role card = theme.neutral80();

@@ -25,7 +25,7 @@ public final class AttachableHeldLayer<S extends HumanoidRenderState, M extends 
       WornAttachables.Frame right = held(state.rightHandItemState);
       WornAttachables.Frame left = held(state.leftHandItemState);
       if (right != null || left != null) {
-         JavaSkeleton skeleton = this.adapter.pose((HumanoidModel<?>)this.getParentModel());
+         JavaSkeleton skeleton = this.adapter.pose(this.getParentModel());
          int overlay = LivingEntityRenderer.getOverlayCoords(state, 0.0F);
          submit(right, poseStack, collector, light, overlay, state, skeleton);
          submit(left, poseStack, collector, light, overlay, state, skeleton);
@@ -33,7 +33,7 @@ public final class AttachableHeldLayer<S extends HumanoidRenderState, M extends 
    }
 
    private static void submit(
-      @Nullable WornAttachables.Frame frame,
+      WornAttachables.@Nullable Frame frame,
       PoseStack poseStack,
       SubmitNodeCollector collector,
       int light,
@@ -54,8 +54,7 @@ public final class AttachableHeldLayer<S extends HumanoidRenderState, M extends 
       }
    }
 
-   @Nullable
-   private static WornAttachables.Frame held(ItemStackRenderState item) {
+   private static WornAttachables.@Nullable Frame held(ItemStackRenderState item) {
       return (WornAttachables.Frame)item.getData(WornAttachables.HELD);
    }
 }

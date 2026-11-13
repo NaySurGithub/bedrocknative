@@ -15,7 +15,7 @@ public final class Skeleton {
    private final float[] scale;
    private final boolean[] relativeToEntity;
    private final Matrix4f[] world;
-   private final Matrix4f[] boundTo;
+   private final @Nullable Matrix4f[] boundTo;
    private final Matrix3f rotationScratch = new Matrix3f();
    private final Quaternionf quaternion = new Quaternionf();
 
@@ -143,8 +143,7 @@ public final class Skeleton {
       return point;
    }
 
-   @Nullable
-   public Vector3f locator(String name) {
+   public @Nullable Vector3f locator(String name) {
       for (int i = 0; i < this.geometry.boneCount(); i++) {
          List<MeshedGeometry.Locator> locators = this.geometry.bone(i).locators();
 

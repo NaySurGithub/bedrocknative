@@ -46,7 +46,9 @@ public record OreDisconnect(
             ? lang.get("hbui.ConnectionErrorRoute.server.disconnectedFromServer")
             : lang.get("hbui.ConnectionErrorRoute.server.disconnectedFrom", name);
          return new OreDisconnect(OreDisconnect.Variant.SERVER, end.reasonCode(), reason.name(), title, "", name, shown, "", details, false);
-      } else if (end.reasonCode() == 35) {
+      }
+
+      if (end.reasonCode() == 35) {
          return new OreDisconnect(
             OreDisconnect.Variant.CLIENT_MISMATCH,
             end.reasonCode(),
@@ -59,21 +61,21 @@ public record OreDisconnect(
             details,
             false
          );
-      } else {
-         OreDisconnect.Entry entry = entry(reason);
-         return new OreDisconnect(
-            OreDisconnect.Variant.STANDARD,
-            end.reasonCode(),
-            reason.name(),
-            lang.get(entry.title()),
-            lang.get(entry.body()),
-            name,
-            "",
-            "",
-            details,
-            entry.reconnect()
-         );
       }
+
+      OreDisconnect.Entry entry = entry(reason);
+      return new OreDisconnect(
+         OreDisconnect.Variant.STANDARD,
+         end.reasonCode(),
+         reason.name(),
+         lang.get(entry.title()),
+         lang.get(entry.body()),
+         name,
+         "",
+         "",
+         details,
+         entry.reconnect()
+      );
    }
 
    public static String serverMessage(String raw, OreLang lang) {
@@ -105,20 +107,20 @@ public record OreDisconnect(
    public static String stripFormatting(String text) {
       if (text.indexOf(167) < 0) {
          return text;
-      } else {
-         StringBuilder out = new StringBuilder(text.length());
-
-         for (int i = 0; i < text.length(); i++) {
-            char c = text.charAt(i);
-            if (c == 167) {
-               i++;
-            } else {
-               out.append(c);
-            }
-         }
-
-         return out.toString();
       }
+
+      StringBuilder out = new StringBuilder(text.length());
+
+      for (int i = 0; i < text.length(); i++) {
+         char c = text.charAt(i);
+         if (c == 167) {
+            i++;
+         } else {
+            out.append(c);
+         }
+      }
+
+      return out.toString();
    }
 
    static String details(SessionEnd end, String serverName, String address, OreLang lang) {
@@ -307,7 +309,7 @@ public record OreDisconnect(
    public record Entry(String title, String body, boolean reconnect) {
    }
 
-   public static enum Variant {
+   public enum Variant {
       STANDARD,
       SERVER,
       CLIENT_MISMATCH;

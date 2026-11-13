@@ -27,60 +27,53 @@ public final class JavaFontPages implements OreFont.PixelFace {
       this.glyphs = Map.copyOf(glyphs);
    }
 
-   @Nullable
-   public static JavaFontPages load() {
+   public static @Nullable JavaFontPages load() {
       return read(resource -> {
-         try {
-            byte[] t$;
-            try (InputStream in = JavaFontPages.class.getClassLoader().getResourceAsStream(resource)) {
-               t$ = in == null ? null : in.readNBytes(4194304);
-            }
-
-            return t$;
-         } catch (IOException var6) {
+         try (InputStream in = JavaFontPages.class.getClassLoader().getResourceAsStream(resource)) {
+            return in == null ? null : in.readNBytes(4194304);
+         } catch (IOException e) {
             return null;
          }
       });
    }
 
-   @Nullable
-   static JavaFontPages read(Function<String, byte[]> resources) {
+   static @Nullable JavaFontPages read(Function<String, byte @Nullable []> resources) {
       byte[] definition = resources.apply("assets/minecraft/font/include/default.json");
       if (definition == null) {
          return null;
-      } else {
-         Map<Integer, OreFont.PixelGlyph> glyphs = new HashMap<>();
-
-         try {
-            if (!(
-               JsonParser.parseString(new String(definition, StandardCharsets.UTF_8)) instanceof JsonObject object
-                  && object.get("providers") instanceof JsonArray providers
-            )) {
-               return null;
-            }
-
-            for (JsonElement element : providers) {
-               if (element instanceof JsonObject provider && "bitmap".equals(string(provider, "type"))) {
-                  provider(provider, resources, glyphs);
-               }
-            }
-         } catch (RuntimeException var9) {
-            BedrockNative.LOGGER.warn("Own menus: Java's font definition couldn't be read", var9);
-            return null;
-         }
-
-         if (!glyphs.containsKey(65)) {
-            return null;
-         } else {
-            OreFont.PixelGlyph space = new OreFont.PixelGlyph(0, 0, 0, 3, new byte[0]);
-            glyphs.put(32, space);
-            glyphs.put(160, space);
-            return new JavaFontPages(glyphs);
-         }
       }
+
+      Map<Integer, OreFont.PixelGlyph> glyphs = new HashMap<>();
+
+      try {
+         if (!(
+            JsonParser.parseString(new String(definition, StandardCharsets.UTF_8)) instanceof JsonObject object
+               && object.get("providers") instanceof JsonArray providers
+         )) {
+            return null;
+         }
+
+         for (JsonElement element : providers) {
+            if (element instanceof JsonObject provider && "bitmap".equals(string(provider, "type"))) {
+               provider(provider, resources, glyphs);
+            }
+         }
+      } catch (RuntimeException e) {
+         BedrockNative.LOGGER.warn("Own menus: Java's font definition couldn't be read", e);
+         return null;
+      }
+
+      if (!glyphs.containsKey(65)) {
+         return null;
+      }
+
+      OreFont.PixelGlyph space = new OreFont.PixelGlyph(0, 0, 0, 3, new byte[0]);
+      glyphs.put(32, space);
+      glyphs.put(160, space);
+      return new JavaFontPages(glyphs);
    }
 
-   private static void provider(JsonObject provider, Function<String, byte[]> resources, Map<Integer, OreFont.PixelGlyph> glyphs) {
+   private static void provider(JsonObject provider, Function<String, byte @Nullable []> resources, Map<Integer, OreFont.PixelGlyph> glyphs) {
       String file = string(provider, "file");
       if (file != null && provider.get("chars") instanceof JsonArray rows && !rows.isEmpty()) {
          String path = file.contains(":") ? file.substring(file.indexOf(58) + 1) : file;
@@ -90,7 +83,7 @@ public final class JavaFontPages implements OreFont.PixelFace {
                ArgbImage page;
                try {
                   page = BedrockImages.decode(bytes);
-               } catch (RuntimeException | IOException var18) {
+               } catch (IOException | RuntimeException e) {
                   return;
                }
 
@@ -121,8 +114,7 @@ public final class JavaFontPages implements OreFont.PixelFace {
       }
    }
 
-   @Nullable
-   private static OreFont.PixelGlyph glyph(ArgbImage page, int x0, int y0, int cellWidth, int cellHeight, int ascent) {
+   private static OreFont.@Nullable PixelGlyph glyph(ArgbImage page, int x0, int y0, int cellWidth, int cellHeight, int ascent) {
       int width = 0;
 
       for (int x = cellWidth - 1; x >= 0 && width == 0; x--) {
@@ -136,28 +128,26 @@ public final class JavaFontPages implements OreFont.PixelFace {
 
       if (width == 0) {
          return null;
-      } else {
-         byte[] alpha = new byte[width * cellHeight];
-
-         for (int yx = 0; yx < cellHeight; yx++) {
-            for (int x = 0; x < width; x++) {
-               alpha[yx * width + x] = (byte)(page.pixel(x0 + x, y0 + yx) >>> 24);
-            }
-         }
-
-         return new OreFont.PixelGlyph(width, cellHeight, ascent, width + 1, alpha);
       }
+
+      byte[] alpha = new byte[width * cellHeight];
+
+      for (int y = 0; y < cellHeight; y++) {
+         for (int x = 0; x < width; x++) {
+            alpha[y * width + x] = (byte)(page.pixel(x0 + x, y0 + y) >>> 24);
+         }
+      }
+
+      return new OreFont.PixelGlyph(width, cellHeight, ascent, width + 1, alpha);
    }
 
-   @Nullable
-   private static String string(JsonObject object, String key) {
+   private static @Nullable String string(JsonObject object, String key) {
       JsonElement value = object.get(key);
       return value != null && value.isJsonPrimitive() ? value.getAsString() : null;
    }
 
-   @Nullable
    @Override
-   public OreFont.PixelGlyph glyph(int codePoint) {
+   public OreFont.@Nullable PixelGlyph glyph(int codePoint) {
       return this.glyphs.get(codePoint);
    }
 
@@ -172,41 +162,41 @@ public final class JavaFontPages implements OreFont.PixelFace {
          OreFont.PixelGlyph cached = bold.get(shown);
          if (cached != null) {
             return cached;
-         } else {
-            OreFont.PixelGlyph plain = this.glyphs.get(shown);
-            if (plain == null) {
-               plain = this.glyphs.get(codePoint);
-            }
-
-            if (plain == null) {
-               return null;
-            } else {
-               OreFont.PixelGlyph made = embolden(plain);
-               if (bold.size() < 4096) {
-                  bold.put(shown, made);
-               }
-
-               return made;
-            }
          }
+
+         OreFont.PixelGlyph plain = this.glyphs.get(shown);
+         if (plain == null) {
+            plain = this.glyphs.get(codePoint);
+         }
+
+         if (plain == null) {
+            return null;
+         }
+
+         OreFont.PixelGlyph made = embolden(plain);
+         if (bold.size() < 4096) {
+            bold.put(shown, made);
+         }
+
+         return made;
       };
    }
 
    static OreFont.PixelGlyph embolden(OreFont.PixelGlyph plain) {
       if (plain.width() == 0) {
          return new OreFont.PixelGlyph(0, 0, 0, plain.advance() + 1, new byte[0]);
-      } else {
-         int width = plain.width() + 1;
-         byte[] alpha = new byte[width * plain.height()];
-
-         for (int y = 0; y < plain.height(); y++) {
-            for (int x = 0; x < width; x++) {
-               alpha[y * width + x] = (byte)Math.max(plain.coverage(x, y), plain.coverage(x - 1, y));
-            }
-         }
-
-         return new OreFont.PixelGlyph(width, plain.height(), plain.top(), plain.advance() + 1, alpha);
       }
+
+      int width = plain.width() + 1;
+      byte[] alpha = new byte[width * plain.height()];
+
+      for (int y = 0; y < plain.height(); y++) {
+         for (int x = 0; x < width; x++) {
+            alpha[y * width + x] = (byte)Math.max(plain.coverage(x, y), plain.coverage(x - 1, y));
+         }
+      }
+
+      return new OreFont.PixelGlyph(width, plain.height(), plain.top(), plain.advance() + 1, alpha);
    }
 
    @Override

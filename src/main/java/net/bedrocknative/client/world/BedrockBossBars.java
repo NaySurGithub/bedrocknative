@@ -6,7 +6,6 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
@@ -74,11 +73,7 @@ public final class BedrockBossBars {
                      switch (event.getAction()) {
                         case CREATE:
                            if (bar == null) {
-                              bar = new BossEvent(new UUID(-5740682150013829120L, id), title(event), color(event.getColor()), overlay(event.getOverlay())) {
-                                 {
-                                    Objects.requireNonNull(BedrockBossBars.this);
-                                 }
-                              };
+                              bar = new BossEvent(new UUID(-5740682150013829120L, id), title(event), color(event.getColor()), overlay(event.getOverlay())) {};
                               bar.setProgress(progress(event.getHealthPercentage()));
                               this.bars.put(id, bar);
                               this.update(ClientboundBossEventPacket.createAddPacket(bar));

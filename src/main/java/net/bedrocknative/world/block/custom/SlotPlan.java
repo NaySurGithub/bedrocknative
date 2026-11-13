@@ -61,16 +61,16 @@ public final class SlotPlan {
             break;
          }
 
-         int ix = classes.length - 1;
+         int i = classes.length - 1;
 
          while (true) {
-            if (ix >= 0) {
-               if (classes[ix] != from) {
-                  ix--;
+            if (i >= 0) {
+               if (classes[i] != from) {
+                  i--;
                   continue;
                }
 
-               classes[ix]--;
+               classes[i]--;
             }
 
             needed[from]--;
@@ -84,13 +84,13 @@ public final class SlotPlan {
       int unplaced = 0;
       if (over > 0L) {
          long perSlot = BedrockTextureSet.cost(SIZES[0], SIZES[0], padding, granularity);
-         unplaced = (int)Math.min((long)(counts[0] - BASE[0]), (over + perSlot - 1L) / perSlot);
+         unplaced = (int)Math.min(counts[0] - BASE[0], (over + perSlot - 1L) / perSlot);
          counts[0] -= unplaced;
          int left = unplaced;
 
-         for (int ix = classes.length - 1; ix >= 0 && left > 0; ix--) {
-            if (classes[ix] == 0) {
-               classes[ix] = -1;
+         for (int i = classes.length - 1; i >= 0 && left > 0; i--) {
+            if (classes[i] == 0) {
+               classes[i] = -1;
                left--;
             }
          }
@@ -130,12 +130,9 @@ public final class SlotPlan {
    }
 
    public record Plan(int[] counts, int[] classes, int unplaced) {
-      public Plan(int[] counts, int[] classes, int unplaced) {
+      public Plan {
          counts = (int[])counts.clone();
          classes = (int[])classes.clone();
-         this.counts = counts;
-         this.classes = classes;
-         this.unplaced = unplaced;
       }
 
       public int count(int sizeClass) {

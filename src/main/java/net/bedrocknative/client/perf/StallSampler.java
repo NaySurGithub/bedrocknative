@@ -14,8 +14,7 @@ public final class StallSampler {
    private static final long THRESHOLD_NANOS = 12000000L;
    private static final long INTERVAL_MICROS = 2000L;
    private static final int SHOWN = 6;
-   @Nullable
-   private static volatile StallSampler current;
+   private static volatile @Nullable StallSampler current;
    private static volatile long frameStarted;
    private final Thread client;
    private final Thread thread;
@@ -29,8 +28,7 @@ public final class StallSampler {
    private long lastSampledFrame;
    private int frameSamples;
    private int longestFrameSamples;
-   @Nullable
-   private String longestFrameStack;
+   private @Nullable String longestFrameStack;
    private static final int LONGEST_FRAME_SAMPLES = 15;
    private static final int STACK_FRAMES = 28;
 
@@ -51,18 +49,18 @@ public final class StallSampler {
       current = null;
       if (sampler == null) {
          return "";
-      } else {
-         sampler.stopped = true;
-         LockSupport.unpark(sampler.thread);
-
-         try {
-            sampler.thread.join(1000L);
-         } catch (InterruptedException var2) {
-            Thread.currentThread().interrupt();
-         }
-
-         return sampler.describe();
       }
+
+      sampler.stopped = true;
+      LockSupport.unpark(sampler.thread);
+
+      try {
+         sampler.thread.join(1000L);
+      } catch (InterruptedException e) {
+         Thread.currentThread().interrupt();
+      }
+
+      return sampler.describe();
    }
 
    public static void frameStarted(long now) {
@@ -139,24 +137,24 @@ public final class StallSampler {
    private String describe() {
       if (this.samples == 0) {
          return "";
-      } else {
-         String longest = this.longestFrameStack == null
-            ? ""
-            : String.format(Locale.ROOT, "; the longest frame (%d samples) was in: %s", this.longestFrameSamples, this.longestFrameStack);
-         return String.format(
-            Locale.ROOT,
-            "%d samples (%d us apart) in %d frames over %d ms; game loop: %s; in the client tick: %s; our code: %s; top frames: %s%s",
-            this.samples,
-            2000L,
-            this.slowFrames,
-            12L,
-            largest(this.phases),
-            largest(this.tickParts),
-            largest(this.ours),
-            largest(this.tops),
-            longest
-         );
       }
+
+      String longest = this.longestFrameStack == null
+         ? ""
+         : String.format(Locale.ROOT, "; the longest frame (%d samples) was in: %s", this.longestFrameSamples, this.longestFrameStack);
+      return String.format(
+         Locale.ROOT,
+         "%d samples (%d us apart) in %d frames over %d ms; game loop: %s; in the client tick: %s; our code: %s; top frames: %s%s",
+         this.samples,
+         2000L,
+         this.slowFrames,
+         12L,
+         largest(this.phases),
+         largest(this.tickParts),
+         largest(this.ours),
+         largest(this.tops),
+         longest
+      );
    }
 
    private static String stackText(StackTraceElement[] stack) {
@@ -181,16 +179,16 @@ public final class StallSampler {
    private static String largest(Map<String, Integer> counts) {
       if (counts.isEmpty()) {
          return "none";
-      } else {
-         List<Entry<String, Integer>> entries = new ArrayList<>(counts.entrySet());
-         entries.sort(Entry.<String, Integer>comparingByValue().reversed());
-         StringBuilder text = new StringBuilder();
-
-         for (int i = 0; i < Math.min(6, entries.size()); i++) {
-            text.append(i == 0 ? "" : ", ").append(entries.get(i).getKey()).append(' ').append(entries.get(i).getValue());
-         }
-
-         return text.toString();
       }
+
+      List<Entry<String, Integer>> entries = new ArrayList<>(counts.entrySet());
+      entries.sort(Entry.<String, Integer>comparingByValue().reversed());
+      StringBuilder text = new StringBuilder();
+
+      for (int i = 0; i < Math.min(6, entries.size()); i++) {
+         text.append(i == 0 ? "" : ", ").append(entries.get(i).getKey()).append(' ').append(entries.get(i).getValue());
+      }
+
+      return text.toString();
    }
 }

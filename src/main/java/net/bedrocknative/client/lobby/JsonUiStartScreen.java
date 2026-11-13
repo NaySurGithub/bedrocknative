@@ -32,20 +32,17 @@ import org.jspecify.annotations.Nullable;
 
 public final class JsonUiStartScreen extends TitleScreen implements LobbyScreen, JsonUiHost, StartData.Actions, ItemSource {
    public static final String SCREEN = "start.start_screen";
-   @Nullable
-   private static String pinnedSplash;
+   private static @Nullable String pinnedSplash;
    private final UiDefinitionSet definitions;
    private final StartData data;
    private final LobbyHost host;
    private final LobbyDoll doll;
    private final MenuNotice notice = new MenuNotice();
    private final String splash;
-   @Nullable
-   private List<String> splashLines;
+   private @Nullable List<String> splashLines;
    private boolean hidden;
    private boolean turning;
-   @Nullable
-   private String builtLanguage;
+   private @Nullable String builtLanguage;
    private final DiscordButton discord = new DiscordButton(false, false);
 
    private JsonUiStartScreen(UiDefinitionSet definitions, StartData data, JsonUiScreen ui) {
@@ -62,8 +59,7 @@ public final class JsonUiStartScreen extends TitleScreen implements LobbyScreen,
       ui.fallback(this::fallBack);
    }
 
-   @Nullable
-   static JsonUiStartScreen create(UiDefinitionSet definitions) {
+   static @Nullable JsonUiStartScreen create(UiDefinitionSet definitions) {
       Minecraft minecraft = Minecraft.getInstance();
       BedrockLobby.language(minecraft, true);
       StartData data = new StartData();
@@ -71,10 +67,10 @@ public final class JsonUiStartScreen extends TitleScreen implements LobbyScreen,
       JsonUiScreen ui = JsonUiScreen.create(definitions, "start.start_screen", StartData.variables(), data);
       if (ui == null) {
          return null;
-      } else {
-         ui.instance().problems().log("lobby start screen");
-         return new JsonUiStartScreen(definitions, data, ui);
       }
+
+      ui.instance().problems().log("lobby start screen");
+      return new JsonUiStartScreen(definitions, data, ui);
    }
 
    public static void pinSplash(@Nullable String text) {
@@ -110,8 +106,7 @@ public final class JsonUiStartScreen extends TitleScreen implements LobbyScreen,
       return this.splash;
    }
 
-   @Nullable
-   Screen playScreen(int tab) {
+   @Nullable Screen playScreen(int tab) {
       return BedrockLobby.playScreen(this, tab);
    }
 
@@ -122,6 +117,7 @@ public final class JsonUiStartScreen extends TitleScreen implements LobbyScreen,
       }
    }
 
+   @Override
    protected void init() {
       this.splashLines = null;
       if (!this.minecraft.options.languageCode.equals(this.builtLanguage)) {
@@ -143,48 +139,56 @@ public final class JsonUiStartScreen extends TitleScreen implements LobbyScreen,
       }
    }
 
+   @Override
    public void tick() {
       fill(this.data, this.doll);
    }
 
+   @Override
    public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
       BedrockPanorama.prepare(this.minecraft);
       this.extractPanorama(graphics, a);
    }
 
+   @Override
    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
       this.host.render(graphics);
       this.notice.render(graphics, this.width);
       this.discord.render(graphics, this.width, this.height, mouseX, mouseY);
    }
 
+   @Override
    public void removed() {
       this.hidden = true;
       this.releaseDoll();
       super.removed();
    }
 
+   @Override
    public void mouseMoved(double x, double y) {
       this.host.mouseMoved(x, y);
    }
 
+   @Override
    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
       if (event.button() == 1 && this.discord.clicked(event.x(), event.y())) {
          return true;
-      } else {
-         if (event.button() == 1 && this.doll.contains(event.x(), event.y())) {
-            this.turning = true;
-         }
-
-         return this.host.mouseClicked(event);
       }
+
+      if (event.button() == 1 && this.doll.contains(event.x(), event.y())) {
+         this.turning = true;
+      }
+
+      return this.host.mouseClicked(event);
    }
 
+   @Override
    public boolean mouseReleased(MouseButtonEvent event) {
       this.turning = false;
       return this.host.mouseReleased(event);
    }
 
+   @Override
    public boolean mouseDragged(MouseButtonEvent event, double dx, double dy) {
       if (this.turning) {
          this.doll.turn(dx);
@@ -194,10 +198,12 @@ public final class JsonUiStartScreen extends TitleScreen implements LobbyScreen,
       }
    }
 
+   @Override
    public boolean mouseScrolled(double x, double y, double scrollX, double scrollY) {
       return this.host.mouseScrolled(x, y, scrollY);
    }
 
+   @Override
    public boolean keyPressed(KeyEvent event) {
       if (event.isEscape()) {
          this.minecraft.gui.setScreen(new StartExitScreen(this));
@@ -207,10 +213,12 @@ public final class JsonUiStartScreen extends TitleScreen implements LobbyScreen,
       }
    }
 
+   @Override
    public boolean charTyped(CharacterEvent event) {
       return this.host.charTyped(event);
    }
 
+   @Override
    public boolean preeditUpdated(@Nullable PreeditEvent event) {
       return this.host.preeditUpdated(event);
    }
@@ -247,8 +255,7 @@ public final class JsonUiStartScreen extends TitleScreen implements LobbyScreen,
 
    @Override
    public boolean draw(GuiGraphicsExtractor graphics, UiDrawCommand.Custom renderer) {
-      String var3 = renderer.renderer();
-      switch (var3) {
+      switch (renderer.renderer()) {
          case "paper_doll_renderer":
             this.doll.draw(graphics, renderer.x(), renderer.y(), renderer.w(), renderer.h());
             break;

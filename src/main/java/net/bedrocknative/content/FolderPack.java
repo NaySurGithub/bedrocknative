@@ -37,53 +37,53 @@ public final class FolderPack implements PackSource {
    public Optional<byte[]> read(String path) throws IOException {
       if (PackPaths.escapes(path)) {
          return Optional.empty();
-      } else {
-         int slash = path.lastIndexOf(47);
-         String folder = slash > 0 ? path.substring(0, slash) : "";
-
-         try {
-            if (this.looseFolders.computeIfAbsent(folder, key -> Files.isDirectory(this.root.resolve(key)))) {
-               Path loose = this.root.resolve(path);
-               if (Files.isRegularFile(loose)) {
-                  return Optional.of(Files.readAllBytes(loose));
-               }
-            }
-         } catch (InvalidPathException var5) {
-            return Optional.empty();
-         }
-
-         if (folder.isEmpty()) {
-            return Optional.empty();
-         } else {
-            Optional<BrArchive> archive = this.archives.computeIfAbsent(folder, this::openArchive);
-            return archive.isPresent() ? archive.get().read(path.substring(slash + 1)) : Optional.empty();
-         }
       }
+
+      int slash = path.lastIndexOf(47);
+      String folder = slash > 0 ? path.substring(0, slash) : "";
+
+      try {
+         if (this.looseFolders.computeIfAbsent(folder, key -> Files.isDirectory(this.root.resolve(key)))) {
+            Path loose = this.root.resolve(path);
+            if (Files.isRegularFile(loose)) {
+               return Optional.of(Files.readAllBytes(loose));
+            }
+         }
+      } catch (InvalidPathException e) {
+         return Optional.empty();
+      }
+
+      if (folder.isEmpty()) {
+         return Optional.empty();
+      }
+
+      Optional<BrArchive> archive = this.archives.computeIfAbsent(folder, this::openArchive);
+      return archive.isPresent() ? archive.get().read(path.substring(slash + 1)) : Optional.empty();
    }
 
    @Override
    public boolean has(String path) {
       if (PackPaths.escapes(path)) {
          return false;
-      } else {
-         int slash = path.lastIndexOf(47);
-         String folder = slash > 0 ? path.substring(0, slash) : "";
-
-         try {
-            if (this.looseFolders.computeIfAbsent(folder, key -> Files.isDirectory(this.root.resolve(key))) && Files.isRegularFile(this.root.resolve(path))) {
-               return true;
-            }
-         } catch (InvalidPathException var5) {
-            return false;
-         }
-
-         if (folder.isEmpty()) {
-            return false;
-         } else {
-            Optional<BrArchive> archive = this.archives.computeIfAbsent(folder, this::openArchive);
-            return archive.isPresent() && archive.get().has(path.substring(slash + 1));
-         }
       }
+
+      int slash = path.lastIndexOf(47);
+      String folder = slash > 0 ? path.substring(0, slash) : "";
+
+      try {
+         if (this.looseFolders.computeIfAbsent(folder, key -> Files.isDirectory(this.root.resolve(key))) && Files.isRegularFile(this.root.resolve(path))) {
+            return true;
+         }
+      } catch (InvalidPathException e) {
+         return false;
+      }
+
+      if (folder.isEmpty()) {
+         return false;
+      }
+
+      Optional<BrArchive> archive = this.archives.computeIfAbsent(folder, this::openArchive);
+      return archive.isPresent() && archive.get().has(path.substring(slash + 1));
    }
 
    @Override
@@ -122,8 +122,8 @@ public final class FolderPack implements PackSource {
             Optional<BrArchive> archive = this.archives(archiveFolder);
             archive.ifPresent(foundx -> foundx.names().forEach(name -> paths.add(archiveFolder + "/" + name)));
          }
-      } catch (InvalidPathException | UncheckedIOException | IOException var18) {
-         BedrockNative.LOGGER.warn("Couldn't list {} in {}: {}", new Object[]{folder, this.root, var18.getMessage()});
+      } catch (IOException | InvalidPathException | UncheckedIOException e) {
+         BedrockNative.LOGGER.warn("Couldn't list {} in {}: {}", new Object[]{folder, this.root, e.getMessage()});
       }
 
       return List.copyOf(paths);
@@ -143,7 +143,7 @@ public final class FolderPack implements PackSource {
                files.filter(x$0 -> Files.isRegularFile(x$0)).forEach(file -> names.add(file.getFileName().toString()));
             }
          }
-      } catch (InvalidPathException var8) {
+      } catch (InvalidPathException e) {
          return List.of();
       }
 
@@ -155,19 +155,19 @@ public final class FolderPack implements PackSource {
       Path file;
       try {
          file = this.root.resolve("__brarchive").resolve(folder + ".brarchive");
-      } catch (InvalidPathException var5) {
+      } catch (InvalidPathException e) {
          return Optional.empty();
       }
 
       if (!Files.isRegularFile(file)) {
          return Optional.empty();
-      } else {
-         try {
-            return Optional.of(BrArchive.open(file));
-         } catch (IOException var4) {
-            BedrockNative.LOGGER.warn("Couldn't read Bedrock archive {}", file, var4);
-            return Optional.empty();
-         }
+      }
+
+      try {
+         return Optional.of(BrArchive.open(file));
+      } catch (IOException e) {
+         BedrockNative.LOGGER.warn("Couldn't read Bedrock archive {}", file, e);
+         return Optional.empty();
       }
    }
 

@@ -19,7 +19,7 @@ public final class LogBudget {
 
    public boolean take(long nowNanos) {
       if (this.last != Long.MIN_VALUE && nowNanos > this.last) {
-         this.tokens = Math.min((double)this.burst, this.tokens + (double)(nowNanos - this.last) / this.refillNanos);
+         this.tokens = Math.min(this.burst, this.tokens + (double)(nowNanos - this.last) / this.refillNanos);
       }
 
       this.last = nowNanos;

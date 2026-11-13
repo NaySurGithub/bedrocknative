@@ -16,8 +16,7 @@ public interface ParticleWorld {
    default void playSound(String event, double x, double y, double z, ParticleEffect source) {
    }
 
-   @Nullable
-   default ParticleEffect effect(String identifier) {
+   default @Nullable ParticleEffect effect(String identifier) {
       return null;
    }
 

@@ -1,7 +1,6 @@
 package net.bedrocknative.client.world;
 
 import java.util.Locale;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.PriorityBlockingQueue;
@@ -46,7 +45,7 @@ public final class ChunkStream {
    private static final long BURST_QUIET_NANOS = 1000000000L;
    private static final int BURST_LOG_COLUMNS = 32;
    private static final long STALE_DRAIN_NANOS = 100000000L;
-   private static final int WORKERS = Math.clamp((long)(Runtime.getRuntime().availableProcessors() / 4), 1, 3);
+   private static final int WORKERS = Math.clamp(Runtime.getRuntime().availableProcessors() / 4, 1, 3);
    private static final AtomicInteger WORKER_NUMBER = new AtomicInteger();
    private static final AtomicLong SUBMITTED = new AtomicLong();
    private static final ThreadPoolExecutor DECODE = new ThreadPoolExecutor(
@@ -60,8 +59,7 @@ public final class ChunkStream {
    private static final Set<Class<?>> FAILURES_LOGGED = ConcurrentHashMap.newKeySet();
    private static final ArrivalWatch ARRIVALS = new ArrivalWatch(System::nanoTime);
    private static volatile long playerChunk = ColumnQueue.key(0, 0);
-   @Nullable
-   private static volatile ChunkStream active;
+   private static volatile @Nullable ChunkStream active;
    private final Minecraft minecraft;
    private final Runnable onFullColumn;
    private final ApplyBudget budget = new ApplyBudget();
@@ -76,10 +74,8 @@ public final class ChunkStream {
    private long burstStarted;
    private long lastArrival;
    private long emptiedAt;
-   @Nullable
-   private ThreadedLightEngine.Stats burstLight;
-   @Nullable
-   private MeshStats.Snapshot burstMeshes;
+   private ThreadedLightEngine.@Nullable Stats burstLight;
+   private MeshStats.@Nullable Snapshot burstMeshes;
 
    public ChunkStream(Minecraft minecraft, Runnable onFullColumn) {
       this.minecraft = minecraft;
@@ -141,11 +137,11 @@ public final class ChunkStream {
    private long frameBudget() {
       if (this.minecraft.gui.screen() instanceof LevelLoadingScreen) {
          return LOADING_BUDGET_NANOS;
-      } else {
-         long base = ADAPTIVE_BUDGET ? this.frameBudget.nanos(this.queue.waiting()) : BUDGET_NANOS;
-         int limit = this.minecraft.getFramerateLimitTracker().getFramerateLimit();
-         return limit > 0 && limit < 260 ? Math.max(base, 1000000000L / limit / 3L) : base;
       }
+
+      long base = ADAPTIVE_BUDGET ? this.frameBudget.nanos(this.queue.waiting()) : BUDGET_NANOS;
+      int limit = this.minecraft.getFramerateLimitTracker().getFramerateLimit();
+      return limit > 0 && limit < 260 ? Math.max(base, 1000000000L / limit / 3L) : base;
    }
 
    private int frameColumns() {
@@ -155,26 +151,25 @@ public final class ChunkStream {
    private static ColumnQueue.Priority priority(LocalPlayer player, int chunkX, int chunkZ) {
       if (!PRIORITY_AHEAD) {
          return ColumnQueue.Priority.around(chunkX, chunkZ);
-      } else {
-         Vec3 velocity = player.getDeltaMovement();
-         double aheadX = velocity.x * 20.0 / 16.0;
-         double aheadZ = velocity.z * 20.0 / 16.0;
-         double ahead = Math.sqrt(aheadX * aheadX + aheadZ * aheadZ);
-         if (ahead > 6.0) {
-            aheadX *= 6.0 / ahead;
-            aheadZ *= 6.0 / ahead;
-         }
-
-         Vec3 look = player.getViewVector(1.0F);
-         double flat = Math.sqrt(look.x * look.x + look.z * look.z);
-         double forwardX = flat > 1.0E-6 ? look.x / flat : 0.0;
-         double forwardZ = flat > 1.0E-6 ? look.z / flat : 0.0;
-         return new ColumnQueue.Priority(chunkX, chunkZ, player.getX() / 16.0 + aheadX, player.getZ() / 16.0 + aheadZ, forwardX, forwardZ);
       }
+
+      Vec3 velocity = player.getDeltaMovement();
+      double aheadX = velocity.x * 20.0 / 16.0;
+      double aheadZ = velocity.z * 20.0 / 16.0;
+      double ahead = Math.sqrt(aheadX * aheadX + aheadZ * aheadZ);
+      if (ahead > 6.0) {
+         aheadX *= 6.0 / ahead;
+         aheadZ *= 6.0 / ahead;
+      }
+
+      Vec3 look = player.getViewVector(1.0F);
+      double flat = Math.sqrt(look.x * look.x + look.z * look.z);
+      double forwardX = flat > 1.0E-6 ? look.x / flat : 0.0;
+      double forwardZ = flat > 1.0E-6 ? look.z / flat : 0.0;
+      return new ColumnQueue.Priority(chunkX, chunkZ, player.getX() / 16.0 + aheadX, player.getZ() / 16.0 + aheadZ, forwardX, forwardZ);
    }
 
-   @Nullable
-   public static ChunkStream active() {
+   public static @Nullable ChunkStream active() {
       return active;
    }
 
@@ -366,9 +361,9 @@ public final class ChunkStream {
          try {
             this.work.run();
             PerfProbe.end(PerfProbe.Part.CHUNKS_DECODE, perf);
-         } catch (RuntimeException var4) {
-            if (ChunkStream.FAILURES_LOGGED.add(var4.getClass())) {
-               BedrockNative.LOGGER.error("Chunk decode failed; later failures of this kind are not logged", var4);
+         } catch (RuntimeException e) {
+            if (ChunkStream.FAILURES_LOGGED.add(e.getClass())) {
+               BedrockNative.LOGGER.error("Chunk decode failed; later failures of this kind are not logged", e);
             }
          }
       }
@@ -380,13 +375,7 @@ public final class ChunkStream {
    }
 
    private final class LevelTarget implements ColumnQueue.Target<PreparedColumn> {
-      @Nullable
-      ClientLevel level;
-
-      private LevelTarget() {
-         Objects.requireNonNull(ChunkStream.this);
-         super();
-      }
+      @Nullable ClientLevel level;
 
       @Override
       public boolean inRange(int x, int z) {

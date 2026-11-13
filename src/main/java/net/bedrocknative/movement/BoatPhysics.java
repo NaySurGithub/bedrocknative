@@ -101,7 +101,7 @@ public final class BoatPhysics {
 
    public static boolean isBlocked(double from, double intended, double after) {
       float expected = (float)(from + intended);
-      double tolerance = Math.max(1.0E-5 * Math.max(1.0, Math.abs(intended)), (double)Math.ulp(Math.max(Math.abs(expected), Math.abs((float)after))));
+      double tolerance = Math.max(1.0E-5 * Math.max(1.0, Math.abs(intended)), Math.ulp(Math.max(Math.abs(expected), Math.abs((float)after))));
       return Math.abs(after - expected) > tolerance;
    }
 
@@ -163,7 +163,7 @@ public final class BoatPhysics {
       }
    }
 
-   public static enum Medium {
+   public enum Medium {
       LAND,
       WATER,
       UNDER_WATER,

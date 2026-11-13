@@ -22,12 +22,10 @@ import org.jspecify.annotations.Nullable;
 public final class CustomFormScreen extends FormScreen {
    private static final int MAX_INPUT_LENGTH = 100;
    private final BedrockForm.Custom form;
-   @Nullable
-   private final Screen settingsParent;
+   private final @Nullable Screen settingsParent;
    private final Object[] state;
-   private final List<AbstractWidget> controls = new ArrayList<>();
-   @Nullable
-   private AbstractWidget submit;
+   private final List<@Nullable AbstractWidget> controls = new ArrayList<>();
+   private @Nullable AbstractWidget submit;
 
    public CustomFormScreen(FormScreen.Host host, int formId, BedrockForm.Custom form, @Nullable FormScreen below, @Nullable Screen settingsParent) {
       super(host, formId, form.title(), below);
@@ -40,9 +38,8 @@ public final class CustomFormScreen extends FormScreen {
       return this.form;
    }
 
-   @Nullable
    @Override
-   public Screen settingsParent() {
+   public @Nullable Screen settingsParent() {
       return this.settingsParent;
    }
 
@@ -51,7 +48,7 @@ public final class CustomFormScreen extends FormScreen {
       return this.settingsParent != null;
    }
 
-   public List<AbstractWidget> controls() {
+   public List<@Nullable AbstractWidget> controls() {
       return this.controls;
    }
 
@@ -82,7 +79,7 @@ public final class CustomFormScreen extends FormScreen {
       for (int i = 0; i < elements.size(); i++) {
          FormElement element = elements.get(i);
 
-         AbstractWidget var10000 = switch (element) {
+         AbstractWidget control = switch (element) {
             case FormElement.Label label -> this.text(body, label.text(), width, FormTextWidget.Kind.TEXT);
             case FormElement.Header header -> this.text(body, header.text(), width, FormTextWidget.Kind.HEADER);
             case FormElement.Divider ignored -> {
@@ -121,8 +118,6 @@ public final class CustomFormScreen extends FormScreen {
             case FormElement.Dropdown dropdown -> withTooltip(this.dropdown(dropdown, (Integer)this.state[i], width), dropdown.tooltip());
             default -> null;
          };
-
-         AbstractWidget control = var10000;
          boolean textOnly = !element.hasValue();
          if (control != null && !textOnly) {
             body.addChild(control);
@@ -131,14 +126,13 @@ public final class CustomFormScreen extends FormScreen {
          this.controls.add(textOnly ? null : control);
       }
 
-      Component submitText = (Component)(this.isServerSettings()
+      Component submitText = this.isServerSettings()
          ? CommonComponents.GUI_DONE
-         : BedrockText.ui(this.form.submit() != null && !this.form.submit().isEmpty() ? this.form.submit() : "gui.submit"));
-      this.submit = (AbstractWidget)body.addChild(new FormButton(this.font, width, 32, submitText, null, this::submit));
+         : BedrockText.ui(this.form.submit() != null && !this.form.submit().isEmpty() ? this.form.submit() : "gui.submit");
+      this.submit = body.addChild(new FormButton(this.font, width, 32, submitText, null, this::submit));
    }
 
-   @Nullable
-   private AbstractWidget text(LinearLayout body, String text, int width, FormTextWidget.Kind kind) {
+   private @Nullable AbstractWidget text(LinearLayout body, String text, int width, FormTextWidget.Kind kind) {
       body.addChild(new FormTextWidget(this.font, BedrockText.ui(text), width, kind));
       return null;
    }
@@ -146,12 +140,14 @@ public final class CustomFormScreen extends FormScreen {
    private AbstractWidget dropdown(FormElement.Dropdown dropdown, int selected, int width) {
       Component label = BedrockText.ui(dropdown.text());
       if (dropdown.options().isEmpty()) {
-         CycleButton<Integer> empty = CycleButton.builder(index -> Component.empty(), 0).withValues(new Integer[]{0}).create(0, 0, width, 20, label);
+         CycleButton<Integer> empty = CycleButton.<Integer>builder(index -> Component.empty(), 0).withValues(0).create(0, 0, width, 20, label);
          empty.active = false;
          return empty;
       } else {
          List<Integer> indices = IntStream.range(0, dropdown.options().size()).boxed().toList();
-         return CycleButton.builder(index -> BedrockText.ui(dropdown.options().get(index)), selected).withValues(indices).create(0, 0, width, 20, label);
+         return CycleButton.<Integer>builder(index -> BedrockText.ui(dropdown.options().get(index)), selected)
+            .withValues(indices)
+            .create(0, 0, width, 20, label);
       }
    }
 
@@ -164,7 +160,7 @@ public final class CustomFormScreen extends FormScreen {
    }
 
    private static Component labelled(String text, Component value) {
-      return (Component)(text.isEmpty() ? value : Component.empty().append(BedrockText.ui(text)).append(": ").append(value));
+      return text.isEmpty() ? value : Component.empty().append(BedrockText.ui(text)).append(": ").append(value);
    }
 
    static String number(float value) {
@@ -208,10 +204,10 @@ public final class CustomFormScreen extends FormScreen {
       for (int i = 0; i < elements.size(); i++) {
          values.set(i, switch ((FormElement)elements.get(i)) {
             case FormElement.Input ignored -> this.state[i];
-            case FormElement.Toggle ignoredx -> this.state[i];
+            case FormElement.Toggle ignored -> this.state[i];
             case FormElement.Slider slider -> slider.valueAt((Integer)this.state[i]);
-            case FormElement.StepSlider ignoredxx -> this.state[i];
-            case FormElement.Dropdown ignoredxxx -> this.state[i];
+            case FormElement.StepSlider ignored -> this.state[i];
+            case FormElement.Dropdown ignored -> this.state[i];
             default -> null;
          });
       }
@@ -219,8 +215,7 @@ public final class CustomFormScreen extends FormScreen {
       return FormResponse.custom(values);
    }
 
-   @Nullable
-   public AbstractWidget submitButton() {
+   public @Nullable AbstractWidget submitButton() {
       return this.submit;
    }
 }

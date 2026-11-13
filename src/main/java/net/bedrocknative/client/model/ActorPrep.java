@@ -26,21 +26,18 @@ public final class ActorPrep {
    static final long MAX_PREPARED_BYTES = 67108864L;
    static final long MAX_WARM_PIXELS = 16777216L;
    private static final long STALE_DRAIN_NANOS = 100000000L;
-   static final int WORKERS = Math.clamp((long)(Runtime.getRuntime().availableProcessors() / 4), 1, 2);
-   @Nullable
-   private static final PrepPool POOL = ENABLED
+   static final int WORKERS = Math.clamp(Runtime.getRuntime().availableProcessors() / 4, 1, 2);
+   private static final @Nullable PrepPool POOL = ENABLED
       ? new PrepPool("Bedrock actor prep", WORKERS, 5, 512, 67108864L, (message, error) -> BedrockNative.LOGGER.warn(message, error))
       : null;
-   @Nullable
-   private static volatile RegistryWarmer warmer;
+   private static volatile @Nullable RegistryWarmer warmer;
    private static long lastDrain;
    private static volatile double[] viewPosition = new double[0];
 
    private ActorPrep() {
    }
 
-   @Nullable
-   public static PrepPool pool() {
+   public static @Nullable PrepPool pool() {
       return POOL;
    }
 
@@ -49,7 +46,7 @@ public final class ActorPrep {
    }
 
    static Executor modelExecutor() {
-      return (Executor)(POOL != null ? POOL.executor(PrepPool.Tier.NEAR) : Util.backgroundExecutor());
+      return POOL != null ? POOL.executor(PrepPool.Tier.NEAR) : Util.backgroundExecutor();
    }
 
    public static void register() {
@@ -148,14 +145,12 @@ public final class ActorPrep {
       }
    }
 
-   @Nullable
-   public static RegistryWarmer.Summary warmed() {
+   public static RegistryWarmer.@Nullable Summary warmed() {
       RegistryWarmer current = warmer;
       return current != null ? current.summary() : null;
    }
 
-   @Nullable
-   public static PrepPool.Stats stats() {
+   public static PrepPool.@Nullable Stats stats() {
       PrepPool pool = POOL;
       return pool != null ? pool.stats() : null;
    }

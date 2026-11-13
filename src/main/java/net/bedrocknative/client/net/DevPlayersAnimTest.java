@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -78,8 +77,7 @@ final class DevPlayersAnimTest {
    private final List<String> results = new ArrayList<>();
    private final List<Long> injected = new ArrayList<>();
    private final AtomicLong ticks = new AtomicLong();
-   @Nullable
-   private volatile Consumer<Minecraft> perTick;
+   private volatile @Nullable Consumer<Minecraft> perTick;
    private long nextId = 2114977792L;
    private int failed;
    private volatile long botRuntimeId = -1L;
@@ -129,9 +127,9 @@ final class DevPlayersAnimTest {
          }
 
          this.check("setup", false, "the model registry never loaded");
-      } catch (RuntimeException var13) {
-         this.check("exception", false, String.valueOf(var13));
-         BedrockNative.LOGGER.error("Dev players-anim test failed with an exception", var13);
+      } catch (RuntimeException e) {
+         this.check("exception", false, String.valueOf(e));
+         BedrockNative.LOGGER.error("Dev players-anim test failed with an exception", e);
          return;
       } finally {
          this.perTick = null;
@@ -305,7 +303,7 @@ final class DevPlayersAnimTest {
 
          if (tick[0] % spacing == 2 && at.size() < count) {
             at.add(client.level.getGameTime());
-            this.inject.accept((BedrockPacket)(actorEvent ? attackStart(walker.npc.uniqueId) : swing(walker.npc.uniqueId)));
+            this.inject.accept(actorEvent ? attackStart(walker.npc.uniqueId) : swing(walker.npc.uniqueId));
          }
 
          if (tick[0] == 5) {
@@ -564,13 +562,11 @@ final class DevPlayersAnimTest {
 
    private void onPacket(BedrockPacket packet) {
       long id = this.botRuntimeId;
-      Objects.requireNonNull(packet);
       BedrockPacket var4 = packet;
       byte var5 = 0;
 
       while (true) {
-         switch (SwitchBootstraps.typeSwitch<"typeSwitch",AddPlayerPacket,MovePlayerPacket,MoveEntityDeltaPacket,MoveEntityAbsolutePacket,SetEntityMotionPacket,AnimatePacket,EntityEventPacket,TextPacket>(
-            var4, var5
+         switch (net.bedrocknative.TypeSwitchHelper.index(new Class<?>[]{AddPlayerPacket.class, MovePlayerPacket.class, MoveEntityDeltaPacket.class, MoveEntityAbsolutePacket.class, SetEntityMotionPacket.class, AnimatePacket.class, EntityEventPacket.class, TextPacket.class}, var4, var5
          )) {
             case 0:
                AddPlayerPacket add = (AddPlayerPacket)var4;
@@ -606,34 +602,34 @@ final class DevPlayersAnimTest {
                var5 = 2;
                break;
             case 2:
-               MoveEntityDeltaPacket move = (MoveEntityDeltaPacket)var4;
-               if (move.getRuntimeEntityId() == id && this.recordingBot) {
+               MoveEntityDeltaPacket move2 = (MoveEntityDeltaPacket)var4;
+               if (move2.getRuntimeEntityId() == id && this.recordingBot) {
                   this.botPackets
                      .merge(
                         "MoveActorDelta ticks "
-                           + move.getTicks()
-                           + (move.isForceMove() ? " forceMove" : "")
-                           + (move.isForceCompletion() ? " forceCompletion" : ""),
+                           + move2.getTicks()
+                           + (move2.isForceMove() ? " forceMove" : "")
+                           + (move2.isForceCompletion() ? " forceCompletion" : ""),
                         1,
                         Integer::sum
                      );
                   this.sample(
                      "MoveActorDelta "
-                        + move.getFlags()
+                        + move2.getFlags()
                         + " ground "
-                        + move.isOnGround()
+                        + move2.isOnGround()
                         + " ticks "
-                        + move.getTicks()
+                        + move2.getTicks()
                         + " at "
-                        + move.getX()
+                        + move2.getX()
                         + " "
-                        + move.getY()
+                        + move2.getY()
                         + " "
-                        + move.getZ()
+                        + move2.getZ()
                         + " yaw "
-                        + move.getYaw()
+                        + move2.getYaw()
                         + " head "
-                        + move.getHeadYaw()
+                        + move2.getHeadYaw()
                         + " (game time "
                         + this.gameTimeNow()
                         + ")"
@@ -644,10 +640,10 @@ final class DevPlayersAnimTest {
                var5 = 3;
                break;
             case 3:
-               MoveEntityAbsolutePacket move = (MoveEntityAbsolutePacket)var4;
-               if (move.getRuntimeEntityId() == id && this.recordingBot) {
+               MoveEntityAbsolutePacket move3 = (MoveEntityAbsolutePacket)var4;
+               if (move3.getRuntimeEntityId() == id && this.recordingBot) {
                   this.botPackets.merge("MoveActorAbsolute", 1, Integer::sum);
-                  this.sample("MoveActorAbsolute at " + move.getPosition() + " rotation " + move.getRotation() + " ground " + move.isOnGround());
+                  this.sample("MoveActorAbsolute at " + move3.getPosition() + " rotation " + move3.getRotation() + " ground " + move3.isOnGround());
                   return;
                }
 
@@ -721,8 +717,8 @@ final class DevPlayersAnimTest {
 
       int[] histogram = new int[4];
 
-      for (long tickx = from; tickx <= to; tickx++) {
-         histogram[Math.min(3, perTick.getOrDefault(tickx, 0))]++;
+      for (long tick = from; tick <= to; tick++) {
+         histogram[Math.min(3, perTick.getOrDefault(tick, 0))]++;
       }
 
       return String.format(Locale.ROOT, "ticks with 0/1/2/3+ move packets: %d/%d/%d/%d", histogram[0], histogram[1], histogram[2], histogram[3]);
@@ -738,20 +734,19 @@ final class DevPlayersAnimTest {
       this.awaitTicks(16);
    }
 
-   @Nullable
-   private Entity bot() {
+   private @Nullable Entity bot() {
       return this.onClient(() -> {
          if (this.minecraft.level == null) {
             return null;
-         } else {
-            for (Entity entity : this.minecraft.level.entitiesForRendering()) {
-               if (entity != this.minecraft.player && entity instanceof Player player && "BNBot".equals(player.getGameProfile().name())) {
-                  return entity;
-               }
-            }
-
-            return null;
          }
+
+         for (Entity entity : this.minecraft.level.entitiesForRendering()) {
+            if (entity != this.minecraft.player && entity instanceof Player player && "BNBot".equals(player.getGameProfile().name())) {
+               return entity;
+            }
+         }
+
+         return null;
       });
    }
 
@@ -840,10 +835,10 @@ final class DevPlayersAnimTest {
       int stopTicks = -1;
       float stillSince = Float.NaN;
 
-      for (float[] framex : frames) {
-         float tick = framex[1];
+      for (float[] frame : frames) {
+         float tick = frame[1];
          if (!(tick < (float)segment.stop)) {
-            if (Math.abs(framex[13]) > 3.0F) {
+            if (Math.abs(frame[13]) > 3.0F) {
                stillSince = Float.NaN;
             } else if (Float.isNaN(stillSince)) {
                stillSince = tick;
@@ -1026,19 +1021,18 @@ final class DevPlayersAnimTest {
       return event;
    }
 
-   @Nullable
-   private Player player(UUID uuid) {
+   private @Nullable Player player(UUID uuid) {
       if (this.minecraft.level == null) {
          return null;
-      } else {
-         for (Entity entity : this.minecraft.level.entitiesForRendering()) {
-            if (entity instanceof Player player && player.getUUID().equals(uuid)) {
-               return player;
-            }
-         }
-
-         return null;
       }
+
+      for (Entity entity : this.minecraft.level.entitiesForRendering()) {
+         if (entity instanceof Player player && player.getUUID().equals(uuid)) {
+            return player;
+         }
+      }
+
+      return null;
    }
 
    private String describe(DevPlayersAnimTest.Npc npc) {
@@ -1047,18 +1041,17 @@ final class DevPlayersAnimTest {
       return described != null ? described : "not drawn by the runtime";
    }
 
-   @Nullable
-   private SerializedSkin classic(String texture) {
+   private @Nullable SerializedSkin classic(String texture) {
       if (!Files.isRegularFile(SKIN_PACK.resolve(texture))) {
          return null;
-      } else {
-         try {
-            JsonObject claims = BedrockSkin.classicFromSkinPack(SKIN_PACK, texture, false).claims();
-            return SkinClaims.toSerialized(claims);
-         } catch (Exception var3) {
-            log("reading {} from the skin pack: {}", texture, var3);
-            return null;
-         }
+      }
+
+      try {
+         JsonObject claims = BedrockSkin.classicFromSkinPack(SKIN_PACK, texture, false).claims();
+         return SkinClaims.toSerialized(claims);
+      } catch (Exception e) {
+         log("reading {} from the skin pack: {}", texture, e);
+         return null;
       }
    }
 
@@ -1147,7 +1140,7 @@ final class DevPlayersAnimTest {
    private static void sleep(long millis) {
       try {
          Thread.sleep(millis);
-      } catch (InterruptedException var3) {
+      } catch (InterruptedException e) {
          Thread.currentThread().interrupt();
       }
    }
@@ -1190,12 +1183,9 @@ final class DevPlayersAnimTest {
       double x;
       double z;
       float yaw;
-      final EntityDataMap flags;
+      final EntityDataMap flags = new EntityDataMap();
 
       Walker(DevPlayersAnimTest.Npc npc, double x, double z, float yaw) {
-         Objects.requireNonNull(DevPlayersAnimTest.this);
-         super();
-         this.flags = new EntityDataMap();
          this.npc = npc;
          this.x = x;
          this.z = z;

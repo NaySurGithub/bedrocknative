@@ -44,15 +44,12 @@ final class MolangParser {
    private Expr expression() {
       if (++this.depth > 256) {
          throw this.error("Expression nested too deeply");
-      } else {
-         Expr var1;
-         try {
-            var1 = this.assignment();
-         } finally {
-            this.depth--;
-         }
+      }
 
-         return var1;
+      try {
+         return this.assignment();
+      } finally {
+         this.depth--;
       }
    }
 
@@ -205,15 +202,12 @@ final class MolangParser {
          String op = this.next().text();
          if (++this.depth > 256) {
             throw this.error("Expression nested too deeply");
-         } else {
-            Expr.Unary var2;
-            try {
-               var2 = new Expr.Unary(op, this.unary());
-            } finally {
-               this.depth--;
-            }
+         }
 
-            return var2;
+         try {
+            return new Expr.Unary(op, this.unary());
+         } finally {
+            this.depth--;
          }
       } else {
          return this.match("+") ? this.unary() : this.arrow();
@@ -222,7 +216,7 @@ final class MolangParser {
 
    private Expr arrow() {
       Expr left = this.postfix();
-      return (Expr)(this.match("->") ? new Expr.Arrow(left, this.postfix()) : left);
+      return this.match("->") ? new Expr.Arrow(left, this.postfix()) : left;
    }
 
    private Expr postfix() {
@@ -271,8 +265,7 @@ final class MolangParser {
    }
 
    private Expr identifier(MolangLexer.Token token) {
-      String parts = token.text();
-      switch (parts) {
+      switch (token.text()) {
          case "true":
             return new Expr.Num(1.0F);
          case "false":
@@ -281,7 +274,7 @@ final class MolangParser {
             return new Expr.This();
          case "return":
             return new Expr.Return(
-               (Expr)(!this.peek().is(";") && !this.peek().is("}") && this.peek().kind() != MolangLexer.Kind.EOF ? this.expression() : new Expr.Num(0.0F))
+               !this.peek().is(";") && !this.peek().is("}") && this.peek().kind() != MolangLexer.Kind.EOF ? this.expression() : new Expr.Num(0.0F)
             );
          case "break":
             return new Expr.Break();
@@ -329,18 +322,18 @@ final class MolangParser {
 
       if (!this.match("(")) {
          return new Expr.Name(List.copyOf(parts), token.position());
-      } else {
-         List<Expr> args = new ArrayList<>();
-         if (!this.match(")")) {
-            do {
-               args.add(this.expression());
-            } while (this.match(","));
-
-            this.expect(")");
-         }
-
-         return new Expr.Call(List.copyOf(parts), args, token.position());
       }
+
+      List<Expr> args = new ArrayList<>();
+      if (!this.match(")")) {
+         do {
+            args.add(this.expression());
+         } while (this.match(","));
+
+         this.expect(")");
+      }
+
+      return new Expr.Call(List.copyOf(parts), args, token.position());
    }
 
    private static boolean isCallNamespace(String namespace) {

@@ -27,34 +27,34 @@ public final class KeyframeSampler {
    public static float sample(Keyframe[] keys, float time, int axis, float current, MolangEnv env) {
       if (keys.length == 0) {
          return current;
-      } else {
-         env.thisValue = current;
-         int after = after(keys, time);
-         int before = after - 1;
-         if (before < 0) {
-            env.keyFrameLerpTime = 0.0F;
-            return keys[0].pre().get(axis, env);
-         } else {
-            Keyframe previous = keys[before];
-            if (after < keys.length && !(Math.abs(previous.time() - time) <= 8.3333335E-4F)) {
-               Keyframe next = keys[after];
-               float span = next.time() - previous.time();
-               float alpha = span <= 0.0F ? 1.0F : (time - previous.time()) / span;
-               env.keyFrameLerpTime = alpha;
-               float p1 = previous.post().get(axis, env);
-               float p2 = next.pre().get(axis, env);
-               if (!previous.catmullRom() && !next.catmullRom()) {
-                  return p1 + (p2 - p1) * alpha;
-               } else {
-                  float p0 = before > 0 && !previous.split() ? keys[before - 1].post().get(axis, env) : p1;
-                  float p3 = after + 1 < keys.length && !next.split() ? keys[after + 1].pre().get(axis, env) : p2;
-                  return catmullRom(p0, p1, p2, p3, alpha);
-               }
-            } else {
-               env.keyFrameLerpTime = after >= keys.length ? 1.0F : 0.0F;
-               return previous.post().get(axis, env);
-            }
+      }
+
+      env.thisValue = current;
+      int after = after(keys, time);
+      int before = after - 1;
+      if (before < 0) {
+         env.keyFrameLerpTime = 0.0F;
+         return keys[0].pre().get(axis, env);
+      }
+
+      Keyframe previous = keys[before];
+      if (after < keys.length && !(Math.abs(previous.time() - time) <= 8.3333335E-4F)) {
+         Keyframe next = keys[after];
+         float span = next.time() - previous.time();
+         float alpha = span <= 0.0F ? 1.0F : (time - previous.time()) / span;
+         env.keyFrameLerpTime = alpha;
+         float p1 = previous.post().get(axis, env);
+         float p2 = next.pre().get(axis, env);
+         if (!previous.catmullRom() && !next.catmullRom()) {
+            return p1 + (p2 - p1) * alpha;
          }
+
+         float p0 = before > 0 && !previous.split() ? keys[before - 1].post().get(axis, env) : p1;
+         float p3 = after + 1 < keys.length && !next.split() ? keys[after + 1].pre().get(axis, env) : p2;
+         return catmullRom(p0, p1, p2, p3, alpha);
+      } else {
+         env.keyFrameLerpTime = after >= keys.length ? 1.0F : 0.0F;
+         return previous.post().get(axis, env);
       }
    }
 

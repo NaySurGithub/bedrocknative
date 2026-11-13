@@ -20,8 +20,7 @@ import org.jspecify.annotations.Nullable;
 
 final class OreTextures {
    private static final long MAX_BYTES = 16777216L;
-   @Nullable
-   private final OreInstall install;
+   private final @Nullable OreInstall install;
    private final Map<Path, Optional<OreTextures.Texture>> textures = new HashMap<>();
    private final Map<Path, Optional<OreTextures.Texture>> masks = new HashMap<>();
    private static final AtomicInteger IDS = new AtomicInteger();
@@ -59,8 +58,8 @@ final class OreTextures {
          } else {
             return Optional.empty();
          }
-      } catch (RuntimeException | IOException var9) {
-         BedrockNative.LOGGER.debug("Ore UI: picture {} not shown: {}", file, var9.getMessage());
+      } catch (IOException | RuntimeException e) {
+         BedrockNative.LOGGER.debug("Ore UI: picture {} not shown: {}", file, e.getMessage());
          return Optional.empty();
       }
    }

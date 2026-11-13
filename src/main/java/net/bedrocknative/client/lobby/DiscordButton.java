@@ -36,14 +36,14 @@ final class DiscordButton {
    boolean clicked(double mouseX, double mouseY) {
       if (!this.contains(mouseX, mouseY)) {
          return false;
-      } else {
-         try {
-            Blaze3D.openUri(INVITE);
-         } catch (RuntimeException var6) {
-            BedrockNative.LOGGER.warn("Couldn't open the Discord invite: {}", var6.getClass().getSimpleName());
-         }
-
-         return true;
       }
+
+      try {
+         Blaze3D.openUri(INVITE);
+      } catch (RuntimeException e) {
+         BedrockNative.LOGGER.warn("Couldn't open the Discord invite: {}", e.getClass().getSimpleName());
+      }
+
+      return true;
    }
 }

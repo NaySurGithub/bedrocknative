@@ -31,7 +31,7 @@ final class BaseStore {
       try {
          Path file = this.file(entry);
          return Files.isRegularFile(file) && Files.size(file) == entry.size();
-      } catch (RuntimeException | IOException var3) {
+      } catch (IOException | RuntimeException e) {
          return false;
       }
    }
@@ -40,7 +40,7 @@ final class BaseStore {
       try {
          Path file = this.file(entry);
          return Files.isRegularFile(file) && Files.size(file) == entry.size() ? BaseTable.blobSha1(Files.readAllBytes(file)).equals(entry.sha1()) : false;
-      } catch (RuntimeException | IOException var3) {
+      } catch (IOException | RuntimeException e) {
          return false;
       }
    }
@@ -60,33 +60,33 @@ final class BaseStore {
    void write(BaseTable.Entry entry, byte[] data, int length) throws IOException {
       if (length != entry.size()) {
          throw new BaseStore.Mismatch("size " + length + " instead of " + entry.size());
-      } else {
-         String sha1 = BaseTable.blobSha1(data, length);
-         if (!sha1.equals(entry.sha1())) {
-            throw new BaseStore.Mismatch("hash " + sha1 + " instead of " + entry.sha1());
-         } else {
-            Path file = this.file(entry);
-            if (!file.normalize().startsWith(this.folder.normalize())) {
-               throw new IOException("path leaves the base folder");
-            } else {
-               Files.createDirectories(file.getParent());
-               Path part = file.resolveSibling(file.getFileName() + "." + ProcessHandle.current().pid() + "-" + PARTS.incrementAndGet() + ".part");
+      }
 
-               try {
-                  try (OutputStream out = Files.newOutputStream(part)) {
-                     out.write(data, 0, length);
-                  }
+      String sha1 = BaseTable.blobSha1(data, length);
+      if (!sha1.equals(entry.sha1())) {
+         throw new BaseStore.Mismatch("hash " + sha1 + " instead of " + entry.sha1());
+      }
 
-                  try {
-                     Files.move(part, file, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-                  } catch (AtomicMoveNotSupportedException var16) {
-                     Files.move(part, file, StandardCopyOption.REPLACE_EXISTING);
-                  }
-               } finally {
-                  Files.deleteIfExists(part);
-               }
-            }
+      Path file = this.file(entry);
+      if (!file.normalize().startsWith(this.folder.normalize())) {
+         throw new IOException("path leaves the base folder");
+      }
+
+      Files.createDirectories(file.getParent());
+      Path part = file.resolveSibling(file.getFileName() + "." + ProcessHandle.current().pid() + "-" + PARTS.incrementAndGet() + ".part");
+
+      try {
+         try (OutputStream out = Files.newOutputStream(part)) {
+            out.write(data, 0, length);
          }
+
+         try {
+            Files.move(part, file, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+         } catch (AtomicMoveNotSupportedException e) {
+            Files.move(part, file, StandardCopyOption.REPLACE_EXISTING);
+         }
+      } finally {
+         Files.deleteIfExists(part);
       }
    }
 

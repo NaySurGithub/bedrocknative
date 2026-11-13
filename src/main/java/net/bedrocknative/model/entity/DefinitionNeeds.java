@@ -122,7 +122,7 @@ public final class DefinitionNeeds {
       }
    }
 
-   private void keys(@Nullable Keyframe[] keys) {
+   private void keys(Keyframe @Nullable [] keys) {
       if (keys != null) {
          for (Keyframe key : keys) {
             this.value(key.pre());
@@ -158,7 +158,7 @@ public final class DefinitionNeeds {
       this.program(controller.lightColorMultiplier());
    }
 
-   private void color(@Nullable RenderControllerDef.Color color) {
+   private void color(RenderControllerDef.@Nullable Color color) {
       if (color != null) {
          this.program(color.r());
          this.program(color.g());

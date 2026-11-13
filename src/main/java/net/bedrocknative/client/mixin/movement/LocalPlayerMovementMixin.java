@@ -25,7 +25,7 @@ import org.spongepowered.asm.mixin.injection.At.Shift;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin({LocalPlayer.class})
+@Mixin(LocalPlayer.class)
 public abstract class LocalPlayerMovementMixin extends AbstractClientPlayer {
    @Shadow
    public ClientInput input;
@@ -49,22 +49,12 @@ public abstract class LocalPlayerMovementMixin extends AbstractClientPlayer {
    @Shadow
    protected abstract boolean isSprintingPossible(boolean var1);
 
-   @Inject(
-      method = {"aiStep"},
-      at = {@At("HEAD")}
-   )
+   @Inject(method = "aiStep", at = @At("HEAD"))
    private void bedrocknative$rememberShift(CallbackInfo ci) {
       this.bedrocknative$wasShiftDown = this.input.keyPresses.shift();
    }
 
-   @Inject(
-      method = {"aiStep"},
-      at = {@At(
-         value = "INVOKE",
-         target = "Lnet/minecraft/client/player/ClientInput;tick()V",
-         shift = Shift.AFTER
-      )}
-   )
+   @Inject(method = "aiStep", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/player/ClientInput;tick()V", shift = Shift.AFTER))
    private void bedrocknative$crouchThisTick(CallbackInfo ci) {
       if (BedrockMovement.active()) {
          this.crouching = !this.getAbilities().flying
@@ -75,11 +65,7 @@ public abstract class LocalPlayerMovementMixin extends AbstractClientPlayer {
       }
    }
 
-   @Inject(
-      method = {"modifyInput"},
-      at = {@At("HEAD")},
-      cancellable = true
-   )
+   @Inject(method = "modifyInput", at = @At("HEAD"), cancellable = true)
    private void bedrocknative$bedrockInput(Vec2 input, CallbackInfoReturnable<Vec2> cir) {
       if (BedrockMovement.active()) {
          boolean stoppedSneaking = this.bedrocknative$wasShiftDown && !this.input.keyPresses.shift() && !this.getAbilities().flying;
@@ -104,11 +90,8 @@ public abstract class LocalPlayerMovementMixin extends AbstractClientPlayer {
    }
 
    @WrapOperation(
-      method = {"aiStep"},
-      at = {@At(
-         value = "INVOKE",
-         target = "Lnet/minecraft/client/player/LocalPlayer;setDeltaMovement(Lnet/minecraft/world/phys/Vec3;)V"
-      )}
+      method = "aiStep",
+      at = @At(value = "INVOKE", target = "Lnet/minecraft/client/player/LocalPlayer;setDeltaMovement(Lnet/minecraft/world/phys/Vec3;)V")
    )
    private void bedrocknative$noJavaFlyVertical(LocalPlayer self, Vec3 movement, Operation<Void> original) {
       if (!BedrockMovement.active()) {
@@ -116,35 +99,19 @@ public abstract class LocalPlayerMovementMixin extends AbstractClientPlayer {
       }
    }
 
-   @Inject(
-      method = {"aiStep"},
-      at = {@At(
-         value = "INVOKE",
-         target = "Lnet/minecraft/client/player/LocalPlayer;onUpdateAbilities()V"
-      )}
-   )
+   @Inject(method = "aiStep", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/player/LocalPlayer;onUpdateAbilities()V"))
    private void bedrocknative$flightToggled(CallbackInfo ci) {
       if (BedrockMovement.active()) {
          BedrockMovement.toggleFlight();
       }
    }
 
-   @WrapOperation(
-      method = {"aiStep"},
-      at = {@At(
-         value = "INVOKE",
-         target = "Lnet/minecraft/client/player/LocalPlayer;onGround()Z",
-         ordinal = 1
-      )}
-   )
+   @WrapOperation(method = "aiStep", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/player/LocalPlayer;onGround()Z", ordinal = 1))
    private boolean bedrocknative$noLandingStop(LocalPlayer self, Operation<Boolean> original) {
       return !BedrockMovement.active() && (Boolean)original.call(new Object[]{self});
    }
 
-   @Inject(
-      method = {"move"},
-      at = {@At("HEAD")}
-   )
+   @Inject(method = "move", at = @At("HEAD"))
    private void bedrocknative$beforeMove(MoverType moverType, Vec3 delta, CallbackInfo ci) {
       if (moverType == MoverType.SELF) {
          this.bedrocknative$lastIntended = delta;
@@ -153,10 +120,7 @@ public abstract class LocalPlayerMovementMixin extends AbstractClientPlayer {
       }
    }
 
-   @Inject(
-      method = {"move"},
-      at = {@At("TAIL")}
-   )
+   @Inject(method = "move", at = @At("TAIL"))
    private void bedrocknative$afterMove(MoverType moverType, Vec3 delta, CallbackInfo ci) {
       if (moverType == MoverType.SELF) {
          this.bedrocknative$lastMoved = this.position().subtract(this.bedrocknative$lastMoved);
@@ -168,32 +132,21 @@ public abstract class LocalPlayerMovementMixin extends AbstractClientPlayer {
       }
    }
 
-   @Inject(
-      method = {"rideTick"},
-      at = {@At("TAIL")}
-   )
+   @Inject(method = "rideTick", at = @At("TAIL"))
    private void bedrocknative$vehicleTick(CallbackInfo ci) {
       if (BedrockMovement.active()) {
-         BedrockVehicles.tick((LocalPlayer)this);
+         BedrockVehicles.tick((LocalPlayer)(Object)this);
       }
    }
 
-   @Inject(
-      method = {"shouldStopSwimSprinting"},
-      at = {@At("HEAD")},
-      cancellable = true
-   )
+   @Inject(method = "shouldStopSwimSprinting", at = @At("HEAD"), cancellable = true)
    private void bedrocknative$swimSprintStop(CallbackInfoReturnable<Boolean> cir) {
       if (BedrockMovement.active()) {
          cir.setReturnValue(!this.isSprintingPossible(true) || !this.isInWater() || !this.input.hasForwardImpulse() && !this.input.keyPresses.shift());
       }
    }
 
-   @Inject(
-      method = {"canStartSprinting"},
-      at = {@At("HEAD")},
-      cancellable = true
-   )
+   @Inject(method = "canStartSprinting", at = @At("HEAD"), cancellable = true)
    private void bedrocknative$noSprintStartAfterSneak(CallbackInfoReturnable<Boolean> cir) {
       if (BedrockMovement.active()
          && SprintRules.sneakBlocksSprintStart(this.bedrocknative$wasShiftDown, this.getAbilities().flying, this.isInWater() || this.isInLava())) {
@@ -201,11 +154,7 @@ public abstract class LocalPlayerMovementMixin extends AbstractClientPlayer {
       }
    }
 
-   @Inject(
-      method = {"shouldStopRunSprinting"},
-      at = {@At("HEAD")},
-      cancellable = true
-   )
+   @Inject(method = "shouldStopRunSprinting", at = @At("HEAD"), cancellable = true)
    private void bedrocknative$sprintStop(CallbackInfoReturnable<Boolean> cir) {
       if (BedrockMovement.active()) {
          Vec3 intended = this.bedrocknative$lastIntended;

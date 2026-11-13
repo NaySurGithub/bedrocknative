@@ -12,7 +12,7 @@ final class Browsers {
    private Browsers() {
    }
 
-   static List<Path> candidates(Function<String, String> environment) {
+   static List<Path> candidates(Function<String, @Nullable String> environment) {
       List<Path> candidates = new ArrayList<>();
       add(candidates, environment.apply("ProgramFiles"), "Google\\Chrome\\Application\\chrome.exe");
       add(candidates, environment.apply("ProgramFiles(x86)"), "Google\\Chrome\\Application\\chrome.exe");
@@ -22,8 +22,7 @@ final class Browsers {
       return candidates;
    }
 
-   @Nullable
-   static Path find(Function<String, String> environment, Predicate<Path> exists) {
+   static @Nullable Path find(Function<String, @Nullable String> environment, Predicate<Path> exists) {
       for (Path candidate : candidates(environment)) {
          if (exists.test(candidate)) {
             return candidate;

@@ -31,8 +31,7 @@ public final class OwnOreKit {
    private OwnOreKit() {
    }
 
-   @Nullable
-   public static OreInstall build() {
+   public static @Nullable OreInstall build() {
       JavaFontPages pages = JavaFontPages.load();
       if (pages == null) {
          BedrockNative.LOGGER.warn("Own menus: Java's font pages couldn't be read; Ore UI's screens stay Java's");
@@ -42,7 +41,7 @@ public final class OwnOreKit {
       }
    }
 
-   static OreInstall build(JavaFontPages pages, @Nullable byte[] noto) {
+   static OreInstall build(JavaFontPages pages, byte @Nullable [] noto) {
       Map<String, byte[]> pngs = new HashMap<>();
       Map<String, int[]> sizes = new HashMap<>();
 
@@ -270,20 +269,15 @@ public final class OwnOreKit {
    }
 
    static Map<String, String> texts(String code) {
-      try {
-         Object var3;
-         try (InputStream in = OwnOreKit.class.getClassLoader().getResourceAsStream("assets/bedrocknative/own_ui/oreui/" + code + ".lang")) {
-            if (in == null) {
-               return Map.of();
-            }
-
-            Map<String, String> entries = new HashMap<>();
-            new String(in.readAllBytes(), StandardCharsets.UTF_8).lines().forEach(line -> BedrockLanguage.parseLine(line, entries));
-            var3 = entries;
+      try (InputStream in = OwnOreKit.class.getClassLoader().getResourceAsStream("assets/bedrocknative/own_ui/oreui/" + code + ".lang")) {
+         if (in == null) {
+            return Map.of();
          }
 
-         return (Map<String, String>)var3;
-      } catch (IOException var6) {
+         Map<String, String> entries = new HashMap<>();
+         new String(in.readAllBytes(), StandardCharsets.UTF_8).lines().forEach(line -> BedrockLanguage.parseLine(line, entries));
+         return entries;
+      } catch (IOException e) {
          return Map.of();
       }
    }

@@ -40,10 +40,9 @@ public final class BedrockSoundEngine {
    private static final boolean VANILLA = !Boolean.getBoolean("bedrocknative.javaSounds");
    private static final int PRUNE_AT = 64;
    private static final int WAITING_KEPT = 32;
-   @Nullable
-   private static volatile SoundCatalog catalog;
+   private static volatile @Nullable SoundCatalog catalog;
    private static final LoadQueue WAITING = new LoadQueue(32);
-   private static final List<PackSource> EXTRA = BedrockInstall.musicPack().map(FolderPack::new).map(List::of).orElse(List.of());
+   private static final List<PackSource> EXTRA = BedrockInstall.musicPack().map(path -> List.<PackSource>of(new FolderPack(path))).orElse(List.of());
    private static final List<BedrockSoundEngine.Playing> PLAYING = new ArrayList<>();
    private static final Long2ObjectOpenHashMap<BedrockSoundEngine.Playing> HANDLES = new Long2ObjectOpenHashMap();
    private static final SplittableRandom RANDOM = new SplittableRandom();
@@ -63,8 +62,7 @@ public final class BedrockSoundEngine {
       return VANILLA;
    }
 
-   @Nullable
-   public static SoundCatalog catalog() {
+   public static @Nullable SoundCatalog catalog() {
       return catalog;
    }
 
@@ -163,62 +161,62 @@ public final class BedrockSoundEngine {
       if (current == null) {
          notPlayable++;
          return BedrockSoundEngine.Started.NOT_PLAYABLE;
-      } else {
-         boolean positional = play.positional() && !options.global();
-         if (positional && !options.bypassRange() && play.range() > 0.0F) {
-            Vec3 listener = minecraft.getSoundManager().getListenerTransform().position();
-            if (listener.distanceToSqr(position) > (double)play.range() * play.range()) {
-               outOfRange++;
-               return BedrockSoundEngine.Started.OUT_OF_RANGE;
-            }
-         }
+      }
 
-         Optional<BedrockAudio.Located> file = BedrockAudio.locate(current, play.variant().path(), EXTRA);
-         if (file.isEmpty()) {
-            notPlayable++;
-            return BedrockSoundEngine.Started.NOT_PLAYABLE;
-         } else {
-            boolean stream = play.stream() || options.offset() > 0.0F;
-            Identifier location = BedrockAudio.location(file.get(), positional, options.offset());
-            BedrockSoundInstance instance = new BedrockSoundInstance(
-               play.definition().name(),
-               location,
-               stream,
-               source(play.category()),
-               position,
-               positional,
-               play.gain(),
-               play.pitch(),
-               play.range(),
-               play.start(),
-               options.loopCount(),
-               null,
-               JAVA_RANDOM
-            );
-            minecraft.getSoundManager().play(instance);
-            played++;
-            if (RECENT.size() >= 64) {
-               RECENT.pollFirst();
-            }
-
-            RECENT.addLast(play.definition().name());
-            BedrockSoundEngine.Playing entry = new BedrockSoundEngine.Playing(instance, play, position, options);
-            if (PLAYING.size() >= 64) {
-               PLAYING.removeIf(playing -> playing.instance().isStopped() || !minecraft.getSoundManager().isActive(playing.instance()));
-               HANDLES.values().removeIf(handled -> !PLAYING.contains(handled));
-            }
-
-            PLAYING.add(entry);
-            if (options.handle() != null) {
-               BedrockSoundEngine.Playing previous = (BedrockSoundEngine.Playing)HANDLES.put(options.handle(), entry);
-               if (previous != null && previous != entry) {
-                  stop(previous);
-               }
-            }
-
-            return new BedrockSoundEngine.Started(BedrockSoundEngine.Result.PLAYED, instance);
+      boolean positional = play.positional() && !options.global();
+      if (positional && !options.bypassRange() && play.range() > 0.0F) {
+         Vec3 listener = minecraft.getSoundManager().getListenerTransform().position();
+         if (listener.distanceToSqr(position) > (double)play.range() * play.range()) {
+            outOfRange++;
+            return BedrockSoundEngine.Started.OUT_OF_RANGE;
          }
       }
+
+      Optional<BedrockAudio.Located> file = BedrockAudio.locate(current, play.variant().path(), EXTRA);
+      if (file.isEmpty()) {
+         notPlayable++;
+         return BedrockSoundEngine.Started.NOT_PLAYABLE;
+      }
+
+      boolean stream = play.stream() || options.offset() > 0.0F;
+      Identifier location = BedrockAudio.location(file.get(), positional, options.offset());
+      BedrockSoundInstance instance = new BedrockSoundInstance(
+         play.definition().name(),
+         location,
+         stream,
+         source(play.category()),
+         position,
+         positional,
+         play.gain(),
+         play.pitch(),
+         play.range(),
+         play.start(),
+         options.loopCount(),
+         null,
+         JAVA_RANDOM
+      );
+      minecraft.getSoundManager().play(instance);
+      played++;
+      if (RECENT.size() >= 64) {
+         RECENT.pollFirst();
+      }
+
+      RECENT.addLast(play.definition().name());
+      BedrockSoundEngine.Playing entry = new BedrockSoundEngine.Playing(instance, play, position, options);
+      if (PLAYING.size() >= 64) {
+         PLAYING.removeIf(playing -> playing.instance().isStopped() || !minecraft.getSoundManager().isActive(playing.instance()));
+         HANDLES.values().removeIf(handled -> !PLAYING.contains(handled));
+      }
+
+      PLAYING.add(entry);
+      if (options.handle() != null) {
+         BedrockSoundEngine.Playing previous = (BedrockSoundEngine.Playing)HANDLES.put(options.handle(), entry);
+         if (previous != null && previous != entry) {
+            stop(previous);
+         }
+      }
+
+      return new BedrockSoundEngine.Started(BedrockSoundEngine.Result.PLAYED, instance);
    }
 
    public static SoundSource source(String category) {
@@ -266,10 +264,10 @@ public final class BedrockSoundEngine {
       PLAYING.removeIf(playing -> {
          if (playing.instance() != instance) {
             return false;
-         } else {
-            forgetHandle(playing);
-            return true;
          }
+
+         forgetHandle(playing);
+         return true;
       });
       instance.stopNow();
       Minecraft.getInstance().getSoundManager().stop(instance);
@@ -382,7 +380,7 @@ public final class BedrockSoundEngine {
    private record Playing(BedrockSoundInstance instance, SoundPlanner.Play play, Vec3 position, BedrockSoundEngine.Options options) {
    }
 
-   public static enum Result {
+   public enum Result {
       PLAYED,
       OUT_OF_RANGE,
       NOT_PLAYABLE;

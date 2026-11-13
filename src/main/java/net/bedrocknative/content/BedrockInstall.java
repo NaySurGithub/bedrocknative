@@ -16,8 +16,7 @@ public final class BedrockInstall {
    public static final String SWITCH = "bedrocknative.bedrockInstall";
    private static final Path DEFAULT_DATA = Path.of("C:/XboxGames/Minecraft for Windows/Content/data");
    private static final Path HIDDEN = Path.of(System.getProperty("java.io.tmpdir"), "bedrocknative-bedrock-install-hidden");
-   @Nullable
-   private static volatile BedrockInstall.InstalledIndex installed;
+   private static volatile BedrockInstall.@Nullable InstalledIndex installed;
 
    private BedrockInstall() {
    }
@@ -30,28 +29,28 @@ public final class BedrockInstall {
    public static Path dataFolder() {
       if (!enabled()) {
          return HIDDEN;
-      } else {
-         String configured = System.getProperty("bedrocknative.bedrockData");
-         return configured != null ? Path.of(configured) : DEFAULT_DATA;
       }
+
+      String configured = System.getProperty("bedrocknative.bedrockData");
+      return configured != null ? Path.of(configured) : DEFAULT_DATA;
    }
 
    public static Optional<Path> vanillaResourcePack() {
       if (!enabled()) {
          return Optional.empty();
-      } else {
-         Path vanilla = dataFolder().resolve("resource_packs").resolve("vanilla");
-         return Files.isDirectory(vanilla) ? Optional.of(vanilla) : Optional.empty();
       }
+
+      Path vanilla = dataFolder().resolve("resource_packs").resolve("vanilla");
+      return Files.isDirectory(vanilla) ? Optional.of(vanilla) : Optional.empty();
    }
 
    public static Optional<Path> musicPack() {
       if (!enabled()) {
          return Optional.empty();
-      } else {
-         Path music = dataFolder().resolve("resource_packs").resolve("vanilla_music");
-         return Files.isDirectory(music) ? Optional.of(music) : Optional.empty();
       }
+
+      Path music = dataFolder().resolve("resource_packs").resolve("vanilla_music");
+      return Files.isDirectory(music) ? Optional.of(music) : Optional.empty();
    }
 
    public static List<Path> basePacks(@Nullable String baseGameVersion, Collection<String> experiments) {
@@ -69,7 +68,7 @@ public final class BedrockInstall {
                   versioned.add(folder);
                }
             });
-         } catch (IOException var11) {
+         } catch (IOException e) {
             return List.of(packs.resolve("vanilla"));
          }
 
@@ -105,33 +104,32 @@ public final class BedrockInstall {
    private static List<BedrockInstall.Installed> installedPacks() {
       if (!enabled()) {
          return List.of();
-      } else {
-         Path packs = dataFolder().resolve("resource_packs");
-         BedrockInstall.InstalledIndex index = installed;
-         if (index != null && index.root().equals(packs)) {
-            return index.packs();
-         } else {
-            List<BedrockInstall.Installed> found = new ArrayList<>();
-
-            try (Stream<Path> folders = Files.list(packs)) {
-               for (Path folder : folders.filter(x$0 -> Files.isDirectory(x$0)).sorted().toList()) {
-                  try {
-                     found.add(new BedrockInstall.Installed(folder, PackManifest.parse(Files.readAllBytes(folder.resolve("manifest.json")))));
-                  } catch (IOException var8) {
-                  }
-               }
-            } catch (IOException var10) {
-               return List.of();
-            }
-
-            installed = new BedrockInstall.InstalledIndex(packs, List.copyOf(found));
-            return found;
-         }
       }
+
+      Path packs = dataFolder().resolve("resource_packs");
+      BedrockInstall.InstalledIndex index = installed;
+      if (index != null && index.root().equals(packs)) {
+         return index.packs();
+      }
+
+      List<BedrockInstall.Installed> found = new ArrayList<>();
+
+      try (Stream<Path> folders = Files.list(packs)) {
+         for (Path folder : folders.filter(x$0 -> Files.isDirectory(x$0)).sorted().toList()) {
+            try {
+               found.add(new BedrockInstall.Installed(folder, PackManifest.parse(Files.readAllBytes(folder.resolve("manifest.json")))));
+            } catch (IOException var8) {
+            }
+         }
+      } catch (IOException e) {
+         return List.of();
+      }
+
+      installed = new BedrockInstall.InstalledIndex(packs, List.copyOf(found));
+      return found;
    }
 
-   @Nullable
-   static int[] version(@Nullable String text) {
+   static int @Nullable [] version(@Nullable String text) {
       if (text != null && text.matches("\\d{1,9}(\\.\\d{1,9})*")) {
          String[] parts = text.split("\\.");
          int[] version = new int[parts.length];

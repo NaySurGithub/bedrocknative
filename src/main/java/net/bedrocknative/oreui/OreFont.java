@@ -23,13 +23,11 @@ public final class OreFont {
    private static final FontRenderContext CONTEXT = new FontRenderContext(null, true, true);
    private static final int MAX_BYTES = 16777216;
    private final String name;
-   @Nullable
-   private final Font reference;
+   private final @Nullable Font reference;
    private final float ascent;
    private final float descent;
    private final Map<Integer, Float> advances = new ConcurrentHashMap<>();
-   @Nullable
-   private final OreFont.PixelFace pixels;
+   private final OreFont.@Nullable PixelFace pixels;
    private final float texelX;
    private final float texelY;
    private final float bearing;
@@ -60,69 +58,66 @@ public final class OreFont {
       return new OreFont(name, face, texelX, texelY, bearing, ascent, descent);
    }
 
-   @Nullable
-   public static OreFont load(String name, byte[] data) {
+   public static @Nullable OreFont load(String name, byte[] data) {
       try {
          if (data.length > 16777216) {
             return null;
-         } else {
-            float[] metrics = hhea(data);
-            Font font = Font.createFont(0, new ByteArrayInputStream(data));
-            return metrics == null ? null : new OreFont(name, font, metrics[0], metrics[1]);
          }
-      } catch (FontFormatException | RuntimeException | IOException var4) {
+
+         float[] metrics = hhea(data);
+         Font font = Font.createFont(0, new ByteArrayInputStream(data));
+         return metrics == null ? null : new OreFont(name, font, metrics[0], metrics[1]);
+      } catch (IOException | FontFormatException | RuntimeException e) {
          return null;
       }
    }
 
-   @Nullable
-   public static OreFont load(String name, Path file) {
+   public static @Nullable OreFont load(String name, Path file) {
       try {
          if (Files.size(file) > 16777216L) {
             return null;
-         } else {
-            byte[] data = Files.readAllBytes(file);
-            float[] metrics = hhea(data);
-            Font font = Font.createFont(0, new ByteArrayInputStream(data));
-            return metrics == null ? null : new OreFont(name, font, metrics[0], metrics[1]);
          }
-      } catch (FontFormatException | RuntimeException | IOException var5) {
+
+         byte[] data = Files.readAllBytes(file);
+         float[] metrics = hhea(data);
+         Font font = Font.createFont(0, new ByteArrayInputStream(data));
+         return metrics == null ? null : new OreFont(name, font, metrics[0], metrics[1]);
+      } catch (IOException | FontFormatException | RuntimeException e) {
          return null;
       }
    }
 
-   @Nullable
-   static float[] hhea(byte[] data) {
+   static float @Nullable [] hhea(byte[] data) {
       if (data.length < 12) {
          return null;
-      } else {
-         int tables = u16(data, 4);
-         int head = -1;
-         int hhea = -1;
+      }
 
-         for (int i = 0; i < tables && 12 + 16 * i + 16 <= data.length; i++) {
-            int entry = 12 + 16 * i;
-            String tag = new String(data, entry, 4, StandardCharsets.ISO_8859_1);
-            int offset = s32(data, entry + 8);
-            if (tag.equals("head")) {
-               head = offset;
-            } else if (tag.equals("hhea")) {
-               hhea = offset;
-            }
+      int tables = u16(data, 4);
+      int head = -1;
+      int hhea = -1;
+
+      for (int i = 0; i < tables && 12 + 16 * i + 16 <= data.length; i++) {
+         int entry = 12 + 16 * i;
+         String tag = new String(data, entry, 4, StandardCharsets.ISO_8859_1);
+         int offset = s32(data, entry + 8);
+         if (tag.equals("head")) {
+            head = offset;
+         } else if (tag.equals("hhea")) {
+            hhea = offset;
          }
+      }
 
-         if (head >= 0 && hhea >= 0 && head + 20 <= data.length && hhea + 10 <= data.length) {
-            int unitsPerEm = u16(data, head + 18);
-            if (unitsPerEm <= 0) {
-               return null;
-            } else {
-               short ascender = (short)u16(data, hhea + 4);
-               short descender = (short)u16(data, hhea + 6);
-               return new float[]{(float)ascender / unitsPerEm, (float)(-descender) / unitsPerEm};
-            }
-         } else {
+      if (head >= 0 && hhea >= 0 && head + 20 <= data.length && hhea + 10 <= data.length) {
+         int unitsPerEm = u16(data, head + 18);
+         if (unitsPerEm <= 0) {
             return null;
          }
+
+         short ascender = (short)u16(data, hhea + 4);
+         short descender = (short)u16(data, hhea + 6);
+         return new float[]{(float)ascender / unitsPerEm, (float)(-descender) / unitsPerEm};
+      } else {
+         return null;
       }
    }
 
@@ -154,12 +149,14 @@ public final class OreFont {
       Float cached = this.advances.get(codePoint);
       if (cached != null) {
          return cached;
-      } else if (this.pixels == null && this.reference != null) {
+      }
+
+      if (this.pixels == null && this.reference != null) {
          float advance;
          try {
             GlyphVector vector = this.reference.createGlyphVector(CONTEXT, Character.toString(codePoint));
             advance = vector.getNumGlyphs() == 0 ? 0.0F : vector.getGlyphMetrics(0).getAdvance() / 1000.0F;
-         } catch (RuntimeException var5) {
+         } catch (RuntimeException e) {
             advance = 0.0F;
          }
 
@@ -170,44 +167,46 @@ public final class OreFont {
          return advance;
       } else {
          OreFont.PixelGlyph glyph = this.pixels == null ? null : this.pixels.glyph(codePoint);
-         float advancex = glyph == null ? 0.0F : glyph.advance() * this.texelX;
+         float advance = glyph == null ? 0.0F : glyph.advance() * this.texelX;
          if (this.advances.size() < 65536) {
-            this.advances.put(codePoint, advancex);
+            this.advances.put(codePoint, advance);
          }
 
-         return advancex;
+         return advance;
       }
    }
 
    public OreFont.Glyph rasterize(int codePoint, float pixelSize) {
       if (pixelSize <= 0.0F || pixelSize > 512.0F) {
          return OreFont.Glyph.EMPTY;
-      } else if (this.pixels == null && this.reference != null) {
+      }
+
+      if (this.pixels == null && this.reference != null) {
          try {
             Font sized = this.reference.deriveFont(pixelSize);
             GlyphVector vector = sized.createGlyphVector(CONTEXT, Character.toString(codePoint));
             Rectangle box = vector.getPixelBounds(CONTEXT, 0.0F, 0.0F);
             if (box.isEmpty()) {
                return OreFont.Glyph.EMPTY;
-            } else {
-               box.grow(1, 1);
-               BufferedImage image = new BufferedImage(box.width, box.height, 2);
-               Graphics2D graphics = image.createGraphics();
-
-               try {
-                  graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                  graphics.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-                  graphics.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
-                  graphics.setColor(Color.WHITE);
-                  graphics.drawGlyphVector(vector, -box.x, -box.y);
-               } finally {
-                  graphics.dispose();
-               }
-
-               int[] argb = image.getRGB(0, 0, box.width, box.height, null, 0, box.width);
-               return new OreFont.Glyph(box.width, box.height, box.x, box.y, argb);
             }
-         } catch (RuntimeException var12) {
+
+            box.grow(1, 1);
+            BufferedImage image = new BufferedImage(box.width, box.height, 2);
+            Graphics2D graphics = image.createGraphics();
+
+            try {
+               graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+               graphics.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+               graphics.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
+               graphics.setColor(Color.WHITE);
+               graphics.drawGlyphVector(vector, -box.x, -box.y);
+            } finally {
+               graphics.dispose();
+            }
+
+            int[] argb = image.getRGB(0, 0, box.width, box.height, null, 0, box.width);
+            return new OreFont.Glyph(box.width, box.height, box.x, box.y, argb);
+         } catch (RuntimeException e) {
             return OreFont.Glyph.EMPTY;
          }
       } else {
@@ -281,8 +280,7 @@ public final class OreFont {
    }
 
    public interface PixelFace {
-      @Nullable
-      OreFont.PixelGlyph glyph(int var1);
+      OreFont.@Nullable PixelGlyph glyph(int var1);
    }
 
    public record PixelGlyph(int width, int height, int top, int advance, byte[] alpha) {

@@ -28,68 +28,63 @@ public final class ComposedTextures {
       return generation;
    }
 
-   @Nullable
-   static ComposedTextures.Entry get(
+   static ComposedTextures.@Nullable Entry get(
       MaterialTable.MaterialInfo material, @Nullable String base, @Nullable String layer1, @Nullable String layer2, int tint, int tint2
    ) {
       if (base == null) {
          return null;
-      } else {
-         boolean tinted = material.colorMask()
-            || material.defines().contains("COLOR_SECOND_TEXTURE")
-            || material.defines().contains("MULTIPLICATIVE_TINT_COLOR");
-         ComposedTextures.Key key = new ComposedTextures.Key(
-            material.name(), base, layer1, layer2, tinted ? tint : -1, material.defines().contains("MULTIPLICATIVE_TINT_COLOR") ? tint2 : -1
-         );
-         Optional<ComposedTextures.Entry> cached = CACHE.get(key);
-         if (cached == null) {
-            cached = Optional.ofNullable(make(material, key));
-            CACHE.put(key, cached);
-         }
-
-         return cached.orElse(null);
       }
+
+      boolean tinted = material.colorMask() || material.defines().contains("COLOR_SECOND_TEXTURE") || material.defines().contains("MULTIPLICATIVE_TINT_COLOR");
+      ComposedTextures.Key key = new ComposedTextures.Key(
+         material.name(), base, layer1, layer2, tinted ? tint : -1, material.defines().contains("MULTIPLICATIVE_TINT_COLOR") ? tint2 : -1
+      );
+      Optional<ComposedTextures.Entry> cached = CACHE.get(key);
+      if (cached == null) {
+         cached = Optional.ofNullable(make(material, key));
+         CACHE.put(key, cached);
+      }
+
+      return cached.orElse(null);
    }
 
-   @Nullable
-   private static ComposedTextures.Entry make(MaterialTable.MaterialInfo material, ComposedTextures.Key key) {
+   private static ComposedTextures.@Nullable Entry make(MaterialTable.MaterialInfo material, ComposedTextures.Key key) {
       ModelRegistry registry = BedrockModels.registry();
       if (registry == null) {
          return null;
-      } else {
-         try {
-            TextureMesher.Pixels[] layers = new TextureMesher.Pixels[]{
-               image(registry, key.base()),
-               key.layer1() != null ? image(registry, key.layer1()) : null,
-               key.layer2() != null ? image(registry, key.layer2()) : null
-            };
-            TextureComposer.Composed composed = TextureComposer.compose(material, layers, key.tint(), key.tint2());
-            if (composed == null) {
-               return null;
-            } else {
-               int id = counter++;
-               String label = key.material() + " " + key.base();
-               Identifier base = BedrockTextures.registerArgb("composed/" + id, composed.width(), composed.height(), composed.base(), label);
-               MADE.add(base);
-               Identifier emissive = null;
-               if (composed.emissive() != null) {
-                  emissive = BedrockTextures.registerArgb(
-                     "composed/" + id + "_emissive", composed.width(), composed.height(), composed.emissive(), label + " (emissive)"
-                  );
-                  MADE.add(emissive);
-               }
+      }
 
-               return new ComposedTextures.Entry(base, emissive);
-            }
-         } catch (RuntimeException var9) {
-            BedrockNative.LOGGER.warn("Couldn't compose the Bedrock texture {} for material {}", new Object[]{key.base(), key.material(), var9});
+      try {
+         TextureMesher.Pixels[] layers = new TextureMesher.Pixels[]{
+            image(registry, key.base()),
+            key.layer1() != null ? image(registry, key.layer1()) : null,
+            key.layer2() != null ? image(registry, key.layer2()) : null
+         };
+         TextureComposer.Composed composed = TextureComposer.compose(material, layers, key.tint(), key.tint2());
+         if (composed == null) {
             return null;
          }
+
+         int id = counter++;
+         String label = key.material() + " " + key.base();
+         Identifier base = BedrockTextures.registerArgb("composed/" + id, composed.width(), composed.height(), composed.base(), label);
+         MADE.add(base);
+         Identifier emissive = null;
+         if (composed.emissive() != null) {
+            emissive = BedrockTextures.registerArgb(
+               "composed/" + id + "_emissive", composed.width(), composed.height(), composed.emissive(), label + " (emissive)"
+            );
+            MADE.add(emissive);
+         }
+
+         return new ComposedTextures.Entry(base, emissive);
+      } catch (RuntimeException e) {
+         BedrockNative.LOGGER.warn("Couldn't compose the Bedrock texture {} for material {}", new Object[]{key.base(), key.material(), e});
+         return null;
       }
    }
 
-   @Nullable
-   private static TextureMesher.Pixels image(ModelRegistry registry, String path) {
+   private static TextureMesher.@Nullable Pixels image(ModelRegistry registry, String path) {
       return SkinTextures.handles(path) ? SkinTextures.pixels(path) : registry.image(path);
    }
 

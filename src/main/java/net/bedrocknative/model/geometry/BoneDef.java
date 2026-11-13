@@ -8,7 +8,7 @@ public record BoneDef(
    @Nullable String parent,
    float[] pivot,
    float[] rotation,
-   @Nullable float[] bindPoseRotation,
+   float @Nullable [] bindPoseRotation,
    boolean mirror,
    float inflate,
    boolean neverRender,

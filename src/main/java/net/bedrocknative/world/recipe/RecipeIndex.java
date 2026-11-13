@@ -60,8 +60,7 @@ public final class RecipeIndex {
       this.version++;
    }
 
-   @Nullable
-   public BookRecipe byNetId(int netId) {
+   public @Nullable BookRecipe byNetId(int netId) {
       return (BookRecipe)this.byNetId.get(netId);
    }
 

@@ -87,8 +87,7 @@ public final class DataDrivenUi {
       return packet;
    }
 
-   @Nullable
-   public Object value(String store, String property) {
+   public @Nullable Object value(String store, String property) {
       synchronized (this.stores) {
          Map<String, Object> properties = this.stores.get(store);
          return properties == null ? null : properties.get(property);

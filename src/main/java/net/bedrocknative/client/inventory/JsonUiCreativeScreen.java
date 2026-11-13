@@ -28,7 +28,6 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
-import net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen.ItemPickerMenu;
 import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
@@ -71,11 +70,9 @@ public final class JsonUiCreativeScreen extends CreativeModeInventoryScreen impl
    private CreativeData.Tab lastTab;
    private List<ItemStack> shownItems;
    private ItemStack[] shownSlots;
-   @Nullable
-   private CreativeData.Layout shownLayout;
+   private CreativeData.@Nullable Layout shownLayout;
    private ItemStack shownCarried;
-   @Nullable
-   private UiControl cursorIcon;
+   private @Nullable UiControl cursorIcon;
    private long cursorVersion;
    private boolean uiPressed;
    private boolean opened;
@@ -101,8 +98,7 @@ public final class JsonUiCreativeScreen extends CreativeModeInventoryScreen impl
       ui.items(this);
    }
 
-   @Nullable
-   static JsonUiCreativeScreen create(Minecraft minecraft, LocalPlayer player, FeatureFlagSet features, boolean operatorTab) {
+   static @Nullable JsonUiCreativeScreen create(Minecraft minecraft, LocalPlayer player, FeatureFlagSet features, boolean operatorTab) {
       UiDefinitionSet definitions = JsonUi.definitions();
       if (definitions != null && BedrockCreativeTabs.active()) {
          CreativeData data = new CreativeData(new ContainerData(INVENTORY));
@@ -129,7 +125,7 @@ public final class JsonUiCreativeScreen extends CreativeModeInventoryScreen impl
    }
 
    public List<ItemStack> items() {
-      return ((ItemPickerMenu)this.getMenu()).items;
+      return this.getMenu().items;
    }
 
    public CreativeData.Layout layout() {
@@ -141,13 +137,14 @@ public final class JsonUiCreativeScreen extends CreativeModeInventoryScreen impl
    }
 
    private CreativeScreenAccessor creative() {
-      return (CreativeScreenAccessor)this;
+      return (CreativeScreenAccessor)(Object)this;
    }
 
    private ContainerScreenAccessor container() {
-      return (ContainerScreenAccessor)this;
+      return (ContainerScreenAccessor)(Object)this;
    }
 
+   @Override
    protected void init() {
       super.init();
       LocalPlayer player = this.minecraft.player;
@@ -181,32 +178,30 @@ public final class JsonUiCreativeScreen extends CreativeModeInventoryScreen impl
       this.setFocused(null);
    }
 
-   @Nullable
-   private static CreativeData.Tab tabOf(CreativeModeTab javaTab) {
+   private static CreativeData.@Nullable Tab tabOf(CreativeModeTab javaTab) {
       if (javaTab.getType() == Type.SEARCH) {
          return CreativeData.Tab.SEARCH;
-      } else {
-         for (Entry<CreativeData.Tab, CreativeItemCategory> category : CATEGORIES.entrySet()) {
-            if (BedrockCreativeTabs.javaTab(category.getValue()) == javaTab) {
-               return category.getKey();
-            }
-         }
-
-         return null;
       }
+
+      for (Entry<CreativeData.Tab, CreativeItemCategory> category : CATEGORIES.entrySet()) {
+         if (BedrockCreativeTabs.javaTab(category.getValue()) == javaTab) {
+            return category.getKey();
+         }
+      }
+
+      return null;
    }
 
    private static CreativeModeTab javaTab(CreativeData.Tab tab) {
       if (tab == CreativeData.Tab.SEARCH) {
          return CreativeModeTabs.searchTab();
-      } else {
-         CreativeModeTab javaTab = BedrockCreativeTabs.javaTab(CATEGORIES.get(tab));
-         return javaTab != null ? javaTab : CreativeModeTabs.getDefaultTab();
       }
+
+      CreativeModeTab javaTab = BedrockCreativeTabs.javaTab(CATEGORIES.get(tab));
+      return javaTab != null ? javaTab : CreativeModeTabs.getDefaultTab();
    }
 
-   @Nullable
-   private static CreativeModeTab inventoryTab() {
+   private static @Nullable CreativeModeTab inventoryTab() {
       for (CreativeModeTab tab : CreativeModeTabs.allTabs()) {
          if (tab.getType() == Type.INVENTORY) {
             return tab;
@@ -285,8 +280,7 @@ public final class JsonUiCreativeScreen extends CreativeModeInventoryScreen impl
       return this.notice;
    }
 
-   @Nullable
-   public UiControl searchBox() {
+   public @Nullable UiControl searchBox() {
       UiControl[] found = new UiControl[]{null};
       UiControl root = this.ui.instance().root();
       if (root != null) {
@@ -300,41 +294,39 @@ public final class JsonUiCreativeScreen extends CreativeModeInventoryScreen impl
       return found[0];
    }
 
-   @Nullable
    @Override
-   public Slot slotAt(double x, double y) {
+   public @Nullable Slot slotAt(double x, double y) {
       UiControl control = this.ui.topmost(x, y);
       if (control == null) {
          return null;
-      } else {
-         String collection = control.itemCollection();
-         int index = control.itemIndex();
-         if (this.layout != CreativeData.Layout.SURVIVAL) {
-            if ("recipe_book".equals(collection)) {
-               List<ItemStack> items = ((ItemPickerMenu)this.getMenu()).items;
-               return index >= 0 && index < items.size() ? this.picker(items.get(index)) : null;
-            }
+      }
 
-            if (fires(control, "button.destroy_selection")) {
-               return this.picker(ItemStack.EMPTY);
-            }
+      String collection = control.itemCollection();
+      int index = control.itemIndex();
+      if (this.layout != CreativeData.Layout.SURVIVAL) {
+         if ("recipe_book".equals(collection)) {
+            List<ItemStack> items = this.getMenu().items;
+            return index >= 0 && index < items.size() ? this.picker(items.get(index)) : null;
          }
 
-         return this.slotOf(slotsOf(this.layout).javaSlot(collection, index));
+         if (fires(control, "button.destroy_selection")) {
+            return this.picker(ItemStack.EMPTY);
+         }
       }
+
+      return this.slotOf(slotsOf(this.layout).javaSlot(collection, index));
    }
 
-   @Nullable
-   private Slot slotOf(int javaSlot) {
-      AbstractContainerMenu menu = (AbstractContainerMenu)(this.layout == CreativeData.Layout.BOTH && this.minecraft.player != null
+   private @Nullable Slot slotOf(int javaSlot) {
+      AbstractContainerMenu menu = this.layout == CreativeData.Layout.BOTH && this.minecraft.player != null
          ? this.minecraft.player.inventoryMenu
-         : this.getMenu());
+         : this.getMenu();
       return javaSlot >= 0 && javaSlot < menu.slots.size() ? menu.getSlot(javaSlot) : null;
    }
 
    private Slot picker(ItemStack stack) {
       CreativeScreenAccessor.bedrocknative$container().setItem(0, stack);
-      return ((ItemPickerMenu)this.getMenu()).getSlot(0);
+      return this.getMenu().getSlot(0);
    }
 
    private static boolean fires(UiControl control, String buttonId) {
@@ -351,8 +343,7 @@ public final class JsonUiCreativeScreen extends CreativeModeInventoryScreen impl
       return layout == CreativeData.Layout.CREATIVE ? HOTBAR : INVENTORY;
    }
 
-   @Nullable
-   public float[] cellCentre(String collection, int index) {
+   public float @Nullable [] cellCentre(String collection, int index) {
       UiControl[] found = new UiControl[]{null};
       UiControl root = this.ui.instance().root();
       if (root != null) {
@@ -373,8 +364,7 @@ public final class JsonUiCreativeScreen extends CreativeModeInventoryScreen impl
       return cell == null ? null : JsonUiScreen.toGui(cell.x() + cell.width() / 2.0F, cell.y() + cell.height() / 2.0F);
    }
 
-   @Nullable
-   public UiControl grid() {
+   public @Nullable UiControl grid() {
       UiControl[] found = new UiControl[]{null};
       UiControl root = this.ui.instance().root();
       if (root != null) {
@@ -402,7 +392,7 @@ public final class JsonUiCreativeScreen extends CreativeModeInventoryScreen impl
          this.data.search(box.getValue());
       }
 
-      List<ItemStack> items = ((ItemPickerMenu)this.getMenu()).items;
+      List<ItemStack> items = this.getMenu().items;
       if (!this.sameItems(items)) {
          this.shownItems = new ArrayList<>(items);
          List<CreativeData.Cell> cells = new ArrayList<>(items.size());
@@ -441,7 +431,7 @@ public final class JsonUiCreativeScreen extends CreativeModeInventoryScreen impl
          }
       }
 
-      ItemStack carried = ((ItemPickerMenu)this.getMenu()).getCarried();
+      ItemStack carried = this.getMenu().getCarried();
       if (!ItemStack.matches(carried, this.shownCarried)) {
          this.shownCarried = carried.copy();
          this.slots.carried(JsonUiContainerScreen.describe(carried));
@@ -451,15 +441,15 @@ public final class JsonUiCreativeScreen extends CreativeModeInventoryScreen impl
    private boolean sameItems(List<ItemStack> items) {
       if (items.size() != this.shownItems.size()) {
          return false;
-      } else {
-         for (int i = 0; i < items.size(); i++) {
-            if (items.get(i) != this.shownItems.get(i)) {
-               return false;
-            }
-         }
-
-         return true;
       }
+
+      for (int i = 0; i < items.size(); i++) {
+         if (items.get(i) != this.shownItems.get(i)) {
+            return false;
+         }
+      }
+
+      return true;
    }
 
    @Override
@@ -473,7 +463,7 @@ public final class JsonUiCreativeScreen extends CreativeModeInventoryScreen impl
             Slot slot = this.slotOf(slotsOf(this.layout).javaSlot(collection, index));
             return slot != null ? slot.getItem() : ItemStack.EMPTY;
          } else {
-            List<ItemStack> items = ((ItemPickerMenu)this.getMenu()).items;
+            List<ItemStack> items = this.getMenu().items;
             return index >= 0 && index < items.size() ? items.get(index) : ItemStack.EMPTY;
          }
       }
@@ -484,8 +474,7 @@ public final class JsonUiCreativeScreen extends CreativeModeInventoryScreen impl
       return Math.max(0, renderer.itemIndex());
    }
 
-   @Nullable
-   private UiControl cursorIcon() {
+   private @Nullable UiControl cursorIcon() {
       long version = this.ui.instance().treeVersion();
       if (version != this.cursorVersion) {
          this.cursorVersion = version;
@@ -532,10 +521,12 @@ public final class JsonUiCreativeScreen extends CreativeModeInventoryScreen impl
       }
    }
 
+   @Override
    public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
       this.minecraft.gui.hud.extractDeferredSubtitles();
    }
 
+   @Override
    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
       if (!this.ui.failed()) {
          if ((int)this.mouseX != mouseX || (int)this.mouseY != mouseY || Double.isNaN(this.mouseX)) {
@@ -571,12 +562,14 @@ public final class JsonUiCreativeScreen extends CreativeModeInventoryScreen impl
       }
    }
 
+   @Override
    protected boolean hasClickedOutside(double mx, double my, int xo, int yo) {
       boolean outside = this.slotAt(mx, my) == null && ContainerData.outside(this.ui.topmost(mx, my));
       this.creative().bedrocknative$hasClickedOutside(outside);
       return outside;
    }
 
+   @Override
    protected void slotClicked(@Nullable Slot slot, int slotId, int buttonNum, ContainerInput input) {
       LocalPlayer player = this.minecraft.player;
       boolean inventorySide = slot != null
@@ -607,6 +600,7 @@ public final class JsonUiCreativeScreen extends CreativeModeInventoryScreen impl
       }
    }
 
+   @Override
    public void mouseMoved(double x, double y) {
       this.mouseX = x;
       this.mouseY = y;
@@ -614,6 +608,7 @@ public final class JsonUiCreativeScreen extends CreativeModeInventoryScreen impl
       this.hover(this.slotAt(x, y));
    }
 
+   @Override
    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
       if (event.button() == 1) {
          UiControl control = this.ui.topmost(event.x(), event.y());
@@ -634,6 +629,7 @@ public final class JsonUiCreativeScreen extends CreativeModeInventoryScreen impl
       return super.mouseClicked(event, doubleClick);
    }
 
+   @Override
    public boolean mouseReleased(MouseButtonEvent event) {
       if (this.uiPressed && event.button() == 1) {
          this.uiPressed = false;
@@ -644,14 +640,17 @@ public final class JsonUiCreativeScreen extends CreativeModeInventoryScreen impl
       }
    }
 
+   @Override
    public boolean mouseDragged(MouseButtonEvent event, double dx, double dy) {
       return this.uiPressed ? this.ui.mouseDragged(event) : super.mouseDragged(event, dx, dy);
    }
 
+   @Override
    public boolean mouseScrolled(double x, double y, double scrollX, double scrollY) {
       return this.ui.mouseScrolled(x, y, scrollY) || super.mouseScrolled(x, y, scrollX, scrollY);
    }
 
+   @Override
    public boolean keyPressed(KeyEvent event) {
       this.skipChar = false;
       if (this.ui.input().focused() != null) {
@@ -671,26 +670,29 @@ public final class JsonUiCreativeScreen extends CreativeModeInventoryScreen impl
       return super.keyPressed(event);
    }
 
+   @Override
    public boolean charTyped(CharacterEvent event) {
       if (this.skipChar) {
          this.skipChar = false;
          return true;
-      } else {
-         if (this.ui.input().focused() == null && this.layout != CreativeData.Layout.SURVIVAL && this.data.tab() == CreativeData.Tab.SEARCH) {
-            UiControl box = this.searchBox();
-            if (box != null) {
-               this.ui.input().focus(box);
-            }
-         }
-
-         return this.ui.input().focused() != null && this.ui.charTyped(event);
       }
+
+      if (this.ui.input().focused() == null && this.layout != CreativeData.Layout.SURVIVAL && this.data.tab() == CreativeData.Tab.SEARCH) {
+         UiControl box = this.searchBox();
+         if (box != null) {
+            this.ui.input().focus(box);
+         }
+      }
+
+      return this.ui.input().focused() != null && this.ui.charTyped(event);
    }
 
+   @Override
    public boolean preeditUpdated(@Nullable PreeditEvent event) {
       return this.ui.input().focused() != null && this.ui.preeditUpdated(event);
    }
 
+   @Override
    public boolean isInputCaptured() {
       return this.ui.input().focused() != null || super.isInputCaptured();
    }

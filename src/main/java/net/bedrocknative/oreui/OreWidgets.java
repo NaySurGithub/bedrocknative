@@ -15,8 +15,7 @@ public final class OreWidgets {
       return this.widgets;
    }
 
-   @Nullable
-   public OreWidget at(double x, double y) {
+   public @Nullable OreWidget at(double x, double y) {
       for (int i = this.widgets.size() - 1; i >= 0; i--) {
          OreWidget widget = this.widgets.get(i);
          if (widget.enabled() && widget.hit().contains(x, y)) {
@@ -27,49 +26,46 @@ public final class OreWidgets {
       return null;
    }
 
-   @Nullable
-   public OreWidget get(@Nullable String id) {
+   public @Nullable OreWidget get(@Nullable String id) {
       if (id == null) {
          return null;
-      } else {
-         for (OreWidget widget : this.widgets) {
-            if (widget.id().equals(id)) {
-               return widget;
-            }
-         }
-
-         return null;
       }
+
+      for (OreWidget widget : this.widgets) {
+         if (widget.id().equals(id)) {
+            return widget;
+         }
+      }
+
+      return null;
    }
 
    private List<OreWidget> focusable() {
       return this.widgets.stream().filter(widget -> widget.focusable() && widget.enabled() && !widget.box().empty()).toList();
    }
 
-   @Nullable
-   public OreWidget next(@Nullable String id, boolean reverse) {
+   public @Nullable OreWidget next(@Nullable String id, boolean reverse) {
       List<OreWidget> focusable = this.focusable();
       if (focusable.isEmpty()) {
          return null;
+      }
+
+      int at = -1;
+
+      for (int i = 0; i < focusable.size(); i++) {
+         if (focusable.get(i).id().equals(id)) {
+            at = i;
+         }
+      }
+
+      if (at < 0) {
+         return reverse ? focusable.getLast() : focusable.getFirst();
       } else {
-         int at = -1;
-
-         for (int i = 0; i < focusable.size(); i++) {
-            if (focusable.get(i).id().equals(id)) {
-               at = i;
-            }
-         }
-
-         if (at < 0) {
-            return reverse ? focusable.getLast() : focusable.getFirst();
-         } else {
-            return focusable.get(Math.floorMod(at + (reverse ? -1 : 1), focusable.size()));
-         }
+         return focusable.get(Math.floorMod(at + (reverse ? -1 : 1), focusable.size()));
       }
    }
 
-   @Nullable
-   public OreWidget toward(OreWidget from, int dx, int dy) {
+   public @Nullable OreWidget toward(OreWidget from, int dx, int dy) {
       OreWidget best = null;
       float bestScore = Float.MAX_VALUE;
       OreBox a = from.box();

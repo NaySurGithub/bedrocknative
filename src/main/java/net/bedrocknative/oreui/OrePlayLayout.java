@@ -112,7 +112,7 @@ public final class OrePlayLayout {
             } else {
                int count = model.lan().size() + model.worlds().size();
                worldPages = Math.max(1, (count + 12 - 1) / 12);
-               worldPage = Math.clamp((long)state.worldPage(), 1, worldPages);
+               worldPage = Math.clamp(state.worldPage(), 1, worldPages);
                int from = (worldPage - 1) * 12;
                int to = Math.min(count, from + 12);
                columns = this.worldColumns(viewport.w());
@@ -227,7 +227,7 @@ public final class OrePlayLayout {
    }
 
    public static String tabIcon(int tab) {
-      return TAB_ICONS[Math.clamp((long)tab, 0, 2)];
+      return TAB_ICONS[Math.clamp(tab, 0, 2)];
    }
 
    private List<OrePlayLayout.Tab> tabs(OreBox bar, int selected, OrePlayModel model, OreWidgets widgets) {
@@ -297,12 +297,14 @@ public final class OrePlayLayout {
    private float worldsHeight(boolean list, int columns, float contentW, int n) {
       if (n <= 0) {
          return 0.0F;
-      } else if (list) {
-         return n * (this.listRowHeight() + this.px(0.8F)) - this.px(0.8F);
-      } else {
-         int rows = (n + columns - 1) / columns;
-         return rows * this.gridRowHeight(contentW, columns) - this.px(1.6F);
       }
+
+      if (list) {
+         return n * (this.listRowHeight() + this.px(0.8F)) - this.px(0.8F);
+      }
+
+      int rows = (n + columns - 1) / columns;
+      return rows * this.gridRowHeight(contentW, columns) - this.px(1.6F);
    }
 
    private float gridRowHeight(float contentW, int columns) {
@@ -344,7 +346,7 @@ public final class OrePlayLayout {
                game.name(),
                game.world(),
                List.of(),
-               List.of(new String[]{this.lang.get("hbui.WorldTag.lanWorld"), OrePlayLayout.TagRole.INFORMATIVE_TINT.name()}),
+               List.<String[]>of(new String[]{this.lang.get("hbui.WorldTag.lanWorld"), OrePlayLayout.TagRole.INFORMATIVE_TINT.name()}),
                game.online() + "/" + game.max()
             );
          } else {
@@ -360,7 +362,7 @@ public final class OrePlayLayout {
                imageH,
                world.name(),
                world.date(),
-               List.of(new String[]{this.lang.get(world.modeTag()), role.name()}),
+               List.<String[]>of(new String[]{this.lang.get(world.modeTag()), role.name()}),
                List.of(),
                ""
             );
@@ -551,25 +553,29 @@ public final class OrePlayLayout {
       String plain = String.valueOf(index + 1);
       if (index == 0) {
          return plain;
-      } else if (index == cells - 1) {
+      }
+
+      if (index == cells - 1) {
          return String.valueOf(pages);
-      } else if (pages <= cells) {
+      }
+
+      if (pages <= cells) {
          return plain;
-      } else {
-         int middle = cells - 4;
-         int half = middle / 2;
-         int before = middle % 2 == 0 ? half - 1 : half;
-         boolean skipBefore = page > before + 3;
-         boolean skipAfter = page < pages - half - 2;
-         if ((index != 1 || !skipBefore) && (index != cells - 2 || !skipAfter)) {
-            if (skipBefore && skipAfter) {
-               return String.valueOf(page + index - before - 2);
-            } else {
-               return skipBefore ? String.valueOf(pages - cells + index + 1) : plain;
-            }
+      }
+
+      int middle = cells - 4;
+      int half = middle / 2;
+      int before = middle % 2 == 0 ? half - 1 : half;
+      boolean skipBefore = page > before + 3;
+      boolean skipAfter = page < pages - half - 2;
+      if ((index != 1 || !skipBefore) && (index != cells - 2 || !skipAfter)) {
+         if (skipBefore && skipAfter) {
+            return String.valueOf(page + index - before - 2);
          } else {
-            return "...";
+            return skipBefore ? String.valueOf(pages - cells + index + 1) : plain;
          }
+      } else {
+         return "...";
       }
    }
 
@@ -871,49 +877,49 @@ public final class OrePlayLayout {
       String selected = state.selected();
       if (selected == null) {
          return new OrePlayLayout.Details(null, null, null);
-      } else {
-         float top = column.y() + this.mu(2);
-         OreBox viewport = new OreBox(column.x(), top, column.w(), Math.max(0.0F, column.bottom() - top));
-         if (selected.startsWith("server:")) {
-            int index = index(selected);
-            if (index >= 0 && index < model.servers().size()) {
-               float contentH = this.savedBarHeight() + 3.0F * this.px(7.2F) + this.footerHeight();
-               boolean overflow = contentH > viewport.h();
-               OrePlayLayout.Scroll scroll = this.scroll("details", viewport, contentH, state.detailsScroll(), overflow);
-               float w = viewport.w() - (overflow && breakpoint == OreScale.Breakpoint.DESKTOP ? this.px(1.6F) : 0.0F);
-               OrePlayLayout.SavedDetails saved = this.saved(
-                  model.servers().get(index), viewport.x(), viewport.y() - scroll.offset(), w, state.addressShown(), breakpoint
-               );
-               widgets.add(OreWidget.clipped(saved.play().id(), saved.play().box(), viewport));
+      }
 
-               for (OrePlayLayout.FieldRow row : saved.rows()) {
-                  if (row.toggle() != null) {
-                     widgets.add(OreWidget.clipped(row.toggle().id(), row.toggle().box(), viewport));
-                  }
+      float top = column.y() + this.mu(2);
+      OreBox viewport = new OreBox(column.x(), top, column.w(), Math.max(0.0F, column.bottom() - top));
+      if (selected.startsWith("server:")) {
+         int index = index(selected);
+         if (index >= 0 && index < model.servers().size()) {
+            float contentH = this.savedBarHeight() + 3.0F * this.px(7.2F) + this.footerHeight();
+            boolean overflow = contentH > viewport.h();
+            OrePlayLayout.Scroll scroll = this.scroll("details", viewport, contentH, state.detailsScroll(), overflow);
+            float w = viewport.w() - (overflow && breakpoint == OreScale.Breakpoint.DESKTOP ? this.px(1.6F) : 0.0F);
+            OrePlayLayout.SavedDetails saved = this.saved(
+               model.servers().get(index), viewport.x(), viewport.y() - scroll.offset(), w, state.addressShown(), breakpoint
+            );
+            widgets.add(OreWidget.clipped(saved.play().id(), saved.play().box(), viewport));
+
+            for (OrePlayLayout.FieldRow row : saved.rows()) {
+               if (row.toggle() != null) {
+                  widgets.add(OreWidget.clipped(row.toggle().id(), row.toggle().box(), viewport));
                }
+            }
 
-               widgets.add(OreWidget.clipped(saved.edit().id(), saved.edit().box(), viewport));
-               return new OrePlayLayout.Details(scroll, saved, null);
-            } else {
-               return new OrePlayLayout.Details(null, null, null);
-            }
-         } else if (!selected.startsWith("featured:")) {
-            return new OrePlayLayout.Details(null, null, null);
+            widgets.add(OreWidget.clipped(saved.edit().id(), saved.edit().box(), viewport));
+            return new OrePlayLayout.Details(scroll, saved, null);
          } else {
-            int index = index(selected);
-            if (index >= 0 && index < model.featured().size()) {
-               OrePlayModel.Featured partner = model.featured().get(index);
-               OrePlayLayout.FeaturedDetails first = this.featured(partner, viewport.x(), viewport.y(), viewport.w(), breakpoint);
-               float contentH = first.card().h() + (breakpoint == OreScale.Breakpoint.NARROW ? this.mu(2) : this.mu(4));
-               boolean overflow = contentH > viewport.h();
-               OrePlayLayout.Scroll scroll = this.scroll("details", viewport, contentH, state.detailsScroll(), overflow);
-               float w = viewport.w() - (overflow && breakpoint == OreScale.Breakpoint.DESKTOP ? this.px(1.6F) : 0.0F);
-               OrePlayLayout.FeaturedDetails details = this.featured(partner, viewport.x(), viewport.y() - scroll.offset(), w, breakpoint);
-               widgets.add(OreWidget.clipped(details.play().id(), details.play().box(), viewport));
-               return new OrePlayLayout.Details(scroll, null, details);
-            } else {
-               return new OrePlayLayout.Details(null, null, null);
-            }
+            return new OrePlayLayout.Details(null, null, null);
+         }
+      } else if (!selected.startsWith("featured:")) {
+         return new OrePlayLayout.Details(null, null, null);
+      } else {
+         int index = index(selected);
+         if (index >= 0 && index < model.featured().size()) {
+            OrePlayModel.Featured partner = model.featured().get(index);
+            OrePlayLayout.FeaturedDetails first = this.featured(partner, viewport.x(), viewport.y(), viewport.w(), breakpoint);
+            float contentH = first.card().h() + (breakpoint == OreScale.Breakpoint.NARROW ? this.mu(2) : this.mu(4));
+            boolean overflow = contentH > viewport.h();
+            OrePlayLayout.Scroll scroll = this.scroll("details", viewport, contentH, state.detailsScroll(), overflow);
+            float w = viewport.w() - (overflow && breakpoint == OreScale.Breakpoint.DESKTOP ? this.px(1.6F) : 0.0F);
+            OrePlayLayout.FeaturedDetails details = this.featured(partner, viewport.x(), viewport.y() - scroll.offset(), w, breakpoint);
+            widgets.add(OreWidget.clipped(details.play().id(), details.play().box(), viewport));
+            return new OrePlayLayout.Details(scroll, null, details);
+         } else {
+            return new OrePlayLayout.Details(null, null, null);
          }
       }
    }
@@ -921,7 +927,7 @@ public final class OrePlayLayout {
    public static int index(String id) {
       try {
          return Integer.parseInt(id.substring(id.indexOf(58) + 1));
-      } catch (IndexOutOfBoundsException | NumberFormatException var2) {
+      } catch (NumberFormatException | IndexOutOfBoundsException e) {
          return -1;
       }
    }
@@ -1061,7 +1067,7 @@ public final class OrePlayLayout {
       OreBox card = new OreBox(x, y, w, descRow.bottom() - y);
       List<OrePlayLayout.Tag> sponsorTags = partner.server().sponsored()
          ? this.tags(
-            List.of(new String[]{this.lang.get("bedrocknative.partner.sponsored"), OrePlayLayout.TagRole.INFORMATIVE_TINT.name()}),
+            List.<String[]>of(new String[]{this.lang.get("bedrocknative.partner.sponsored"), OrePlayLayout.TagRole.INFORMATIVE_TINT.name()}),
             banner.x(),
             banner.y(),
             banner.w()
@@ -1136,7 +1142,7 @@ public final class OrePlayLayout {
    public record Button(String id, OreBox box, String text, OreTheme.Variant variant, @Nullable OreIcon icon, boolean hero) {
    }
 
-   private record Details(@Nullable OrePlayLayout.Scroll scroll, @Nullable OrePlayLayout.SavedDetails saved, @Nullable OrePlayLayout.FeaturedDetails featured) {
+   private record Details(OrePlayLayout.@Nullable Scroll scroll, OrePlayLayout.@Nullable SavedDetails saved, OrePlayLayout.@Nullable FeaturedDetails featured) {
    }
 
    public record FeaturedDetails(
@@ -1162,7 +1168,7 @@ public final class OrePlayLayout {
    ) {
    }
 
-   public record FieldRow(OreBox box, OreBox value, String valueText, OreBox label, String labelText, @Nullable OrePlayLayout.Button toggle) {
+   public record FieldRow(OreBox box, OreBox value, String valueText, OreBox label, String labelText, OrePlayLayout.@Nullable Button toggle) {
    }
 
    public record Frame(
@@ -1179,22 +1185,22 @@ public final class OrePlayLayout {
       int tab,
       @Nullable OreBox layoutToggle,
       List<OrePlayLayout.Button> headerButtons,
-      @Nullable OrePlayLayout.Scroll worldScroll,
+      OrePlayLayout.@Nullable Scroll worldScroll,
       List<OrePlayLayout.WorldCard> worldCards,
       List<OrePlayLayout.WorldRow> worldRows,
       int columns,
       int worldPage,
       int worldPages,
-      @Nullable OrePlayLayout.Pagination pagination,
-      @Nullable OrePlayLayout.Notice emptyWorlds,
-      @Nullable OrePlayLayout.Notice realmsNotice,
-      @Nullable OrePlayLayout.Scroll menuScroll,
+      OrePlayLayout.@Nullable Pagination pagination,
+      OrePlayLayout.@Nullable Notice emptyWorlds,
+      OrePlayLayout.@Nullable Notice realmsNotice,
+      OrePlayLayout.@Nullable Scroll menuScroll,
       @Nullable OreBox menuPanel,
-      @Nullable OrePlayLayout.Button addServer,
+      OrePlayLayout.@Nullable Button addServer,
       List<OrePlayLayout.Section> sections,
-      @Nullable OrePlayLayout.Scroll detailsScroll,
-      @Nullable OrePlayLayout.SavedDetails saved,
-      @Nullable OrePlayLayout.FeaturedDetails featured,
+      OrePlayLayout.@Nullable Scroll detailsScroll,
+      OrePlayLayout.@Nullable SavedDetails saved,
+      OrePlayLayout.@Nullable FeaturedDetails featured,
       OrePlayLayout.Button profile,
       OreWidgets widgets
    ) {
@@ -1224,7 +1230,7 @@ public final class OrePlayLayout {
       @Nullable OreBox subtitle,
       String subtitleText,
       @Nullable OreBox icon,
-      @Nullable OrePlayLayout.Tag tag
+      OrePlayLayout.@Nullable Tag tag
    ) {
    }
 
@@ -1298,7 +1304,7 @@ public final class OrePlayLayout {
    public record Tag(OreBox box, String text, OrePlayLayout.TagRole role) {
    }
 
-   public static enum TagRole {
+   public enum TagRole {
       NEUTRAL80,
       INFORMATIVE_TINT,
       DESTRUCTIVE_TINT;

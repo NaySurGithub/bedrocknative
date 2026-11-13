@@ -96,19 +96,14 @@ public final class BiomeMappings {
    }
 
    private static JsonObject read(String resource) {
-      try {
-         JsonObject var2;
-         try (InputStream in = BiomeMappings.class.getResourceAsStream(resource)) {
-            if (in == null) {
-               throw new IllegalStateException("Missing " + resource);
-            }
-
-            var2 = JsonParser.parseReader(new InputStreamReader(in, StandardCharsets.UTF_8)).getAsJsonObject();
+      try (InputStream in = BiomeMappings.class.getResourceAsStream(resource)) {
+         if (in == null) {
+            throw new IllegalStateException("Missing " + resource);
+         } else {
+            return JsonParser.parseReader(new InputStreamReader(in, StandardCharsets.UTF_8)).getAsJsonObject();
          }
-
-         return var2;
-      } catch (IOException var6) {
-         throw new UncheckedIOException(var6);
+      } catch (IOException e) {
+         throw new UncheckedIOException(e);
       }
    }
 

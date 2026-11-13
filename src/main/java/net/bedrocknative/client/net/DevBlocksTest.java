@@ -1,7 +1,6 @@
 package net.bedrocknative.client.net;
 
 import com.mojang.blaze3d.platform.InputConstants;
-import com.mojang.blaze3d.platform.NativeImage;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -513,38 +512,20 @@ final class DevBlocksTest {
    private int centerPixel() {
       CompletableFuture<Integer> pixel = new CompletableFuture<>();
       this.minecraft.execute(() -> Screenshot.takeScreenshot(this.minecraft.gameRenderer.mainRenderTarget(), image -> {
-         try {
-            NativeImage twrVar0$ = image;
-
-            try {
-               pixel.complete(image.getPixel(image.getWidth() / 2, image.getHeight() / 2));
-            } catch (Throwable var6) {
-               if (image != null) {
-                  try {
-                     twrVar0$.close();
-                  } catch (Throwable var5) {
-                     var6.addSuppressed(var5);
-                  }
-               }
-
-               throw var6;
-            }
-
-            if (image != null) {
-               image.close();
-            }
-         } catch (RuntimeException var7) {
-            pixel.completeExceptionally(var7);
+         try (image) {
+            pixel.complete(image.getPixel(image.getWidth() / 2, image.getHeight() / 2));
+         } catch (RuntimeException e) {
+            pixel.completeExceptionally(e);
          }
       }));
 
       try {
          return pixel.get(10L, TimeUnit.SECONDS);
-      } catch (InterruptedException var3) {
+      } catch (InterruptedException e) {
          Thread.currentThread().interrupt();
          return 0;
-      } catch (TimeoutException | ExecutionException var4) {
-         log("the frame could not be read back: {}", var4.toString());
+      } catch (ExecutionException | TimeoutException e) {
+         log("the frame could not be read back: {}", e.toString());
          return 0;
       }
    }
@@ -624,10 +605,10 @@ final class DevBlocksTest {
    private static String bounds(VoxelShape shape) {
       if (shape.isEmpty()) {
          return "none";
-      } else {
-         AABB box = shape.bounds();
-         return String.format(Locale.ROOT, "%.3f,%.3f,%.3f..%.3f,%.3f,%.3f", box.minX, box.minY, box.minZ, box.maxX, box.maxY, box.maxZ);
       }
+
+      AABB box = shape.bounds();
+      return String.format(Locale.ROOT, "%.3f,%.3f,%.3f..%.3f,%.3f,%.3f", box.minX, box.minY, box.minZ, box.maxX, box.maxY, box.maxZ);
    }
 
    private void view(BlockPos eye, BlockPos target, String name) {
@@ -654,7 +635,7 @@ final class DevBlocksTest {
       this.commands(String.format(Locale.ROOT, "tp @s %.2f %.2f %.2f %.1f 0", from.x, from.y, from.z, yaw));
       sleep(1500L);
       int before = this.movement.count();
-      boolean autoJump = this.onClient(() -> (Boolean)this.minecraft.options.autoJump().get());
+      boolean autoJump = this.onClient(() -> this.minecraft.options.autoJump().get());
       this.run(() -> {
          this.minecraft.options.autoJump().set(false);
          this.minecraft.options.keyUp.setDown(true);
@@ -824,7 +805,7 @@ final class DevBlocksTest {
    private static void sleep(long millis) {
       try {
          Thread.sleep(millis);
-      } catch (InterruptedException var3) {
+      } catch (InterruptedException e) {
          Thread.currentThread().interrupt();
       }
    }

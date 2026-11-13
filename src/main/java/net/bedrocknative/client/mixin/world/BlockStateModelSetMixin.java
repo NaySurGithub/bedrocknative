@@ -9,12 +9,9 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 
-@Mixin({BlockStateModelSet.class})
+@Mixin(BlockStateModelSet.class)
 public abstract class BlockStateModelSetMixin {
-   @ModifyReturnValue(
-      method = {"get"},
-      at = {@At("RETURN")}
-   )
+   @ModifyReturnValue(method = "get", at = @At("RETURN"))
    private BlockStateModel bedrocknative$customBlock(BlockStateModel original, @Local(argsOnly = true) BlockState state) {
       BlockStateModel custom = BedrockBlockModels.model(state);
       return custom != null ? custom : original;

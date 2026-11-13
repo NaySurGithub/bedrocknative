@@ -23,8 +23,7 @@ import org.jspecify.annotations.Nullable;
 public final class AccountManager {
    private static final Map<String, AccountManager.Status> STATUS = new ConcurrentHashMap<>();
    private static final AtomicInteger CHANGES = new AtomicInteger();
-   @Nullable
-   private static volatile XboxAccountStore store;
+   private static volatile @Nullable XboxAccountStore store;
    private static volatile boolean autoVerify = true;
    private static volatile XboxSignInFlow.Signer signer = XboxAccount::signIn;
    private static volatile SignInActions signInActions = new ClientSignInActions();
@@ -53,8 +52,7 @@ public final class AccountManager {
       return store != null;
    }
 
-   @Nullable
-   static String activeIdIfLoaded() {
+   static @Nullable String activeIdIfLoaded() {
       XboxAccountStore current = store;
       return current == null ? null : current.active().map(XboxAccountStore.Entry::id).orElse(null);
    }
@@ -129,22 +127,22 @@ public final class AccountManager {
             AccountWarmUp.known(entry.id(), prepared.account());
          });
          return prepared;
-      } catch (XboxAccountStore.AccountException var2) {
-         if (var2.account() != null) {
-            record(var2.account().id(), statusOf(var2));
+      } catch (XboxAccountStore.AccountException e) {
+         if (e.account() != null) {
+            record(e.account().id(), statusOf(e));
          }
 
-         throw var2;
+         throw e;
       }
    }
 
    private static <T> T exclusive(Callable<T> step) throws XboxAccountStore.AccountException {
       try {
          return AccountWarmUp.WARM_UP.exclusive(step);
-      } catch (RuntimeException | XboxAccountStore.AccountException var2) {
-         throw var2;
-      } catch (Exception var3) {
-         throw new IllegalStateException(var3);
+      } catch (XboxAccountStore.AccountException | RuntimeException e) {
+         throw e;
+      } catch (Exception e) {
+         throw new IllegalStateException(e);
       }
    }
 
@@ -156,10 +154,10 @@ public final class AccountManager {
             try {
                exclusive(() -> accounts.authenticate(id));
                record(id, AccountManager.Status.OK);
-            } catch (XboxAccountStore.AccountException var3) {
-               record(id, statusOf(var3));
-            } catch (RuntimeException var4) {
-               record(id, new AccountManager.Status(AccountManager.Check.FAILED, String.valueOf(var4.getMessage())));
+            } catch (XboxAccountStore.AccountException e) {
+               record(id, statusOf(e));
+            } catch (RuntimeException e) {
+               record(id, new AccountManager.Status(AccountManager.Check.FAILED, String.valueOf(e.getMessage())));
             }
          }, "Xbox account check");
          thread.setDaemon(true);
@@ -175,30 +173,30 @@ public final class AccountManager {
       );
    }
 
-   public static Component name(@Nullable XboxAccountStore.Entry entry) {
+   public static Component name(XboxAccountStore.@Nullable Entry entry) {
       return entry != null && entry.gamertag() != null ? Component.literal(entry.gamertag()) : Component.translatable("bedrocknative.accounts.unnamed");
    }
 
    public static Component message(XboxAccountStore.AccountException e) {
       if (e.diagnosis() != null) {
          return AccountProblems.message(e.diagnosis(), e.account());
-      } else {
-         return switch (e.problem()) {
-            case NONE_ACTIVE -> Component.translatable("bedrocknative.accounts.message.none");
-            case SIGN_IN_REQUIRED -> Component.translatable("bedrocknative.accounts.message.expired", new Object[]{name(e.account())});
-            case FAILED -> Component.translatable("bedrocknative.accounts.message.failed", new Object[]{name(e.account()), String.valueOf(e.getMessage())});
-         };
       }
+
+      return switch (e.problem()) {
+         case NONE_ACTIVE -> Component.translatable("bedrocknative.accounts.message.none");
+         case SIGN_IN_REQUIRED -> Component.translatable("bedrocknative.accounts.message.expired", name(e.account()));
+         case FAILED -> Component.translatable("bedrocknative.accounts.message.failed", name(e.account()), String.valueOf(e.getMessage()));
+      };
    }
 
    public static Component buttonLabel() {
       return store()
          .active()
-         .map(entry -> Component.translatable("bedrocknative.accounts.button", new Object[]{name(entry)}))
+         .map(entry -> Component.translatable("bedrocknative.accounts.button", name(entry)))
          .orElseGet(() -> Component.translatable("bedrocknative.accounts.button.none"));
    }
 
-   public static enum Check {
+   public enum Check {
       UNKNOWN,
       CHECKING,
       OK,
@@ -206,7 +204,7 @@ public final class AccountManager {
       FAILED;
    }
 
-   public record Status(AccountManager.Check check, String detail, @Nullable XboxProblem.Diagnosis diagnosis) {
+   public record Status(AccountManager.Check check, String detail, XboxProblem.@Nullable Diagnosis diagnosis) {
       static final AccountManager.Status UNKNOWN = new AccountManager.Status(AccountManager.Check.UNKNOWN, "");
       static final AccountManager.Status CHECKING = new AccountManager.Status(AccountManager.Check.CHECKING, "");
       static final AccountManager.Status OK = new AccountManager.Status(AccountManager.Check.OK, "");

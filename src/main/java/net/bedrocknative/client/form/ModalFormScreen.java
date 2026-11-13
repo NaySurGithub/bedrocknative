@@ -68,6 +68,6 @@ public final class ModalFormScreen extends FormScreen {
       );
       first.setPosition(x, y);
       second.setPosition(x, y + height - buttonHeight);
-      this.buttons = List.of((AbstractButton)this.addRenderableWidget(first), (AbstractButton)this.addRenderableWidget(second));
+      this.buttons = List.of(this.addRenderableWidget(first), this.addRenderableWidget(second));
    }
 }

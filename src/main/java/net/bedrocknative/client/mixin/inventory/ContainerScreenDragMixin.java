@@ -10,17 +10,14 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin({AbstractContainerScreen.class})
+@Mixin(AbstractContainerScreen.class)
 public abstract class ContainerScreenDragMixin {
    @Unique
    private boolean bedrocknative$cursorDrag;
 
-   @Inject(
-      method = {"mouseDragged"},
-      at = {@At("HEAD")}
-   )
+   @Inject(method = "mouseDragged", at = @At("HEAD"))
    private void bedrocknative$dragStart(MouseButtonEvent event, double dragX, double dragY, CallbackInfoReturnable<Boolean> cir) {
-      if (!this.bedrocknative$cursorDrag && event.button() == 0 && !((AbstractContainerScreen)this).getMenu().getCarried().isEmpty()) {
+      if (!this.bedrocknative$cursorDrag && event.button() == 0 && !((AbstractContainerScreen)(Object)this).getMenu().getCarried().isEmpty()) {
          ClientBedrockSession session = ClientBedrockSession.active();
          if (session != null) {
             session.cursorDrag(true);
@@ -29,18 +26,12 @@ public abstract class ContainerScreenDragMixin {
       }
    }
 
-   @Inject(
-      method = {"mouseReleased"},
-      at = {@At("HEAD")}
-   )
+   @Inject(method = "mouseReleased", at = @At("HEAD"))
    private void bedrocknative$dragStop(MouseButtonEvent event, CallbackInfoReturnable<Boolean> cir) {
       this.bedrocknative$stopDrag();
    }
 
-   @Inject(
-      method = {"removed"},
-      at = {@At("HEAD")}
-   )
+   @Inject(method = "removed", at = @At("HEAD"))
    private void bedrocknative$removed(CallbackInfo ci) {
       this.bedrocknative$stopDrag();
    }

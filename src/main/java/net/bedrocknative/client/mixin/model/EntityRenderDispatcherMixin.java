@@ -12,20 +12,19 @@ import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.LivingEntityRenderer;
 import net.minecraft.client.renderer.entity.state.EnderDragonRenderState;
 import net.minecraft.client.renderer.entity.state.EntityRenderState;
-import net.minecraft.client.renderer.entity.state.EntityRenderState.LeashState;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 
-@Mixin({EntityRenderDispatcher.class})
+@Mixin(EntityRenderDispatcher.class)
 public abstract class EntityRenderDispatcherMixin {
    @WrapOperation(
-      method = {"submit"},
-      at = {@At(
+      method = "submit",
+      at = @At(
          value = "INVOKE",
          target = "Lnet/minecraft/client/renderer/entity/EntityRenderer;submit(Lnet/minecraft/client/renderer/entity/state/EntityRenderState;Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;Lnet/minecraft/client/renderer/state/level/CameraRenderState;)V"
-      )}
+      )
    )
    private void bedrocknative$bedrockLook(
       EntityRenderer<?, EntityRenderState> renderer,
@@ -45,7 +44,7 @@ public abstract class EntityRenderDispatcherMixin {
 
          if (state.leashStates != null) {
             for (int i = 0; i < state.leashStates.size(); i++) {
-               collector.submitLeash(poseStack, (LeashState)state.leashStates.get(i));
+               collector.submitLeash(poseStack, state.leashStates.get(i));
             }
          }
 

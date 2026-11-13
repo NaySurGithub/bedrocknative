@@ -56,28 +56,28 @@ public final class JsonUiPauseScreen extends PauseScreen implements JsonUiHost, 
          UiDefinitionSet definitions = JsonUi.definitions();
          if (definitions == null) {
             return java;
-         } else {
-            try {
-               PauseData data = new PauseData();
-               data.social(BedrockText.translate("menu.socialfriends", List.of("0")));
-               JsonUiScreen ui = JsonUiScreen.create(definitions, "pause.pause_screen", PauseData.variables(), data);
-               if (ui != null && JsonUi.use("pause", ui.instance())) {
-                  ui.instance().problems().log("pause screen");
-                  JsonUiPauseScreen screen = new JsonUiPauseScreen(ui, data);
-                  ui.fallback(() -> {
-                     failed = true;
-                     if (minecraft.gui.screen() == screen) {
-                        minecraft.gui.setScreen(new PauseScreen(true));
-                     }
-                  });
-                  return screen;
-               } else {
-                  return java;
-               }
-            } catch (RuntimeException var6) {
-               BedrockNative.LOGGER.warn("JSON UI couldn't build the pause screen; the Java screen shows it", var6);
+         }
+
+         try {
+            PauseData data = new PauseData();
+            data.social(BedrockText.translate("menu.socialfriends", List.of("0")));
+            JsonUiScreen ui = JsonUiScreen.create(definitions, "pause.pause_screen", PauseData.variables(), data);
+            if (ui != null && JsonUi.use("pause", ui.instance())) {
+               ui.instance().problems().log("pause screen");
+               JsonUiPauseScreen screen = new JsonUiPauseScreen(ui, data);
+               ui.fallback(() -> {
+                  failed = true;
+                  if (minecraft.gui.screen() == screen) {
+                     minecraft.gui.setScreen(new PauseScreen(true));
+                  }
+               });
+               return screen;
+            } else {
                return java;
             }
+         } catch (RuntimeException e) {
+            BedrockNative.LOGGER.warn("JSON UI couldn't build the pause screen; the Java screen shows it", e);
+            return java;
          }
       } else {
          return java;
@@ -105,6 +105,7 @@ public final class JsonUiPauseScreen extends PauseScreen implements JsonUiHost, 
       return this.notice;
    }
 
+   @Override
    protected void init() {
       this.ui.resize(this.width, this.height);
       if (!this.opened) {
@@ -127,9 +128,11 @@ public final class JsonUiPauseScreen extends PauseScreen implements JsonUiHost, 
       }
    }
 
+   @Override
    public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
    }
 
+   @Override
    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
       if (!this.ui.failed()) {
          this.refresh();
@@ -138,12 +141,14 @@ public final class JsonUiPauseScreen extends PauseScreen implements JsonUiHost, 
       }
    }
 
+   @Override
    public void mouseMoved(double x, double y) {
       this.mouseX = x;
       this.mouseY = y;
       this.ui.mouseMoved(x, y);
    }
 
+   @Override
    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
       if (event.button() == 1) {
          this.uiPressed = true;
@@ -153,6 +158,7 @@ public final class JsonUiPauseScreen extends PauseScreen implements JsonUiHost, 
       }
    }
 
+   @Override
    public boolean mouseReleased(MouseButtonEvent event) {
       if (this.uiPressed && event.button() == 1) {
          this.uiPressed = false;
@@ -162,10 +168,12 @@ public final class JsonUiPauseScreen extends PauseScreen implements JsonUiHost, 
       }
    }
 
+   @Override
    public boolean mouseDragged(MouseButtonEvent event, double dx, double dy) {
       return this.uiPressed && this.ui.mouseDragged(event);
    }
 
+   @Override
    public boolean mouseScrolled(double x, double y, double scrollX, double scrollY) {
       return this.ui.mouseScrolled(x, y, scrollY);
    }

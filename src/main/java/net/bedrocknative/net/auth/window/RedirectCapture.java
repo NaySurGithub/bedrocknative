@@ -5,12 +5,11 @@ import org.jspecify.annotations.Nullable;
 public interface RedirectCapture {
    String name();
 
-   @Nullable
-   String unavailable();
+   @Nullable String unavailable();
 
    RedirectCapture.Outcome capture(String var1, RedirectCapture.Control var2) throws InterruptedException;
 
-   public interface Control {
+   interface Control {
       void opened(RedirectCapture.Window var1);
 
       boolean codeInstead();
@@ -21,11 +20,10 @@ public interface RedirectCapture {
 
       String windowTitle();
 
-      @Nullable
-      String language();
+      @Nullable String language();
    }
 
-   public record Outcome(RedirectCapture.Outcome.Kind kind, @Nullable String redirect, String detail) {
+   record Outcome(RedirectCapture.Outcome.Kind kind, @Nullable String redirect, String detail) {
       public static RedirectCapture.Outcome redirect(@Nullable String redirect) {
          return new RedirectCapture.Outcome(RedirectCapture.Outcome.Kind.REDIRECT, redirect, "redirect received");
       }
@@ -39,7 +37,7 @@ public interface RedirectCapture {
          return this.kind + " (" + this.detail + ")";
       }
 
-      public static enum Kind {
+      public enum Kind {
          REDIRECT,
          CLOSED,
          CODE_INSTEAD,
@@ -48,7 +46,7 @@ public interface RedirectCapture {
       }
    }
 
-   public static enum Window {
+   enum Window {
       HELPER,
       BROWSER_APP,
       BROWSER;

@@ -32,8 +32,7 @@ final class UiProps {
 
       for (UiAnimation.Track track : c.tracks) {
          if (track.property() != null && (track.value() != null || track.lengths() != null)) {
-            String size = track.property();
-            switch (size) {
+            switch (track.property()) {
                case "alpha":
                   alphaTrack = later(alphaTrack, track);
                   break;
@@ -255,7 +254,7 @@ final class UiProps {
       }
    }
 
-   private static UiAnimation.Track later(@Nullable UiAnimation.Track current, UiAnimation.Track candidate) {
+   private static UiAnimation.Track later(UiAnimation.@Nullable Track current, UiAnimation.Track candidate) {
       return current != null && !(candidate.activatedAt() >= current.activatedAt()) ? current : candidate;
    }
 
@@ -264,7 +263,7 @@ final class UiProps {
       return pair != null ? pair : new UiLength[]{fallback, fallback};
    }
 
-   private static boolean sameLengths(@Nullable UiLength[] a, @Nullable UiLength[] b) {
+   private static boolean sameLengths(UiLength @Nullable [] a, UiLength @Nullable [] b) {
       return a == null ? b == null : b != null && Arrays.equals(a, b, UiProps::sameLength);
    }
 
@@ -309,8 +308,7 @@ final class UiProps {
          return this.control.resolved(key, this.instance.dataFor(this.control), this.instance.problems, this.instance.definitions);
       }
 
-      @Nullable
-      UiValue bag(String key) {
+      @Nullable UiValue bag(String key) {
          return this.control.bag.get(key);
       }
 

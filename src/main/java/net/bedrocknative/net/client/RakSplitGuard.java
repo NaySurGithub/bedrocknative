@@ -42,8 +42,8 @@ public final class RakSplitGuard extends ChannelInboundHandlerAdapter {
          field.setAccessible(true);
          field.set(codec, new RoundRobinArray(65536));
          return true;
-      } catch (RuntimeException | ReflectiveOperationException var2) {
-         BedrockNative.LOGGER.warn("RakNet split table not enlarged (big packets can be mixed up when 256 split packets overlap)", var2);
+      } catch (ReflectiveOperationException | RuntimeException e) {
+         BedrockNative.LOGGER.warn("RakNet split table not enlarged (big packets can be mixed up when 256 split packets overlap)", e);
          return false;
       }
    }

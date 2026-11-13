@@ -17,8 +17,7 @@ public interface SuggestionsView {
 
    List<String> bedrocknative$entries();
 
-   @Nullable
-   SuggestionWindow bedrocknative$window();
+   @Nullable SuggestionWindow bedrocknative$window();
 
    void bedrocknative$rows(int var1);
 

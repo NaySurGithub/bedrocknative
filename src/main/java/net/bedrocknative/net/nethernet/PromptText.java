@@ -58,11 +58,11 @@ public final class PromptText {
    private static boolean printable(int point) {
       if (Character.isISOControl(point)) {
          return false;
-      } else {
-         return switch (Character.getType(point)) {
-            case 0, 13, 14, 15, 16, 18, 19 -> false;
-            default -> true;
-         };
       }
+
+      return switch (Character.getType(point)) {
+         case 0, 13, 14, 15, 16, 18, 19 -> false;
+         default -> true;
+      };
    }
 }

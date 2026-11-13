@@ -17,20 +17,20 @@ public final class ScoreboardIdentities {
       List<Long> removed = new ArrayList<>();
       if (packet.getAction() == null) {
          return removed;
-      } else {
-         for (Entry entry : packet.getEntries()) {
-            if (packet.getAction() == Action.ADD) {
-               if (this.players.containsKey(entry.getScoreboardId()) || this.players.size() < 100000) {
-                  this.players.put(entry.getScoreboardId(), entry.getPlayerId());
-               }
-            } else {
-               this.players.remove(entry.getScoreboardId());
-               removed.add(entry.getScoreboardId());
-            }
-         }
-
-         return removed;
       }
+
+      for (Entry entry : packet.getEntries()) {
+         if (packet.getAction() == Action.ADD) {
+            if (this.players.containsKey(entry.getScoreboardId()) || this.players.size() < 100000) {
+               this.players.put(entry.getScoreboardId(), entry.getPlayerId());
+            }
+         } else {
+            this.players.remove(entry.getScoreboardId());
+            removed.add(entry.getScoreboardId());
+         }
+      }
+
+      return removed;
    }
 
    public long playerOf(long scoreboardId) {

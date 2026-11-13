@@ -10,12 +10,9 @@ import net.minecraft.client.renderer.fog.FogRenderer;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 
-@Mixin({FogRenderer.class})
+@Mixin(FogRenderer.class)
 public abstract class FogRendererMixin {
-   @ModifyReturnValue(
-      method = {"setupFog"},
-      at = {@At("RETURN")}
-   )
+   @ModifyReturnValue(method = "setupFog", at = @At("RETURN"))
    private FogData bedrocknative$bedrockFog(
       FogData fog, Camera camera, int renderDistanceInChunks, DeltaTracker deltaTracker, float darkenWorldAmount, ClientLevel level
    ) {

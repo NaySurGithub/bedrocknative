@@ -17,8 +17,7 @@ public final class ChunkDiagnostics {
    private int nonEmptyFailed;
    private boolean described;
    private boolean allFailedTold;
-   @Nullable
-   private String firstKind;
+   private @Nullable String firstKind;
    private final Map<String, Integer> kinds = new TreeMap<>();
 
    public synchronized void reset(String server) {
@@ -132,7 +131,7 @@ public final class ChunkDiagnostics {
    }
 
    static String kind(RuntimeException failure) {
-      Throwable shown = (Throwable)(failure instanceof BedrockChunkCodec.FormatException && failure.getCause() != null ? failure.getCause() : failure);
+      Throwable shown = failure instanceof BedrockChunkCodec.FormatException && failure.getCause() != null ? failure.getCause() : failure;
       String message = String.valueOf(shown.getMessage()).replaceAll("-?\\d+", "#");
       String kind = shown.getClass().getSimpleName() + ": " + message;
       return kind.length() > 140 ? kind.substring(0, 140) + "..." : kind;

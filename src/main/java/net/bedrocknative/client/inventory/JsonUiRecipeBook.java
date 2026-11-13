@@ -41,7 +41,7 @@ public final class JsonUiRecipeBook implements RecipeBookData.Actions {
    private final Runnable exit;
    private List<RecipeBook.Cell> cells = List.of();
    private int cellsVersion = -1;
-   private ItemStack[] shownStacks = new ItemStack[0];
+   private @Nullable ItemStack[] shownStacks = new ItemStack[0];
    private final ItemData[] sourceItems = new ItemData[45];
    private List<List<ItemStack>> ghost = List.of();
    private List<ItemStack> ghostResult = List.of();
@@ -56,15 +56,13 @@ public final class JsonUiRecipeBook implements RecipeBookData.Actions {
       data.actions(this);
    }
 
-   @Nullable
-   static RecipeBookData data(ContainerSlots.Kind kind, ContainerData slots) {
+   static @Nullable RecipeBookData data(ContainerSlots.Kind kind, ContainerData slots) {
       return (kind == ContainerSlots.Kind.INVENTORY || kind == ContainerSlots.Kind.CRAFTING_TABLE) && BedrockRecipeBook.active() != null
          ? new RecipeBookData(slots)
          : null;
    }
 
-   @Nullable
-   static JsonUiRecipeBook of(@Nullable RecipeBookData data, AbstractContainerMenu menu, ContainerSlots.Kind kind, Runnable exit) {
+   static @Nullable JsonUiRecipeBook of(@Nullable RecipeBookData data, AbstractContainerMenu menu, ContainerSlots.Kind kind, Runnable exit) {
       BedrockRecipeBook session = BedrockRecipeBook.active();
       return data != null && session != null ? new JsonUiRecipeBook(session, data, menu, kind == ContainerSlots.Kind.CRAFTING_TABLE, exit) : null;
    }
@@ -215,33 +213,35 @@ public final class JsonUiRecipeBook implements RecipeBookData.Actions {
          if (entry == null) {
             this.book.toggle(cell.group());
             return true;
-         } else {
-            this.book.select(entry);
-            this.clearGhost();
-            BookRecipe recipe = entry.recipe();
-            StackRequests requests = this.session.requests();
-            if (!entry.fits()) {
-               BedrockNative.LOGGER.info("Recipe book: {} needs a crafting table", recipe.id());
-               return true;
-            } else if (!entry.craftable()) {
-               BedrockNative.LOGGER.debug("Recipe book: {} chosen, the items are missing", recipe.id());
-               this.showGhost(recipe);
-               return true;
-            } else {
-               if (shift && button == 1) {
-                  int crafts = RecipeBookCrafts.autoCraft(
-                     requests, recipe, this.gridSize(), Integer.MAX_VALUE, requests.crafting()::matches, BedrockRecipeBook::maxStack
-                  );
-                  BedrockNative.LOGGER.info("Recipe book: auto-craft of {} (net id {}) x{}", new Object[]{recipe.id(), recipe.netId(), crafts});
-               } else {
-                  boolean placed = RecipeBookCrafts.place(requests, recipe, this.gridSize(), requests.crafting()::matches, BedrockRecipeBook::maxStack);
-                  BedrockNative.LOGGER.info("Recipe book: {} {} into the grid", recipe.id(), placed ? "placed" : "not placed");
-               }
-
-               requests.inventory().showMenu(this.menu);
-               return true;
-            }
          }
+
+         this.book.select(entry);
+         this.clearGhost();
+         BookRecipe recipe = entry.recipe();
+         StackRequests requests = this.session.requests();
+         if (!entry.fits()) {
+            BedrockNative.LOGGER.info("Recipe book: {} needs a crafting table", recipe.id());
+            return true;
+         }
+
+         if (!entry.craftable()) {
+            BedrockNative.LOGGER.debug("Recipe book: {} chosen, the items are missing", recipe.id());
+            this.showGhost(recipe);
+            return true;
+         }
+
+         if (shift && button == 1) {
+            int crafts = RecipeBookCrafts.autoCraft(
+               requests, recipe, this.gridSize(), Integer.MAX_VALUE, requests.crafting()::matches, BedrockRecipeBook::maxStack
+            );
+            BedrockNative.LOGGER.info("Recipe book: auto-craft of {} (net id {}) x{}", new Object[]{recipe.id(), recipe.netId(), crafts});
+         } else {
+            boolean placed = RecipeBookCrafts.place(requests, recipe, this.gridSize(), requests.crafting()::matches, BedrockRecipeBook::maxStack);
+            BedrockNative.LOGGER.info("Recipe book: {} {} into the grid", recipe.id(), placed ? "placed" : "not placed");
+         }
+
+         requests.inventory().showMenu(this.menu);
+         return true;
       } else {
          return false;
       }
@@ -270,7 +270,7 @@ public final class JsonUiRecipeBook implements RecipeBookData.Actions {
 
          for (int u = 0; u < units.size(); u++) {
             for (int cell : cells[u]) {
-               SlotDisplay slot = (SlotDisplay)(recipe.shaped() ? slots.get(units.get(u).index()) : (item < slots.size() ? slots.get(item) : Empty.INSTANCE));
+               SlotDisplay slot = recipe.shaped() ? slots.get(units.get(u).index()) : (item < slots.size() ? slots.get(item) : Empty.INSTANCE);
                item++;
                shown.set(cell, slot.resolveForStacks(context));
             }
@@ -295,7 +295,7 @@ public final class JsonUiRecipeBook implements RecipeBookData.Actions {
       return items.isEmpty() ? ItemStack.EMPTY : items.get((int)(Util.getMillis() / 1000L % items.size()));
    }
 
-   void drawGhost(GuiGraphicsExtractor graphics, IntFunction<float[]> centre) {
+   void drawGhost(GuiGraphicsExtractor graphics, IntFunction<float @Nullable []> centre) {
       if (!this.ghost.isEmpty()) {
          for (int javaSlot = 0; javaSlot <= this.ghost.size(); javaSlot++) {
             ItemStack stack = this.ghost(javaSlot);

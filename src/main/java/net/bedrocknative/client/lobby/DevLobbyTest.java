@@ -6,7 +6,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
@@ -41,9 +40,9 @@ public final class DevLobbyTest {
       while ((instance = Minecraft.getInstance()) == null || instance.getWindow() == null) {
          try {
             Thread.sleep(200L);
-         } catch (InterruptedException var2) {
+         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new IllegalStateException(var2);
+            throw new IllegalStateException(e);
          }
       }
 
@@ -63,8 +62,8 @@ public final class DevLobbyTest {
 
                try {
                   test.run(serversDat, datBefore);
-               } catch (Throwable var9) {
-                  BedrockNative.LOGGER.error("Dev lobby test: FAIL crashed", var9);
+               } catch (Throwable e) {
+                  BedrockNative.LOGGER.error("Dev lobby test: FAIL crashed", e);
                   test.failed++;
                } finally {
                   test.sleep(3000L);
@@ -83,7 +82,7 @@ public final class DevLobbyTest {
          );
    }
 
-   private void run(Path serversDat, @Nullable byte[] datBefore) throws Exception {
+   private void run(Path serversDat, byte @Nullable [] datBefore) throws Exception {
       this.waitFor(
          "the title screen",
          () -> this.onClient(
@@ -148,10 +147,6 @@ public final class DevLobbyTest {
          this.check("Play opens Bedrock's Play screen (Ore UI; " + name(this.screen()) + ")", play != null);
          if (play != null) {
             DevOrePlayTest.Reporter reporter = new DevOrePlayTest.Reporter() {
-               {
-                  Objects.requireNonNull(DevLobbyTest.this);
-               }
-
                @Override
                public void check(String what, boolean ok) {
                   DevLobbyTest.this.check(what, ok);
@@ -214,8 +209,7 @@ public final class DevLobbyTest {
       return this.onClient(() -> labelsOf((Screen)host));
    }
 
-   @Nullable
-   private UiControl firing(JsonUiHost host, String id, @Nullable String collection, int index) {
+   private @Nullable UiControl firing(JsonUiHost host, String id, @Nullable String collection, int index) {
       return this.onClient(() -> host.ui().input().firing(id, collection, index));
    }
 
@@ -241,24 +235,23 @@ public final class DevLobbyTest {
       });
    }
 
-   @Nullable
-   private static byte[] read(Path file) {
+   private static byte @Nullable [] read(Path file) {
       try {
          return Files.isRegularFile(file) ? Files.readAllBytes(file) : null;
-      } catch (IOException var2) {
+      } catch (IOException e) {
          return null;
       }
    }
 
-   private void restore(Path file, @Nullable byte[] bytes) {
+   private void restore(Path file, byte @Nullable [] bytes) {
       try {
          if (bytes == null) {
             Files.deleteIfExists(file);
          } else {
             Files.write(file, bytes);
          }
-      } catch (IOException var4) {
-         BedrockNative.LOGGER.error("Dev lobby test: FAIL couldn't put {} back", file, var4);
+      } catch (IOException e) {
+         BedrockNative.LOGGER.error("Dev lobby test: FAIL couldn't put {} back", file, e);
          this.failed++;
       }
    }
@@ -314,7 +307,7 @@ public final class DevLobbyTest {
    private void sleep(long millis) {
       try {
          Thread.sleep(millis);
-      } catch (InterruptedException var4) {
+      } catch (InterruptedException e) {
          Thread.currentThread().interrupt();
       }
    }

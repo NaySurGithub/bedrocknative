@@ -15,8 +15,7 @@ final class FormButton extends AbstractButton {
    static final int HEIGHT = 32;
    private static final int IMAGE_COLUMN = 34;
    private final Font font;
-   @Nullable
-   private final FormImage image;
+   private final @Nullable FormImage image;
    private final Runnable action;
 
    FormButton(Font font, int width, int height, Component text, @Nullable FormImage image, Runnable action) {
@@ -26,10 +25,12 @@ final class FormButton extends AbstractButton {
       this.action = action;
    }
 
+   @Override
    public void onPress(InputWithModifiers input) {
       this.action.run();
    }
 
+   @Override
    protected void extractContents(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
       int left = this.getX();
       if (this.image != null) {
@@ -56,6 +57,7 @@ final class FormButton extends AbstractButton {
       }
    }
 
+   @Override
    protected void updateWidgetNarration(NarrationElementOutput output) {
       this.defaultButtonNarrationText(output);
    }

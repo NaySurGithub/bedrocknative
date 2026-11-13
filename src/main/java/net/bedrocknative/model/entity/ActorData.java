@@ -63,8 +63,7 @@ public final class ActorData {
       this.flags[flag.ordinal()] = value;
    }
 
-   @Nullable
-   public Object value(EntityDataType<?> type) {
+   public @Nullable Object value(EntityDataType<?> type) {
       return this.values.get(type);
    }
 
@@ -92,8 +91,7 @@ public final class ActorData {
       return this.values.get(EntityDataTypes.NAME) instanceof CharSequence name ? name.toString() : "";
    }
 
-   @Nullable
-   public Object property(String name) {
+   public @Nullable Object property(String name) {
       return this.properties.get(name);
    }
 

@@ -27,8 +27,7 @@ final class CustomBlockStateModel implements BlockStateModel {
    private final CustomBlockStateModel.Quad[] quads;
    private final BlockStateModelPart part;
    private final String block;
-   @Nullable
-   private final String layer;
+   private final @Nullable String layer;
 
    CustomBlockStateModel(CustomBlockStateModel.Quad[] quads, BlockStateModelPart part, String block, @Nullable String layer) {
       this.quads = quads;
@@ -37,16 +36,18 @@ final class CustomBlockStateModel implements BlockStateModel {
       this.layer = layer;
    }
 
+   @Override
    public void collectParts(RandomSource random, List<BlockStateModelPart> output) {
       output.add(this.part);
    }
 
+   @Override
    public Baked particleMaterial() {
       return this.part.particleMaterial();
    }
 
-   @MaterialFlags
-   public int materialFlags() {
+   @Override
+   public @MaterialFlags int materialFlags() {
       return this.part.materialFlags();
    }
 

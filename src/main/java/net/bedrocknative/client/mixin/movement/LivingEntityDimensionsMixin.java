@@ -12,15 +12,11 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin({LivingEntity.class})
+@Mixin(LivingEntity.class)
 public abstract class LivingEntityDimensionsMixin {
-   @Inject(
-      method = {"getDimensions"},
-      at = {@At("HEAD")},
-      cancellable = true
-   )
+   @Inject(method = "getDimensions", at = @At("HEAD"), cancellable = true)
    private void bedrocknative$localDimensions(Pose pose, CallbackInfoReturnable<EntityDimensions> cir) {
-      LivingEntity self = (LivingEntity)this;
+      LivingEntity self = (LivingEntity)(Object)this;
       if (self == Minecraft.getInstance().player && BedrockMovement.active() && pose == Pose.STANDING) {
          Vector2f size = BedrockLocalPlayer.localSize();
          if (size != null && (!(Math.abs(size.getX() - 0.6F) < 1.0E-4F) || !(Math.abs(size.getY() - 1.8F) < 1.0E-4F))) {

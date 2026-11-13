@@ -47,8 +47,8 @@ public final class BedrockBlockPalette {
          NBTInputStream in = NbtUtils.createGZIPReader(raw);
       ) {
          root = (NbtMap)in.readTag();
-      } catch (IOException var14) {
-         throw new UncheckedIOException(var14);
+      } catch (IOException e) {
+         throw new UncheckedIOException(e);
       }
 
       List<NbtMap> blocks = root.getList("blocks", NbtType.COMPOUND);
@@ -74,18 +74,13 @@ public final class BedrockBlockPalette {
 
    public static Set<String> dataDrivenBlocks(String folder) {
       return DATA_DRIVEN.computeIfAbsent(folder, key -> {
-         try {
-            Set<String> names;
-            try (
-               InputStream raw = open("/assets/bedrocknative/mappings/" + key + "/data_driven_blocks.txt");
-               BufferedReader reader = new BufferedReader(new InputStreamReader(raw, StandardCharsets.UTF_8));
-            ) {
-               names = reader.lines().map(String::strip).filter(line -> !line.isEmpty() && !line.startsWith("#")).collect(Collectors.toUnmodifiableSet());
-            }
-
-            return names;
-         } catch (IOException var10) {
-            throw new UncheckedIOException(var10);
+         try (
+            InputStream raw = open("/assets/bedrocknative/mappings/" + key + "/data_driven_blocks.txt");
+            BufferedReader reader = new BufferedReader(new InputStreamReader(raw, StandardCharsets.UTF_8));
+         ) {
+            return reader.lines().map(String::strip).filter(line -> !line.isEmpty() && !line.startsWith("#")).collect(Collectors.toUnmodifiableSet());
+         } catch (IOException e) {
+            throw new UncheckedIOException(e);
          }
       });
    }
@@ -95,18 +90,13 @@ public final class BedrockBlockPalette {
    }
 
    static JsonElement readGzipJson(String resource) {
-      try {
-         JsonElement var3;
-         try (
-            InputStream raw = open(resource);
-            InputStreamReader reader = new InputStreamReader(new GZIPInputStream(raw), StandardCharsets.UTF_8);
-         ) {
-            var3 = JsonParser.parseReader(reader);
-         }
-
-         return var3;
-      } catch (IOException var9) {
-         throw new UncheckedIOException(var9);
+      try (
+         InputStream raw = open(resource);
+         InputStreamReader reader = new InputStreamReader(new GZIPInputStream(raw), StandardCharsets.UTF_8);
+      ) {
+         return JsonParser.parseReader(reader);
+      } catch (IOException e) {
+         throw new UncheckedIOException(e);
       }
    }
 

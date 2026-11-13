@@ -26,7 +26,7 @@ public final class ItemSmoothing {
    }
 
    public static InterpolationHandler createHandler(Entity entity) {
-      return (InterpolationHandler)(entity.level().isClientSide() ? new ItemSmoothing.Handler(entity, ItemSmoothing::active) : InterpolationHandler.NO_OP);
+      return entity.level().isClientSide() ? new ItemSmoothing.Handler(entity, ItemSmoothing::active) : InterpolationHandler.NO_OP;
    }
 
    static final class Handler implements InterpolationHandler {
@@ -39,26 +39,28 @@ public final class ItemSmoothing {
          this.enabled = enabled;
       }
 
-      @Nullable
-      public PositionAndRotation target() {
+      @Override
+      public @Nullable PositionAndRotation target() {
          return this.lerp.active() ? PositionAndRotation.of(this.lerp.target(), this.entity.getYRot(), this.entity.getXRot()) : null;
       }
 
+      @Override
       public boolean interpolateTo(@Nullable PositionPath position, float yRot, float xRot, boolean hasRotation) {
          if (!this.enabled.getAsBoolean()) {
             return false;
-         } else {
-            if (position != null) {
-               Vec3 end = position.endPosition();
-               if (!this.lerp.heading(end)) {
-                  this.lerp.begin(end, 3);
-               }
-            }
-
-            return true;
          }
+
+         if (position != null) {
+            Vec3 end = position.endPosition();
+            if (!this.lerp.heading(end)) {
+               this.lerp.begin(end, 3);
+            }
+         }
+
+         return true;
       }
 
+      @Override
       public void interpolate() {
          if (this.lerp.active()) {
             if (!this.enabled.getAsBoolean()) {
@@ -69,13 +71,16 @@ public final class ItemSmoothing {
          }
       }
 
+      @Override
       public void applyPredictedMovement(Vec3 delta) {
       }
 
+      @Override
       public boolean hasActiveInterpolation() {
          return this.lerp.active();
       }
 
+      @Override
       public void cancel() {
          this.lerp.cancel();
       }

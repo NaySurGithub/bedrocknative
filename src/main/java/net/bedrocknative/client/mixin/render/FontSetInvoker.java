@@ -4,7 +4,7 @@ import net.minecraft.client.gui.font.FontSet;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Invoker;
 
-@Mixin({FontSet.class})
+@Mixin(FontSet.class)
 public interface FontSetInvoker {
    @Invoker("resetTextures")
    void bedrocknative$resetTextures();

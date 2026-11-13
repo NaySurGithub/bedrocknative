@@ -19,15 +19,12 @@ import org.jspecify.annotations.Nullable;
 
 public final class BedrockFog {
    private static final float RAIN_FOG_LEVEL = 0.01F;
-   @Nullable
-   private static volatile BedrockFog active;
+   private static volatile @Nullable BedrockFog active;
    private final FogStack stack = new FogStack();
-   @Nullable
-   private FogDefinition.Medium lastMedium;
+   private FogDefinition.@Nullable Medium lastMedium;
    private long enteredMillis;
    private final Set<FogDefinition.Transition> logged = new HashSet<>();
-   @Nullable
-   private volatile BedrockFog.Definitions definitions;
+   private volatile BedrockFog.@Nullable Definitions definitions;
 
    public static void modify(FogData fog, Camera camera, float renderDistanceBlocks, ClientLevel level) {
       BedrockFog current = active;
@@ -106,8 +103,7 @@ public final class BedrockFog {
       }
    }
 
-   @Nullable
-   static FogDefinition.Medium medium(Camera camera, ClientLevel level) {
+   static FogDefinition.@Nullable Medium medium(Camera camera, ClientLevel level) {
       FogType type = camera.getFluidInCamera();
 
       return switch (type) {
@@ -121,7 +117,6 @@ public final class BedrockFog {
             yield FogDefinition.Medium.LAVA;
          }
          case ATMOSPHERIC, NONE -> level.getRainLevel(1.0F) > 0.01F ? FogDefinition.Medium.WEATHER : FogDefinition.Medium.AIR;
-         default -> throw new MatchException(null, null);
       };
    }
 

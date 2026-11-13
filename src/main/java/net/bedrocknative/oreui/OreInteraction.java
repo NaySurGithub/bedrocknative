@@ -3,12 +3,9 @@ package net.bedrocknative.oreui;
 import org.jspecify.annotations.Nullable;
 
 public final class OreInteraction {
-   @Nullable
-   private String hovered;
-   @Nullable
-   private String pressed;
-   @Nullable
-   private String focused;
+   private @Nullable String hovered;
+   private @Nullable String pressed;
+   private @Nullable String focused;
    private boolean focusVisible;
    private double mouseX = -1.0;
    private double mouseY = -1.0;
@@ -20,13 +17,11 @@ public final class OreInteraction {
       );
    }
 
-   @Nullable
-   public String hovered() {
+   public @Nullable String hovered() {
       return this.hovered;
    }
 
-   @Nullable
-   public String focused() {
+   public @Nullable String focused() {
       return this.focused;
    }
 
@@ -58,8 +53,7 @@ public final class OreInteraction {
       }
    }
 
-   @Nullable
-   public String press(OreWidgets widgets, double x, double y) {
+   public @Nullable String press(OreWidgets widgets, double x, double y) {
       this.moved(widgets, x, y);
       this.pressed = this.hovered;
       if (this.pressed != null) {
@@ -70,8 +64,7 @@ public final class OreInteraction {
       return this.pressed;
    }
 
-   @Nullable
-   public String release(OreWidgets widgets, double x, double y) {
+   public @Nullable String release(OreWidgets widgets, double x, double y) {
       this.moved(widgets, x, y);
       String activated = this.pressed != null && this.pressed.equals(this.hovered) ? this.pressed : null;
       this.pressed = null;
@@ -82,8 +75,7 @@ public final class OreInteraction {
       this.pressed = null;
    }
 
-   @Nullable
-   public OreWidget navigate(OreWidgets widgets, OreKey key, boolean shift) {
+   public @Nullable OreWidget navigate(OreWidgets widgets, OreKey key, boolean shift) {
       OreWidget current = widgets.get(this.focused);
       OreWidget next;
       if (key == OreKey.TAB) {

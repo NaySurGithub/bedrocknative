@@ -10,15 +10,9 @@ import net.minecraft.world.entity.player.Player;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 
-@Mixin({MultiPlayerGameMode.class})
+@Mixin(MultiPlayerGameMode.class)
 public abstract class MultiPlayerGameModeMixin {
-   @WrapOperation(
-      method = {"attack"},
-      at = {@At(
-         value = "INVOKE",
-         target = "Lnet/minecraft/world/entity/player/Player;resetAttackStrengthTicker()V"
-      )}
-   )
+   @WrapOperation(method = "attack", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/player/Player;resetAttackStrengthTicker()V"))
    private void bedrocknative$noAttackDip(Player player, Operation<Void> original) {
       if (!BedrockMovement.active()) {
          original.call(new Object[]{player});
@@ -26,11 +20,8 @@ public abstract class MultiPlayerGameModeMixin {
    }
 
    @WrapOperation(
-      method = {"attack"},
-      at = {@At(
-         value = "INVOKE",
-         target = "Lnet/minecraft/world/entity/player/Player;attack(Lnet/minecraft/world/entity/Entity;)V"
-      )}
+      method = "attack",
+      at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/player/Player;attack(Lnet/minecraft/world/entity/Entity;)V")
    )
    private void bedrocknative$noLocalAttack(Player player, Entity target, Operation<Void> original) {
       if (!BedrockMovement.active()) {
@@ -38,10 +29,7 @@ public abstract class MultiPlayerGameModeMixin {
       }
    }
 
-   @ModifyReturnValue(
-      method = {"hasMissTime"},
-      at = {@At("RETURN")}
-   )
+   @ModifyReturnValue(method = "hasMissTime", at = @At("RETURN"))
    private boolean bedrocknative$noMissTime(boolean original) {
       return original && !BedrockMovement.active();
    }

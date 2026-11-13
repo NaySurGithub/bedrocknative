@@ -42,16 +42,14 @@ public final class BedrockItemFrames {
             owner = level;
          }
 
-         Direction facing = (Direction)state.getValue(MovingPistonBlock.FACING);
+         Direction facing = state.getValue(MovingPistonBlock.FACING);
          ItemFrame frame = FRAMES.get(pos);
          if (frame == null || frame.isRemoved() || frame.getDirection() != facing) {
             if (frame != null) {
                frame.discard();
             }
 
-            frame = (ItemFrame)(state.getValue(MovingPistonBlock.TYPE) == PistonType.STICKY
-               ? new GlowItemFrame(level, pos, facing)
-               : new ItemFrame(level, pos, facing));
+            frame = state.getValue(MovingPistonBlock.TYPE) == PistonType.STICKY ? new GlowItemFrame(level, pos, facing) : new ItemFrame(level, pos, facing);
             frame.setId(nextId--);
             level.addEntity(frame);
             FRAMES.put(pos.immutable(), frame);

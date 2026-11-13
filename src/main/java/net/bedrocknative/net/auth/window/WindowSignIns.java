@@ -19,7 +19,7 @@ public final class WindowSignIns {
       boolean windows = windows();
       long processId = ProcessHandle.current().pid();
       Path temp = tempRoot();
-      Registry registry = (Registry)(windows ? new WindowsRegistry() : WindowSignIns.NoRegistry.INSTANCE);
+      Registry registry = windows ? new WindowsRegistry() : WindowSignIns.NoRegistry.INSTANCE;
       BrowserCapture browser = new BrowserCapture(
          windows,
          new SchemeHandler(registry, processId, WindowSignIns::alive),
@@ -35,7 +35,7 @@ public final class WindowSignIns {
    }
 
    public static HelperCapture devHelper() {
-      return helper((Registry)(windows() ? new WindowsRegistry() : WindowSignIns.NoRegistry.INSTANCE), true);
+      return helper(windows() ? new WindowsRegistry() : WindowSignIns.NoRegistry.INSTANCE, true);
    }
 
    private static HelperCapture helper(Registry registry, boolean allowLoopback) {
@@ -65,8 +65,7 @@ public final class WindowSignIns {
       }
    }
 
-   @Nullable
-   static Boolean runtimeInstalled(Registry registry) {
+   static @Nullable Boolean runtimeInstalled(Registry registry) {
       try {
          for (String key : List.of(
             "SOFTWARE\\WOW6432Node\\Microsoft\\EdgeUpdate\\Clients\\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}",
@@ -78,7 +77,7 @@ public final class WindowSignIns {
          }
 
          return version(registry.get("Software\\Microsoft\\EdgeUpdate\\Clients\\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}", "pv"));
-      } catch (RuntimeException | IOException var3) {
+      } catch (IOException | RuntimeException e) {
          return null;
       }
    }
@@ -91,20 +90,20 @@ public final class WindowSignIns {
       Path java = CallbackJar.java();
       if (java == null) {
          throw new IOException("the game's Java executable is unknown");
-      } else {
-         List<Path> roots = new ArrayList<>();
-         String local = System.getenv("LOCALAPPDATA");
-         if (local != null && !local.isBlank()) {
-            roots.add(Path.of(local, "BedrockNative", "cb"));
-         }
+      }
 
-         roots.add(tempRoot().resolve("bncb"));
-         String command = CallbackJar.command(java, CallbackJar.install(roots), folder);
-         if (command == null) {
-            throw new IOException("a path of the command holds a quote or a percent sign");
-         } else {
-            return command;
-         }
+      List<Path> roots = new ArrayList<>();
+      String local = System.getenv("LOCALAPPDATA");
+      if (local != null && !local.isBlank()) {
+         roots.add(Path.of(local, "BedrockNative", "cb"));
+      }
+
+      roots.add(tempRoot().resolve("bncb"));
+      String command = CallbackJar.command(java, CallbackJar.install(roots), folder);
+      if (command == null) {
+         throw new IOException("a path of the command holds a quote or a percent sign");
+      } else {
+         return command;
       }
    }
 
@@ -120,7 +119,7 @@ public final class WindowSignIns {
       return Path.of(System.getProperty("java.io.tmpdir"));
    }
 
-   private static enum NoRegistry implements Registry {
+   private enum NoRegistry implements Registry {
       INSTANCE;
 
       @Override
@@ -128,9 +127,8 @@ public final class WindowSignIns {
          throw new IOException("no registry");
       }
 
-      @Nullable
       @Override
-      public String get(String key, String name) throws IOException {
+      public @Nullable String get(String key, String name) throws IOException {
          throw new IOException("no registry");
       }
 
@@ -144,9 +142,8 @@ public final class WindowSignIns {
          throw new IOException("no registry");
       }
 
-      @Nullable
       @Override
-      public String getMachine(String key, String name) throws IOException {
+      public @Nullable String getMachine(String key, String name) throws IOException {
          throw new IOException("no registry");
       }
    }

@@ -9,7 +9,7 @@ public final class ServerStatuses {
    private ServerStatuses() {
    }
 
-   public static PlayData.Status of(@Nullable BedrockPing.Pong pong, @Nullable ProbeResult netherNet, @Nullable JavaStatus java) {
+   public static PlayData.Status of(BedrockPing.@Nullable Pong pong, @Nullable ProbeResult netherNet, @Nullable JavaStatus java) {
       if (pong != null) {
          return PlayData.Status.online(pong.motd(), pong.players(), pong.maxPlayers(), pong.latencyMillis());
       } else if (netherNet != null && netherNet.supported()) {

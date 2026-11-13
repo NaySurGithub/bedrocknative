@@ -44,8 +44,7 @@ final class RecipeUnlockedToast implements Toast {
    );
    private final ItemStack icon;
    private final Component title;
-   @Nullable
-   private final Component secondLine;
+   private final @Nullable Component secondLine;
    private final int width;
    private Visibility visibility = Visibility.SHOW;
 
@@ -57,8 +56,7 @@ final class RecipeUnlockedToast implements Toast {
       this.width = 33 + Math.min(200, text) + 9;
    }
 
-   @Nullable
-   static String description(String tag) {
+   static @Nullable String description(String tag) {
       return DESCRIPTIONS.get(tag);
    }
 
@@ -75,18 +73,22 @@ final class RecipeUnlockedToast implements Toast {
       minecraft.gui.toastManager().addToast(new RecipeUnlockedToast(result, title, second, minecraft.font));
    }
 
+   @Override
    public Visibility getWantedVisibility() {
       return this.visibility;
    }
 
+   @Override
    public void update(ToastManager manager, long fullyVisibleForMs) {
       this.visibility = fullyVisibleForMs >= 5000.0 * manager.getNotificationDisplayTimeMultiplier() ? Visibility.HIDE : Visibility.SHOW;
    }
 
+   @Override
    public int width() {
       return this.width;
    }
 
+   @Override
    public void extractRenderState(GuiGraphicsExtractor graphics, Font font, long fullyVisibleForMs) {
       background(graphics, this.width(), this.height());
       graphics.fakeItem(this.icon, 10, (this.height() - 16) / 2);

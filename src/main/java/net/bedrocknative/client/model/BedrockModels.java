@@ -11,8 +11,7 @@ import net.minecraft.util.Util;
 import org.jspecify.annotations.Nullable;
 
 public final class BedrockModels {
-   @Nullable
-   private static volatile ModelRegistry registry;
+   private static volatile @Nullable ModelRegistry registry;
    private static int generation;
    private static boolean active;
    private static boolean loading;
@@ -20,8 +19,7 @@ public final class BedrockModels {
    private BedrockModels() {
    }
 
-   @Nullable
-   public static ModelRegistry registry() {
+   public static @Nullable ModelRegistry registry() {
       return registry;
    }
 

@@ -13,7 +13,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -90,8 +89,7 @@ public final class BedrockConnector {
    private static final long PREVIOUS_CLOSE_WAIT_MS = 2000L;
    private static final int LOCATE_TIMEOUT_MS = 1000;
    private static final boolean LOCATE = !"off".equalsIgnoreCase(System.getProperty("bedrocknative.locatePing", "").trim());
-   @Nullable
-   private static final TransportKind DEV_TRANSPORT = TransportKind.byId(System.getProperty("bedrocknative.transport"));
+   private static final @Nullable TransportKind DEV_TRANSPORT = TransportKind.byId(System.getProperty("bedrocknative.transport"));
    private static final Duration JAVA_STATUS_TIMEOUT = Duration.ofMillis(1500L);
    private static final Duration NETHERNET_PROBE_TIMEOUT = Duration.ofMillis(1500L);
    private static final long NETHERNET_PROBE_BOUND_MS = NETHERNET_PROBE_TIMEOUT.toMillis() * 4L + 1000L;
@@ -108,12 +106,9 @@ public final class BedrockConnector {
    private static final ThreadLocal<Boolean> HANDING_TO_JAVA = ThreadLocal.withInitial(() -> false);
    private static volatile Channel lastChannel;
    private static volatile boolean loggedStandIn;
-   @Nullable
-   private static volatile TransportKind lastTransport;
-   @Nullable
-   private static volatile TransportMemory memory;
-   @Nullable
-   private static volatile BedrockConnector.JoinReport lastJoin;
+   private static volatile @Nullable TransportKind lastTransport;
+   private static volatile @Nullable TransportMemory memory;
+   private static volatile BedrockConnector.@Nullable JoinReport lastJoin;
    private static final boolean DEV_OFFLINE_IDENTITY = Boolean.getBoolean("bedrocknative.offlineIdentity");
 
    private BedrockConnector() {
@@ -123,8 +118,7 @@ public final class BedrockConnector {
       return ServerLookup.start(host, port, ServerLookup.SYSTEM, line -> BedrockNative.LOGGER.info(line));
    }
 
-   @Nullable
-   private static BedrockPing.Located locate(InetSocketAddress address) {
+   private static BedrockPing.@Nullable Located locate(InetSocketAddress address) {
       try {
          BedrockPing.Located located = BedrockPing.locate(address, 1000);
          BedrockPing.Pong pong = located.pong();
@@ -141,8 +135,8 @@ public final class BedrockConnector {
          }
 
          return located;
-      } catch (RuntimeException | IOException var3) {
-         BedrockNative.LOGGER.info("Server-list ping of {} failed: {}", hostPort(address), var3.toString());
+      } catch (IOException | RuntimeException e) {
+         BedrockNative.LOGGER.info("Server-list ping of {} failed: {}", hostPort(address), e.toString());
          return null;
       }
    }
@@ -151,8 +145,7 @@ public final class BedrockConnector {
       return (address.getAddress() == null ? address.getHostString() : address.getAddress().getHostAddress()) + ":" + address.getPort();
    }
 
-   @Nullable
-   public static BedrockConnector.JoinReport lastJoin() {
+   public static BedrockConnector.@Nullable JoinReport lastJoin() {
       return lastJoin;
    }
 
@@ -160,7 +153,7 @@ public final class BedrockConnector {
       BedrockConnector.Entry entry,
       @Nullable InetSocketAddress address,
       TransportKind kind,
-      @Nullable BedrockConnector.Attempt attempt,
+      BedrockConnector.@Nullable Attempt attempt,
       BedrockConnector.Probes probes,
       TransportChooser chooser
    ) {
@@ -214,8 +207,7 @@ public final class BedrockConnector {
       return HANDING_TO_JAVA.get();
    }
 
-   @Nullable
-   public static TransportKind lastTransport() {
+   public static @Nullable TransportKind lastTransport() {
       return lastTransport;
    }
 
@@ -251,8 +243,8 @@ public final class BedrockConnector {
             BedrockSkin skin = BedrockSkin.load(saved);
             BedrockNative.LOGGER.info("Using the {} saved from the vanilla client ({})", skin.describe(), "bedrock-skin.json");
             return skin;
-         } catch (IOException var4) {
-            BedrockNative.LOGGER.warn("Couldn't use the saved Bedrock skin, using the classic one: {}", var4.getMessage());
+         } catch (IOException e) {
+            BedrockNative.LOGGER.warn("Couldn't use the saved Bedrock skin, using the classic one: {}", e.getMessage());
          }
       }
 
@@ -264,8 +256,8 @@ public final class BedrockConnector {
             logStandIn("the install's classic Steve");
             return steve;
          }
-      } catch (Exception var3) {
-         BedrockNative.LOGGER.warn("Couldn't read the vanilla Bedrock skin pack, using the default persona", var3);
+      } catch (Exception e) {
+         BedrockNative.LOGGER.warn("Couldn't read the vanilla Bedrock skin pack, using the default persona", e);
       }
 
       logStandIn("vanilla's default persona Steve");
@@ -286,7 +278,7 @@ public final class BedrockConnector {
 
    private static ClientIdentity.Settings settings(Minecraft minecraft) {
       Window window = minecraft.getWindow();
-      int chosen = (Integer)minecraft.options.guiScale().get();
+      int chosen = minecraft.options.guiScale().get();
       boolean unicode = minecraft.isEnforceUnicode();
       return ClientIdentity.Settings.of(
          minecraft.options.languageCode,
@@ -345,8 +337,8 @@ public final class BedrockConnector {
       Thread.ofVirtual().name("Bedrock account").start(() -> {
          try {
             future.complete(prepare(minecraft, transfer));
-         } catch (Throwable var4) {
-            future.completeExceptionally(var4);
+         } catch (Throwable e) {
+            future.completeExceptionally(e);
          }
       });
       return future;
@@ -355,11 +347,11 @@ public final class BedrockConnector {
    private static BedrockConnector.Bedrock await(CompletableFuture<BedrockConnector.Bedrock> preparing) throws Exception {
       try {
          return preparing.join();
-      } catch (CompletionException var4) {
-         if (var4.getCause() instanceof Exception cause) {
+      } catch (CompletionException e) {
+         if (e.getCause() instanceof Exception cause) {
             throw cause;
          } else {
-            throw var4;
+            throw e;
          }
       }
    }
@@ -418,9 +410,9 @@ public final class BedrockConnector {
             try {
                address = lookup.await();
                SessionTimeline.mark("address");
-            } catch (UnknownHostException var40) {
+            } catch (UnknownHostException e) {
                if (forced != null) {
-                  throw var40;
+                  throw e;
                }
 
                BedrockNative.LOGGER.info("No address for {}: only Java's lookup (SRV) is left", host);
@@ -449,8 +441,8 @@ public final class BedrockConnector {
 
          while (!screen.aborted) {
             TransportChooser.Step step = chooser.next();
-            Objects.requireNonNull(step);
-            switch (step) {
+            TransportChooser.Step var26 = step;
+            switch (var26) {
                case TransportChooser.Start start:
                   start.probes().forEach(probes::start);
                   break;
@@ -461,7 +453,7 @@ public final class BedrockConnector {
                   report(entry, address, TransportKind.JAVA, null, probes, chooser);
                   handToJava(screen, minecraft, server, entry, transferState, probes.java(), forced == TransportKind.JAVA, chooser);
                   return;
-               case TransportChooser.Join joinx:
+               case TransportChooser.Join join:
                   JoinWarmUp.startBedrock("connect");
                   if (address == null) {
                      address = (lookup != null ? lookup : lookUp(host, entry.bedrockPort())).await();
@@ -487,13 +479,13 @@ public final class BedrockConnector {
                      session.privileges(privileges);
                   }
 
-                  TransportKind joining = joinx.kind();
+                  TransportKind joining = join.kind();
                   ProbeResult scheme = probes.netherNet();
                   session.whenLoggedIn(() -> rememberLogin(entry, joining, scheme));
-                  attempt = joinx.kind() == TransportKind.RAKNET
+                  attempt = join.kind() == TransportKind.RAKNET
                      ? rakNet(screen, minecraft, address, bedrock.identity(), session, probes)
                      : netherNet(screen, minecraft, entry, address, forced, bedrock.identity(), session, probes, asked);
-                  report(entry, address, joinx.kind(), attempt, probes, chooser);
+                  report(entry, address, join.kind(), attempt, probes, chooser);
                   if (attempt.future().isSuccess()) {
                      connected(screen, minecraft, entry, address, attempt, session, chooser);
                      return;
@@ -503,13 +495,13 @@ public final class BedrockConnector {
                      return;
                   }
 
-                  chooser.joinFailed(joinx.kind(), failureOf(attempt));
+                  chooser.joinFailed(join.kind(), failureOf(attempt));
                   break;
                case TransportChooser.TrustPrompt prompt:
                   chooser.trust(askTrust(screen, minecraft, entry, attempt, asked));
                   break;
                case TransportChooser.Fail var51:
-                  TransportChooser.Fail fail = (TransportChooser.Fail)step;
+                  TransportChooser.Fail fail = (TransportChooser.Fail)var26;
                   if (preparing != null && preparing.isCompletedExceptionally()) {
                      await(preparing);
                   }
@@ -521,7 +513,7 @@ public final class BedrockConnector {
                   fail(screen, minecraft, server, entry, address, fail.kind(), attempt, probes, chooser);
                   return;
                case TransportChooser.Stop var52:
-                  TransportChooser.Stop stop = (TransportChooser.Stop)step;
+                  TransportChooser.Stop stop = (TransportChooser.Stop)var26;
                   SessionTimeline.joinAbandoned();
                   BedrockNative.LOGGER.info("Join of {}:{} ended by the player ({})", new Object[]{host, entry.bedrockPort(), chooser.trail()});
                   minecraft.execute(() -> {
@@ -534,25 +526,20 @@ public final class BedrockConnector {
                   throw new MatchException(null, null);
             }
          }
-      } catch (XboxAccountStore.AccountException var41) {
+      } catch (XboxAccountStore.AccountException e) {
          SessionTimeline.joinAbandoned();
          if (!screen.aborted) {
             BedrockNative.LOGGER
-               .warn(
-                  "The Xbox account can't be used ({}{}): {}",
-                  new Object[]{var41.problem(), var41.diagnosis() == null ? "" : ", " + var41.diagnosis(), var41.getMessage()}
-               );
-            minecraft.execute(() -> minecraft.gui.setScreen(AccountsScreen.forFailure(screen.parent, var41)));
+               .warn("The Xbox account can't be used ({}{}): {}", new Object[]{e.problem(), e.diagnosis() == null ? "" : ", " + e.diagnosis(), e.getMessage()});
+            minecraft.execute(() -> minecraft.gui.setScreen(AccountsScreen.forFailure(screen.parent, e)));
          }
-      } catch (Exception var42) {
+      } catch (Exception e) {
          SessionTimeline.joinAbandoned();
          if (!screen.aborted) {
             ConnectDiagnosis.Explanation explanation = address != null && attempt != null && attempt.kind() == TransportKind.RAKNET
-               ? ConnectDiagnosis.explain(var42, host, address, attempt.pinged(), attempt.pong(), attempt.trace())
+               ? ConnectDiagnosis.explain(e, host, address, attempt.pinged(), attempt.pong(), attempt.trace())
                : null;
-            failed(
-               screen, minecraft, server, entry, var42, explanation == null ? null : explanation.full(), explanation == null ? null : explanation.headline()
-            );
+            failed(screen, minecraft, server, entry, e, explanation == null ? null : explanation.full(), explanation == null ? null : explanation.headline());
          }
       } finally {
          if (probes != null) {
@@ -601,7 +588,7 @@ public final class BedrockConnector {
       InetSocketAddress address,
       ClientIdentity identity,
       ClientBedrockSession session,
-      @Nullable BedrockPing.Located located,
+      BedrockPing.@Nullable Located located,
       boolean pinged,
       int attempts,
       BedrockProtocol protocol
@@ -629,7 +616,7 @@ public final class BedrockConnector {
       return new BedrockConnector.Attempt(TransportKind.RAKNET, future, trace, pinged, located == null ? null : located.pong(), localPort, attempts, protocol);
    }
 
-   private static BedrockProtocol protocolFor(@Nullable BedrockPing.Pong pong, @Nullable ProbeResult probe) {
+   private static BedrockProtocol protocolFor(BedrockPing.@Nullable Pong pong, @Nullable ProbeResult probe) {
       if (pong != null && pong.protocol() > 0) {
          return BedrockProtocols.forPong(pong.protocol());
       } else {
@@ -669,8 +656,8 @@ public final class BedrockConnector {
                   protocol
                )
             );
-         } catch (TransportUnavailableException var13) {
-            future = failedFuture(var13);
+         } catch (TransportUnavailableException e) {
+            future = failedFuture(e);
          }
 
          awaitNetherNet(screen, entry, future);
@@ -738,10 +725,10 @@ public final class BedrockConnector {
    private static TransportChooser.JoinFailure failureOf(BedrockConnector.Attempt attempt) {
       if (attempt.kind() == TransportKind.RAKNET) {
          return attempt.trace().answered() ? TransportChooser.JoinFailure.RAKNET_ANSWERED : TransportChooser.JoinFailure.RAKNET_UNANSWERED;
-      } else {
-         Throwable cause = attempt.future().cause();
-         return cause == null ? TransportChooser.JoinFailure.NETHERNET_LINK : NetherNetDiagnosis.kind(cause);
       }
+
+      Throwable cause = attempt.future().cause();
+      return cause == null ? TransportChooser.JoinFailure.NETHERNET_LINK : NetherNetDiagnosis.kind(cause);
    }
 
    public static void shutdown() {
@@ -765,7 +752,7 @@ public final class BedrockConnector {
    }
 
    private static boolean askTrust(
-      ConnectScreen screen, Minecraft minecraft, BedrockConnector.Entry entry, @Nullable BedrockConnector.Attempt attempt, AtomicReference<TrustPrompt> asked
+      ConnectScreen screen, Minecraft minecraft, BedrockConnector.Entry entry, BedrockConnector.@Nullable Attempt attempt, AtomicReference<TrustPrompt> asked
    ) {
       TrustPrompt during = asked.getAndSet(null);
       if (during != null) {
@@ -782,7 +769,6 @@ public final class BedrockConnector {
    }
 
    private static boolean awaitTrust(ConnectScreen screen, BedrockConnector.Entry entry, TrustPrompt prompt) {
-      boolean var5;
       try (NetherNetAttempts.Tracked tracked = NETHERNET_ATTEMPTS.track(prompt)) {
          boolean trusted = prompt.await(() -> screen.aborted || NETHERNET_ATTEMPTS.stopping());
          if (!trusted) {
@@ -793,10 +779,8 @@ public final class BedrockConnector {
                );
          }
 
-         var5 = trusted;
+         return trusted;
       }
-
-      return var5;
    }
 
    private static void connected(
@@ -907,7 +891,7 @@ public final class BedrockConnector {
       BedrockConnector.Entry entry,
       @Nullable InetSocketAddress address,
       TransportKind kind,
-      @Nullable BedrockConnector.Attempt attempt,
+      BedrockConnector.@Nullable Attempt attempt,
       BedrockConnector.Probes probes,
       TransportChooser chooser
    ) {
@@ -930,9 +914,7 @@ public final class BedrockConnector {
       } else {
          Throwable failure = attempt != null && attempt.kind() == TransportKind.NETHERNET ? attempt.future().cause() : null;
          NetherNetDiagnosis.Explanation words = NetherNetDiagnosis.forJoin(probes.netherNet(), failure, entry.bedrockPort());
-         failed(
-            screen, minecraft, server, entry, (Throwable)(failure != null ? failure : new ConnectException(words.headline())), words.full(), words.headline()
-         );
+         failed(screen, minecraft, server, entry, failure != null ? failure : new ConnectException(words.headline()), words.full(), words.headline());
       }
    }
 
@@ -954,12 +936,8 @@ public final class BedrockConnector {
       });
    }
 
-   @Nullable
-   private static InetSocketAddress vanillaLookup(String host, int port) {
-      return ServerNameResolver.DEFAULT
-         .resolveAddress(new ServerAddress(host, port))
-         .<InetSocketAddress>map(ResolvedServerAddress::asInetSocketAddress)
-         .orElse(null);
+   private static @Nullable InetSocketAddress vanillaLookup(String host, int port) {
+      return ServerNameResolver.DEFAULT.resolveAddress(new ServerAddress(host, port)).map(ResolvedServerAddress::asInetSocketAddress).orElse(null);
    }
 
    private record Attempt(
@@ -967,7 +945,7 @@ public final class BedrockConnector {
       ChannelFuture future,
       RakHandshakeTrace trace,
       boolean pinged,
-      @Nullable BedrockPing.Pong pong,
+      BedrockPing.@Nullable Pong pong,
       int pingPort,
       int attempts,
       BedrockProtocol protocol
@@ -984,12 +962,12 @@ public final class BedrockConnector {
       static BedrockConnector.Entry of(String stored, ServerAddress hostAndPort, boolean transfer) {
          if (transfer) {
             return new BedrockConnector.Entry(hostAndPort.getHost(), hostAndPort.getPort(), hostAndPort.getPort(), true, null);
-         } else {
-            BedrockAddress typed = BedrockAddress.parse(stored);
-            boolean portTyped = BedrockAddress.portTyped(stored);
-            int javaPort = !portTyped && typed.forced() != TransportKind.JAVA ? 25565 : typed.port();
-            return new BedrockConnector.Entry(typed.host(), typed.port(), javaPort, portTyped, typed.forced());
          }
+
+         BedrockAddress typed = BedrockAddress.parse(stored);
+         boolean portTyped = BedrockAddress.portTyped(stored);
+         int javaPort = !portTyped && typed.forced() != TransportKind.JAVA ? 25565 : typed.port();
+         return new BedrockConnector.Entry(typed.host(), typed.port(), javaPort, portTyped, typed.forced());
       }
    }
 
@@ -998,7 +976,7 @@ public final class BedrockConnector {
       InetSocketAddress address,
       int attempts,
       boolean pinged,
-      @Nullable BedrockPing.Pong pong,
+      BedrockPing.@Nullable Pong pong,
       int pingPort,
       int handshakePort,
       String handshake,
@@ -1015,25 +993,18 @@ public final class BedrockConnector {
    private static final class Probes {
       private final TransportChooser chooser;
       private final BedrockConnector.Entry entry;
-      @Nullable
-      private final InetSocketAddress address;
-      @Nullable
-      private final SignalingScheme pinnedScheme;
+      private final @Nullable InetSocketAddress address;
+      private final @Nullable SignalingScheme pinnedScheme;
       private final boolean javaImmediate;
       private final BlockingQueue<Runnable> outcomes = new LinkedBlockingQueue<>();
-      @Nullable
-      private BedrockPing.Located located;
+      private BedrockPing.@Nullable Located located;
       private long pingedAt;
       private long pingStartedAt;
       private boolean overdueReported;
-      @Nullable
-      private JavaStatus javaStatus;
-      @Nullable
-      private JavaProbeGate javaGate;
-      @Nullable
-      private ProbeResult netherNet;
-      @Nullable
-      private volatile CompletableFuture<ProbeResult> netherNetAsked;
+      private @Nullable JavaStatus javaStatus;
+      private @Nullable JavaProbeGate javaGate;
+      private @Nullable ProbeResult netherNet;
+      private volatile @Nullable CompletableFuture<ProbeResult> netherNetAsked;
 
       Probes(
          TransportChooser chooser,
@@ -1105,7 +1076,7 @@ public final class BedrockConnector {
          }
       }
 
-      private void pingEnded(@Nullable BedrockPing.Located result, PingOutcome outcome) {
+      private void pingEnded(BedrockPing.@Nullable Located result, PingOutcome outcome) {
          this.located = result;
          SessionTimeline.mark("ping");
          this.chooser.pinged(outcome);
@@ -1186,8 +1157,7 @@ public final class BedrockConnector {
          }
       }
 
-      @Nullable
-      BedrockPing.Located located() {
+      BedrockPing.@Nullable Located located() {
          return this.located;
       }
 
@@ -1199,8 +1169,7 @@ public final class BedrockConnector {
          return this.located == null ? 0L : (System.nanoTime() - this.pingedAt) / 1000000L;
       }
 
-      @Nullable
-      BedrockPing.Pong pong() {
+      BedrockPing.@Nullable Pong pong() {
          return this.located == null ? null : this.located.pong();
       }
 
@@ -1208,13 +1177,11 @@ public final class BedrockConnector {
          return this.located == null ? 0 : this.located.localPort();
       }
 
-      @Nullable
-      JavaStatus java() {
+      @Nullable JavaStatus java() {
          return this.javaStatus;
       }
 
-      @Nullable
-      ProbeResult netherNet() {
+      @Nullable ProbeResult netherNet() {
          return this.netherNet;
       }
    }

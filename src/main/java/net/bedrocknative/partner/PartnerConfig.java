@@ -25,35 +25,34 @@ public record PartnerConfig(String url) {
       Path file = configFolder.resolve("partner-servers.json");
       if (!Files.isRegularFile(file)) {
          return new PartnerConfig("");
-      } else {
-         try {
-            if (Files.size(file) > 16384L) {
-               throw new IOException("larger than 16384 bytes");
+      }
+
+      try {
+         if (Files.size(file) > 16384L) {
+            throw new IOException("larger than 16384 bytes");
+         } else {
+            JsonElement root = JsonParser.parseString(Files.readString(file, StandardCharsets.UTF_8));
+            if (root instanceof JsonObject object && object.get("url") instanceof JsonPrimitive url && url.isString()) {
+               return new PartnerConfig(url.getAsString().strip());
+            } else if (root instanceof JsonObject object && !object.has("url")) {
+               return new PartnerConfig("");
             } else {
-               JsonElement root = JsonParser.parseString(Files.readString(file, StandardCharsets.UTF_8));
-               if (root instanceof JsonObject object && object.get("url") instanceof JsonPrimitive url && url.isString()) {
-                  return new PartnerConfig(url.getAsString().strip());
-               } else if (root instanceof JsonObject object && !object.has("url")) {
-                  return new PartnerConfig("");
-               } else {
-                  throw new IOException("\"url\" must be a string");
-               }
+               throw new IOException("\"url\" must be a string");
             }
-         } catch (JsonParseException | IllegalStateException | IOException var6) {
-            BedrockNative.LOGGER.warn("Partner servers: {} does not read ({}); partner servers off", file, var6.getMessage());
-            return OFF;
          }
+      } catch (IOException | JsonParseException | IllegalStateException e) {
+         BedrockNative.LOGGER.warn("Partner servers: {} does not read ({}); partner servers off", file, e.getMessage());
+         return OFF;
       }
    }
 
-   @Nullable
-   public URI uri(PartnerGuard guard) {
+   public @Nullable URI uri(PartnerGuard guard) {
       if (!this.url.isEmpty() && this.url.length() <= 512) {
          try {
             URI uri = new URI(this.url);
             guard.checkForm(uri);
             return uri;
-         } catch (IOException | URISyntaxException var3) {
+         } catch (URISyntaxException | IOException e) {
             return null;
          }
       } else {
@@ -61,8 +60,7 @@ public record PartnerConfig(String url) {
       }
    }
 
-   @Nullable
-   public String host(PartnerGuard guard) {
+   public @Nullable String host(PartnerGuard guard) {
       URI uri = this.uri(guard);
       return uri == null ? null : uri.getHost().toLowerCase(Locale.ROOT);
    }

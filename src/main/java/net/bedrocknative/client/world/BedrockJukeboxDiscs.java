@@ -34,7 +34,7 @@ public final class BedrockJukeboxDiscs {
          RECORDS.remove(pos.asLong());
          return state;
       } else {
-         return (BlockState)state.setValue(BlockStateProperties.HAS_RECORD, hasRecord(pos));
+         return state.setValue(BlockStateProperties.HAS_RECORD, hasRecord(pos));
       }
    }
 
@@ -47,8 +47,8 @@ public final class BedrockJukeboxDiscs {
       }
 
       BlockState state = level.getBlockState(pos);
-      if (state.is(Blocks.JUKEBOX) && (Boolean)state.getValue(BlockStateProperties.HAS_RECORD) != has) {
-         level.setServerVerifiedBlockState(pos, (BlockState)state.setValue(BlockStateProperties.HAS_RECORD, has), 19);
+      if (state.is(Blocks.JUKEBOX) && state.getValue(BlockStateProperties.HAS_RECORD) != has) {
+         level.setServerVerifiedBlockState(pos, state.setValue(BlockStateProperties.HAS_RECORD, has), 19);
       }
    }
 }

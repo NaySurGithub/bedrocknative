@@ -41,34 +41,34 @@ public record JavaStatus(
    public static JavaStatus parse(String json, InetSocketAddress address, long latencyMillis) {
       if (tooDeep(json)) {
          return none(address, "not a Java status (JSON nested too deep)");
+      }
+
+      JsonElement root;
+      try {
+         root = JsonParser.parseString(json);
+      } catch (JsonParseException | StackOverflowError e) {
+         return none(address, "not a Java status (unreadable JSON)");
+      }
+
+      if (root instanceof JsonObject object) {
+         String motd = object.has("description") ? flatten(object.get("description"), 0) : "";
+         int online = -1;
+         int max = -1;
+         if (object.get("players") instanceof JsonObject players) {
+            online = number(players.get("online"), -1);
+            max = number(players.get("max"), -1);
+         }
+
+         String version = "";
+         int protocol = 0;
+         if (object.get("version") instanceof JsonObject named) {
+            version = named.get("name") instanceof JsonPrimitive name && name.isString() ? name.getAsString() : "";
+            protocol = number(named.get("protocol"), 0);
+         }
+
+         return new JavaStatus(true, address, motd, online, max, version, protocol, latencyMillis, "");
       } else {
-         JsonElement root;
-         try {
-            root = JsonParser.parseString(json);
-         } catch (StackOverflowError | JsonParseException var14) {
-            return none(address, "not a Java status (unreadable JSON)");
-         }
-
-         if (root instanceof JsonObject object) {
-            String motd = object.has("description") ? flatten(object.get("description"), 0) : "";
-            int online = -1;
-            int max = -1;
-            if (object.get("players") instanceof JsonObject players) {
-               online = number(players.get("online"), -1);
-               max = number(players.get("max"), -1);
-            }
-
-            String version = "";
-            int protocol = 0;
-            if (object.get("version") instanceof JsonObject named) {
-               version = named.get("name") instanceof JsonPrimitive name && name.isString() ? name.getAsString() : "";
-               protocol = number(named.get("protocol"), 0);
-            }
-
-            return new JavaStatus(true, address, motd, online, max, version, protocol, latencyMillis, "");
-         } else {
-            return none(address, "not a Java status (no JSON object)");
-         }
+         return none(address, "not a Java status (no JSON object)");
       }
    }
 
@@ -102,7 +102,7 @@ public record JavaStatus(
       if (element instanceof JsonPrimitive primitive && primitive.isNumber()) {
          try {
             return primitive.getAsInt();
-         } catch (NumberFormatException var4) {
+         } catch (NumberFormatException e) {
             return fallback;
          }
       } else {
@@ -138,7 +138,7 @@ public record JavaStatus(
                style(object, "strikethrough", 'm', codes);
                style(object, "underlined", 'n', codes);
                style(object, "italic", 'o', codes);
-               text.append((CharSequence)codes);
+               text.append(codes);
                if (object.get("text") instanceof JsonPrimitive own) {
                   text.append(own.getAsString());
                } else if (object.get("translate") instanceof JsonPrimitive key) {
@@ -148,7 +148,7 @@ public record JavaStatus(
                JsonElement var16 = object.get("extra");
                if (var16 instanceof JsonArray) {
                   for (JsonElement part : (JsonArray)var16) {
-                     text.append((CharSequence)codes).append(flatten(part, depth + 1));
+                     text.append(codes).append(flatten(part, depth + 1));
                   }
                }
             }

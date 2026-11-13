@@ -174,8 +174,7 @@ final class DevServerUiTest {
       }
    }
 
-   @Nullable
-   private Entity nearest(EntityType<?> type) {
+   private @Nullable Entity nearest(EntityType<?> type) {
       Entity found = null;
       double best = 36.0;
 
@@ -190,8 +189,7 @@ final class DevServerUiTest {
       return found;
    }
 
-   @Nullable
-   private static Entity actorOf(@Nullable UiControl renderer) {
+   private static @Nullable Entity actorOf(@Nullable UiControl renderer) {
       Long id = renderer == null ? null : UiActorRenderers.entityId(renderer.bag("#entity_id"));
       return id == null ? null : BedrockExtras.actor(id);
    }
@@ -251,7 +249,7 @@ final class DevServerUiTest {
    private static void sleep(long millis) {
       try {
          Thread.sleep(millis);
-      } catch (InterruptedException var3) {
+      } catch (InterruptedException e) {
          Thread.currentThread().interrupt();
       }
    }

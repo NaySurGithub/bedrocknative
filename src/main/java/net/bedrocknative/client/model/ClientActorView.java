@@ -50,16 +50,11 @@ public final class ClientActorView implements MolangActor {
    private static final int LEVITATION = 24;
    private final BedrockActors actors;
    private final ActorState state;
-   @Nullable
-   private Entity entity;
-   @Nullable
-   private LivingEntity living;
-   @Nullable
-   private MobEngineState mob;
-   @Nullable
-   private PlayerRuntime player;
-   @Nullable
-   private Direction bed;
+   private @Nullable Entity entity;
+   private @Nullable LivingEntity living;
+   private @Nullable MobEngineState mob;
+   private @Nullable PlayerRuntime player;
+   private @Nullable Direction bed;
    private float partialTick;
    private float lifeTime;
    private float bodyYaw;
@@ -131,8 +126,7 @@ public final class ClientActorView implements MolangActor {
       return this.state.data();
    }
 
-   @Nullable
-   private ActorMotion motion() {
+   private @Nullable ActorMotion motion() {
       return this.entity instanceof BedrockActorEntity carrier ? carrier.motion() : null;
    }
 
@@ -199,15 +193,13 @@ public final class ClientActorView implements MolangActor {
       return this.data().number(type);
    }
 
-   @Nullable
    @Override
-   public Object property(String name) {
+   public @Nullable Object property(String name) {
       return this.data().property(name);
    }
 
-   @Nullable
    @Override
-   public VariableStore publicVariables() {
+   public @Nullable VariableStore publicVariables() {
       ActorInstance instance = this.state.instance();
       return instance != null ? instance.variables() : null;
    }
@@ -305,20 +297,20 @@ public final class ClientActorView implements MolangActor {
       ActorMotion motion = this.motion();
       if (motion != null) {
          return motion.positionDelta(axis);
-      } else {
-         Entity current = this.entity;
-         if (current == null) {
-            return 0.0F;
-         } else {
-            double delta = switch (axis) {
-               case 0 -> current.getX() - current.xo;
-               case 1 -> current.getY() - current.yo;
-               case 2 -> current.getZ() - current.zo;
-               default -> 0.0;
-            };
-            return (float)delta;
-         }
       }
+
+      Entity current = this.entity;
+      if (current == null) {
+         return 0.0F;
+      }
+
+      double delta = switch (axis) {
+         case 0 -> current.getX() - current.xo;
+         case 1 -> current.getY() - current.yo;
+         case 2 -> current.getZ() - current.zo;
+         default -> 0.0;
+      };
+      return (float)delta;
    }
 
    @Override
@@ -326,11 +318,11 @@ public final class ClientActorView implements MolangActor {
       ActorMotion motion = this.motion();
       if (motion != null) {
          return motion.groundSpeed();
-      } else {
-         float dx = this.positionDelta(0);
-         float dz = this.positionDelta(2);
-         return (float)Math.sqrt(dx * dx + dz * dz) * 20.0F;
       }
+
+      float dx = this.positionDelta(0);
+      float dz = this.positionDelta(2);
+      return (float)Math.sqrt(dx * dx + dz * dz) * 20.0F;
    }
 
    @Override
@@ -344,15 +336,15 @@ public final class ClientActorView implements MolangActor {
       ActorMotion motion = this.motion();
       if (motion != null) {
          return motion.yawSpeed();
-      } else {
-         LivingEntity current = this.living;
-         if (current != null) {
-            return Mth.wrapDegrees(current.yBodyRot - current.yBodyRotO) * 20.0F;
-         } else {
-            Entity other = this.entity;
-            return other != null ? Mth.wrapDegrees(other.getYRot() - other.yRotO) * 20.0F : 0.0F;
-         }
       }
+
+      LivingEntity current = this.living;
+      if (current != null) {
+         return Mth.wrapDegrees(current.yBodyRot - current.yBodyRotO) * 20.0F;
+      }
+
+      Entity other = this.entity;
+      return other != null ? Mth.wrapDegrees(other.getYRot() - other.yRotO) * 20.0F : 0.0F;
    }
 
    @Override
@@ -360,10 +352,10 @@ public final class ClientActorView implements MolangActor {
       ActorMotion motion = this.motion();
       if (motion != null) {
          return motion.distanceMoved();
-      } else {
-         LivingEntity current = this.living;
-         return (this.mob != null || this.player != null) && current != null ? current.walkAnimation.position(this.partialTick) : 0.0F;
       }
+
+      LivingEntity current = this.living;
+      return (this.mob != null || this.player != null) && current != null ? current.walkAnimation.position(this.partialTick) : 0.0F;
    }
 
    @Override
@@ -395,10 +387,10 @@ public final class ClientActorView implements MolangActor {
    public boolean isMoving() {
       if (this.data().flag(EntityFlag.MOVING)) {
          return true;
-      } else {
-         ActorMotion motion = this.motion();
-         return motion != null ? motion.moving() : this.positionDelta(0) != 0.0F || this.positionDelta(1) != 0.0F || this.positionDelta(2) != 0.0F;
       }
+
+      ActorMotion motion = this.motion();
+      return motion != null ? motion.moving() : this.positionDelta(0) != 0.0F || this.positionDelta(1) != 0.0F || this.positionDelta(2) != 0.0F;
    }
 
    @Override
@@ -542,23 +534,23 @@ public final class ClientActorView implements MolangActor {
 
          if (!sideways) {
             return atY - eyeY > 0.0 ? 0.0F : -1.0F;
-         } else {
-            float yaw = this.headYaw + this.bodyYaw;
-            double level = Math.cos(Math.toRadians(this.pitch));
-            double lookX = -Math.sin(Math.toRadians(yaw)) * level;
-            double lookZ = Math.cos(Math.toRadians(yaw)) * level;
-            double awayX = eyeX - atX;
-            double awayZ = eyeZ - atZ;
-            double length = Math.sqrt(awayX * awayX + awayZ * awayZ);
-            if (length < 1.0E-4) {
-               return 0.0F;
-            } else {
-               double sideX = awayZ / length;
-               double sideZ = -awayX / length;
-               double dot = lookX * sideX + lookZ * sideZ;
-               return (float)(Math.sqrt(Math.abs(dot)) * 2.0 * Math.signum(dot));
-            }
          }
+
+         float yaw = this.headYaw + this.bodyYaw;
+         double level = Math.cos(Math.toRadians(this.pitch));
+         double lookX = -Math.sin(Math.toRadians(yaw)) * level;
+         double lookZ = Math.cos(Math.toRadians(yaw)) * level;
+         double awayX = eyeX - atX;
+         double awayZ = eyeZ - atZ;
+         double length = Math.sqrt(awayX * awayX + awayZ * awayZ);
+         if (length < 1.0E-4) {
+            return 0.0F;
+         }
+
+         double sideX = awayZ / length;
+         double sideZ = -awayX / length;
+         double dot = lookX * sideX + lookZ * sideZ;
+         return (float)(Math.sqrt(Math.abs(dot)) * 2.0 * Math.signum(dot));
       } else {
          return 0.0F;
       }
@@ -694,8 +686,7 @@ public final class ClientActorView implements MolangActor {
       return this.data().value(EntityDataTypes.TARGET_EID) instanceof Long target && target != 0L && target != -1L;
    }
 
-   @Nullable
-   private Entity owner() {
+   private @Nullable Entity owner() {
       return this.data().value(EntityDataTypes.OWNER_EID) instanceof Long owner && owner != 0L && owner != -1L ? this.actors.byUniqueId(owner) : null;
    }
 
@@ -736,8 +727,7 @@ public final class ClientActorView implements MolangActor {
       }
    }
 
-   @Nullable
-   private static EquipmentSlot javaSlot(String slot) {
+   private static @Nullable EquipmentSlot javaSlot(String slot) {
       return switch (slot) {
          case "slot.weapon.mainhand" -> EquipmentSlot.MAINHAND;
          case "slot.weapon.offhand" -> EquipmentSlot.OFFHAND;
@@ -787,7 +777,7 @@ public final class ClientActorView implements MolangActor {
       ClientLevel level = Minecraft.getInstance().level;
       if (direction == null && level != null && this.data().value(EntityDataTypes.BED_POSITION) instanceof Vector3i position) {
          BlockState block = level.getBlockState(new BlockPos(position.getX(), position.getY(), position.getZ()));
-         direction = block.getBlock() instanceof BedBlock ? (Direction)block.getValue(BedBlock.FACING) : null;
+         direction = block.getBlock() instanceof BedBlock ? block.getValue(BedBlock.FACING) : null;
       }
 
       return direction != null && direction.getAxis().isHorizontal() ? PlayerEngine.sleepRotation(direction.get2DDataValue()) : 0.0F;
@@ -847,9 +837,7 @@ public final class ClientActorView implements MolangActor {
    public float armorTextureSlot(int slot) {
       if (this.player == null) {
          if (this.mob != null && slot == 4) {
-            String var2 = this.data().item("slot.armor.body");
-
-            return switch (var2) {
+            return switch (this.data().item("slot.armor.body")) {
                case "minecraft:leather_horse_armor" -> 1.0F;
                case "minecraft:iron_horse_armor" -> 2.0F;
                case "minecraft:golden_horse_armor" -> 3.0F;
@@ -877,7 +865,7 @@ public final class ClientActorView implements MolangActor {
             case 3 -> EquipmentSlot.FEET;
             default -> EquipmentSlot.BODY;
          });
-         DyedItemColor dyed = (DyedItemColor)stack.get(DataComponents.DYED_COLOR);
+         DyedItemColor dyed = stack.get(DataComponents.DYED_COLOR);
          int rgb = dyed != null ? dyed.rgb() : 16777215;
 
          return switch (channel) {

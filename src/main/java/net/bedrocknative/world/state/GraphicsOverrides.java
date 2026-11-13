@@ -36,8 +36,7 @@ public final class GraphicsOverrides {
       }
    }
 
-   @Nullable
-   public GraphicsOverrides.Value get(String biome, GraphicsOverrideParameterType type) {
+   public GraphicsOverrides.@Nullable Value get(String biome, GraphicsOverrideParameterType type) {
       return this.values.get(new GraphicsOverrides.Key(biome, type));
    }
 

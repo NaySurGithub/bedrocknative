@@ -20,7 +20,7 @@ public enum Face {
    private final float[] normal;
    private final int[][] corners;
 
-   private Face(String key, float nx, float ny, float nz, int[][] corners) {
+   Face(String key, float nx, float ny, float nz, int[][] corners) {
       this.key = key;
       this.normal = new float[]{nx, ny, nz};
       this.corners = corners;
@@ -42,8 +42,7 @@ public enum Face {
       return this.corners[corner][axis];
    }
 
-   @Nullable
-   public static Face byKey(String key) {
+   public static @Nullable Face byKey(String key) {
       for (Face face : values()) {
          if (face.key.equalsIgnoreCase(key)) {
             return face;

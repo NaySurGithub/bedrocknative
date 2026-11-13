@@ -94,23 +94,27 @@ final class LobbyStatusProbe {
             history.answered(key);
             remember(context.memory(), typed, TransportKind.RAKNET, typed.port());
             return ServerStatuses.of(pong, null, null);
-         } else if (javaStatus != null && javaStatus.answered() && javaStatus.address() != null) {
+         }
+
+         if (javaStatus != null && javaStatus.answered() && javaStatus.address() != null) {
             history.answered(key);
             remember(context.memory(), typed, TransportKind.JAVA, javaStatus.address().getPort());
             return ServerStatuses.of(null, null, javaStatus);
-         } else if (probed) {
+         }
+
+         if (probed) {
             history.tcpFailed(key);
             return PlayData.Status.OFFLINE;
-         } else {
-            ProbeResult netherNet = netherNet(typed.host(), typed.port(), context);
-            if (netherNet != null && netherNet.supported()) {
-               history.answered(key);
-            } else {
-               history.tcpFailed(key);
-            }
-
-            return ServerStatuses.of(null, netherNet, null);
          }
+
+         ProbeResult netherNet = netherNet(typed.host(), typed.port(), context);
+         if (netherNet != null && netherNet.supported()) {
+            history.answered(key);
+         } else {
+            history.tcpFailed(key);
+         }
+
+         return ServerStatuses.of(null, netherNet, null);
       }
    }
 
@@ -128,25 +132,26 @@ final class LobbyStatusProbe {
       if (pong != null) {
          context.history().answered(key);
          return ServerStatuses.of(pong, null, null);
-      } else if (!context.history().tcpAllowed(key)) {
-         return PlayData.Status.OFFLINE;
-      } else {
-         ProbeResult probe = netherNet(host, port, context);
-         if (probe != null && probe.supported()) {
-            context.history().answered(key);
-         } else {
-            context.history().tcpFailed(key);
-         }
-
-         return ServerStatuses.of(null, probe, null);
       }
+
+      if (!context.history().tcpAllowed(key)) {
+         return PlayData.Status.OFFLINE;
+      }
+
+      ProbeResult probe = netherNet(host, port, context);
+      if (probe != null && probe.supported()) {
+         context.history().answered(key);
+      } else {
+         context.history().tcpFailed(key);
+      }
+
+      return ServerStatuses.of(null, probe, null);
    }
 
-   @Nullable
-   private static BedrockPing.Pong ping(String host, int port, int timeoutMillis) {
+   private static BedrockPing.@Nullable Pong ping(String host, int port, int timeoutMillis) {
       try {
          return BedrockPing.ping(new InetSocketAddress(host, port), timeoutMillis);
-      } catch (RuntimeException | IOException var4) {
+      } catch (IOException | RuntimeException e) {
          return null;
       }
    }
@@ -155,36 +160,31 @@ final class LobbyStatusProbe {
       return JavaStatusProbe.probe(host, port, context.lookup(), context.protocol(), JAVA_TIMEOUT, JAVA_TIMEOUT);
    }
 
-   @Nullable
-   private static ProbeResult netherNet(String host, int port, LobbyStatusProbe.Context context) {
+   private static @Nullable ProbeResult netherNet(String host, int port, LobbyStatusProbe.Context context) {
       NetherNetProbe probe = context.netherNet();
       if (probe == null) {
          return null;
-      } else {
-         InetSocketAddress address = new InetSocketAddress(host, port);
-         if (address.isUnresolved()) {
-            return null;
-         } else {
-            long bound = NETHERNET_TIMEOUT.toMillis() * 4L + 1000L;
-            CompletableFuture<ProbeResult> asked = probe.probe(host, address, null, NETHERNET_TIMEOUT);
-            ProbeResult result = asked.copy()
-               .completeOnTimeout(ProbeResult.failed(ProbeResult.Reason.TIMEOUT, List.of(), bound), bound, TimeUnit.MILLISECONDS)
-               .join();
-            if (!asked.isDone()) {
-               asked.cancel(true);
-            }
-
-            return result;
-         }
       }
+
+      InetSocketAddress address = new InetSocketAddress(host, port);
+      if (address.isUnresolved()) {
+         return null;
+      }
+
+      long bound = NETHERNET_TIMEOUT.toMillis() * 4L + 1000L;
+      CompletableFuture<ProbeResult> asked = probe.probe(host, address, null, NETHERNET_TIMEOUT);
+      ProbeResult result = asked.copy()
+         .completeOnTimeout(ProbeResult.failed(ProbeResult.Reason.TIMEOUT, List.of(), bound), bound, TimeUnit.MILLISECONDS)
+         .join();
+      if (!asked.isDone()) {
+         asked.cancel(true);
+      }
+
+      return result;
    }
 
-   @Nullable
-   private static InetSocketAddress vanillaLookup(String host, int port) {
-      return ServerNameResolver.DEFAULT
-         .resolveAddress(new ServerAddress(host, port))
-         .<InetSocketAddress>map(ResolvedServerAddress::asInetSocketAddress)
-         .orElse(null);
+   private static @Nullable InetSocketAddress vanillaLookup(String host, int port) {
+      return ServerNameResolver.DEFAULT.resolveAddress(new ServerAddress(host, port)).map(ResolvedServerAddress::asInetSocketAddress).orElse(null);
    }
 
    record Context(TransportMemory memory, JavaStatusProbe.Resolver lookup, @Nullable NetherNetProbe netherNet, int protocol, ProbeHistory history) {

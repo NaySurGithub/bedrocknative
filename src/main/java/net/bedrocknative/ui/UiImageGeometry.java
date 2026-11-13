@@ -16,9 +16,9 @@ public final class UiImageGeometry {
       float w,
       float h,
       UiTextureInfo texture,
-      @Nullable float[] uv,
-      @Nullable float[] uvSize,
-      @Nullable float[] slices,
+      float @Nullable [] uv,
+      float @Nullable [] uvSize,
+      float @Nullable [] slices,
       boolean keepRatio,
       @Nullable String tiled,
       float[] tiledScale,
@@ -96,10 +96,10 @@ public final class UiImageGeometry {
    private static float[] texels(float from, float to) {
       if (to >= from) {
          return new float[]{from, to};
-      } else {
-         float middle = (from + to) / 2.0F;
-         return new float[]{middle, middle};
       }
+
+      float middle = (from + to) / 2.0F;
+      return new float[]{middle, middle};
    }
 
    private static List<UiDrawCommand.Quad> tiled(

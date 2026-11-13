@@ -28,11 +28,9 @@ import org.jspecify.annotations.Nullable;
 
 public final class NetherNetTransport implements BedrockTransport {
    public static final int HANDSHAKE_TIMEOUT_MS = 10000;
-   @Nullable
-   private final Path nativeFolder;
+   private final @Nullable Path nativeFolder;
    private final NetherNetTrustStore trust;
-   @Nullable
-   private final X509ExtendedTrustManager tls;
+   private final @Nullable X509ExtendedTrustManager tls;
 
    NetherNetTransport(@Nullable Path nativeFolder, NetherNetTrustStore trust, @Nullable X509ExtendedTrustManager tls) {
       this.nativeFolder = nativeFolder;
@@ -69,18 +67,18 @@ public final class NetherNetTransport implements BedrockTransport {
                   NetherNetConnectException.Stage.UNAVAILABLE, "NetherNet is not available on this system: " + loaded.problem(), null, -1, -1, 0L
                )
             );
-         } else {
-            Predicate<Exception> question = attempt.trustQuestion();
-            return this.open(
-               group,
-               target,
-               identity.netherNetIdentity(),
-               probe.scheme(),
-               new NetherNetLinkWatch(),
-               new NetherNetClientInitializer(session -> BedrockSessionSetup.init(session, identity, target.address(), listener, attempt.protocol())),
-               question == null ? null : question::test
-            );
          }
+
+         Predicate<Exception> question = attempt.trustQuestion();
+         return this.open(
+            group,
+            target,
+            identity.netherNetIdentity(),
+            probe.scheme(),
+            new NetherNetLinkWatch(),
+            new NetherNetClientInitializer(session -> BedrockSessionSetup.init(session, identity, target.address(), listener, attempt.protocol())),
+            question == null ? null : question::test
+         );
       } else {
          return failed(
             group,

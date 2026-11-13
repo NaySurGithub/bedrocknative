@@ -4,9 +4,8 @@ public record OreScale(int guiScale) {
    public static final float TABLET_REM = 70.0F;
    public static final float DESKTOP_REM = 128.0F;
 
-   public OreScale(int guiScale) {
+   public OreScale {
       guiScale = Math.max(1, guiScale);
-      this.guiScale = guiScale;
    }
 
    public float remPx() {
@@ -38,7 +37,7 @@ public record OreScale(int guiScale) {
       return rem < 70.0F ? OreScale.Breakpoint.NARROW : (rem < 128.0F ? OreScale.Breakpoint.TABLET : OreScale.Breakpoint.DESKTOP);
    }
 
-   public static enum Breakpoint {
+   public enum Breakpoint {
       NARROW,
       TABLET,
       DESKTOP;

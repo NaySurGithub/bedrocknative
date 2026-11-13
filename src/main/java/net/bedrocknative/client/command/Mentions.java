@@ -19,20 +19,20 @@ public final class Mentions {
       String typed = builder.getRemaining().toLowerCase(Locale.ROOT);
       if (!typed.startsWith("@")) {
          return builder.buildFuture();
-      } else {
-         if ("@a".startsWith(typed)) {
-            builder.suggest("@a", BedrockText.ui("chat.mentions.autocomplete.allPlayers"));
-         }
-
-         for (String name : players) {
-            String mention = "@" + quoted(name);
-            if (mention.toLowerCase(Locale.ROOT).startsWith(typed) || ("@" + name).toLowerCase(Locale.ROOT).startsWith(typed)) {
-               builder.suggest(mention);
-            }
-         }
-
-         return builder.buildFuture();
       }
+
+      if ("@a".startsWith(typed)) {
+         builder.suggest("@a", BedrockText.ui("chat.mentions.autocomplete.allPlayers"));
+      }
+
+      for (String name : players) {
+         String mention = "@" + quoted(name);
+         if (mention.toLowerCase(Locale.ROOT).startsWith(typed) || ("@" + name).toLowerCase(Locale.ROOT).startsWith(typed)) {
+            builder.suggest(mention);
+         }
+      }
+
+      return builder.buildFuture();
    }
 
    static String quoted(String name) {

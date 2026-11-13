@@ -47,6 +47,7 @@ public final class AccountScreenHooks {
          super(4, 4, width, 20, Component.empty(), onPress, DEFAULT_NARRATION);
       }
 
+      @Override
       public Component getMessage() {
          return AccountManager.buttonLabel();
       }

@@ -37,7 +37,7 @@ final class DevBlobCacheTest {
    private static int renderDistanceToAsk() {
       try {
          return Integer.parseInt(System.getenv().getOrDefault("BN_BLOBCACHE_RD", "10"));
-      } catch (NumberFormatException var1) {
+      } catch (NumberFormatException e) {
          return 10;
       }
    }
@@ -50,7 +50,7 @@ final class DevBlobCacheTest {
    void run() {
       String name = System.getProperty("bedrocknative.devTest", "blobcache");
       String label = name.contains("-") ? name.substring(name.indexOf(45) + 1) : "run";
-      int initialDistance = this.onClient(() -> (Integer)this.minecraft.options.renderDistance().get());
+      int initialDistance = this.onClient(() -> this.minecraft.options.renderDistance().get());
 
       try {
          if (RENDER_DISTANCE > 0) {
@@ -58,9 +58,9 @@ final class DevBlobCacheTest {
          }
 
          this.test(label);
-      } catch (RuntimeException var8) {
-         this.failures.add("exception: " + var8);
-         BedrockNative.LOGGER.error("Dev blobcache test failed with an exception", var8);
+      } catch (RuntimeException e) {
+         this.failures.add("exception: " + e);
+         BedrockNative.LOGGER.error("Dev blobcache test failed with an exception", e);
       } finally {
          this.minecraft.execute(() -> this.minecraft.options.renderDistance().set(initialDistance));
       }
@@ -112,12 +112,12 @@ final class DevBlobCacheTest {
       }
 
       this.check("no chunk missing around the spawn (" + loaded + " of " + total + " loaded after " + waited + " ms)", loaded == total);
-      CachedChunkTransformer.Summary summaryx = this.blobCache.get();
-      if (summaryx == null) {
+      CachedChunkTransformer.Summary summary = this.blobCache.get();
+      if (summary == null) {
          BedrockNative.LOGGER.info("Dev blobcache test: {}: the server named no blobs (full chunks, as with the cache off)", label);
          this.check("the cache-off run saw no blob traffic", !label.equals("cold") && !label.equals("warm"));
       } else {
-         BlobTracker.Stats blobs = summaryx.blobs();
+         BlobTracker.Stats blobs = summary.blobs();
          BedrockNative.LOGGER
             .info(
                "Dev blobcache test: {}: {} blobs found in the cache, {} missing, {} received ({} KB), retries {}, given up {}, invalid {}, unexpected {}; {} LevelChunk and {} SubChunk packets, {} sub-chunks asked again, {} lost, {} columns lost",
@@ -131,16 +131,16 @@ final class DevBlobCacheTest {
                   blobs.giveUps(),
                   blobs.invalid(),
                   blobs.unexpected(),
-                  summaryx.levelChunks(),
-                  summaryx.subChunkPackets(),
-                  summaryx.subChunksResent(),
-                  summaryx.subChunksLost(),
-                  summaryx.columnsLost()
+                  summary.levelChunks(),
+                  summary.subChunkPackets(),
+                  summary.subChunksResent(),
+                  summary.subChunksLost(),
+                  summary.columnsLost()
                }
             );
          this.check(
             "every blob arrived (none given up, none invalid, no sub-chunk or column lost)",
-            blobs.giveUps() == 0L && blobs.invalid() == 0L && summaryx.subChunksLost() == 0 && summaryx.columnsLost() == 0
+            blobs.giveUps() == 0L && blobs.invalid() == 0L && summary.subChunksLost() == 0 && summary.columnsLost() == 0
          );
          if (label.equals("warm")) {
             this.check("the warm run found blobs in the disk cache (" + blobs.hits() + " found, " + blobs.misses() + " missing)", blobs.hits() > blobs.misses());
@@ -166,8 +166,8 @@ final class DevBlobCacheTest {
          Files.write(folder.resolve("parts-" + label + ".txt"), partLines, StandardCharsets.UTF_8);
          this.dumpBlocks(folder, label, center);
          this.dumpExtraChunks(folder, label);
-      } catch (IOException var19) {
-         this.failures.add("cannot write the digests: " + var19);
+      } catch (IOException e) {
+         this.failures.add("cannot write the digests: " + e);
       }
 
       BedrockNative.LOGGER.info("Dev blobcache test: {}: {} chunks, digest {}", new Object[]{label, digests.size(), Long.toHexString(digest)});
@@ -255,54 +255,50 @@ final class DevBlobCacheTest {
 
    private void compare(Path file, String other, int[] center, long digest, Map<String, Long> digests) {
       if (Files.isRegularFile(file)) {
-         try {
-            try (Stream<String> lines = Files.lines(file, StandardCharsets.UTF_8)) {
-               List<String> all = lines.toList();
-               if (all.getFirst().equals("center " + center[0] + " " + center[1])) {
-                  int differing = 0;
-                  int differingNear = 0;
-                  int near = 0;
+         try (Stream<String> lines = Files.lines(file, StandardCharsets.UTF_8)) {
+            List<String> all = lines.toList();
+            if (all.getFirst().equals("center " + center[0] + " " + center[1])) {
+               int differing = 0;
+               int differingNear = 0;
+               int near = 0;
 
-                  for (String line : all.subList(2, all.size())) {
-                     int space = line.lastIndexOf(32);
-                     String key = line.substring(0, space);
-                     int comma = key.indexOf(44);
-                     int distance = Math.max(
-                        Math.abs(Integer.parseInt(key.substring(0, comma)) - center[0]), Math.abs(Integer.parseInt(key.substring(comma + 1)) - center[1])
-                     );
-                     near += distance <= 2 ? 1 : 0;
-                     Long mine = digests.get(key);
-                     if (mine == null || !Long.toHexString(mine).equals(line.substring(space + 1))) {
-                        differing++;
-                        differingNear += distance <= 2 ? 1 : 0;
-                     }
-                  }
-
-                  this.check(
-                     "the chunks within 2 of the spawn equal the "
-                        + other
-                        + " run's ("
-                        + differingNear
-                        + " of "
-                        + near
-                        + " differ; "
-                        + differing
-                        + " of "
-                        + digests.size()
-                        + " differ over the whole square)",
-                     differingNear == 0
+               for (String line : all.subList(2, all.size())) {
+                  int space = line.lastIndexOf(32);
+                  String key = line.substring(0, space);
+                  int comma = key.indexOf(44);
+                  int distance = Math.max(
+                     Math.abs(Integer.parseInt(key.substring(0, comma)) - center[0]), Math.abs(Integer.parseInt(key.substring(comma + 1)) - center[1])
                   );
-                  if (differing > 0) {
-                     this.explainDifference(file.resolveSibling("parts-" + other + ".txt"), file.resolveSibling("parts-" + this.currentLabel + ".txt"), other);
+                  near += distance <= 2 ? 1 : 0;
+                  Long mine = digests.get(key);
+                  if (mine == null || !Long.toHexString(mine).equals(line.substring(space + 1))) {
+                     differing++;
+                     differingNear += distance <= 2 ? 1 : 0;
                   }
-
-                  return;
                }
 
+               this.check(
+                  "the chunks within 2 of the spawn equal the "
+                     + other
+                     + " run's ("
+                     + differingNear
+                     + " of "
+                     + near
+                     + " differ; "
+                     + differing
+                     + " of "
+                     + digests.size()
+                     + " differ over the whole square)",
+                  differingNear == 0
+               );
+               if (differing > 0) {
+                  this.explainDifference(file.resolveSibling("parts-" + other + ".txt"), file.resolveSibling("parts-" + this.currentLabel + ".txt"), other);
+               }
+            } else {
                BedrockNative.LOGGER.info("Dev blobcache test: the {} run started in another chunk ({}); not compared", other, all.getFirst());
             }
-         } catch (RuntimeException | IOException var21) {
-            this.failures.add("cannot compare with " + other + ": " + var21);
+         } catch (IOException | RuntimeException e) {
+            this.failures.add("cannot compare with " + other + ": " + e);
          }
       }
    }
@@ -339,8 +335,8 @@ final class DevBlobCacheTest {
                "Dev blobcache test: against the {} run {} chunks differ in their blocks and {} in their biomes; first: {}",
                new Object[]{other, blocks, biomes, sample}
             );
-      } catch (RuntimeException | IOException var16) {
-         BedrockNative.LOGGER.info("Dev blobcache test: cannot tell which part differs from the {} run: {}", other, var16.toString());
+      } catch (IOException | RuntimeException e) {
+         BedrockNative.LOGGER.info("Dev blobcache test: cannot tell which part differs from the {} run: {}", other, e.toString());
       }
    }
 
@@ -432,7 +428,7 @@ final class DevBlobCacheTest {
    private static void sleep(long millis) {
       try {
          Thread.sleep(millis);
-      } catch (InterruptedException var3) {
+      } catch (InterruptedException e) {
          Thread.currentThread().interrupt();
       }
    }
@@ -442,15 +438,15 @@ final class DevBlobCacheTest {
       this.minecraft.execute(() -> {
          try {
             future.complete(supplier.get());
-         } catch (RuntimeException var3) {
-            future.completeExceptionally(var3);
+         } catch (RuntimeException e) {
+            future.completeExceptionally(e);
          }
       });
 
       try {
          return future.get(30L, TimeUnit.SECONDS);
-      } catch (Exception var4) {
-         throw new IllegalStateException(var4);
+      } catch (Exception e) {
+         throw new IllegalStateException(e);
       }
    }
 }

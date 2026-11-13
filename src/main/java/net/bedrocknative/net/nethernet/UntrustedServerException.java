@@ -6,12 +6,9 @@ public final class UntrustedServerException extends Exception {
    private final String digest;
    private final String target;
    private final String domain;
-   @Nullable
-   private final String issuer;
-   @Nullable
-   private final String previousDigest;
-   @Nullable
-   private final transient NetherNetTrustStore store;
+   private final @Nullable String issuer;
+   private final @Nullable String previousDigest;
+   private final transient @Nullable NetherNetTrustStore store;
 
    public UntrustedServerException(String digest, String target, String domain, @Nullable String issuer) {
       this(digest, target, domain, issuer, null, null);
@@ -46,12 +43,12 @@ public final class UntrustedServerException extends Exception {
    public void trust() {
       if (this.store == null) {
          throw new IllegalStateException("No trust store to keep the key in");
+      }
+
+      if (this.previousDigest != null) {
+         this.store.replace(this.previousDigest, this.digest, this.target, this.domain);
       } else {
-         if (this.previousDigest != null) {
-            this.store.replace(this.previousDigest, this.digest, this.target, this.domain);
-         } else {
-            this.store.trust(this.digest, this.target, this.domain);
-         }
+         this.store.trust(this.digest, this.target, this.domain);
       }
    }
 
@@ -71,18 +68,15 @@ public final class UntrustedServerException extends Exception {
       return this.domain;
    }
 
-   @Nullable
-   public String issuer() {
+   public @Nullable String issuer() {
       return this.issuer;
    }
 
-   @Nullable
-   public String previousDigest() {
+   public @Nullable String previousDigest() {
       return this.previousDigest;
    }
 
-   @Nullable
-   public String shortPreviousDigest() {
+   public @Nullable String shortPreviousDigest() {
       return this.previousDigest == null ? null : this.previousDigest.substring(0, Math.min(8, this.previousDigest.length()));
    }
 
@@ -102,8 +96,7 @@ public final class UntrustedServerException extends Exception {
       return PromptText.plain(this.issuer, 64);
    }
 
-   @Nullable
-   public static UntrustedServerException in(@Nullable Throwable failure) {
+   public static @Nullable UntrustedServerException in(@Nullable Throwable failure) {
       for (Throwable cause = failure; cause != null; cause = cause.getCause() == cause ? null : cause.getCause()) {
          if (cause instanceof UntrustedServerException untrusted) {
             return untrusted;

@@ -106,8 +106,8 @@ public final class ClientIdentity {
       try {
          byte[] hash = MessageDigest.getInstance("SHA-256").digest(("bedrocknative-device-id:" + accountDeviceId).getBytes(StandardCharsets.UTF_8));
          return HexFormat.of().formatHex(hash, 0, 16);
-      } catch (NoSuchAlgorithmException var2) {
-         throw new IllegalStateException(var2);
+      } catch (NoSuchAlgorithmException e) {
+         throw new IllegalStateException(e);
       }
    }
 
@@ -243,7 +243,7 @@ public final class ClientIdentity {
       long hash = -3750763034362895579L;
 
       for (byte b : text.getBytes(StandardCharsets.UTF_8)) {
-         hash ^= b & 255;
+         hash ^= b & 0xFF;
          hash *= 1099511628211L;
       }
 
@@ -253,8 +253,7 @@ public final class ClientIdentity {
    static final class Device {
       static final int WIN32 = 8;
       static final int OS = os();
-      @Nullable
-      private static final HardwareAbstractionLayer HARDWARE = hardware();
+      private static final @Nullable HardwareAbstractionLayer HARDWARE = hardware();
       static final String MODEL = model();
       static final int MEMORY_TIER = memoryTier(totalMemory());
       static final int MAX_VIEW_DISTANCE = 76;
@@ -264,11 +263,10 @@ public final class ClientIdentity {
          return name.startsWith("windows") ? 8 : (name.startsWith("mac") ? 3 : 15);
       }
 
-      @Nullable
-      private static HardwareAbstractionLayer hardware() {
+      private static @Nullable HardwareAbstractionLayer hardware() {
          try {
             return new SystemInfo().getHardware();
-         } catch (LinkageError | RuntimeException var1) {
+         } catch (RuntimeException | LinkageError e) {
             return null;
          }
       }
@@ -277,7 +275,7 @@ public final class ClientIdentity {
          try {
             ComputerSystem system = HARDWARE.getComputerSystem();
             return system.getModel() + " " + system.getManufacturer() + " (Unknown)";
-         } catch (LinkageError | RuntimeException var1) {
+         } catch (RuntimeException | LinkageError e) {
             return "Unknown";
          }
       }
@@ -285,7 +283,7 @@ public final class ClientIdentity {
       private static long totalMemory() {
          try {
             return HARDWARE.getMemory().getTotal();
-         } catch (LinkageError | RuntimeException var1) {
+         } catch (RuntimeException | LinkageError e) {
             return -1L;
          }
       }
@@ -293,10 +291,10 @@ public final class ClientIdentity {
       static int memoryTier(long totalBytes) {
          if (totalBytes <= 0L) {
             return 4;
-         } else {
-            double gib = totalBytes / 1.0737418E9F;
-            return gib <= 1.5 ? 0 : (gib <= 2.0 ? 1 : (gib <= 4.0 ? 2 : (gib <= 8.0 ? 3 : 4)));
          }
+
+         double gib = totalBytes / 1.0737418E9F;
+         return gib <= 1.5 ? 0 : (gib <= 2.0 ? 1 : (gib <= 4.0 ? 2 : (gib <= 8.0 ? 3 : 4)));
       }
    }
 
@@ -309,7 +307,7 @@ public final class ClientIdentity {
       }
 
       public static int guiScaleOffset(boolean auto, int scale, int autoScale) {
-         return auto ? 0 : Math.clamp((long)(scale - autoScale), -2, 0);
+         return auto ? 0 : Math.clamp(scale - autoScale, -2, 0);
       }
    }
 }

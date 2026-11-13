@@ -30,8 +30,8 @@ public final class NetherNetStatus {
                   gameType(json)
                );
             }
-         } catch (RuntimeException var3) {
-            BedrockNative.LOGGER.warn("NetherNet status: {} ({} bytes), shown as empty", var3.getMessage(), body.length());
+         } catch (RuntimeException e) {
+            BedrockNative.LOGGER.warn("NetherNet status: {} ({} bytes), shown as empty", e.getMessage(), body.length());
             return ProbeResult.Status.EMPTY;
          }
       } else {

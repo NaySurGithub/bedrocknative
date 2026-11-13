@@ -112,8 +112,7 @@ public final class TextureOps {
       return new ArgbImage(grassSide.width(), grassSide.height(), out);
    }
 
-   @Nullable
-   public static ArgbImage maskOverlay(ArgbImage icon) {
+   public static @Nullable ArgbImage maskOverlay(ArgbImage icon) {
       int[] out = new int[icon.argb().length];
       boolean any = false;
 
@@ -140,8 +139,7 @@ public final class TextureOps {
       return new ArgbImage(icon.width(), icon.height(), out);
    }
 
-   @Nullable
-   public static ArgbImage transform(ArgbImage image, String name) {
+   public static @Nullable ArgbImage transform(ArgbImage image, String name) {
       int w = image.width();
       int h = image.height();
       boolean swaps;
@@ -206,38 +204,38 @@ public final class TextureOps {
    public static ArgbImage downscale(ArgbImage image, int factor) {
       if (factor <= 1) {
          return image;
-      } else {
-         int width = Math.max(1, image.width() / factor);
-         int height = Math.max(1, image.height() / factor);
-         int[] out = new int[width * height];
-
-         for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-               long a = 0L;
-               long r = 0L;
-               long g = 0L;
-               long b = 0L;
-               int count = 0;
-
-               for (int dy = 0; dy < factor && y * factor + dy < image.height(); dy++) {
-                  for (int dx = 0; dx < factor && x * factor + dx < image.width(); dx++) {
-                     int pixel = image.pixel(x * factor + dx, y * factor + dy);
-                     int alpha = ArgbImage.alpha(pixel);
-                     a += alpha;
-                     r += (long)(pixel >> 16 & 0xFF) * alpha;
-                     g += (long)(pixel >> 8 & 0xFF) * alpha;
-                     b += (long)(pixel & 0xFF) * alpha;
-                     count++;
-                  }
-               }
-
-               int alpha = (int)(a / count);
-               out[y * width + x] = a == 0L ? 0 : alpha << 24 | (int)(r / a) << 16 | (int)(g / a) << 8 | (int)(b / a);
-            }
-         }
-
-         return new ArgbImage(width, height, out);
       }
+
+      int width = Math.max(1, image.width() / factor);
+      int height = Math.max(1, image.height() / factor);
+      int[] out = new int[width * height];
+
+      for (int y = 0; y < height; y++) {
+         for (int x = 0; x < width; x++) {
+            long a = 0L;
+            long r = 0L;
+            long g = 0L;
+            long b = 0L;
+            int count = 0;
+
+            for (int dy = 0; dy < factor && y * factor + dy < image.height(); dy++) {
+               for (int dx = 0; dx < factor && x * factor + dx < image.width(); dx++) {
+                  int pixel = image.pixel(x * factor + dx, y * factor + dy);
+                  int alpha = ArgbImage.alpha(pixel);
+                  a += alpha;
+                  r += (long)(pixel >> 16 & 0xFF) * alpha;
+                  g += (long)(pixel >> 8 & 0xFF) * alpha;
+                  b += (long)(pixel & 0xFF) * alpha;
+                  count++;
+               }
+            }
+
+            int alpha = (int)(a / count);
+            out[y * width + x] = a == 0L ? 0 : alpha << 24 | (int)(r / a) << 16 | (int)(g / a) << 8 | (int)(b / a);
+         }
+      }
+
+      return new ArgbImage(width, height, out);
    }
 
    public static ArgbImage scale(ArgbImage image, int width, int height) {
@@ -252,7 +250,7 @@ public final class TextureOps {
       return new ArgbImage(width, height, out);
    }
 
-   public static enum AlphaClass {
+   public enum AlphaClass {
       OPAQUE,
       CUTOUT,
       TRANSLUCENT;

@@ -18,18 +18,13 @@ public final class TransportChooser {
    private final Map<TransportKind, Integer> joins = new EnumMap<>(TransportKind.class);
    private final Map<TransportKind, TransportChooser.JoinFailure> failures = new EnumMap<>(TransportKind.class);
    private final List<String> trail = new ArrayList<>();
-   @Nullable
-   private PingOutcome ping;
-   @Nullable
-   private Boolean javaAnswer;
-   @Nullable
-   private ProbeResult probe;
+   private @Nullable PingOutcome ping;
+   private @Nullable Boolean javaAnswer;
+   private @Nullable ProbeResult probe;
    private boolean overdue;
    private boolean trustAsked;
-   @Nullable
-   private Boolean trusted;
-   @Nullable
-   private TransportChooser.Step terminal;
+   private @Nullable Boolean trusted;
+   private TransportChooser.@Nullable Step terminal;
 
    public TransportChooser(TransportChooser.Inputs inputs) {
       this.in = inputs;
@@ -52,39 +47,39 @@ public final class TransportChooser {
    public TransportChooser.Step next() {
       if (this.terminal != null) {
          return this.terminal;
-      } else {
-         TransportChooser.Step step = this.decide();
-         switch (step) {
-            case TransportChooser.Start start:
-               this.started.addAll(start.probes());
-               this.trail.add("start " + start.probes());
-               break;
-            case TransportChooser.Join join:
-               this.joins.merge(join.kind(), 1, Integer::sum);
-               this.trail.add("join " + join.kind().shown());
-               if (join.kind() == TransportKind.JAVA) {
-                  this.terminal = step;
-               }
-               break;
-            case TransportChooser.Fail fail:
-               this.trail.add("fail " + fail.kind().shown());
-               this.terminal = step;
-               break;
-            case TransportChooser.Stop stop:
-               this.trail.add("stop");
-               this.terminal = step;
-               break;
-            case TransportChooser.TrustPrompt prompt:
-               this.trail.add("ask trust");
-               break;
-            case TransportChooser.Wait var9:
-               break;
-            default:
-               throw new MatchException(null, null);
-         }
-
-         return step;
       }
+
+      TransportChooser.Step step = this.decide();
+      switch (step) {
+         case TransportChooser.Start start:
+            this.started.addAll(start.probes());
+            this.trail.add("start " + start.probes());
+            break;
+         case TransportChooser.Join join:
+            this.joins.merge(join.kind(), 1, Integer::sum);
+            this.trail.add("join " + join.kind().shown());
+            if (join.kind() == TransportKind.JAVA) {
+               this.terminal = step;
+            }
+            break;
+         case TransportChooser.Fail fail:
+            this.trail.add("fail " + fail.kind().shown());
+            this.terminal = step;
+            break;
+         case TransportChooser.Stop stop:
+            this.trail.add("stop");
+            this.terminal = step;
+            break;
+         case TransportChooser.TrustPrompt prompt:
+            this.trail.add("ask trust");
+            break;
+         case TransportChooser.Wait var9:
+            break;
+         default:
+            throw new MatchException(null, null);
+      }
+
+      return step;
    }
 
    public void pinged(PingOutcome outcome) {
@@ -129,18 +124,15 @@ public final class TransportChooser {
       }
    }
 
-   @Nullable
-   public PingOutcome ping() {
+   public @Nullable PingOutcome ping() {
       return this.ping;
    }
 
-   @Nullable
-   public Boolean javaAnswer() {
+   public @Nullable Boolean javaAnswer() {
       return this.javaAnswer;
    }
 
-   @Nullable
-   public ProbeResult netherNetProbe() {
+   public @Nullable ProbeResult netherNetProbe() {
       return this.probe;
    }
 
@@ -157,59 +149,59 @@ public final class TransportChooser {
    private TransportChooser.Step decide() {
       if (this.in.forced() != null) {
          return this.forced(this.in.forced());
-      } else {
-         TransportKind first = this.in.preferred();
-         if (first == TransportKind.JAVA && !this.in.javaAllowed()) {
-            first = null;
-         }
-
-         boolean known = first != null && first.bedrock();
-         if (first == null && !this.in.order().isEmpty() && this.in.order().getFirst() == TransportKind.NETHERNET) {
-            first = TransportKind.NETHERNET;
-         }
-
-         if (first == TransportKind.NETHERNET && !this.in.netherNet()) {
-            first = null;
-         }
-
-         if (first == TransportKind.JAVA) {
-            Set<TransportChooser.Probe> toStart = EnumSet.noneOf(TransportChooser.Probe.class);
-            if (!this.started(TransportChooser.Probe.JAVA_STATUS)) {
-               toStart.add(TransportChooser.Probe.JAVA_STATUS);
-            }
-
-            if (!this.started(TransportChooser.Probe.RAKNET_PING)) {
-               toStart.add(TransportChooser.Probe.RAKNET_PING);
-            }
-
-            if (!toStart.isEmpty()) {
-               return start(toStart);
-            }
-
-            if (this.ping == PingOutcome.PONG) {
-               return this.rakNet();
-            }
-
-            if (this.javaAnswer == null) {
-               return WAIT;
-            }
-
-            if (this.javaAnswer) {
-               return join(TransportKind.JAVA);
-            }
-         } else if (first == TransportKind.NETHERNET) {
-            TransportChooser.Step step = this.netherNetFirst();
-            if (step != null) {
-               return step;
-            }
-         }
-
-         return this.general(known);
       }
+
+      TransportKind first = this.in.preferred();
+      if (first == TransportKind.JAVA && !this.in.javaAllowed()) {
+         first = null;
+      }
+
+      boolean known = first != null && first.bedrock();
+      if (first == null && !this.in.order().isEmpty() && this.in.order().getFirst() == TransportKind.NETHERNET) {
+         first = TransportKind.NETHERNET;
+      }
+
+      if (first == TransportKind.NETHERNET && !this.in.netherNet()) {
+         first = null;
+      }
+
+      if (first == TransportKind.JAVA) {
+         Set<TransportChooser.Probe> toStart = EnumSet.noneOf(TransportChooser.Probe.class);
+         if (!this.started(TransportChooser.Probe.JAVA_STATUS)) {
+            toStart.add(TransportChooser.Probe.JAVA_STATUS);
+         }
+
+         if (!this.started(TransportChooser.Probe.RAKNET_PING)) {
+            toStart.add(TransportChooser.Probe.RAKNET_PING);
+         }
+
+         if (!toStart.isEmpty()) {
+            return start(toStart);
+         }
+
+         if (this.ping == PingOutcome.PONG) {
+            return this.rakNet();
+         }
+
+         if (this.javaAnswer == null) {
+            return WAIT;
+         }
+
+         if (this.javaAnswer) {
+            return join(TransportKind.JAVA);
+         }
+      } else if (first == TransportKind.NETHERNET) {
+         TransportChooser.Step step = this.netherNetFirst();
+         if (step != null) {
+            return step;
+         }
+      }
+
+      return this.general(known);
    }
 
    private TransportChooser.Step forced(TransportKind kind) {
-      return (TransportChooser.Step)(switch (kind) {
+      return switch (kind) {
          case JAVA -> join(TransportKind.JAVA);
          case RAKNET -> !this.started(TransportChooser.Probe.RAKNET_PING)
             ? start(TransportChooser.Probe.RAKNET_PING)
@@ -228,11 +220,10 @@ public final class TransportChooser {
                yield step != null ? step : new TransportChooser.Fail(TransportKind.NETHERNET);
             }
          }
-      });
+      };
    }
 
-   @Nullable
-   private TransportChooser.Step netherNetFirst() {
+   private TransportChooser.@Nullable Step netherNetFirst() {
       if (!this.started(TransportChooser.Probe.NETHERNET_PROBE)) {
          return start(TransportChooser.Probe.NETHERNET_PROBE);
       } else if (this.probe == null) {
@@ -248,46 +239,45 @@ public final class TransportChooser {
          } else if (this.ping == null) {
             return WAIT;
          } else {
-            return (TransportChooser.Step)(this.ping == PingOutcome.PONG ? this.rakNet() : new TransportChooser.Fail(TransportKind.NETHERNET));
+            return this.ping == PingOutcome.PONG ? this.rakNet() : new TransportChooser.Fail(TransportKind.NETHERNET);
          }
       }
    }
 
-   @Nullable
-   private TransportChooser.Step netherNet() {
+   private TransportChooser.@Nullable Step netherNet() {
       int done = this.joins.getOrDefault(TransportKind.NETHERNET, 0);
       if (done == 0) {
          return join(TransportKind.NETHERNET);
-      } else {
-         TransportChooser.JoinFailure failure = this.failures.get(TransportKind.NETHERNET);
-         if (failure == null) {
-            throw new IllegalStateException("The NetherNet join's outcome was not reported");
-         } else {
-            return (TransportChooser.Step)(switch (failure) {
-               case NETHERNET_LINK -> null;
-               case NETHERNET_UNTRUSTED -> {
-                  if (!this.trustAsked) {
-                     this.trustAsked = true;
-                     yield new TransportChooser.TrustPrompt();
-                  } else {
-                     if (this.trusted == null) {
-                        throw new IllegalStateException("The trust prompt's answer was not reported");
-                     }
-
-                     if (!this.trusted) {
-                        yield new TransportChooser.Stop();
-                     } else if (done == 1) {
-                        this.failures.remove(TransportKind.NETHERNET);
-                        yield join(TransportKind.NETHERNET);
-                     } else {
-                        yield new TransportChooser.Fail(TransportKind.NETHERNET);
-                     }
-                  }
-               }
-               default -> new TransportChooser.Fail(TransportKind.NETHERNET);
-            });
-         }
       }
+
+      TransportChooser.JoinFailure failure = this.failures.get(TransportKind.NETHERNET);
+      if (failure == null) {
+         throw new IllegalStateException("The NetherNet join's outcome was not reported");
+      }
+
+      return switch (failure) {
+         case NETHERNET_LINK -> null;
+         case NETHERNET_UNTRUSTED -> {
+            if (!this.trustAsked) {
+               this.trustAsked = true;
+               yield new TransportChooser.TrustPrompt();
+            } else {
+               if (this.trusted == null) {
+                  throw new IllegalStateException("The trust prompt's answer was not reported");
+               }
+
+               if (!this.trusted) {
+                  yield new TransportChooser.Stop();
+               } else if (done == 1) {
+                  this.failures.remove(TransportKind.NETHERNET);
+                  yield join(TransportKind.NETHERNET);
+               } else {
+                  yield new TransportChooser.Fail(TransportKind.NETHERNET);
+               }
+            }
+         }
+         default -> new TransportChooser.Fail(TransportKind.NETHERNET);
+      };
    }
 
    private TransportChooser.Step general(boolean known) {
@@ -302,19 +292,20 @@ public final class TransportChooser {
 
       if (!toStart.isEmpty()) {
          return start(toStart);
-      } else if (this.ping == null) {
-         TransportChooser.Step early = known ? null : this.earlyJava();
-         return (TransportChooser.Step)(early != null ? early : WAIT);
-      } else {
-         return switch (this.ping) {
-            case PONG -> this.rakNet();
-            case SILENT, NOT_PINGED -> known ? this.knownBedrockSilent() : (this.ping == PingOutcome.SILENT ? this.silent() : this.notPinged());
-         };
       }
+
+      if (this.ping == null) {
+         TransportChooser.Step early = known ? null : this.earlyJava();
+         return early != null ? early : WAIT;
+      }
+
+      return switch (this.ping) {
+         case PONG -> this.rakNet();
+         case SILENT, NOT_PINGED -> known ? this.knownBedrockSilent() : (this.ping == PingOutcome.SILENT ? this.silent() : this.notPinged());
+      };
    }
 
-   @Nullable
-   private TransportChooser.Step earlyJava() {
+   private TransportChooser.@Nullable Step earlyJava() {
       if (this.overdue && Boolean.TRUE.equals(this.javaAnswer)) {
          if (this.in.netherNet() && !this.in.javaSharesTcpPort()) {
             if (!this.started(TransportChooser.Probe.NETHERNET_PROBE)) {
@@ -327,7 +318,7 @@ public final class TransportChooser {
 
             if (this.probe.supported()) {
                TransportChooser.Step step = this.netherNet();
-               return (TransportChooser.Step)(step != null ? step : new TransportChooser.Fail(TransportKind.NETHERNET));
+               return step != null ? step : new TransportChooser.Fail(TransportKind.NETHERNET);
             }
          }
 
@@ -345,9 +336,7 @@ public final class TransportChooser {
          if (failure == null) {
             throw new IllegalStateException("The RakNet join's outcome was not reported");
          } else {
-            return (TransportChooser.Step)(failure == TransportChooser.JoinFailure.RAKNET_UNANSWERED
-               ? this.silent()
-               : new TransportChooser.Fail(TransportKind.RAKNET));
+            return failure == TransportChooser.JoinFailure.RAKNET_UNANSWERED ? this.silent() : new TransportChooser.Fail(TransportKind.RAKNET);
          }
       }
    }
@@ -372,37 +361,51 @@ public final class TransportChooser {
          return start(toStart);
       } else if (this.probe != null && this.probe.supported()) {
          TransportChooser.Step step = this.netherNet();
-         return (TransportChooser.Step)(step != null ? step : new TransportChooser.Fail(TransportKind.NETHERNET));
+         return step != null ? step : new TransportChooser.Fail(TransportKind.NETHERNET);
       } else if (this.started(TransportChooser.Probe.NETHERNET_PROBE) && this.probe == null) {
          return WAIT;
       } else if (this.javaAnswer == null) {
          return WAIT;
       } else {
-         return (TransportChooser.Step)(this.javaAnswer ? join(TransportKind.JAVA) : this.rakNet());
+         return this.javaAnswer ? join(TransportKind.JAVA) : this.rakNet();
       }
    }
 
    private TransportChooser.Step notPinged() {
       if (this.in.javaAllowed() && !this.started(TransportChooser.Probe.JAVA_STATUS)) {
          return start(TransportChooser.Probe.JAVA_STATUS);
-      } else if (this.javaAnswer == null) {
-         return WAIT;
-      } else if (this.javaAnswer) {
-         return join(TransportKind.JAVA);
-      } else if (this.joins.getOrDefault(TransportKind.RAKNET, 0) == 0) {
-         return join(TransportKind.RAKNET);
-      } else if (this.failures.get(TransportKind.RAKNET) != TransportChooser.JoinFailure.RAKNET_UNANSWERED || !this.in.netherNet()) {
-         return new TransportChooser.Fail(TransportKind.RAKNET);
-      } else if (!this.started(TransportChooser.Probe.NETHERNET_PROBE)) {
-         return start(TransportChooser.Probe.NETHERNET_PROBE);
-      } else if (this.probe == null) {
-         return WAIT;
-      } else if (!this.probe.supported()) {
-         return new TransportChooser.Fail(TransportKind.RAKNET);
-      } else {
-         TransportChooser.Step step = this.netherNet();
-         return (TransportChooser.Step)(step != null ? step : new TransportChooser.Fail(TransportKind.NETHERNET));
       }
+
+      if (this.javaAnswer == null) {
+         return WAIT;
+      }
+
+      if (this.javaAnswer) {
+         return join(TransportKind.JAVA);
+      }
+
+      if (this.joins.getOrDefault(TransportKind.RAKNET, 0) == 0) {
+         return join(TransportKind.RAKNET);
+      }
+
+      if (this.failures.get(TransportKind.RAKNET) != TransportChooser.JoinFailure.RAKNET_UNANSWERED || !this.in.netherNet()) {
+         return new TransportChooser.Fail(TransportKind.RAKNET);
+      }
+
+      if (!this.started(TransportChooser.Probe.NETHERNET_PROBE)) {
+         return start(TransportChooser.Probe.NETHERNET_PROBE);
+      }
+
+      if (this.probe == null) {
+         return WAIT;
+      }
+
+      if (!this.probe.supported()) {
+         return new TransportChooser.Fail(TransportKind.RAKNET);
+      }
+
+      TransportChooser.Step step = this.netherNet();
+      return step != null ? step : new TransportChooser.Fail(TransportKind.NETHERNET);
    }
 
    private TransportChooser.Step rakNet() {
@@ -438,21 +441,8 @@ public final class TransportChooser {
       boolean javaSharesTcpPort,
       boolean javaAllowed
    ) {
-      public Inputs(
-         @Nullable TransportKind forced,
-         @Nullable TransportKind preferred,
-         List<TransportKind> order,
-         boolean netherNet,
-         boolean javaSharesTcpPort,
-         boolean javaAllowed
-      ) {
+      public Inputs {
          order = List.copyOf(order);
-         this.forced = forced;
-         this.preferred = preferred;
-         this.order = order;
-         this.netherNet = netherNet;
-         this.javaSharesTcpPort = javaSharesTcpPort;
-         this.javaAllowed = javaAllowed;
       }
 
       public Inputs(@Nullable TransportKind forced, @Nullable TransportKind preferred, List<TransportKind> order, boolean netherNet, boolean javaSharesTcpPort) {
@@ -463,7 +453,7 @@ public final class TransportChooser {
    public record Join(TransportKind kind) implements TransportChooser.Step {
    }
 
-   public static enum JoinFailure {
+   public enum JoinFailure {
       RAKNET_ANSWERED,
       RAKNET_UNANSWERED,
       NETHERNET_LINK,
@@ -471,16 +461,15 @@ public final class TransportChooser {
       UNAVAILABLE;
    }
 
-   public static enum Probe {
+   public enum Probe {
       RAKNET_PING,
       JAVA_STATUS,
       NETHERNET_PROBE;
    }
 
    public record Start(Set<TransportChooser.Probe> probes) implements TransportChooser.Step {
-      public Start(Set<TransportChooser.Probe> probes) {
+      public Start {
          probes = probes.isEmpty() ? Set.of() : Collections.unmodifiableSet(EnumSet.copyOf(probes));
-         this.probes = probes;
       }
    }
 

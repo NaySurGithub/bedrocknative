@@ -14,10 +14,8 @@ import org.jspecify.annotations.Nullable;
 
 public final class BedrockDisconnects {
    static final long VALID_MS = 30000L;
-   @Nullable
-   private static volatile BedrockDisconnects.Ended pending;
-   @Nullable
-   private static volatile BedrockDisconnects.Ended last;
+   private static volatile BedrockDisconnects.@Nullable Ended pending;
+   private static volatile BedrockDisconnects.@Nullable Ended last;
 
    private BedrockDisconnects() {
    }
@@ -37,8 +35,7 @@ public final class BedrockDisconnects {
       pending = null;
    }
 
-   @Nullable
-   public static BedrockDisconnects.Ended last() {
+   public static BedrockDisconnects.@Nullable Ended last() {
       return last;
    }
 
@@ -77,8 +74,8 @@ public final class BedrockDisconnects {
                if (ore != null) {
                   shown = ore;
                }
-            } catch (RuntimeException var4) {
-               OreUi.fail("disconnect screen", var4);
+            } catch (RuntimeException e) {
+               OreUi.fail("disconnect screen", e);
             }
          }
 

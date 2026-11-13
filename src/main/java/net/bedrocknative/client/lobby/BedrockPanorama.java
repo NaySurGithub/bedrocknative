@@ -20,8 +20,7 @@ public final class BedrockPanorama {
    private static final int[] FACES = new int[]{1, 3, 5, 4, 0, 2};
    private static final String[] SETS = new String[]{"textures/ui/panorama_alternate_", "textures/ui/panorama_"};
    private static boolean tried;
-   @Nullable
-   private static AbstractTexture texture;
+   private static @Nullable AbstractTexture texture;
    private static String set = SETS[0];
 
    private BedrockPanorama() {
@@ -39,15 +38,14 @@ public final class BedrockPanorama {
                cube.apply(cube.loadContents(minecraft.getResourceManager()));
                minecraft.getTextureManager().register(ID, cube);
                texture = cube;
-            } catch (RuntimeException | IOException var3) {
-               BedrockNative.LOGGER.warn("Bedrock lobby: Bedrock's panorama didn't load; Java's turns instead", var3);
+            } catch (IOException | RuntimeException e) {
+               BedrockNative.LOGGER.warn("Bedrock lobby: Bedrock's panorama didn't load; Java's turns instead", e);
             }
          }
       }
    }
 
-   @Nullable
-   static String set(PackStack stack) {
+   static @Nullable String set(PackStack stack) {
       for (String prefix : SETS) {
          boolean complete = true;
 
@@ -77,6 +75,7 @@ public final class BedrockPanorama {
          super(BedrockPanorama.ID);
       }
 
+      @Override
       public TextureContents loadContents(ResourceManager resourceManager) throws IOException {
          NativeImage first = face(BedrockPanorama.FACES[0]);
          int width = first.getWidth();
@@ -87,33 +86,17 @@ public final class BedrockPanorama {
             first.copyRect(stacked, 0, 0, 0, 0, width, height, false, true);
 
             for (int i = 1; i < 6; i++) {
-               NativeImage part = face(BedrockPanorama.FACES[i]);
-
-               try {
+               try (NativeImage part = face(BedrockPanorama.FACES[i])) {
                   if (part.getWidth() != width || part.getHeight() != height) {
                      throw new IOException("Bedrock panorama faces differ in size");
                   }
 
                   part.copyRect(stacked, 0, 0, 0, i * height, width, height, false, true);
-               } catch (Throwable var16) {
-                  if (part != null) {
-                     try {
-                        part.close();
-                     } catch (Throwable var15) {
-                        var16.addSuppressed(var15);
-                     }
-                  }
-
-                  throw var16;
-               }
-
-               if (part != null) {
-                  part.close();
                }
             }
-         } catch (RuntimeException | IOException var17) {
+         } catch (IOException | RuntimeException e) {
             stacked.close();
-            throw var17;
+            throw e;
          } finally {
             first.close();
          }

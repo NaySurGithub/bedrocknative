@@ -39,14 +39,11 @@ public final class XboxAccountStore {
    private static final String FOLDER = "accounts";
    private static final int VERSION = 1;
    private final Path folder;
-   @Nullable
-   private final TokenVault vault;
+   private final @Nullable TokenVault vault;
    private final List<XboxAccountStore.Entry> entries = new ArrayList<>();
    private final Set<String> backupsOfThisRun = ConcurrentHashMap.newKeySet();
-   @Nullable
-   private String active;
-   @Nullable
-   private volatile XboxPrivileges privileges;
+   private @Nullable String active;
+   private volatile @Nullable XboxPrivileges privileges;
    private final Map<String, Long> tokenVersions = new HashMap<>();
 
    public static TokenVault standardVault() {
@@ -70,8 +67,7 @@ public final class XboxAccountStore {
       return this.folder;
    }
 
-   @Nullable
-   public TokenVault vault() {
+   public @Nullable TokenVault vault() {
       return this.vault;
    }
 
@@ -102,16 +98,16 @@ public final class XboxAccountStore {
    public synchronized void setActive(String id) {
       if (this.find(id).isEmpty()) {
          throw new IllegalArgumentException("No saved account " + id);
-      } else {
-         String previous = this.active;
-         this.active = id;
+      }
 
-         try {
-            this.saveIndex();
-         } catch (UncheckedIOException var4) {
-            this.active = previous;
-            throw var4;
-         }
+      String previous = this.active;
+      this.active = id;
+
+      try {
+         this.saveIndex();
+      } catch (UncheckedIOException e) {
+         this.active = previous;
+         throw e;
       }
    }
 
@@ -144,9 +140,8 @@ public final class XboxAccountStore {
             if (!existedBefore) {
                createdVaultName = name;
             }
-         } catch (RuntimeException | IOException var20) {
-            BedrockNative.LOGGER
-               .warn("Couldn't put the Xbox sign-in in the protected store ({}); it stays in the game folder", var20.getClass().getSimpleName());
+         } catch (IOException | RuntimeException e) {
+            BedrockNative.LOGGER.warn("Couldn't put the Xbox sign-in in the protected store ({}); it stays in the game folder", e.getClass().getSimpleName());
             entry = plain;
          }
       } else {
@@ -173,7 +168,7 @@ public final class XboxAccountStore {
 
       try {
          this.saveIndex();
-      } catch (UncheckedIOException var21) {
+      } catch (UncheckedIOException e) {
          this.entries.clear();
          this.entries.addAll(previousEntries);
          this.active = previousActive;
@@ -187,18 +182,18 @@ public final class XboxAccountStore {
          if (createdVaultName != null) {
             try {
                this.vault.delete(createdVaultName);
-            } catch (RuntimeException | IOException var17) {
+            } catch (IOException | RuntimeException var17) {
             }
          }
 
-         throw var21.getCause();
+         throw e.getCause();
       }
 
       if (wroteVault && previousFile != null && !previousFile.startsWith("vault:")) {
          try {
             Files.deleteIfExists(this.folder.resolve(previousFile));
-         } catch (RuntimeException | IOException var19) {
-            BedrockNative.LOGGER.warn("Couldn't delete the old Xbox sign-in file of the game folder ({})", var19.getClass().getSimpleName());
+         } catch (IOException | RuntimeException e) {
+            BedrockNative.LOGGER.warn("Couldn't delete the old Xbox sign-in file of the game folder ({})", e.getClass().getSimpleName());
          }
       }
 
@@ -225,11 +220,11 @@ public final class XboxAccountStore {
 
       try {
          this.saveIndex();
-      } catch (UncheckedIOException var6) {
+      } catch (UncheckedIOException e) {
          this.entries.clear();
          this.entries.addAll(previousEntries);
          this.active = previousActive;
-         throw var6.getCause();
+         throw e.getCause();
       }
 
       String name = entry.vaultName();
@@ -247,13 +242,13 @@ public final class XboxAccountStore {
 
       try {
          return XboxAccount.fromJson(this.readTokens(entry));
-      } catch (VaultUnreadableException var4) {
+      } catch (VaultUnreadableException e) {
          throw new XboxAccountStore.AccountException(
-            XboxAccountStore.Problem.SIGN_IN_REQUIRED, entry, "The saved sign-in can't be opened by this Windows user on this PC", var4
+            XboxAccountStore.Problem.SIGN_IN_REQUIRED, entry, "The saved sign-in can't be opened by this Windows user on this PC", e
          );
-      } catch (RuntimeException | IOException var5) {
+      } catch (IOException | RuntimeException e) {
          throw new XboxAccountStore.AccountException(
-            XboxAccountStore.Problem.SIGN_IN_REQUIRED, entry, "The saved sign-in can't be read (" + var5.getClass().getSimpleName() + ")", var5
+            XboxAccountStore.Problem.SIGN_IN_REQUIRED, entry, "The saved sign-in can't be read (" + e.getClass().getSimpleName() + ")", e
          );
       }
    }
@@ -335,8 +330,8 @@ public final class XboxAccountStore {
 
             return tokens;
          });
-      } catch (RuntimeException | IOException var10) {
-         throw classify(entry, var10);
+      } catch (IOException | RuntimeException e) {
+         throw classify(entry, e);
       }
 
       return new XboxAccountStore.Prepared(account, started);
@@ -349,8 +344,8 @@ public final class XboxAccountStore {
          try {
             store.dropBackup(name);
             BedrockNative.LOGGER.info("Xbox account {}: its protected copy works, the backup of the old file is deleted", entry.id());
-         } catch (RuntimeException | IOException var5) {
-            BedrockNative.LOGGER.warn("Couldn't delete the backup of an old Xbox sign-in file ({})", var5.getClass().getSimpleName());
+         } catch (IOException | RuntimeException e) {
+            BedrockNative.LOGGER.warn("Couldn't delete the backup of an old Xbox sign-in file ({})", e.getClass().getSimpleName());
          }
       }
    }
@@ -390,9 +385,9 @@ public final class XboxAccountStore {
 
                   try {
                      this.saveIndex();
-                  } catch (UncheckedIOException var17) {
+                  } catch (UncheckedIOException e) {
                      this.entries.set(index, entry);
-                     throw var17.getCause();
+                     throw e.getCause();
                   }
 
                   step = "delete";
@@ -400,25 +395,21 @@ public final class XboxAccountStore {
 
                   try {
                      Files.delete(old);
-                  } catch (IOException var16) {
+                  } catch (IOException e) {
                      BedrockNative.LOGGER
-                        .warn(
-                           "Xbox account {} is in the protected store; its old file could not be deleted yet ({})",
-                           entry.id(),
-                           var16.getClass().getSimpleName()
-                        );
+                        .warn("Xbox account {} is in the protected store; its old file could not be deleted yet ({})", entry.id(), e.getClass().getSimpleName());
                   }
-               } catch (RuntimeException | IOException var18) {
+               } catch (IOException | RuntimeException e) {
                   left++;
                   BedrockNative.LOGGER
-                     .warn("Xbox account {} stays in the game folder for now (step {}: {})", new Object[]{entry.id(), step, var18.getClass().getSimpleName()});
+                     .warn("Xbox account {} stays in the game folder for now (step {}: {})", new Object[]{entry.id(), step, e.getClass().getSimpleName()});
                }
             }
          }
 
          int stale = this.deleteMovedLeftovers();
          long plainLeft = this.plainTokenFiles().size();
-         long protectedCount = this.entries.stream().filter(entryx -> entryx.vaultName() != null).count();
+         long protectedCount = this.entries.stream().filter(entry -> entry.vaultName() != null).count();
          if (moved <= 0 && left <= 0 && stale <= 0 && plainLeft <= 0L) {
             BedrockNative.LOGGER.info("Xbox accounts: {} protected, 0 plaintext left", protectedCount);
          } else {
@@ -467,7 +458,7 @@ public final class XboxAccountStore {
                      deleted++;
                   }
                }
-            } catch (RuntimeException | IOException var10) {
+            } catch (IOException | RuntimeException var10) {
             }
          }
       }
@@ -478,8 +469,8 @@ public final class XboxAccountStore {
    private void saveQuietly(String id, BedrockAuthManager account, long loadedAt) {
       try {
          this.saveIfUnchanged(id, account, loadedAt);
-      } catch (RuntimeException | IOException var6) {
-         BedrockNative.LOGGER.warn("Couldn't save the Xbox tokens the multiplayer check renewed: {}", var6.getClass().getSimpleName());
+      } catch (IOException | RuntimeException e) {
+         BedrockNative.LOGGER.warn("Couldn't save the Xbox tokens the multiplayer check renewed: {}", e.getClass().getSimpleName());
       }
    }
 
@@ -507,7 +498,7 @@ public final class XboxAccountStore {
          .id();
    }
 
-   static XboxAccountStore.AccountException classify(@Nullable XboxAccountStore.Entry entry, Throwable failure) {
+   static XboxAccountStore.AccountException classify(XboxAccountStore.@Nullable Entry entry, Throwable failure) {
       XboxProblem.Diagnosis diagnosis = XboxProblem.classify(failure, entry == null ? null : titleOf(entry));
 
       for (Throwable cause = failure; cause != null; cause = cause.getCause()) {
@@ -533,11 +524,10 @@ public final class XboxAccountStore {
       return new XboxAccountStore.AccountException(XboxAccountStore.Problem.FAILED, entry, String.valueOf(failure.getMessage()), failure, diagnosis);
    }
 
-   @Nullable
-   private static XboxTitle titleOf(XboxAccountStore.Entry entry) {
+   private static @Nullable XboxTitle titleOf(XboxAccountStore.Entry entry) {
       try {
          return XboxTitle.valueOf(entry.title());
-      } catch (IllegalArgumentException var2) {
+      } catch (IllegalArgumentException e) {
          return null;
       }
    }
@@ -559,7 +549,7 @@ public final class XboxAccountStore {
       if (Files.isRegularFile(index)) {
          try {
             this.read(index);
-         } catch (RuntimeException | IOException var3) {
+         } catch (IOException | RuntimeException e) {
             quarantine(index);
             this.entries.clear();
             this.active = null;
@@ -594,8 +584,7 @@ public final class XboxAccountStore {
       }
    }
 
-   @Nullable
-   private static String string(JsonObject json, String key) {
+   private static @Nullable String string(JsonObject json, String key) {
       JsonElement value = json.get(key);
       return value != null && !value.isJsonNull() ? value.getAsString() : null;
    }
@@ -622,7 +611,7 @@ public final class XboxAccountStore {
             String relative = this.folder.relativize(file).toString().replace('\\', '/');
             String id = relative.equals("account.json") ? "default" : file.getFileName().toString().replace(".json", "");
             this.entries.add(new XboxAccountStore.Entry(id, relative, identity[0], identity[1], XboxTitle.of(account).name(), System.currentTimeMillis()));
-         } catch (RuntimeException | IOException var10) {
+         } catch (IOException | RuntimeException var10) {
          }
       }
 
@@ -642,8 +631,8 @@ public final class XboxAccountStore {
    private void saveIndexOrKeepInMemory() {
       try {
          this.saveIndex();
-      } catch (UncheckedIOException var2) {
-         BedrockNative.LOGGER.warn("Couldn't save the Xbox account list ({}); using it from memory", var2.getCause().getMessage());
+      } catch (UncheckedIOException e) {
+         BedrockNative.LOGGER.warn("Couldn't save the Xbox account list ({}); using it from memory", e.getCause().getMessage());
       }
    }
 
@@ -671,28 +660,26 @@ public final class XboxAccountStore {
          Path temp = this.folder.resolve("accounts.json.tmp");
          Files.writeString(temp, json.toString());
          Files.move(temp, this.folder.resolve("accounts.json"), StandardCopyOption.REPLACE_EXISTING);
-      } catch (IOException var6) {
-         throw new UncheckedIOException(var6);
+      } catch (IOException e) {
+         throw new UncheckedIOException(e);
       }
    }
 
    public static final class AccountException extends Exception {
       private final XboxAccountStore.Problem problem;
-      @Nullable
-      private final XboxAccountStore.Entry account;
-      @Nullable
-      private final XboxProblem.Diagnosis diagnosis;
+      private final XboxAccountStore.@Nullable Entry account;
+      private final XboxProblem.@Nullable Diagnosis diagnosis;
 
-      public AccountException(XboxAccountStore.Problem problem, @Nullable XboxAccountStore.Entry account, String detail, @Nullable Throwable cause) {
+      public AccountException(XboxAccountStore.Problem problem, XboxAccountStore.@Nullable Entry account, String detail, @Nullable Throwable cause) {
          this(problem, account, detail, cause, null);
       }
 
       public AccountException(
          XboxAccountStore.Problem problem,
-         @Nullable XboxAccountStore.Entry account,
+         XboxAccountStore.@Nullable Entry account,
          String detail,
          @Nullable Throwable cause,
-         @Nullable XboxProblem.Diagnosis diagnosis
+         XboxProblem.@Nullable Diagnosis diagnosis
       ) {
          super(detail, cause);
          this.problem = problem;
@@ -704,13 +691,11 @@ public final class XboxAccountStore {
          return this.problem;
       }
 
-      @Nullable
-      public XboxAccountStore.Entry account() {
+      public XboxAccountStore.@Nullable Entry account() {
          return this.account;
       }
 
-      @Nullable
-      public XboxProblem.Diagnosis diagnosis() {
+      public XboxProblem.@Nullable Diagnosis diagnosis() {
          return this.diagnosis;
       }
    }
@@ -724,8 +709,7 @@ public final class XboxAccountStore {
          return new XboxAccountStore.Entry(this.id, newFile, this.gamertag, this.xuid, this.title, this.added);
       }
 
-      @Nullable
-      public String vaultName() {
+      public @Nullable String vaultName() {
          return this.file.startsWith("vault:") ? this.file.substring("vault:".length()) : null;
       }
    }
@@ -733,7 +717,7 @@ public final class XboxAccountStore {
    public record Prepared(BedrockAuthManager account, PrivilegeCheck privileges) {
    }
 
-   public static enum Problem {
+   public enum Problem {
       NONE_ACTIVE,
       SIGN_IN_REQUIRED,
       FAILED;

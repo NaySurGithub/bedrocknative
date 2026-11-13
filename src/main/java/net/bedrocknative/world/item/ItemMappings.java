@@ -308,48 +308,48 @@ public final class ItemMappings {
          ItemStack stack = new ItemStack(BedrockItems.CUSTOM, Math.max(1, count));
          custom.applyTo(stack);
          return stack;
-      } else {
-         identifier = legacyIdentifier(identifier, aux);
-         ItemMappings.Resolution resolution = resolve(identifier, aux, block);
-         if (resolution.kind() == ItemMappings.Kind.MISSING && blockName != null) {
-            Item byName = itemOfBlock(BlockMappings.get().byName(blockName));
-            if (byName != null) {
-               resolution = new ItemMappings.Resolution(byName, ItemMappings.Kind.BLOCK);
-            }
-         }
-
-         ItemStack stack = new ItemStack(resolution.item(), Math.max(1, count));
-         if (resolution.kind() == ItemMappings.Kind.STAND_IN || resolution.kind() == ItemMappings.Kind.MISSING) {
-            stack.set(DataComponents.ITEM_NAME, bedrockName(identifier));
-            if (resolution.kind() == ItemMappings.Kind.MISSING && LOGGED.add(identifier)) {
-               BedrockNative.LOGGER.debug("No Java item for Bedrock item {}", identifier);
-            }
-         }
-
-         return stack;
       }
+
+      identifier = legacyIdentifier(identifier, aux);
+      ItemMappings.Resolution resolution = resolve(identifier, aux, block);
+      if (resolution.kind() == ItemMappings.Kind.MISSING && blockName != null) {
+         Item byName = itemOfBlock(BlockMappings.get().byName(blockName));
+         if (byName != null) {
+            resolution = new ItemMappings.Resolution(byName, ItemMappings.Kind.BLOCK);
+         }
+      }
+
+      ItemStack stack = new ItemStack(resolution.item(), Math.max(1, count));
+      if (resolution.kind() == ItemMappings.Kind.STAND_IN || resolution.kind() == ItemMappings.Kind.MISSING) {
+         stack.set(DataComponents.ITEM_NAME, bedrockName(identifier));
+         if (resolution.kind() == ItemMappings.Kind.MISSING && LOGGED.add(identifier)) {
+            BedrockNative.LOGGER.debug("No Java item for Bedrock item {}", identifier);
+         }
+      }
+
+      return stack;
    }
 
    public static ItemMappings.Resolution resolve(String identifier, int aux, BlockDefinition block) {
       if (customItems.containsKey(identifier)) {
          return new ItemMappings.Resolution(BedrockItems.CUSTOM, ItemMappings.Kind.CUSTOM);
-      } else {
-         identifier = legacyIdentifier(identifier, aux);
-         Item variant = variant(identifier, aux);
-         if (variant != null) {
-            return new ItemMappings.Resolution(variant, ItemMappings.Kind.VARIANT);
-         } else {
-            ItemMappings.Resolution byIdentifier = BY_IDENTIFIER.computeIfAbsent(identifier, ItemMappings::resolveIdentifier);
-            if (byIdentifier.kind() == ItemMappings.Kind.STAND_IN || byIdentifier.kind() == ItemMappings.Kind.MISSING) {
-               Item placed = byBlock(block);
-               if (placed != null) {
-                  return new ItemMappings.Resolution(placed, ItemMappings.Kind.BLOCK);
-               }
-            }
+      }
 
-            return byIdentifier;
+      identifier = legacyIdentifier(identifier, aux);
+      Item variant = variant(identifier, aux);
+      if (variant != null) {
+         return new ItemMappings.Resolution(variant, ItemMappings.Kind.VARIANT);
+      }
+
+      ItemMappings.Resolution byIdentifier = BY_IDENTIFIER.computeIfAbsent(identifier, ItemMappings::resolveIdentifier);
+      if (byIdentifier.kind() == ItemMappings.Kind.STAND_IN || byIdentifier.kind() == ItemMappings.Kind.MISSING) {
+         Item placed = byBlock(block);
+         if (placed != null) {
+            return new ItemMappings.Resolution(placed, ItemMappings.Kind.BLOCK);
          }
       }
+
+      return byIdentifier;
    }
 
    private static int shownAux(String identifier, int aux, NbtMap tag) {
@@ -365,56 +365,56 @@ public final class ItemMappings {
    private static ItemMappings.Resolution resolveIdentifier(String identifier) {
       if (identifier.equals("minecraft:unknown")) {
          return new ItemMappings.Resolution(Items.BARRIER, ItemMappings.Kind.MISSING);
-      } else {
-         String alias = ALIASES.get(identifier);
-         if (alias != null) {
-            return new ItemMappings.Resolution(item(alias), ItemMappings.Kind.ALIAS);
-         } else {
-            Item named = item(identifier);
-            if (named != null) {
-               return new ItemMappings.Resolution(named, ItemMappings.Kind.NAME);
-            } else {
-               if (identifier.startsWith("minecraft:record_")) {
-                  Item disc = item("minecraft:music_disc_" + identifier.substring("minecraft:record_".length()));
-                  if (disc != null) {
-                     return new ItemMappings.Resolution(disc, ItemMappings.Kind.ALIAS);
-                  }
-               }
+      }
 
-               String standIn = STAND_INS.get(identifier);
-               if (standIn == null && identifier.startsWith("minecraft:hard_") && identifier.contains("glass")) {
-                  standIn = "minecraft:" + identifier.substring("minecraft:hard_".length());
-               }
+      String alias = ALIASES.get(identifier);
+      if (alias != null) {
+         return new ItemMappings.Resolution(item(alias), ItemMappings.Kind.ALIAS);
+      }
 
-               if (standIn == null && identifier.startsWith("minecraft:colored_torch")) {
-                  standIn = "minecraft:torch";
-               }
+      Item named = item(identifier);
+      if (named != null) {
+         return new ItemMappings.Resolution(named, ItemMappings.Kind.NAME);
+      }
 
-               if (standIn == null || item(standIn) == null) {
-                  String blockName = identifier.startsWith("minecraft:item.") ? "minecraft:" + identifier.substring("minecraft:item.".length()) : identifier;
-                  Item placed = itemOfBlock(BlockMappings.get().byName(blockName));
-                  if (placed != null) {
-                     return new ItemMappings.Resolution(placed, ItemMappings.Kind.BLOCK);
-                  }
-               }
-
-               if (standIn != null && item(standIn) != null) {
-                  return new ItemMappings.Resolution(item(standIn), ItemMappings.Kind.STAND_IN);
-               } else {
-                  if (identifier.startsWith("minecraft:item.")) {
-                     ItemMappings.Resolution plain = resolveIdentifier("minecraft:" + identifier.substring("minecraft:item.".length()));
-                     if (plain.kind() != ItemMappings.Kind.MISSING) {
-                        return plain;
-                     }
-                  }
-
-                  return identifier.endsWith("candle_cake")
-                     ? new ItemMappings.Resolution(Items.CAKE, ItemMappings.Kind.ALIAS)
-                     : new ItemMappings.Resolution(Items.BARRIER, ItemMappings.Kind.MISSING);
-               }
-            }
+      if (identifier.startsWith("minecraft:record_")) {
+         Item disc = item("minecraft:music_disc_" + identifier.substring("minecraft:record_".length()));
+         if (disc != null) {
+            return new ItemMappings.Resolution(disc, ItemMappings.Kind.ALIAS);
          }
       }
+
+      String standIn = STAND_INS.get(identifier);
+      if (standIn == null && identifier.startsWith("minecraft:hard_") && identifier.contains("glass")) {
+         standIn = "minecraft:" + identifier.substring("minecraft:hard_".length());
+      }
+
+      if (standIn == null && identifier.startsWith("minecraft:colored_torch")) {
+         standIn = "minecraft:torch";
+      }
+
+      if (standIn == null || item(standIn) == null) {
+         String blockName = identifier.startsWith("minecraft:item.") ? "minecraft:" + identifier.substring("minecraft:item.".length()) : identifier;
+         Item placed = itemOfBlock(BlockMappings.get().byName(blockName));
+         if (placed != null) {
+            return new ItemMappings.Resolution(placed, ItemMappings.Kind.BLOCK);
+         }
+      }
+
+      if (standIn != null && item(standIn) != null) {
+         return new ItemMappings.Resolution(item(standIn), ItemMappings.Kind.STAND_IN);
+      }
+
+      if (identifier.startsWith("minecraft:item.")) {
+         ItemMappings.Resolution plain = resolveIdentifier("minecraft:" + identifier.substring("minecraft:item.".length()));
+         if (plain.kind() != ItemMappings.Kind.MISSING) {
+            return plain;
+         }
+      }
+
+      return identifier.endsWith("candle_cake")
+         ? new ItemMappings.Resolution(Items.CAKE, ItemMappings.Kind.ALIAS)
+         : new ItemMappings.Resolution(Items.BARRIER, ItemMappings.Kind.MISSING);
    }
 
    private static Item item(String javaName) {
@@ -430,10 +430,10 @@ public final class ItemMappings {
    private static Item itemOfBlock(BlockState state) {
       if (state == null) {
          return null;
-      } else {
-         Item item = state.getBlock().asItem();
-         return item == Items.AIR ? null : item;
       }
+
+      Item item = state.getBlock().asItem();
+      return item == Items.AIR ? null : item;
    }
 
    private static Item variant(String identifier, int aux) {
@@ -532,20 +532,18 @@ public final class ItemMappings {
       return VANILLA_OFFHAND.contains(identifier) || offhandItems.contains(identifier);
    }
 
-   @Nullable
-   public static CustomItem custom(String identifier) {
+   public static @Nullable CustomItem custom(String identifier) {
       return customItems.get(identifier);
    }
 
-   @Nullable
-   public static CustomItem custom(ItemStack stack) {
+   public static @Nullable CustomItem custom(ItemStack stack) {
       if (!stack.is(BedrockItems.CUSTOM)) {
          return null;
-      } else {
-         CustomModelData data = (CustomModelData)stack.get(DataComponents.CUSTOM_MODEL_DATA);
-         String identifier = data == null ? null : data.getString(0);
-         return identifier == null ? null : customItems.get(identifier);
       }
+
+      CustomModelData data = stack.get(DataComponents.CUSTOM_MODEL_DATA);
+      String identifier = data == null ? null : data.getString(0);
+      return identifier == null ? null : customItems.get(identifier);
    }
 
    public static float movementModifier(ItemStack stack) {
@@ -554,8 +552,7 @@ public final class ItemMappings {
       return modifier != null ? modifier : Float.NaN;
    }
 
-   @Nullable
-   public static String identifier(int runtimeId) {
+   public static @Nullable String identifier(int runtimeId) {
       return identifiers.get(runtimeId);
    }
 
@@ -571,8 +568,8 @@ public final class ItemMappings {
       try {
          List<? extends PackSource> announced = serverPacks;
          return announced.isEmpty() ? PackItemFiles.read(PackStack.active()) : PackItemFiles.read(announced);
-      } catch (RuntimeException var1) {
-         BedrockNative.LOGGER.warn("Couldn't read the resource packs' item files", var1);
+      } catch (RuntimeException e) {
+         BedrockNative.LOGGER.warn("Couldn't read the resource packs' item files", e);
          return PackItemFiles.read(List.of());
       }
    }
@@ -664,13 +661,13 @@ public final class ItemMappings {
       if (System.getProperty("bedrocknative.devTest") != null) {
          try {
             Files.writeString(Path.of("bedrocknative-items.txt"), dump + "\n" + byKind);
-         } catch (IOException var18) {
-            BedrockNative.LOGGER.warn("Could not write the item dump", var18);
+         } catch (IOException e) {
+            BedrockNative.LOGGER.warn("Could not write the item dump", e);
          }
       }
    }
 
-   public static enum Kind {
+   public enum Kind {
       NAME,
       ALIAS,
       VARIANT,

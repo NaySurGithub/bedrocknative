@@ -7,7 +7,7 @@ import net.minecraft.resources.Identifier;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 
-@Mixin({TextureAtlas.class})
+@Mixin(TextureAtlas.class)
 public interface TextureAtlasAccessor {
    @Accessor("texturesByName")
    Map<Identifier, TextureAtlasSprite> bedrocknative$texturesByName();

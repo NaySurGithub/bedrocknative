@@ -69,67 +69,64 @@ public final class CameraPresetBook {
       return this.presets.stream().map(CameraPreset::getIdentifier).toList();
    }
 
-   @Nullable
-   public CameraPresetBook.Resolved resolve(int runtimeId) {
+   public CameraPresetBook.@Nullable Resolved resolve(int runtimeId) {
       return runtimeId >= 0 && runtimeId < this.presets.size() ? this.resolve(this.presets.get(runtimeId).getIdentifier()) : null;
    }
 
-   @Nullable
-   public CameraPresetBook.Resolved resolve(String identifier) {
+   public CameraPresetBook.@Nullable Resolved resolve(String identifier) {
       CameraPreset preset = this.byName.get(identifier);
       if (preset == null) {
          CameraPresetBook.Kind kind = CameraPresetBook.Kind.ofVanilla(identifier);
          return kind == null ? null : new CameraPresetBook.Resolved(identifier, kind, true, null, null, null, null, null, null, null, null, null, null);
-      } else {
-         List<CameraPreset> chain = new ArrayList<>();
-         Set<String> seen = new HashSet<>();
-
-         for (CameraPreset link = preset; link != null && seen.add(link.getIdentifier()); link = this.byName.get(link.getParentPreset())) {
-            chain.add(link);
-            if (link.getParentPreset() == null || link.getParentPreset().isEmpty()) {
-               break;
-            }
-         }
-
-         CameraPreset root = chain.getLast();
-         CameraPresetBook.Kind kind = CameraPresetBook.Kind.ofVanilla(root.getIdentifier());
-         if (kind == null && root.getParentPreset() != null && !root.getParentPreset().isEmpty()) {
-            kind = CameraPresetBook.Kind.ofVanilla(root.getParentPreset());
-         }
-
-         if (kind == null) {
-            kind = root.getPos() == null && root.getYaw() == null ? CameraPresetBook.Kind.FIRST_PERSON : CameraPresetBook.Kind.FREE;
-         }
-
-         Vector2f starting = null;
-
-         for (int i = chain.size() - 1; i >= 0; i--) {
-            CameraPreset linkx = chain.get(i);
-            if (!linkx.isApplyInheritedStartingRotation() || starting == null) {
-               starting = linkx.getStartingRotation();
-            }
-         }
-
-         return new CameraPresetBook.Resolved(
-            identifier,
-            kind,
-            CameraPresetBook.Kind.ofVanilla(identifier) != null,
-            first(chain, CameraPreset::getPos),
-            first(chain, CameraPreset::getYaw),
-            first(chain, CameraPreset::getPitch),
-            first(chain, CameraPreset::getViewOffset),
-            first(chain, CameraPreset::getEntityOffset),
-            first(chain, CameraPreset::getRadius),
-            first(chain, CameraPreset::getListener),
-            first(chain, CameraPreset::getRotationSpeed),
-            starting,
-            first(chain, CameraPreset::getControlScheme)
-         );
       }
+
+      List<CameraPreset> chain = new ArrayList<>();
+      Set<String> seen = new HashSet<>();
+
+      for (CameraPreset link = preset; link != null && seen.add(link.getIdentifier()); link = this.byName.get(link.getParentPreset())) {
+         chain.add(link);
+         if (link.getParentPreset() == null || link.getParentPreset().isEmpty()) {
+            break;
+         }
+      }
+
+      CameraPreset root = chain.getLast();
+      CameraPresetBook.Kind kind = CameraPresetBook.Kind.ofVanilla(root.getIdentifier());
+      if (kind == null && root.getParentPreset() != null && !root.getParentPreset().isEmpty()) {
+         kind = CameraPresetBook.Kind.ofVanilla(root.getParentPreset());
+      }
+
+      if (kind == null) {
+         kind = root.getPos() == null && root.getYaw() == null ? CameraPresetBook.Kind.FIRST_PERSON : CameraPresetBook.Kind.FREE;
+      }
+
+      Vector2f starting = null;
+
+      for (int i = chain.size() - 1; i >= 0; i--) {
+         CameraPreset link = chain.get(i);
+         if (!link.isApplyInheritedStartingRotation() || starting == null) {
+            starting = link.getStartingRotation();
+         }
+      }
+
+      return new CameraPresetBook.Resolved(
+         identifier,
+         kind,
+         CameraPresetBook.Kind.ofVanilla(identifier) != null,
+         first(chain, CameraPreset::getPos),
+         first(chain, CameraPreset::getYaw),
+         first(chain, CameraPreset::getPitch),
+         first(chain, CameraPreset::getViewOffset),
+         first(chain, CameraPreset::getEntityOffset),
+         first(chain, CameraPreset::getRadius),
+         first(chain, CameraPreset::getListener),
+         first(chain, CameraPreset::getRotationSpeed),
+         starting,
+         first(chain, CameraPreset::getControlScheme)
+      );
    }
 
-   @Nullable
-   private static <T> T first(List<CameraPreset> chain, Function<CameraPreset, T> value) {
+   private static <T> @Nullable T first(List<CameraPreset> chain, Function<CameraPreset, @Nullable T> value) {
       for (CameraPreset link : chain) {
          T found = value.apply(link);
          if (found != null) {
@@ -160,7 +157,7 @@ public final class CameraPresetBook {
       }
    }
 
-   public static enum Kind {
+   public enum Kind {
       FIRST_PERSON,
       THIRD_PERSON,
       THIRD_PERSON_FRONT,
@@ -168,8 +165,7 @@ public final class CameraPresetBook {
       FIXED_BOOM,
       FOLLOW_ORBIT;
 
-      @Nullable
-      static CameraPresetBook.Kind ofVanilla(String identifier) {
+      static CameraPresetBook.@Nullable Kind ofVanilla(String identifier) {
          return switch (identifier) {
             case "minecraft:first_person" -> FIRST_PERSON;
             case "minecraft:third_person" -> THIRD_PERSON;

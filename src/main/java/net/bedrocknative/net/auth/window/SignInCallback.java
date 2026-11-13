@@ -32,7 +32,7 @@ public final class SignInCallback {
          Path folder;
          try {
             folder = Path.of(args[0]);
-         } catch (InvalidPathException var11) {
+         } catch (InvalidPathException e) {
             return 1;
          }
 
@@ -45,30 +45,30 @@ public final class SignInCallback {
                for (Path ignored : files) {
                   waiting++;
                }
-            } catch (RuntimeException | IOException var13) {
+            } catch (IOException | RuntimeException e) {
                return 1;
             }
 
             if (waiting >= 16) {
                return 1;
-            } else {
-               byte[] random = new byte[8];
-               new SecureRandom().nextBytes(random);
-               String name = "redirect-" + System.nanoTime() + "-" + HexFormat.of().formatHex(random);
-               Path temporary = folder.resolve(name + ".tmp");
+            }
 
+            byte[] random = new byte[8];
+            new SecureRandom().nextBytes(random);
+            String name = "redirect-" + System.nanoTime() + "-" + HexFormat.of().formatHex(random);
+            Path temporary = folder.resolve(name + ".tmp");
+
+            try {
+               Files.write(temporary, args[1].getBytes(StandardCharsets.US_ASCII), StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);
+               Files.move(temporary, folder.resolve(name + ".url"), StandardCopyOption.ATOMIC_MOVE);
+               return 0;
+            } catch (IOException | RuntimeException e) {
                try {
-                  Files.write(temporary, args[1].getBytes(StandardCharsets.US_ASCII), StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);
-                  Files.move(temporary, folder.resolve(name + ".url"), StandardCopyOption.ATOMIC_MOVE);
-                  return 0;
-               } catch (RuntimeException | IOException var10) {
-                  try {
-                     Files.deleteIfExists(temporary);
-                  } catch (RuntimeException | IOException var8) {
-                  }
-
-                  return 1;
+                  Files.deleteIfExists(temporary);
+               } catch (IOException | RuntimeException var8) {
                }
+
+               return 1;
             }
          } else {
             return 1;

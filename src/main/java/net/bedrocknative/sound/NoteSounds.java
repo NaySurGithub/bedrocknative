@@ -37,8 +37,7 @@ public final class NoteSounds {
    private NoteSounds() {
    }
 
-   @Nullable
-   public static String sound(int data) {
+   public static @Nullable String sound(int data) {
       int instrument = data >> 8 & 0xFF;
       return instrument < INSTRUMENTS.length ? INSTRUMENTS[instrument] : null;
    }

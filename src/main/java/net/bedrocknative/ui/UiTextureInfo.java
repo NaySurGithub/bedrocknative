@@ -5,7 +5,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import org.jspecify.annotations.Nullable;
 
-public record UiTextureInfo(String path, int width, int height, float baseWidth, float baseHeight, @Nullable float[] nineslice) {
+public record UiTextureInfo(String path, int width, int height, float baseWidth, float baseHeight, float @Nullable [] nineslice) {
    public static UiTextureInfo of(String path, int width, int height, @Nullable JsonObject sidecar) {
       float baseWidth = width;
       float baseHeight = height;
@@ -22,28 +22,29 @@ public record UiTextureInfo(String path, int width, int height, float baseWidth,
       return new UiTextureInfo(path, width, height, baseWidth, baseHeight, nineslice);
    }
 
-   @Nullable
-   public static float[] slices(@Nullable JsonElement element) {
+   public static float @Nullable [] slices(@Nullable JsonElement element) {
       if (element == null) {
          return null;
-      } else if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isNumber()) {
+      }
+
+      if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isNumber()) {
          float all = element.getAsFloat();
          return new float[]{all, all, all, all};
-      } else {
-         if (element instanceof JsonArray array) {
-            if (array.size() == 4) {
-               return new float[]{(float)number(array.get(0)), (float)number(array.get(1)), (float)number(array.get(2)), (float)number(array.get(3))};
-            }
+      }
 
-            if (array.size() == 2) {
-               float x = (float)number(array.get(0));
-               float y = (float)number(array.get(1));
-               return new float[]{x, y, x, y};
-            }
+      if (element instanceof JsonArray array) {
+         if (array.size() == 4) {
+            return new float[]{(float)number(array.get(0)), (float)number(array.get(1)), (float)number(array.get(2)), (float)number(array.get(3))};
          }
 
-         return null;
+         if (array.size() == 2) {
+            float x = (float)number(array.get(0));
+            float y = (float)number(array.get(1));
+            return new float[]{x, y, x, y};
+         }
       }
+
+      return null;
    }
 
    private static double number(JsonElement element) {

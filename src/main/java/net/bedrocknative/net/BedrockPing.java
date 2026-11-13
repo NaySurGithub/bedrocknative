@@ -32,8 +32,7 @@ public final class BedrockPing {
       return buffer.array();
    }
 
-   @Nullable
-   static BedrockPing.Pong parse(byte[] data, int length, InetSocketAddress from, long now) {
+   static BedrockPing.@Nullable Pong parse(byte[] data, int length, InetSocketAddress from, long now) {
       if (length >= 17 + MAGIC.length + 2 && data[0] == 28) {
          ByteBuffer buffer = ByteBuffer.wrap(data, 0, length);
          buffer.get();
@@ -43,15 +42,15 @@ public final class BedrockPing {
          buffer.get(magic);
          if (!Arrays.equals(magic, MAGIC)) {
             return null;
-         } else {
-            int size = Short.toUnsignedInt(buffer.getShort());
-            if (size > buffer.remaining()) {
-               return null;
-            } else {
-               String id = new String(data, buffer.position(), size, StandardCharsets.UTF_8);
-               return fields(id, from, Math.max(0L, now - time), guid);
-            }
          }
+
+         int size = Short.toUnsignedInt(buffer.getShort());
+         if (size > buffer.remaining()) {
+            return null;
+         }
+
+         String id = new String(data, buffer.position(), size, StandardCharsets.UTF_8);
+         return fields(id, from, Math.max(0L, now - time), guid);
       } else {
          return null;
       }
@@ -106,32 +105,24 @@ public final class BedrockPing {
    private static int number(String text) {
       try {
          return Integer.parseInt(text.trim());
-      } catch (NumberFormatException var2) {
+      } catch (NumberFormatException e) {
          return 0;
       }
    }
 
-   @Nullable
-   public static BedrockPing.Pong ping(InetSocketAddress server, int timeoutMillis) throws IOException {
-      BedrockPing.Pong var3;
+   public static BedrockPing.@Nullable Pong ping(InetSocketAddress server, int timeoutMillis) throws IOException {
       try (DatagramSocket socket = new DatagramSocket()) {
-         var3 = ping(socket, server, timeoutMillis);
+         return ping(socket, server, timeoutMillis);
       }
-
-      return var3;
    }
 
    public static BedrockPing.Located locate(InetSocketAddress server, int timeoutMillis) throws IOException {
-      BedrockPing.Located var3;
       try (DatagramSocket socket = new DatagramSocket()) {
-         var3 = new BedrockPing.Located(ping(socket, server, timeoutMillis), socket.getLocalPort());
+         return new BedrockPing.Located(ping(socket, server, timeoutMillis), socket.getLocalPort());
       }
-
-      return var3;
    }
 
-   @Nullable
-   private static BedrockPing.Pong ping(DatagramSocket socket, InetSocketAddress server, int timeoutMillis) throws IOException {
+   private static BedrockPing.@Nullable Pong ping(DatagramSocket socket, InetSocketAddress server, int timeoutMillis) throws IOException {
       long sent = System.currentTimeMillis();
       byte[] ping = ping(sent);
       socket.send(new DatagramPacket(ping, ping.length, server));
@@ -159,7 +150,7 @@ public final class BedrockPing {
 
          try {
             socket.receive(packet);
-         } catch (SocketTimeoutException var20) {
+         } catch (SocketTimeoutException e) {
             continue;
          }
 
@@ -197,7 +188,7 @@ public final class BedrockPing {
 
             try {
                socket.receive(packet);
-            } catch (SocketTimeoutException var16) {
+            } catch (SocketTimeoutException e) {
                return;
             }
 
@@ -221,7 +212,7 @@ public final class BedrockPing {
       return targets;
    }
 
-   public record Located(@Nullable BedrockPing.Pong pong, int localPort) {
+   public record Located(BedrockPing.@Nullable Pong pong, int localPort) {
    }
 
    public record Pong(

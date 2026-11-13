@@ -54,8 +54,8 @@ public final class UiJson {
 
          reader.close();
          return var4;
-      } catch (IOException | IllegalStateException | JsonParseException var7) {
-         throw new UiJson.Error(String.valueOf(var7.getMessage()));
+      } catch (JsonParseException | IOException | IllegalStateException e) {
+         throw new UiJson.Error(String.valueOf(e.getMessage()));
       }
    }
 

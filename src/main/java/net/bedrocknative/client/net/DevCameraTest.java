@@ -1,7 +1,6 @@
 package net.bedrocknative.client.net;
 
 import com.mojang.blaze3d.audio.ListenerTransform;
-import com.mojang.blaze3d.platform.NativeImage;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -67,8 +66,7 @@ final class DevCameraTest {
          this.setUp();
          String devTest = System.getProperty("bedrocknative.devTest", "");
          if (devTest.startsWith("camera-")) {
-            String var4 = devTest.substring("camera-".length());
-            switch (var4) {
+            switch (devTest.substring("camera-".length())) {
                case "free":
                   this.free();
                   this.ease();
@@ -380,7 +378,7 @@ final class DevCameraTest {
       this.command("camera @s set minecraft:first_person");
       sleep(500L);
       float own = this.sample().fov;
-      int option = this.supply(() -> (Integer)this.minecraft.options.fov().get());
+      int option = this.supply(() -> this.minecraft.options.fov().get());
       this.command("camera @s fov_set 30 0.5 linear");
       sleep(1200L);
       BedrockNative.LOGGER.info("Dev camera test: field of view received as {}", BedrockCamera.lastInstruction());
@@ -435,7 +433,7 @@ final class DevCameraTest {
          DevCameraTest.Sample aimed = this.sample();
          Vec3 centre = this.supply(
             () -> {
-               Entity found = (Entity)this.minecraft
+               Entity found = this.minecraft
                   .level
                   .getEntities((Entity)null, this.minecraft.player.getBoundingBox().inflate(20.0), entity -> entity.getType() == EntityTypes.ARMOR_STAND)
                   .stream()
@@ -473,7 +471,7 @@ final class DevCameraTest {
                .getEntities((Entity)null, this.minecraft.player.getBoundingBox().inflate(20.0), entity -> entity.getType() == EntityTypes.ARMOR_STAND)
                .stream()
                .findFirst()
-               .<Vec3>map(Entity::getEyePosition)
+               .map(Entity::getEyePosition)
                .orElse(Vec3.ZERO)
          );
          this.check(
@@ -671,8 +669,7 @@ final class DevCameraTest {
       sleep(600L);
       this.check(
          "a free camera and a field of view run before the nether",
-         BedrockCamera.forcedCameraType() != null
-            && this.supply(() -> BedrockCamera.fovFactor(((Integer)this.minecraft.options.fov().get()).intValue())) < 0.99F
+         BedrockCamera.forcedCameraType() != null && this.supply(() -> BedrockCamera.fovFactor(this.minecraft.options.fov().get().intValue())) < 0.99F
       );
       this.commands("execute in nether run tp @s 0 100 0");
       this.waitFor(() -> this.minecraft.level.dimension() == Level.NETHER && this.minecraft.getConnection().hasClientLoaded(), 60000L);
@@ -684,11 +681,11 @@ final class DevCameraTest {
             + ", "
             + round(nether.distance(nether.eye))
             + " from the eye) and the field of view ("
-            + round(this.supply(() -> BedrockCamera.fovFactor(((Integer)this.minecraft.options.fov().get()).intValue())).floatValue())
+            + round(this.supply(() -> BedrockCamera.fovFactor(this.minecraft.options.fov().get().intValue())).floatValue())
             + ")",
          BedrockCamera.forcedCameraType() == null
             && nether.distance(nether.eye) < 0.5
-            && this.supply(() -> BedrockCamera.fovFactor(((Integer)this.minecraft.options.fov().get()).intValue())) == 1.0F
+            && this.supply(() -> BedrockCamera.fovFactor(this.minecraft.options.fov().get().intValue())) == 1.0F
       );
       this.command("camera @s set minecraft:third_person");
       sleep(600L);
@@ -756,51 +753,33 @@ final class DevCameraTest {
    private double redShare() {
       CompletableFuture<Double> share = new CompletableFuture<>();
       this.minecraft.execute(() -> Screenshot.takeScreenshot(this.minecraft.gameRenderer.mainRenderTarget(), image -> {
-         try {
-            NativeImage twrVar0$ = image;
+         try (image) {
+            int red = 0;
+            int samples = 0;
 
-            try {
-               int red = 0;
-               int samples = 0;
-
-               for (int y = 0; y < image.getHeight(); y += 8) {
-                  for (int x = 0; x < image.getWidth(); x += 8) {
-                     int argb = image.getPixel(x, y);
-                     samples++;
-                     if ((argb >> 16 & 0xFF) >= 240 && (argb >> 8 & 0xFF) <= 20 && (argb & 0xFF) <= 20) {
-                        red++;
-                     }
+            for (int y = 0; y < image.getHeight(); y += 8) {
+               for (int x = 0; x < image.getWidth(); x += 8) {
+                  int argb = image.getPixel(x, y);
+                  samples++;
+                  if ((argb >> 16 & 0xFF) >= 240 && (argb >> 8 & 0xFF) <= 20 && (argb & 0xFF) <= 20) {
+                     red++;
                   }
                }
-
-               share.complete(samples == 0 ? Double.NaN : (double)red / samples);
-            } catch (Throwable var9) {
-               if (image != null) {
-                  try {
-                     twrVar0$.close();
-                  } catch (Throwable var8) {
-                     var9.addSuppressed(var8);
-                  }
-               }
-
-               throw var9;
             }
 
-            if (image != null) {
-               image.close();
-            }
-         } catch (RuntimeException var10) {
-            share.completeExceptionally(var10);
+            share.complete(samples == 0 ? Double.NaN : (double)red / samples);
+         } catch (RuntimeException e) {
+            share.completeExceptionally(e);
          }
       }));
 
       try {
          return share.get(10L, TimeUnit.SECONDS);
-      } catch (InterruptedException var3) {
+      } catch (InterruptedException e) {
          Thread.currentThread().interrupt();
          return Double.NaN;
-      } catch (TimeoutException | ExecutionException var4) {
-         BedrockNative.LOGGER.info("Dev camera test: the frame could not be read back: {}", var4.toString());
+      } catch (ExecutionException | TimeoutException e) {
+         BedrockNative.LOGGER.info("Dev camera test: the frame could not be read back: {}", e.toString());
          return Double.NaN;
       }
    }
@@ -845,7 +824,7 @@ final class DevCameraTest {
       if (millis > 0L) {
          try {
             Thread.sleep(millis);
-         } catch (InterruptedException var3) {
+         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
          }
       }

@@ -20,7 +20,7 @@ public final class BrowserCapture implements RedirectCapture {
    private final boolean windows;
    private final SchemeHandler handler;
    private final BrowserCapture.HandlerCommand command;
-   private final Supplier<Path> appBrowser;
+   private final Supplier<@Nullable Path> appBrowser;
    private final ProcessStarter starter;
    private final Path tempRoot;
    private final long processId;
@@ -31,7 +31,7 @@ public final class BrowserCapture implements RedirectCapture {
       boolean windows,
       SchemeHandler handler,
       BrowserCapture.HandlerCommand command,
-      Supplier<Path> appBrowser,
+      Supplier<@Nullable Path> appBrowser,
       ProcessStarter starter,
       Path tempRoot,
       long processId,
@@ -54,9 +54,8 @@ public final class BrowserCapture implements RedirectCapture {
       return "the browser";
    }
 
-   @Nullable
    @Override
-   public String unavailable() {
+   public @Nullable String unavailable() {
       return !this.windows ? "the browser way needs a URI handler (Windows only)" : this.handler.blocked();
    }
 
@@ -66,150 +65,80 @@ public final class BrowserCapture implements RedirectCapture {
       try {
          folder = SignInFolder.create(this.tempRoot, this.processId);
          Files.createFile(folder.path().resolve("waiting"));
-      } catch (IOException var22) {
-         return RedirectCapture.Outcome.of(RedirectCapture.Outcome.Kind.FAILED, "no private folder for the sign-in (" + var22.getClass().getSimpleName() + ")");
+      } catch (IOException e) {
+         return RedirectCapture.Outcome.of(RedirectCapture.Outcome.Kind.FAILED, "no private folder for the sign-in (" + e.getClass().getSimpleName() + ")");
       }
 
-      SignInFolder e = folder;
-
-      RedirectCapture.Outcome deadline;
-      label219: {
-         label220: {
-            RedirectCapture.Outcome var30;
-            label221: {
-               label222: {
-                  RedirectCapture.Outcome var29;
-                  label223: {
-                     try {
-                        SchemeHandler.Registration registration;
-                        try {
-                           String handlerCommand = this.command.forFolder(folder.path());
-                           registration = this.handler.register(handlerCommand);
-                        } catch (RuntimeException | IOException var23) {
-                           deadline = RedirectCapture.Outcome.of(
-                              RedirectCapture.Outcome.Kind.FAILED, "the URI handler could not be registered: " + var23.getMessage()
-                           );
-                           break label219;
-                        }
-
-                        SignInCleanup.add(registration);
-
-                        try {
-                           if (Thread.interrupted()) {
-                              throw new InterruptedException();
-                           }
-
-                           RedirectCapture.Window window = this.open(url, control);
-                           if (window == null) {
-                              deadline = RedirectCapture.Outcome.of(RedirectCapture.Outcome.Kind.FAILED, "no browser could be opened");
-                              break label220;
-                           }
-
-                           control.opened(window);
-                           long deadlinex = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(this.limitMillis);
-                           int foreign = 0;
-
-                           while (true) {
-                              for (Path file : handedOver(folder.path())) {
-                                 String redirect = take(file);
-                                 if (redirect != null && control.ours(redirect)) {
-                                    var30 = RedirectCapture.Outcome.redirect(redirect);
-                                    break label221;
-                                 }
-
-                                 this.log.accept("Xbox sign-in: ignored an address that does not belong to this sign-in");
-                                 if (++foreign >= 8) {
-                                    var30 = RedirectCapture.Outcome.redirect(redirect);
-                                    break label222;
-                                 }
-                              }
-
-                              if (control.codeInstead()) {
-                                 var29 = RedirectCapture.Outcome.of(RedirectCapture.Outcome.Kind.CODE_INSTEAD, "the player chose a code instead");
-                                 break label223;
-                              }
-
-                              if (System.nanoTime() - deadlinex > 0L) {
-                                 var29 = RedirectCapture.Outcome.of(RedirectCapture.Outcome.Kind.TIMED_OUT, "the browser page stayed open too long");
-                                 break;
-                              }
-
-                              Thread.sleep(150L);
-                           }
-                        } finally {
-                           registration.close();
-                           SignInCleanup.remove(registration);
-                        }
-                     } catch (Throwable var25) {
-                        if (folder != null) {
-                           try {
-                              e.close();
-                           } catch (Throwable var21) {
-                              var25.addSuppressed(var21);
-                           }
-                        }
-
-                        throw var25;
-                     }
-
-                     if (folder != null) {
-                        folder.close();
-                     }
-
-                     return var29;
-                  }
-
-                  if (folder != null) {
-                     folder.close();
-                  }
-
-                  return var29;
-               }
-
-               if (folder != null) {
-                  folder.close();
-               }
-
-               return var30;
-            }
-
-            if (folder != null) {
-               folder.close();
-            }
-
-            return var30;
+      try (folder) {
+         SchemeHandler.Registration registration;
+         try {
+            String handlerCommand = this.command.forFolder(folder.path());
+            registration = this.handler.register(handlerCommand);
+         } catch (IOException | RuntimeException e) {
+            return RedirectCapture.Outcome.of(RedirectCapture.Outcome.Kind.FAILED, "the URI handler could not be registered: " + e.getMessage());
          }
 
-         if (folder != null) {
-            folder.close();
+         SignInCleanup.add(registration);
+
+         try {
+            if (Thread.interrupted()) {
+               throw new InterruptedException();
+            }
+
+            RedirectCapture.Window window = this.open(url, control);
+            if (window == null) {
+               return RedirectCapture.Outcome.of(RedirectCapture.Outcome.Kind.FAILED, "no browser could be opened");
+            }
+
+            control.opened(window);
+            long deadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(this.limitMillis);
+            int foreign = 0;
+
+            while (true) {
+               for (Path file : handedOver(folder.path())) {
+                  String redirect = take(file);
+                  if (redirect != null && control.ours(redirect)) {
+                     return RedirectCapture.Outcome.redirect(redirect);
+                  }
+
+                  this.log.accept("Xbox sign-in: ignored an address that does not belong to this sign-in");
+                  if (++foreign >= 8) {
+                     return RedirectCapture.Outcome.redirect(redirect);
+                  }
+               }
+
+               if (control.codeInstead()) {
+                  return RedirectCapture.Outcome.of(RedirectCapture.Outcome.Kind.CODE_INSTEAD, "the player chose a code instead");
+               }
+
+               if (System.nanoTime() - deadline > 0L) {
+                  return RedirectCapture.Outcome.of(RedirectCapture.Outcome.Kind.TIMED_OUT, "the browser page stayed open too long");
+               }
+
+               Thread.sleep(150L);
+            }
+         } finally {
+            registration.close();
+            SignInCleanup.remove(registration);
          }
-
-         return deadline;
       }
-
-      if (folder != null) {
-         folder.close();
-      }
-
-      return deadline;
    }
 
-   @Nullable
-   private RedirectCapture.Window open(String url, RedirectCapture.Control control) {
+   private RedirectCapture.@Nullable Window open(String url, RedirectCapture.Control control) {
       Path browser = this.appBrowser.get();
       if (browser != null) {
          try {
             Process process = this.starter.start(Browsers.appWindow(browser, url));
             process.getOutputStream().close();
             return RedirectCapture.Window.BROWSER_APP;
-         } catch (RuntimeException | IOException var6) {
-            this.log.accept("Xbox sign-in: " + browser.getFileName() + " did not start (" + var6.getClass().getSimpleName() + "); trying the default browser");
+         } catch (IOException | RuntimeException e) {
+            this.log.accept("Xbox sign-in: " + browser.getFileName() + " did not start (" + e.getClass().getSimpleName() + "); trying the default browser");
          }
       }
 
       try {
          return control.openInBrowser(url) ? RedirectCapture.Window.BROWSER : null;
-      } catch (RuntimeException var5) {
+      } catch (RuntimeException e) {
          return null;
       }
    }
@@ -219,35 +148,31 @@ public final class BrowserCapture implements RedirectCapture {
 
       try (DirectoryStream<Path> stream = Files.newDirectoryStream(folder, "*.url")) {
          stream.forEach(files::add);
-      } catch (RuntimeException | IOException var7) {
+      } catch (IOException | RuntimeException var7) {
       }
 
       files.sort(null);
       return files;
    }
 
-   @Nullable
-   private static String take(Path file) {
-      Object e;
+   private static @Nullable String take(Path file) {
       try {
-         if (Files.isRegularFile(file, LinkOption.NOFOLLOW_LINKS)) {
-            try (InputStream in = Files.newInputStream(file, LinkOption.NOFOLLOW_LINKS)) {
-               byte[] bytes = in.readNBytes(8193);
-               return bytes.length > 8192 ? null : new String(bytes, StandardCharsets.US_ASCII).strip();
-            }
+         if (!Files.isRegularFile(file, LinkOption.NOFOLLOW_LINKS)) {
+            return null;
          }
 
-         e = null;
-      } catch (RuntimeException | IOException var18) {
+         try (InputStream in = Files.newInputStream(file, LinkOption.NOFOLLOW_LINKS)) {
+            byte[] bytes = in.readNBytes(8193);
+            return bytes.length > 8192 ? null : new String(bytes, StandardCharsets.US_ASCII).strip();
+         }
+      } catch (IOException | RuntimeException e) {
          return null;
       } finally {
          try {
             Files.deleteIfExists(file);
-         } catch (RuntimeException | IOException var15) {
+         } catch (IOException | RuntimeException var15) {
          }
       }
-
-      return (String)e;
    }
 
    @FunctionalInterface

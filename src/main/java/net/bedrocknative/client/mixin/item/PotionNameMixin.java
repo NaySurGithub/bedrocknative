@@ -12,16 +12,13 @@ import org.spongepowered.asm.mixin.injection.At;
 
 @Mixin({PotionItem.class, TippedArrowItem.class})
 public abstract class PotionNameMixin {
-   @ModifyReturnValue(
-      method = {"getName(Lnet/minecraft/world/item/ItemStack;)Lnet/minecraft/network/chat/Component;"},
-      at = {@At("RETURN")}
-   )
+   @ModifyReturnValue(method = "getName(Lnet/minecraft/world/item/ItemStack;)Lnet/minecraft/network/chat/Component;", at = @At("RETURN"))
    private Component bedrocknative$itemName(Component original, ItemStack stack) {
       if (!BedrockMovement.active()) {
          return original;
-      } else {
-         Component name = stack.hasNonDefault(DataComponents.ITEM_NAME) ? (Component)stack.get(DataComponents.ITEM_NAME) : null;
-         return name != null ? name : original;
       }
+
+      Component name = stack.hasNonDefault(DataComponents.ITEM_NAME) ? stack.get(DataComponents.ITEM_NAME) : null;
+      return name != null ? name : original;
    }
 }

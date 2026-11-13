@@ -26,8 +26,7 @@ public final class SignalingProbe implements NetherNetProbe {
    public static final Duration DEFAULT_TIMEOUT = Duration.ofMillis(1500L);
    static final int MAX_BODY = 65536;
    static final long OUTER_SLACK_MILLIS = 500L;
-   @Nullable
-   private final X509ExtendedTrustManager trust;
+   private final @Nullable X509ExtendedTrustManager trust;
 
    public SignalingProbe() {
       this(null);
@@ -46,9 +45,9 @@ public final class SignalingProbe implements NetherNetProbe {
          ProbeResult outcome;
          try {
             outcome = this.probeNow(host, address, pinned, timeout);
-         } catch (Error | RuntimeException var8x) {
+         } catch (RuntimeException | Error e) {
             outcome = ProbeResult.failed(ProbeResult.Reason.ERROR, List.of(), 0L);
-            BedrockNative.LOGGER.warn("NetherNet probe of {} failed", ServerTarget.hostPort(host, address.getPort()), var8x);
+            BedrockNative.LOGGER.warn("NetherNet probe of {} failed", ServerTarget.hostPort(host, address.getPort()), e);
          }
 
          result.complete(outcome);
@@ -71,15 +70,15 @@ public final class SignalingProbe implements NetherNetProbe {
       ProbeResult result;
       try {
          result = this.get(SignalingScheme.HTTPS, host, address, timeout, tried, start);
-      } catch (SignalingHttp.TlsFailure var15) {
-         TlsFallbackRule.Decision decision = TlsFallbackRule.afterFailedHandshake(var15.certificatePresented, var15.reply, pinned);
+      } catch (SignalingHttp.TlsFailure failure) {
+         TlsFallbackRule.Decision decision = TlsFallbackRule.afterFailedHandshake(failure.certificatePresented, failure.reply, pinned);
 
          BedrockNative.LOGGER.info("NetherNet probe of {}: HTTPS {} ({})", new Object[]{target, switch (decision) {
             case PLAIN_HTTP -> "not offered, trying plain HTTP";
             case CERTIFICATE_REFUSED -> "certificate not valid, no plain HTTP";
             case DOWNGRADE_REFUSED -> "not offered, and this server used HTTPS before: no plain HTTP";
             case TLS_FAILED -> "failed, no plain HTTP";
-         }, var15.getMessage()});
+         }, failure.getMessage()});
 
          result = switch (decision) {
             case PLAIN_HTTP -> {
@@ -88,8 +87,8 @@ public final class SignalingProbe implements NetherNetProbe {
                ProbeResult var20;
                try {
                   var20 = this.get(SignalingScheme.HTTP, host, address, timeout, tried, System.nanoTime());
-               } catch (IOException var14) {
-                  var20 = failure(var14, tried, start, target);
+               } catch (IOException e) {
+                  var20 = failure(e, tried, start, target);
                   yield var20;
                }
 
@@ -108,8 +107,8 @@ public final class SignalingProbe implements NetherNetProbe {
                yield var12;
             }
          };
-      } catch (IOException var16) {
-         result = failure(var16, tried, start, target);
+      } catch (IOException e) {
+         result = failure(e, tried, start, target);
       }
 
       BedrockNative.LOGGER.info("{} ({})", result, target);
@@ -117,7 +116,6 @@ public final class SignalingProbe implements NetherNetProbe {
    }
 
    private ProbeResult get(SignalingScheme scheme, String host, InetSocketAddress address, Duration timeout, List<SignalingScheme> tried, long start) throws IOException {
-      ProbeResult var11;
       try (Socket socket = SignalingHttp.open(scheme, host, address, this.trust, timeout, timeout)) {
          SignalingHttp.Reply reply = SignalingHttp.exchange(
             socket,
@@ -137,10 +135,8 @@ public final class SignalingProbe implements NetherNetProbe {
             ok = false;
          }
 
-         var11 = ProbeResult.answered(scheme, reply.status(), ok ? NetherNetStatus.parse(reply.text()) : null, tried, elapsed(start));
+         return ProbeResult.answered(scheme, reply.status(), ok ? NetherNetStatus.parse(reply.text()) : null, tried, elapsed(start));
       }
-
-      return var11;
    }
 
    private static boolean looksLikeHtml(SignalingHttp.Reply reply) {

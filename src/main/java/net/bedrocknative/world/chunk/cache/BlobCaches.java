@@ -35,8 +35,8 @@ public final class BlobCaches {
                   new Object[]{disk.blobCount(), disk.segmentCount(), disk.totalBytes() >> 20, capMb, folder(), (System.nanoTime() - started) / 1000000L}
                );
             shared = disk;
-         } catch (RuntimeException | IOException var5) {
-            BedrockNative.LOGGER.warn("Blob cache: cannot use {} ({}); keeping blobs in memory for this session", folder(), var5.toString());
+         } catch (IOException | RuntimeException e) {
+            BedrockNative.LOGGER.warn("Blob cache: cannot use {} ({}); keeping blobs in memory for this session", folder(), e.toString());
             shared = new MemoryBlobStore(134217728L);
          }
       }

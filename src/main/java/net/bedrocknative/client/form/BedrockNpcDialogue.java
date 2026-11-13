@@ -17,8 +17,7 @@ public final class BedrockNpcDialogue implements FormScreen.Host {
    private final Minecraft minecraft;
    private final Consumer<BedrockPacket> sender;
    private final LongUnaryOperator runtimeIdOf;
-   @Nullable
-   private NpcDialogueScreen screen;
+   private @Nullable NpcDialogueScreen screen;
    private boolean closingReported;
    private int requests;
 
@@ -36,8 +35,7 @@ public final class BedrockNpcDialogue implements FormScreen.Host {
       return this.requests;
    }
 
-   @Nullable
-   public NpcDialogueScreen screen() {
+   public @Nullable NpcDialogueScreen screen() {
       return this.screen;
    }
 

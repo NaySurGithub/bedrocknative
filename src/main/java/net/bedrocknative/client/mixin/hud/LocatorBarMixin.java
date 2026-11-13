@@ -9,13 +9,9 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin({LocatorBar.class})
+@Mixin(LocatorBar.class)
 public abstract class LocatorBarMixin {
-   @Inject(
-      method = {"extractRenderState"},
-      at = {@At("HEAD")},
-      cancellable = true
-   )
+   @Inject(method = "extractRenderState", at = @At("HEAD"), cancellable = true)
    private void bedrocknative$locatorDots(GuiGraphicsExtractor graphics, DeltaTracker deltaTracker, CallbackInfo ci) {
       if (JsonUiHud.owns() && !JsonUiHud.drawingLocator()) {
          ci.cancel();

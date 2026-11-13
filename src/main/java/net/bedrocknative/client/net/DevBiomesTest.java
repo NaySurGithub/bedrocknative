@@ -31,9 +31,9 @@ final class DevBiomesTest {
    void run() {
       try {
          this.test();
-      } catch (RuntimeException var2) {
-         this.failures.add("exception: " + var2);
-         BedrockNative.LOGGER.error("Dev biomes test failed with an exception", var2);
+      } catch (RuntimeException e) {
+         this.failures.add("exception: " + e);
+         BedrockNative.LOGGER.error("Dev biomes test failed with an exception", e);
       }
 
       this.minecraft.execute(() -> Screenshot.grab(this.minecraft, false));
@@ -62,8 +62,8 @@ final class DevBiomesTest {
             for (int id : ids) {
                Arrays.fill(section, id);
                PalettedContainer<Holder<Biome>> container = biomes.container(factory, section);
-               Holder<Biome> holder = (Holder<Biome>)container.get(0, 0, 0);
-               Biome biome = (Biome)holder.value();
+               Holder<Biome> holder = container.get(0, 0, 0);
+               Biome biome = holder.value();
                String name = BiomeMappings.bedrockName(id);
                boolean approx = BiomeMappings.isApproximate(id);
                boolean expected = BiomeMappings.toJava(id) != null && holder.is(BiomeMappings.toJava(id));
@@ -129,15 +129,15 @@ final class DevBiomesTest {
       this.minecraft.execute(() -> {
          try {
             future.complete(supplier.get());
-         } catch (RuntimeException var3) {
-            future.completeExceptionally(var3);
+         } catch (RuntimeException e) {
+            future.completeExceptionally(e);
          }
       });
 
       try {
          return future.get(30L, TimeUnit.SECONDS);
-      } catch (Exception var4) {
-         throw new IllegalStateException(var4);
+      } catch (Exception e) {
+         throw new IllegalStateException(e);
       }
    }
 }

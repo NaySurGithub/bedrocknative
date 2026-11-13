@@ -49,8 +49,8 @@ public final class BedrockLanguage {
          }
 
          file.ifPresent(data -> new String(data, StandardCharsets.UTF_8).lines().forEach(line -> parse(line, entries)));
-      } catch (IOException var4) {
-         BedrockNative.LOGGER.warn("Couldn't read Bedrock texts from {}", pack, var4);
+      } catch (IOException e) {
+         BedrockNative.LOGGER.warn("Couldn't read Bedrock texts from {}", pack, e);
       }
    }
 
@@ -80,8 +80,8 @@ public final class BedrockLanguage {
          while ((line = reader.readLine()) != null) {
             parse(line, entries);
          }
-      } catch (IOException var9) {
-         BedrockNative.LOGGER.warn("Couldn't read Bedrock language file {}", file, var9);
+      } catch (IOException e) {
+         BedrockNative.LOGGER.warn("Couldn't read Bedrock language file {}", file, e);
          return Map.of();
       }
 
@@ -94,18 +94,18 @@ public final class BedrockLanguage {
       Map<String, String> cached = CACHED.get(key);
       if (cached != null) {
          return cached;
-      } else {
-         Map<String, String> loaded = Map.copyOf(load(texts, javaCode));
-         if (!loaded.isEmpty()) {
-            if (CACHED.size() >= 8) {
-               CACHED.clear();
-            }
+      }
 
-            CACHED.put(key, loaded);
+      Map<String, String> loaded = Map.copyOf(load(texts, javaCode));
+      if (!loaded.isEmpty()) {
+         if (CACHED.size() >= 8) {
+            CACHED.clear();
          }
 
-         return loaded;
+         CACHED.put(key, loaded);
       }
+
+      return loaded;
    }
 
    public static void forgetCached() {

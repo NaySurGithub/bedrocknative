@@ -33,7 +33,6 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.network.Filterable;
 import net.minecraft.util.Unit;
-import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.raid.Raid;
@@ -360,7 +359,7 @@ public final class BedrockItemTags {
          List<Component> loreLines = new ArrayList<>();
          if (display.get("Name") instanceof String name && !name.isEmpty()) {
             List<MutableComponent> nameLines = BedrockText.lines(name);
-            stack.set(DataComponents.CUSTOM_NAME, (Component)nameLines.getFirst());
+            stack.set(DataComponents.CUSTOM_NAME, nameLines.getFirst());
             nameLines.subList(1, nameLines.size()).forEach(line -> loreLines.add(Component.empty().withStyle(ChatFormatting.WHITE).append(line)));
          }
 
@@ -475,7 +474,7 @@ public final class BedrockItemTags {
             if (identifier.startsWith("minecraft:light_block_") && stack.is(Items.LIGHT)) {
                try {
                   int level = Integer.parseInt(identifier.substring("minecraft:light_block_".length()));
-                  stack.set(DataComponents.BLOCK_STATE, BlockItemStateProperties.EMPTY.with(LightBlock.LEVEL, Math.clamp((long)level, 0, 15)));
+                  stack.set(DataComponents.BLOCK_STATE, BlockItemStateProperties.EMPTY.with(LightBlock.LEVEL, Math.clamp(level, 0, 15)));
                } catch (NumberFormatException var7) {
                }
             }
@@ -487,10 +486,7 @@ public final class BedrockItemTags {
          stack.set(
             DataComponents.POTION_CONTENTS,
             new PotionContents(
-               Optional.empty(),
-               Optional.of(((MobEffect)MobEffects.WITHER.value()).getColor()),
-               List.of(new MobEffectInstance(MobEffects.WITHER, 800, 1)),
-               Optional.empty()
+               Optional.empty(), Optional.of(MobEffects.WITHER.value().getColor()), List.of(new MobEffectInstance(MobEffects.WITHER, 800, 1)), Optional.empty()
             )
          );
 
@@ -536,7 +532,7 @@ public final class BedrockItemTags {
          Optional<Reference<TrimMaterial>> material = holder(Registries.TRIM_MATERIAL, trim.getString("Material", ""));
          Optional<Reference<TrimPattern>> pattern = holder(Registries.TRIM_PATTERN, trim.getString("Pattern", ""));
          if (material.isPresent() && pattern.isPresent()) {
-            stack.set(DataComponents.TRIM, new ArmorTrim((Holder)material.get(), (Holder)pattern.get()));
+            stack.set(DataComponents.TRIM, new ArmorTrim(material.get(), pattern.get()));
          }
       }
    }
@@ -592,7 +588,7 @@ public final class BedrockItemTags {
             );
          }
       } else {
-         List<Filterable<Component>> content = pages.stream().map(page -> Filterable.passThrough(BedrockText.format(page.getString("text", "")))).toList();
+         List<Filterable<Component>> content = pages.stream().map(page -> Filterable.<Component>passThrough(BedrockText.format(page.getString("text", "")))).toList();
          stack.set(
             DataComponents.WRITTEN_BOOK_CONTENT,
             new WrittenBookContent(Filterable.passThrough(tag.getString("title", "")), tag.getString("author", ""), tag.getInt("generation", 0), content, true)
@@ -603,7 +599,7 @@ public final class BedrockItemTags {
    private static void patterns(ItemStack stack, NbtMap tag) {
       Provider provider = registries;
       if (provider != null) {
-         if (tag.getInt("Type", 0) == 1 && stack.is((Item)Items.BANNER.white())) {
+         if (tag.getInt("Type", 0) == 1 && stack.is(Items.BANNER.white())) {
             stack.applyComponents(Raid.getOminousBannerInstance(provider.lookupOrThrow(Registries.BANNER_PATTERN)).getComponentsPatch());
          } else {
             if (stack.is(Items.SHIELD) && tag.get("Base") instanceof Integer base) {
@@ -709,22 +705,21 @@ public final class BedrockItemTags {
       return text.length() > 4096 ? text.substring(0, 4096) : text;
    }
 
-   @Nullable
-   public static String rawHoverText(ItemStack stack) {
+   public static @Nullable String rawHoverText(ItemStack stack) {
       CompoundTag data = bedrockData(stack);
       String name = data.getStringOr("name", "");
       ListTag lore = data.getListOrEmpty("lore");
       if (name.isEmpty() && lore.isEmpty()) {
          return null;
-      } else {
-         StringBuilder text = new StringBuilder(name.isEmpty() ? stack.getItemName().getString() : name);
-
-         for (int i = 0; i < lore.size(); i++) {
-            text.append('\n').append(lore.getStringOr(i, ""));
-         }
-
-         return text.toString();
       }
+
+      StringBuilder text = new StringBuilder(name.isEmpty() ? stack.getItemName().getString() : name);
+
+      for (int i = 0; i < lore.size(); i++) {
+         text.append('\n').append(lore.getStringOr(i, ""));
+      }
+
+      return text.toString();
    }
 
    private static Optional<AdventureModePredicate> adventurePredicate(String[] bedrockBlocks) {
@@ -733,7 +728,7 @@ public final class BedrockItemTags {
       for (String name : bedrockBlocks) {
          String full = name.contains(":") ? name : "minecraft:" + name;
          BlockState state = BlockMappings.get().byName(full);
-         Block block = state != null ? state.getBlock() : (Block)BuiltInRegistries.BLOCK.getOptional(Identifier.tryParse(full)).orElse(null);
+         Block block = state != null ? state.getBlock() : BuiltInRegistries.BLOCK.getOptional(Identifier.tryParse(full)).orElse(null);
          if (block != null && !blocks.contains(block)) {
             blocks.add(block);
          }
@@ -764,28 +759,26 @@ public final class BedrockItemTags {
    }
 
    public static CompoundTag bedrockData(ItemStack stack) {
-      CustomData data = (CustomData)stack.get(DataComponents.CUSTOM_DATA);
+      CustomData data = stack.get(DataComponents.CUSTOM_DATA);
       if (data == null) {
          return new CompoundTag();
-      } else {
-         BedrockItemTags.DataCache cache = DATA_CACHE.get();
-         if (cache.stack == stack && cache.data == data) {
-            return cache.tag;
-         } else {
-            CompoundTag tag = data.copyTag().getCompoundOrEmpty("bedrocknative");
-            cache.stack = stack;
-            cache.data = data;
-            cache.tag = tag;
-            return tag;
-         }
       }
+
+      BedrockItemTags.DataCache cache = DATA_CACHE.get();
+      if (cache.stack == stack && cache.data == data) {
+         return cache.tag;
+      }
+
+      CompoundTag tag = data.copyTag().getCompoundOrEmpty("bedrocknative");
+      cache.stack = stack;
+      cache.data = data;
+      cache.tag = tag;
+      return tag;
    }
 
    private static final class DataCache {
-      @Nullable
-      private ItemStack stack;
-      @Nullable
-      private CustomData data;
+      private @Nullable ItemStack stack;
+      private @Nullable CustomData data;
       private CompoundTag tag = new CompoundTag();
    }
 }

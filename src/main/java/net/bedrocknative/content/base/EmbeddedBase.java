@@ -50,8 +50,7 @@ public final class EmbeddedBase {
    private static final List<Runnable> LATE = new CopyOnWriteArrayList<>();
    private static final AtomicBoolean LATE_TOLD = new AtomicBoolean();
    private static final AtomicBoolean WAIT_TOLD = new AtomicBoolean();
-   @Nullable
-   private static volatile EmbeddedBase.Opening opening;
+   private static volatile EmbeddedBase.@Nullable Opening opening;
    private static volatile boolean timedOut;
 
    private EmbeddedBase() {
@@ -78,35 +77,35 @@ public final class EmbeddedBase {
       EmbeddedBase.Opening current = opening;
       if (current != null && current.key().equals(key)) {
          return current.future();
-      } else {
-         CompletableFuture<EmbeddedBase.Outcome> created = new CompletableFuture<>();
-         opening = new EmbeddedBase.Opening(key, created);
-         timedOut = false;
-         LATE_TOLD.set(false);
-         Runnable work = () -> {
-            EmbeddedBase.Outcome outcome;
-            try {
-               outcome = openSource(key);
-            } catch (RuntimeException var4x) {
-               outcome = EmbeddedBase.Outcome.missing("it couldn't be opened: " + var4x);
-               BedrockNative.LOGGER.warn("Embedded base: not used: {}", outcome.problem());
-            }
+      }
 
-            created.complete(outcome);
-            if (outcome.opened() != null) {
-               StartupClock.background("embedded base", outcome.opened().millis());
-            }
-
-            tellLate();
-         };
-         if (background) {
-            Thread.ofPlatform().daemon().name("BedrockNative embedded base").start(work);
-         } else {
-            work.run();
+      CompletableFuture<EmbeddedBase.Outcome> created = new CompletableFuture<>();
+      opening = new EmbeddedBase.Opening(key, created);
+      timedOut = false;
+      LATE_TOLD.set(false);
+      Runnable work = () -> {
+         EmbeddedBase.Outcome outcome;
+         try {
+            outcome = openSource(key);
+         } catch (RuntimeException e) {
+            outcome = EmbeddedBase.Outcome.missing("it couldn't be opened: " + e);
+            BedrockNative.LOGGER.warn("Embedded base: not used: {}", outcome.problem());
          }
 
-         return created;
+         created.complete(outcome);
+         if (outcome.opened() != null) {
+            StartupClock.background("embedded base", outcome.opened().millis());
+         }
+
+         tellLate();
+      };
+      if (background) {
+         Thread.ofPlatform().daemon().name("BedrockNative embedded base").start(work);
+      } else {
+         work.run();
       }
+
+      return created;
    }
 
    public static void whenLate(Runnable listener) {
@@ -124,100 +123,97 @@ public final class EmbeddedBase {
    public static Optional<EmbeddedBase.Opened> ready() {
       if (!enabled()) {
          return Optional.empty();
-      } else {
-         CompletableFuture<EmbeddedBase.Outcome> future = start(false);
-         long started = System.nanoTime();
-         boolean done = future.isDone();
+      }
 
-         try {
-            Optional<EmbeddedBase.Opened> opened = Optional.ofNullable(future.get(10L, TimeUnit.SECONDS).opened());
-            long waited = (System.nanoTime() - started) / 1000000L;
-            if (!done && waited >= 5L && WAIT_TOLD.compareAndSet(false, true)) {
-               BedrockNative.LOGGER.info("Embedded base: {} waited {} ms for the opening", Thread.currentThread().getName(), waited);
-            }
+      CompletableFuture<EmbeddedBase.Outcome> future = start(false);
+      long started = System.nanoTime();
+      boolean done = future.isDone();
 
-            return opened;
-         } catch (TimeoutException var7) {
-            if (!timedOut) {
-               timedOut = true;
-               BedrockNative.LOGGER.warn("Embedded base: still opening after {} s; Java's look until it is open", 10L);
-               tellLate();
-            }
-
-            return Optional.empty();
-         } catch (InterruptedException var8) {
-            Thread.currentThread().interrupt();
-            return Optional.empty();
-         } catch (ExecutionException var9) {
-            return Optional.empty();
+      try {
+         Optional<EmbeddedBase.Opened> opened = Optional.ofNullable(future.get(10L, TimeUnit.SECONDS).opened());
+         long waited = (System.nanoTime() - started) / 1000000L;
+         if (!done && waited >= 5L && WAIT_TOLD.compareAndSet(false, true)) {
+            BedrockNative.LOGGER.info("Embedded base: {} waited {} ms for the opening", Thread.currentThread().getName(), waited);
          }
+
+         return opened;
+      } catch (TimeoutException e) {
+         if (!timedOut) {
+            timedOut = true;
+            BedrockNative.LOGGER.warn("Embedded base: still opening after {} s; Java's look until it is open", 10L);
+            tellLate();
+         }
+
+         return Optional.empty();
+      } catch (InterruptedException e) {
+         Thread.currentThread().interrupt();
+         return Optional.empty();
+      } catch (ExecutionException e) {
+         return Optional.empty();
       }
    }
 
-   @Nullable
-   public static String problem() {
+   public static @Nullable String problem() {
       if (!enabled()) {
          return "turned off by -Dbedrocknative.embeddedBase=off";
-      } else {
-         EmbeddedBase.Opening current = opening;
-         EmbeddedBase.Outcome outcome = current != null ? current.future().getNow(null) : null;
-         return outcome != null ? outcome.problem() : null;
       }
+
+      EmbeddedBase.Opening current = opening;
+      EmbeddedBase.Outcome outcome = current != null ? current.future().getNow(null) : null;
+      return outcome != null ? outcome.problem() : null;
    }
 
    private static EmbeddedBase.Outcome openSource(String key) {
       BaseTable table = BaseTable.bundled();
       if (table == null) {
          return EmbeddedBase.Outcome.missing("the jar carries no base table");
-      } else {
-         URL archive;
-         byte[] sidecar;
-         if (key.isEmpty()) {
-            String name = table.folderName();
-            archive = EmbeddedBase.class.getResource("/bedrocknative/base-pack/" + name + ".zip");
-
-            try (InputStream in = EmbeddedBase.class.getResourceAsStream("/bedrocknative/base-pack/" + name + ".json")) {
-               sidecar = in == null ? null : in.readAllBytes();
-            } catch (IOException var12) {
-               sidecar = null;
-            }
-
-            if (archive == null || sidecar == null) {
-               EmbeddedBase.Outcome outcome = EmbeddedBase.Outcome.missing("the jar carries no base archive (built with -PbaseBundle=off)");
-               BedrockNative.LOGGER.info("Embedded base: {}", outcome.problem());
-               return outcome;
-            }
-         } else {
-            Path file = Path.of(key);
-            String fileName = file.getFileName().toString();
-            Path sidecarFile = file.resolveSibling((fileName.endsWith(".zip") ? fileName.substring(0, fileName.length() - 4) : fileName) + ".json");
-
-            try {
-               archive = file.toUri().toURL();
-               sidecar = Files.readAllBytes(sidecarFile);
-            } catch (IOException var9) {
-               EmbeddedBase.Outcome outcome = EmbeddedBase.Outcome.missing("the archive -Dbedrocknative.embeddedBaseArchive names can't be read (" + var9 + ")");
-               BedrockNative.LOGGER.warn("Embedded base: not used: {}", outcome.problem());
-               return outcome;
-            }
-         }
-
-         EmbeddedBase.Outcome outcome = open(archive, sidecar, table, DownloadedBase.dataRoot().resolve("base-pack"));
-         EmbeddedBase.Opened opened = outcome.opened();
-         if (opened != null) {
-            BedrockNative.LOGGER
-               .info(
-                  "Embedded base: {} files ({} MB) of {} read from {} in {} ms",
-                  new Object[]{
-                     opened.files(), String.format(Locale.ROOT, "%.1f", opened.fileBytes() / 1000000.0), table.pin(), opened.source(), opened.millis()
-                  }
-               );
-         } else {
-            BedrockNative.LOGGER.warn("Embedded base: not used: {}", outcome.problem());
-         }
-
-         return outcome;
       }
+
+      URL archive;
+      byte[] sidecar;
+      if (key.isEmpty()) {
+         String name = table.folderName();
+         archive = EmbeddedBase.class.getResource("/bedrocknative/base-pack/" + name + ".zip");
+
+         try (InputStream in = EmbeddedBase.class.getResourceAsStream("/bedrocknative/base-pack/" + name + ".json")) {
+            sidecar = in == null ? null : in.readAllBytes();
+         } catch (IOException e) {
+            sidecar = null;
+         }
+
+         if (archive == null || sidecar == null) {
+            EmbeddedBase.Outcome outcome = EmbeddedBase.Outcome.missing("the jar carries no base archive (built with -PbaseBundle=off)");
+            BedrockNative.LOGGER.info("Embedded base: {}", outcome.problem());
+            return outcome;
+         }
+      } else {
+         Path file = Path.of(key);
+         String fileName = file.getFileName().toString();
+         Path sidecarFile = file.resolveSibling((fileName.endsWith(".zip") ? fileName.substring(0, fileName.length() - 4) : fileName) + ".json");
+
+         try {
+            archive = file.toUri().toURL();
+            sidecar = Files.readAllBytes(sidecarFile);
+         } catch (IOException e) {
+            EmbeddedBase.Outcome outcome = EmbeddedBase.Outcome.missing("the archive -Dbedrocknative.embeddedBaseArchive names can't be read (" + e + ")");
+            BedrockNative.LOGGER.warn("Embedded base: not used: {}", outcome.problem());
+            return outcome;
+         }
+      }
+
+      EmbeddedBase.Outcome outcome = open(archive, sidecar, table, DownloadedBase.dataRoot().resolve("base-pack"));
+      EmbeddedBase.Opened opened = outcome.opened();
+      if (opened != null) {
+         BedrockNative.LOGGER
+            .info(
+               "Embedded base: {} files ({} MB) of {} read from {} in {} ms",
+               new Object[]{opened.files(), String.format(Locale.ROOT, "%.1f", opened.fileBytes() / 1000000.0), table.pin(), opened.source(), opened.millis()}
+            );
+      } else {
+         BedrockNative.LOGGER.warn("Embedded base: not used: {}", outcome.problem());
+      }
+
+      return outcome;
    }
 
    static EmbeddedBase.Outcome open(URL archive, byte[] sidecarBytes, BaseTable table, Path cacheFolder) {
@@ -226,68 +222,70 @@ public final class EmbeddedBase {
       EmbeddedBase.Sidecar sidecar;
       try {
          sidecar = EmbeddedBase.Sidecar.parse(sidecarBytes);
-      } catch (RuntimeException var20) {
-         return EmbeddedBase.Outcome.missing("its sidecar can't be read (" + var20.getMessage() + ")");
+      } catch (RuntimeException e) {
+         return EmbeddedBase.Outcome.missing("its sidecar can't be read (" + e.getMessage() + ")");
       }
 
       if (sidecar.format() != 2) {
          return EmbeddedBase.Outcome.missing("its sidecar has format " + sidecar.format() + ", this mod reads 2");
-      } else if (!sidecar.table().equals(table.digest())) {
+      }
+
+      if (!sidecar.table().equals(table.digest())) {
          return EmbeddedBase.Outcome.missing(
             "it was made from another base table (" + shortHash(sidecar.table()) + "; this jar's is " + shortHash(table.digest()) + ")"
          );
-      } else {
-         EmbeddedBase.Located located;
-         try {
-            located = locate(archive, sidecar, table.folderName() + ".zip", cacheFolder);
-         } catch (IOException var19) {
-            return EmbeddedBase.Outcome.missing("it can't be read: " + var19.getMessage());
-         }
+      }
 
-         FileSystem system = null;
+      EmbeddedBase.Located located;
+      try {
+         located = locate(archive, sidecar, table.folderName() + ".zip", cacheFolder);
+      } catch (IOException e) {
+         return EmbeddedBase.Outcome.missing("it can't be read: " + e.getMessage());
+      }
 
-         try {
-            if (!located.checked()) {
-               String problem = check(located.path(), sidecar);
-               if (problem != null) {
-                  return EmbeddedBase.Outcome.missing(problem);
-               }
-            }
+      FileSystem system = null;
 
-            system = FileSystems.newFileSystem(located.path());
-            Path root = system.getRootDirectories().iterator().next();
-            List<String> paths = new ArrayList<>();
-
-            try (Stream<Path> walk = Files.walk(root)) {
-               walk.filter(x$0 -> Files.isRegularFile(x$0)).forEach(file -> paths.add(root.relativize(file).toString()));
-            }
-
-            String problem = compare(root, paths, table);
+      try {
+         if (!located.checked()) {
+            String problem = check(located.path(), sidecar);
             if (problem != null) {
-               system.close();
                return EmbeddedBase.Outcome.missing(problem);
-            } else {
-               EmbeddedPack pack = new EmbeddedPack(root, paths, "embedded " + table.folderName());
-               long bytes = 0L;
-
-               for (BaseTable.Part part : PARTS) {
-                  bytes += table.bytes(part);
-               }
-
-               return new EmbeddedBase.Outcome(
-                  new EmbeddedBase.Opened(pack, root, located.source(), paths.size(), bytes, (System.nanoTime() - started) / 1000000L), null
-               );
             }
-         } catch (RuntimeException | IOException var22) {
-            if (system != null) {
-               try {
-                  system.close();
-               } catch (IOException var17) {
-               }
-            }
-
-            return EmbeddedBase.Outcome.missing("it is damaged (" + var22 + ")");
          }
+
+         system = FileSystems.newFileSystem(located.path());
+         Path root = system.getRootDirectories().iterator().next();
+         List<String> paths = new ArrayList<>();
+
+         try (Stream<Path> walk = Files.walk(root)) {
+            walk.filter(x$0 -> Files.isRegularFile(x$0)).forEach(file -> paths.add(root.relativize(file).toString()));
+         }
+
+         String problem = compare(root, paths, table);
+         if (problem != null) {
+            system.close();
+            return EmbeddedBase.Outcome.missing(problem);
+         }
+
+         EmbeddedPack pack = new EmbeddedPack(root, paths, "embedded " + table.folderName());
+         long bytes = 0L;
+
+         for (BaseTable.Part part : PARTS) {
+            bytes += table.bytes(part);
+         }
+
+         return new EmbeddedBase.Outcome(
+            new EmbeddedBase.Opened(pack, root, located.source(), paths.size(), bytes, (System.nanoTime() - started) / 1000000L), null
+         );
+      } catch (IOException | RuntimeException e) {
+         if (system != null) {
+            try {
+               system.close();
+            } catch (IOException var17) {
+            }
+         }
+
+         return EmbeddedBase.Outcome.missing("it is damaged (" + e + ")");
       }
    }
 
@@ -295,45 +293,44 @@ public final class EmbeddedBase {
       URI uri;
       try {
          uri = archive.toURI();
-      } catch (URISyntaxException var6) {
+      } catch (URISyntaxException e) {
          uri = null;
       }
 
       if (uri != null && "file".equalsIgnoreCase(uri.getScheme())) {
          Path file = Path.of(uri);
          return new EmbeddedBase.Located(file, "the archive " + file, false);
-      } else {
-         if (uri != null && "jar".equalsIgnoreCase(uri.getScheme())) {
-            Path entry = jarEntry(uri);
-            if (entry != null) {
-               return new EmbeddedBase.Located(entry, "the mod jar " + entry.getFileSystem(), false);
-            }
-         }
-
-         return new EmbeddedBase.Located(
-            copy(archive, sidecar, name, cacheFolder), "one copy of the archive (the class loader gave a " + archive.getProtocol() + ": address)", true
-         );
       }
+
+      if (uri != null && "jar".equalsIgnoreCase(uri.getScheme())) {
+         Path entry = jarEntry(uri);
+         if (entry != null) {
+            return new EmbeddedBase.Located(entry, "the mod jar " + entry.getFileSystem(), false);
+         }
+      }
+
+      return new EmbeddedBase.Located(
+         copy(archive, sidecar, name, cacheFolder), "one copy of the archive (the class loader gave a " + archive.getProtocol() + ": address)", true
+      );
    }
 
-   @Nullable
-   private static Path jarEntry(URI uri) {
+   private static @Nullable Path jarEntry(URI uri) {
       try {
          return Path.of(uri);
-      } catch (FileSystemNotFoundException var6) {
+      } catch (FileSystemNotFoundException e) {
          String spec = uri.getRawSchemeSpecificPart();
          int separator = spec.indexOf("!/");
          if (separator < 0) {
             return null;
-         } else {
-            try {
-               FileSystem jar = FileSystems.newFileSystem(Path.of(URI.create(spec.substring(0, separator))));
-               return jar.getPath(URI.create("entry:" + spec.substring(separator + 1)).getSchemeSpecificPart());
-            } catch (RuntimeException | IOException var5) {
-               return null;
-            }
          }
-      } catch (RuntimeException var7) {
+
+         try {
+            FileSystem jar = FileSystems.newFileSystem(Path.of(URI.create(spec.substring(0, separator))));
+            return jar.getPath(URI.create("entry:" + spec.substring(separator + 1)).getSchemeSpecificPart());
+         } catch (IOException | RuntimeException failed) {
+            return null;
+         }
+      } catch (RuntimeException e) {
          return null;
       }
    }
@@ -342,33 +339,33 @@ public final class EmbeddedBase {
       Path target = folder.resolve(name);
       if (Files.isRegularFile(target) && check(target, sidecar) == null) {
          return target;
-      } else {
-         Path part;
-         try {
-            Files.createDirectories(folder);
-            part = Files.createTempFile(folder, name + ".", ".part");
-         } catch (IOException var8) {
-            Path temporary = Files.createTempFile("bedrocknative-" + name + ".", ".part");
-            temporary.toFile().deleteOnExit();
-            copyChecked(archive, sidecar, temporary);
-            BedrockNative.LOGGER.info("Embedded base: the data folder {} can't be written ({}); a temporary copy is used", folder, var8.toString());
-            return temporary;
-         }
+      }
 
-         try {
-            copyChecked(archive, sidecar, part);
-            Files.move(part, target, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+      Path part;
+      try {
+         Files.createDirectories(folder);
+         part = Files.createTempFile(folder, name + ".", ".part");
+      } catch (IOException e) {
+         Path temporary = Files.createTempFile("bedrocknative-" + name + ".", ".part");
+         temporary.toFile().deleteOnExit();
+         copyChecked(archive, sidecar, temporary);
+         BedrockNative.LOGGER.info("Embedded base: the data folder {} can't be written ({}); a temporary copy is used", folder, e.toString());
+         return temporary;
+      }
+
+      try {
+         copyChecked(archive, sidecar, part);
+         Files.move(part, target, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+         return target;
+      } catch (IOException e) {
+         if (Files.isRegularFile(target) && check(target, sidecar) == null) {
+            Files.deleteIfExists(part);
             return target;
-         } catch (IOException var9) {
-            if (Files.isRegularFile(target) && check(target, sidecar) == null) {
-               Files.deleteIfExists(part);
-               return target;
-            } else if (Files.isRegularFile(part) && check(part, sidecar) == null) {
-               part.toFile().deleteOnExit();
-               return part;
-            } else {
-               throw var9;
-            }
+         } else if (Files.isRegularFile(part) && check(part, sidecar) == null) {
+            part.toFile().deleteOnExit();
+            return part;
+         } else {
+            throw e;
          }
       }
    }
@@ -408,8 +405,7 @@ public final class EmbeddedBase {
       }
    }
 
-   @Nullable
-   static String check(Path archive, EmbeddedBase.Sidecar sidecar) throws IOException {
+   static @Nullable String check(Path archive, EmbeddedBase.Sidecar sidecar) throws IOException {
       MessageDigest digest = sha256();
 
       long bytes;
@@ -431,8 +427,7 @@ public final class EmbeddedBase {
             + " bytes)";
    }
 
-   @Nullable
-   private static String compare(Path root, List<String> paths, BaseTable table) throws IOException {
+   private static @Nullable String compare(Path root, List<String> paths, BaseTable table) throws IOException {
       Map<String, BaseTable.Entry> expected = new HashMap<>();
 
       for (BaseTable.Part part : PARTS) {
@@ -459,8 +454,8 @@ public final class EmbeddedBase {
    private static MessageDigest sha256() {
       try {
          return MessageDigest.getInstance("SHA-256");
-      } catch (NoSuchAlgorithmException var1) {
-         throw new IllegalStateException(var1);
+      } catch (NoSuchAlgorithmException e) {
+         throw new IllegalStateException(e);
       }
    }
 
@@ -477,7 +472,7 @@ public final class EmbeddedBase {
    private record Opening(String key, CompletableFuture<EmbeddedBase.Outcome> future) {
    }
 
-   public record Outcome(@Nullable EmbeddedBase.Opened opened, @Nullable String problem) {
+   public record Outcome(EmbeddedBase.@Nullable Opened opened, @Nullable String problem) {
       static EmbeddedBase.Outcome missing(String why) {
          return new EmbeddedBase.Outcome(null, why);
       }

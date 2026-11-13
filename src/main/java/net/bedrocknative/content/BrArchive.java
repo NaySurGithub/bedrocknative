@@ -33,7 +33,6 @@ public final class BrArchive {
    }
 
    public static BrArchive open(Path file) throws IOException {
-      BrArchive var17;
       try (FileChannel channel = FileChannel.open(file, StandardOpenOption.READ)) {
          ByteBuffer header = read(channel, 0L, 16);
          if (header.getLong() != 2769804620953102205L) {
@@ -54,10 +53,8 @@ public final class BrArchive {
             entries.put(name, new BrArchive.Entry(name, dataStart + offset, size));
          }
 
-         var17 = new BrArchive(file, entries);
+         return new BrArchive(file, entries);
       }
-
-      return var17;
    }
 
    public Set<String> names() {
@@ -76,18 +73,15 @@ public final class BrArchive {
 
       if (entry == null) {
          return Optional.empty();
-      } else {
-         byte[] all = this.contents();
-         if (all != null && entry.size() >= 0 && entry.offset() + entry.size() <= all.length) {
-            return Optional.of(Arrays.copyOfRange(all, (int)entry.offset(), (int)entry.offset() + entry.size()));
-         } else {
-            Optional var5;
-            try (FileChannel channel = FileChannel.open(this.file, StandardOpenOption.READ)) {
-               var5 = Optional.of(read(channel, entry.offset(), entry.size()).array());
-            }
+      }
 
-            return var5;
-         }
+      byte[] all = this.contents();
+      if (all != null && entry.size() >= 0 && entry.offset() + entry.size() <= all.length) {
+         return Optional.of(Arrays.copyOfRange(all, (int)entry.offset(), (int)entry.offset() + entry.size()));
+      }
+
+      try (FileChannel channel = FileChannel.open(this.file, StandardOpenOption.READ)) {
+         return Optional.of(read(channel, entry.offset(), entry.size()).array());
       }
    }
 

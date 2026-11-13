@@ -39,8 +39,7 @@ public record BedrockAddress(String host, int port, @Nullable TransportKind forc
          : new BedrockAddress(text, defaultPort, forced);
    }
 
-   @Nullable
-   public static TransportKind prefix(String text) {
+   public static @Nullable TransportKind prefix(String text) {
       int separator = text.indexOf("://");
       return separator <= 0 ? null : TransportKind.byId(text.substring(0, separator).trim().toLowerCase(Locale.ROOT));
    }
@@ -89,7 +88,7 @@ public record BedrockAddress(String host, int port, @Nullable TransportKind forc
       try {
          int port = Integer.parseInt(text.trim());
          return port >= 1 && port <= 65535 ? port : fallback;
-      } catch (NumberFormatException var3) {
+      } catch (NumberFormatException e) {
          return fallback;
       }
    }

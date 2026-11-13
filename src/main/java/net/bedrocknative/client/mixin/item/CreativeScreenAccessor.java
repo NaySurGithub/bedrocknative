@@ -8,7 +8,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 import org.spongepowered.asm.mixin.gen.Invoker;
 
-@Mixin({CreativeModeInventoryScreen.class})
+@Mixin(CreativeModeInventoryScreen.class)
 public interface CreativeScreenAccessor {
    @Invoker("selectTab")
    void bedrocknative$selectTab(CreativeModeTab var1);

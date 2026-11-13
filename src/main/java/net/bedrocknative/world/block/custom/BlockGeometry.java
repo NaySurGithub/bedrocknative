@@ -28,20 +28,20 @@ public record BlockGeometry(
       JsonElement var3 = root.get("minecraft:geometry");
       if (var3 instanceof JsonArray) {
          for (JsonElement element : (JsonArray)var3) {
-            if (element instanceof JsonObject geometry && geometry.get("description") instanceof JsonObject description) {
-               JsonElement var17 = description.get("identifier");
-               if (var17 instanceof JsonElement && var17.isJsonPrimitive()) {
-                  found.put(
-                     var17.getAsString(),
-                     new BlockGeometry(
-                        var17.getAsString(),
-                        number(description, "texture_width", 16.0F),
-                        number(description, "texture_height", 16.0F),
-                        bones(geometry.get("bones")),
-                        geometry.get("item_display_transforms") instanceof JsonObject display ? display : null
-                     )
-                  );
-               }
+            if (element instanceof JsonObject geometry
+               && geometry.get("description") instanceof JsonObject description
+               && description.get("identifier") instanceof JsonElement id
+               && id.isJsonPrimitive()) {
+               found.put(
+                  id.getAsString(),
+                  new BlockGeometry(
+                     id.getAsString(),
+                     number(description, "texture_width", 16.0F),
+                     number(description, "texture_height", 16.0F),
+                     bones(geometry.get("bones")),
+                     geometry.get("item_display_transforms") instanceof JsonObject display ? display : null
+                  )
+               );
             }
          }
       }
@@ -112,8 +112,7 @@ public record BlockGeometry(
                   }
                }
 
-               JsonElement var15 = bone.get("parent");
-               String parent = var15 instanceof JsonElement && var15.isJsonPrimitive() ? var15.getAsString() : null;
+               String parent = bone.get("parent") instanceof JsonElement p && p.isJsonPrimitive() ? p.getAsString() : null;
                bones.add(
                   new BlockGeometry.Bone(
                      string(bone, "name", ""), parent, vector(bone, "pivot", 0.0F), vector(bone, "rotation", 0.0F), mirror, inflate, List.copyOf(cubes)
@@ -137,8 +136,7 @@ public record BlockGeometry(
             if (entry.getValue() instanceof JsonObject face) {
                float[] corner = vector2(face.get("uv"));
                float[] size = face.has("uv_size") ? vector2(face.get("uv_size")) : null;
-               JsonElement var15 = face.get("material_instance");
-               String instance = var15 instanceof JsonElement && var15.isJsonPrimitive() ? var15.getAsString() : null;
+               String instance = face.get("material_instance") instanceof JsonElement m && m.isJsonPrimitive() ? m.getAsString() : null;
                faces.put(
                   entry.getKey().toLowerCase(Locale.ROOT),
                   new BlockGeometry.Face(corner[0], corner[1], size, Math.round(number(face, "uv_rotation", 0.0F)), instance)
@@ -178,7 +176,7 @@ public record BlockGeometry(
 
       try {
          return value != null && value.isJsonPrimitive() ? value.getAsFloat() : fallback;
-      } catch (NumberFormatException var5) {
+      } catch (NumberFormatException e) {
          return fallback;
       }
    }
@@ -199,15 +197,15 @@ public record BlockGeometry(
    public record Cube(
       float[] origin,
       float[] size,
-      @Nullable float[] pivot,
+      float @Nullable [] pivot,
       float[] rotation,
       float inflate,
       boolean mirror,
-      @Nullable float[] boxUv,
+      float @Nullable [] boxUv,
       Map<String, BlockGeometry.Face> faces
    ) {
    }
 
-   public record Face(float u, float v, @Nullable float[] size, int rotation, @Nullable String materialInstance) {
+   public record Face(float u, float v, float @Nullable [] size, int rotation, @Nullable String materialInstance) {
    }
 }

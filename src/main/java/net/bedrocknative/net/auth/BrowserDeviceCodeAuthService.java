@@ -148,8 +148,7 @@ public final class BrowserDeviceCodeAuthService extends MsaAuthService {
       throw new IOException("Microsoft answered " + response.statusCode() + " without JSON");
    }
 
-   @Nullable
-   private static String text(JsonObject json, String key) {
+   private static @Nullable String text(JsonObject json, String key) {
       JsonElement value = json.get(key);
       return value != null && value.isJsonPrimitive() ? value.getAsString() : null;
    }
@@ -159,7 +158,7 @@ public final class BrowserDeviceCodeAuthService extends MsaAuthService {
 
       try {
          return value != null && value.isJsonPrimitive() ? value.getAsLong() : fallback;
-      } catch (NumberFormatException var6) {
+      } catch (NumberFormatException e) {
          return fallback;
       }
    }

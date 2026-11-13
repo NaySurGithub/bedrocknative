@@ -68,23 +68,23 @@ public final class FrameStats {
    public double percentileMillis(double percent) {
       if (this.count == 0) {
          return 0.0;
-      } else {
-         long rank = Math.max(1L, (long)Math.ceil(percent / 100.0 * this.count));
-         if (rank >= this.count) {
-            return this.maxMillis();
-         } else {
-            long seen = 0L;
+      }
 
-            for (int i = 0; i <= 2000; i++) {
-               seen += this.bins[i];
-               if (seen >= rank) {
-                  return i == 2000 ? this.maxMillis() : Math.min(this.maxMillis(), (i + 1) * 250000L / 1000000.0);
-               }
-            }
+      long rank = Math.max(1L, (long)Math.ceil(percent / 100.0 * this.count));
+      if (rank >= this.count) {
+         return this.maxMillis();
+      }
 
-            return this.maxMillis();
+      long seen = 0L;
+
+      for (int i = 0; i <= 2000; i++) {
+         seen += this.bins[i];
+         if (seen >= rank) {
+            return i == 2000 ? this.maxMillis() : Math.min(this.maxMillis(), (i + 1) * 250000L / 1000000.0);
          }
       }
+
+      return this.maxMillis();
    }
 
    public String summary() {

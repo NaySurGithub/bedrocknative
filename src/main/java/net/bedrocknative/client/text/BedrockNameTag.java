@@ -32,26 +32,20 @@ public final class BedrockNameTag {
    static final int MAX_SCORE_CHARS = 512;
    private String name = "";
    private List<MutableComponent> lines = List.of();
-   @Nullable
-   private Component joined;
+   private @Nullable Component joined;
    private String score = "";
    private List<MutableComponent> scoreLines = List.of();
    private List<Component> scoreBelow = List.of();
-   @Nullable
-   private Boolean alwaysShow;
-   @Nullable
-   private Boolean alwaysShowFlag;
-   @Nullable
-   private Boolean canShowFlag;
+   private @Nullable Boolean alwaysShow;
+   private @Nullable Boolean alwaysShowFlag;
+   private @Nullable Boolean canShowFlag;
    private boolean invisible;
    private float height = Float.NaN;
    private float scale = 1.0F;
-   @Nullable
-   private List<Component> padded;
+   private @Nullable List<Component> padded;
    private int paddedFor = -1;
 
-   @Nullable
-   public static BedrockNameTag of(Entity entity) {
+   public static @Nullable BedrockNameTag of(Entity entity) {
       return ((BedrockNameTag.Holder)entity).bedrocknative$nameTag();
    }
 
@@ -193,8 +187,7 @@ public final class BedrockNameTag {
       return this.scoreLines;
    }
 
-   @Nullable
-   public Component joined() {
+   public @Nullable Component joined() {
       return this.joined;
    }
 
@@ -279,14 +272,16 @@ public final class BedrockNameTag {
       boolean score = shown && !this.scoreBelow.isEmpty();
       if (javaScore == null) {
          return score ? this.scoreBelow : List.of();
-      } else if (!score) {
-         return List.of(javaScore);
-      } else {
-         List<Component> result = new ArrayList<>(this.scoreBelow.size() + 1);
-         result.addAll(this.scoreBelow);
-         result.add(javaScore);
-         return result;
       }
+
+      if (!score) {
+         return List.of(javaScore);
+      }
+
+      List<Component> result = new ArrayList<>(this.scoreBelow.size() + 1);
+      result.addAll(this.scoreBelow);
+      result.add(javaScore);
+      return result;
    }
 
    public static void submitLines(
@@ -321,16 +316,14 @@ public final class BedrockNameTag {
    }
 
    public interface Holder {
-      @Nullable
-      BedrockNameTag bedrocknative$nameTag();
+      @Nullable BedrockNameTag bedrocknative$nameTag();
 
       void bedrocknative$setNameTag(@Nullable BedrockNameTag var1);
    }
 
    public interface StateHolder {
-      @Nullable
-      BedrockNameTag.Drawn bedrocknative$drawn();
+      BedrockNameTag.@Nullable Drawn bedrocknative$drawn();
 
-      void bedrocknative$setDrawn(@Nullable BedrockNameTag.Drawn var1);
+      void bedrocknative$setDrawn(BedrockNameTag.@Nullable Drawn var1);
    }
 }

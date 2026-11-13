@@ -70,15 +70,15 @@ final class DevChunkSteadyTest {
    }
 
    void run() {
-      int initialDistance = this.onClient(() -> (Integer)this.minecraft.options.renderDistance().get());
+      int initialDistance = this.onClient(() -> this.minecraft.options.renderDistance().get());
       GameType initialMode = this.onClient(() -> this.minecraft.gameMode.getPlayerMode());
       List<Runnable> unhook = this.watchGc();
 
       try {
          this.test();
-      } catch (RuntimeException var9) {
-         this.failures.add("exception: " + var9);
-         BedrockNative.LOGGER.error("Dev chunk-steady test failed with an exception", var9);
+      } catch (RuntimeException e) {
+         this.failures.add("exception: " + e);
+         BedrockNative.LOGGER.error("Dev chunk-steady test failed with an exception", e);
       } finally {
          this.perTick = null;
          this.minecraft.execute(() -> {
@@ -597,22 +597,22 @@ final class DevChunkSteadyTest {
       this.minecraft.execute(() -> {
          try {
             future.complete(supplier.get());
-         } catch (RuntimeException var3) {
-            future.completeExceptionally(var3);
+         } catch (RuntimeException e) {
+            future.completeExceptionally(e);
          }
       });
 
       try {
          return future.get(30L, TimeUnit.SECONDS);
-      } catch (Exception var4) {
-         throw new IllegalStateException(var4);
+      } catch (Exception e) {
+         throw new IllegalStateException(e);
       }
    }
 
    private static void sleep(long millis) {
       try {
          Thread.sleep(millis);
-      } catch (InterruptedException var3) {
+      } catch (InterruptedException e) {
          Thread.currentThread().interrupt();
       }
    }

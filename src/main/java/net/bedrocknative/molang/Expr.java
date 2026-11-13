@@ -24,63 +24,63 @@ sealed interface Expr
    Expr.Loop,
    Expr.ForEach,
    Expr.Program {
-   public record Arrow(Expr target, Expr body) implements Expr {
+   record Arrow(Expr target, Expr body) implements Expr {
    }
 
-   public record Assign(Expr target, Expr value, int position) implements Expr {
+   record Assign(Expr target, Expr value, int position) implements Expr {
    }
 
-   public record Binary(String op, Expr left, Expr right) implements Expr {
+   record Binary(String op, Expr left, Expr right) implements Expr {
    }
 
-   public record Block(List<Expr> statements) implements Expr {
+   record Block(List<Expr> statements) implements Expr {
    }
 
-   public record Break() implements Expr {
+   record Break() implements Expr {
    }
 
-   public record Call(List<String> parts, List<Expr> args, int position) implements Expr {
+   record Call(List<String> parts, List<Expr> args, int position) implements Expr {
    }
 
-   public record Coalesce(Expr left, Expr right) implements Expr {
+   record Coalesce(Expr left, Expr right) implements Expr {
    }
 
-   public record Continue() implements Expr {
+   record Continue() implements Expr {
    }
 
-   public record ForEach(Expr variable, Expr array, Expr body) implements Expr {
+   record ForEach(Expr variable, Expr array, Expr body) implements Expr {
    }
 
-   public record Index(Expr target, Expr index) implements Expr {
+   record Index(Expr target, Expr index) implements Expr {
    }
 
-   public record Loop(Expr count, Expr body) implements Expr {
+   record Loop(Expr count, Expr body) implements Expr {
    }
 
-   public record Member(Expr target, String name) implements Expr {
+   record Member(Expr target, String name) implements Expr {
    }
 
-   public record Name(List<String> parts, int position) implements Expr {
+   record Name(List<String> parts, int position) implements Expr {
    }
 
-   public record Num(float value) implements Expr {
+   record Num(float value) implements Expr {
    }
 
-   public record Program(List<Expr> statements, boolean complex) implements Expr {
+   record Program(List<Expr> statements, boolean complex) implements Expr {
    }
 
-   public record Return(Expr value) implements Expr {
+   record Return(Expr value) implements Expr {
    }
 
-   public record Str(String value) implements Expr {
+   record Str(String value) implements Expr {
    }
 
-   public record Ternary(Expr condition, Expr then, @Nullable Expr otherwise) implements Expr {
+   record Ternary(Expr condition, Expr then, @Nullable Expr otherwise) implements Expr {
    }
 
-   public record This() implements Expr {
+   record This() implements Expr {
    }
 
-   public record Unary(String op, Expr operand) implements Expr {
+   record Unary(String op, Expr operand) implements Expr {
    }
 }

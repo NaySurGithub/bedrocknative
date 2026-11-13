@@ -14,7 +14,7 @@ import net.bedrocknative.content.ArgbImage;
 import org.jspecify.annotations.Nullable;
 
 public final class OwnArt {
-   private static final Map<String, Supplier<OwnArt.Texture>> PAINTERS = painters();
+   private static final Map<String, Supplier<OwnArt.@Nullable Texture>> PAINTERS = painters();
    private static final Map<String, Optional<OwnArt.Texture>> PAINTED = new ConcurrentHashMap<>();
    private static final Map<String, byte[]> PNGS = new ConcurrentHashMap<>();
 
@@ -42,8 +42,8 @@ public final class OwnArt {
       return painter == null ? Optional.empty() : PAINTED.computeIfAbsent(key, k -> {
          try {
             return Optional.ofNullable(painter.get());
-         } catch (RuntimeException var3) {
-            BedrockNative.LOGGER.warn("Own menus: the picture {} couldn't be drawn", k, var3);
+         } catch (RuntimeException e) {
+            BedrockNative.LOGGER.warn("Own menus: the picture {} couldn't be drawn", k, e);
             return Optional.empty();
          }
       });

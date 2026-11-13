@@ -25,7 +25,7 @@ public final class LecternPages {
    }
 
    public static int clamp(int javaPage, int pageCount) {
-      return Math.clamp((long)javaPage, 0, lastPage(pageCount));
+      return Math.clamp(javaPage, 0, lastPage(pageCount));
    }
 
    public static boolean turnsPage(int button) {
@@ -53,10 +53,10 @@ public final class LecternPages {
          boolean has = tag.getBoolean("hasBook", !book.isEmpty()) && !book.isEmpty();
          if (!has) {
             return EMPTY;
-         } else {
-            int pages = tag.getInt("totalPages", LecternPages.pagesOf(book));
-            return new LecternPages.State(true, Math.max(0, tag.getInt("page", 0)), Math.max(0, pages), book);
          }
+
+         int pages = tag.getInt("totalPages", LecternPages.pagesOf(book));
+         return new LecternPages.State(true, Math.max(0, tag.getInt("page", 0)), Math.max(0, pages), book);
       }
    }
 }

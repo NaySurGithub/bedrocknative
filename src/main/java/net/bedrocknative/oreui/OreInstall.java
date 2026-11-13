@@ -39,8 +39,7 @@ public final class OreInstall {
    private final OreThemeVars theme;
    private final Map<Path, byte[]> generated;
    private final Map<String, OreFont> ownFonts;
-   @Nullable
-   static volatile Set<String> asked;
+   static volatile @Nullable Set<String> asked;
 
    private OreInstall(Path folder, Map<String, OreInstall.Sprite> sprites, Map<String, Path> pictures, Map<String, Path> fontFaces, OreThemeVars theme) {
       this(folder, sprites, pictures, fontFaces, theme, Map.of(), Map.of());
@@ -93,8 +92,7 @@ public final class OreInstall {
       return png == null ? Optional.empty() : Optional.of(png);
    }
 
-   @Nullable
-   public OreFont ownFont(String family, int weight) {
+   public @Nullable OreFont ownFont(String family, int weight) {
       OreFont exact = this.ownFonts.get(faceKey(family, weight, "normal"));
       return exact != null ? exact : this.ownFonts.get(faceKey(family, 400, "normal"));
    }
@@ -107,8 +105,7 @@ public final class OreInstall {
       return BedrockInstall.dataFolder().resolve("resource_packs").resolve("oreui").resolve("texts");
    }
 
-   @Nullable
-   public static OreInstall read(Path folder) {
+   public static @Nullable OreInstall read(Path folder) {
       try {
          if (Files.isRegularFile(folder.resolve("index.html")) && Files.isRegularFile(folder.resolve("atlas.json"))) {
             String index = text(folder.resolve("index.html"));
@@ -135,18 +132,18 @@ public final class OreInstall {
                Map<String, Path> faces = readFontFaces(folder.resolve("fonts"), text(pageCss));
                if (faces.isEmpty()) {
                   return null;
-               } else {
-                  OreThemeVars theme = OreThemeVars.parse(text(themeCss));
-                  return new OreInstall(folder, sprites, pictures, faces, theme);
                }
+
+               OreThemeVars theme = OreThemeVars.parse(text(themeCss));
+               return new OreInstall(folder, sprites, pictures, faces, theme);
             } else {
                return null;
             }
          } else {
             return null;
          }
-      } catch (RuntimeException | IOException var9) {
-         BedrockNative.LOGGER.warn("Ore UI: couldn't read the install's {}", folder, var9);
+      } catch (IOException | RuntimeException e) {
+         BedrockNative.LOGGER.warn("Ore UI: couldn't read the install's {}", folder, e);
          return null;
       }
    }
@@ -189,8 +186,7 @@ public final class OreInstall {
       return family.trim().toLowerCase(Locale.ROOT) + "|" + (weight >= 600 ? 700 : 400) + "|" + style.trim().toLowerCase(Locale.ROOT);
    }
 
-   @Nullable
-   static String nameOf(String fileName) {
+   static @Nullable String nameOf(String fileName) {
       Matcher matcher = HASHED.matcher(fileName);
       return matcher.matches() ? matcher.group(1) : null;
    }
@@ -222,25 +218,25 @@ public final class OreInstall {
    private static void readAtlas(Path folder, Map<String, OreInstall.Sprite> sprites) throws IOException {
       if (JsonParser.parseString(text(folder.resolve("atlas.json"))) instanceof JsonArray sheets) {
          for (JsonElement element : sheets) {
-            if (element instanceof JsonObject sheet) {
-               JsonElement sheetName = sheet.get("name");
-               if (sheetName instanceof JsonElement && sheetName.isJsonPrimitive() && sheet.get("coordinates") instanceof JsonObject coordinates) {
-                  String sheetNamex = sheetName.getAsString();
-                  if (!sheetNamex.contains("/") && !sheetNamex.contains("\\") && !sheetNamex.contains("..")) {
-                     Path sheetFile = folder.resolve(sheetNamex);
-                     int[] sheetSize = Files.isRegularFile(sheetFile) ? pngSize(sheetFile) : null;
-                     if (sheetSize != null) {
-                        for (Entry<String, JsonElement> entry : coordinates.entrySet()) {
-                           String key = entry.getKey();
-                           String name = nameOf(key.substring(key.lastIndexOf(47) + 1));
-                           if (name != null && entry.getValue() instanceof JsonObject rect) {
-                              int x = integer(rect, "x");
-                              int y = integer(rect, "y");
-                              int width = integer(rect, "width");
-                              int height = integer(rect, "height");
-                              if (x >= 0 && y >= 0 && width > 0 && height > 0 && x + width <= sheetSize[0] && y + height <= sheetSize[1]) {
-                                 sprites.put(name, new OreInstall.Sprite(sheetFile, x, y, width, height, true));
-                              }
+            if (element instanceof JsonObject sheet
+               && sheet.get("name") instanceof JsonElement nameElement
+               && nameElement.isJsonPrimitive()
+               && sheet.get("coordinates") instanceof JsonObject coordinates) {
+               String sheetName = nameElement.getAsString();
+               if (!sheetName.contains("/") && !sheetName.contains("\\") && !sheetName.contains("..")) {
+                  Path sheetFile = folder.resolve(sheetName);
+                  int[] sheetSize = Files.isRegularFile(sheetFile) ? pngSize(sheetFile) : null;
+                  if (sheetSize != null) {
+                     for (Entry<String, JsonElement> entry : coordinates.entrySet()) {
+                        String key = entry.getKey();
+                        String name = nameOf(key.substring(key.lastIndexOf(47) + 1));
+                        if (name != null && entry.getValue() instanceof JsonObject rect) {
+                           int x = integer(rect, "x");
+                           int y = integer(rect, "y");
+                           int width = integer(rect, "width");
+                           int height = integer(rect, "height");
+                           if (x >= 0 && y >= 0 && width > 0 && height > 0 && x + width <= sheetSize[0] && y + height <= sheetSize[1]) {
+                              sprites.put(name, new OreInstall.Sprite(sheetFile, x, y, width, height, true));
                            }
                         }
                      }
@@ -283,23 +279,17 @@ public final class OreInstall {
       return value != null && value.isJsonPrimitive() && value.getAsJsonPrimitive().isNumber() ? value.getAsInt() : -1;
    }
 
-   @Nullable
-   static int[] pngSize(Path file) {
-      try {
-         Object width;
-         try (InputStream in = Files.newInputStream(file)) {
-            byte[] header = in.readNBytes(24);
-            if (header.length >= 24 && (header[0] & 255) == 137 && header[1] == 80 && header[2] == 78 && header[3] == 71) {
-               int widthx = (header[16] & 255) << 24 | (header[17] & 255) << 16 | (header[18] & 255) << 8 | header[19] & 255;
-               int height = (header[20] & 255) << 24 | (header[21] & 255) << 16 | (header[22] & 255) << 8 | header[23] & 255;
-               return widthx > 0 && height > 0 && widthx <= 8192 && height <= 8192 ? new int[]{widthx, height} : null;
-            }
-
-            width = null;
+   static int @Nullable [] pngSize(Path file) {
+      try (InputStream in = Files.newInputStream(file)) {
+         byte[] header = in.readNBytes(24);
+         if (header.length >= 24 && (header[0] & 255) == 137 && header[1] == 80 && header[2] == 78 && header[3] == 71) {
+            int width = (header[16] & 255) << 24 | (header[17] & 255) << 16 | (header[18] & 255) << 8 | header[19] & 255;
+            int height = (header[20] & 255) << 24 | (header[21] & 255) << 16 | (header[22] & 255) << 8 | header[23] & 255;
+            return width > 0 && height > 0 && width <= 8192 && height <= 8192 ? new int[]{width, height} : null;
+         } else {
+            return null;
          }
-
-         return (int[])width;
-      } catch (IOException var8) {
+      } catch (IOException e) {
          return null;
       }
    }

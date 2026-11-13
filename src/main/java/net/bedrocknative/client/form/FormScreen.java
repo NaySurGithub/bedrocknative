@@ -1,7 +1,6 @@
 package net.bedrocknative.client.form;
 
 import java.util.List;
-import java.util.Objects;
 import net.bedrocknative.client.content.BedrockTextures;
 import net.bedrocknative.text.BedrockText;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -23,8 +22,7 @@ public abstract class FormScreen extends Screen {
    private static final int CLOSE_SIZE = 15;
    protected final FormScreen.Host host;
    private final int formId;
-   @Nullable
-   private final FormScreen below;
+   private final @Nullable FormScreen below;
    private boolean answered;
    protected int panelX;
    protected int panelY;
@@ -42,8 +40,7 @@ public abstract class FormScreen extends Screen {
       return this.formId;
    }
 
-   @Nullable
-   public FormScreen below() {
+   public @Nullable FormScreen below() {
       return this.below;
    }
 
@@ -54,18 +51,17 @@ public abstract class FormScreen extends Screen {
    public boolean markAnswered() {
       if (this.answered) {
          return false;
-      } else {
-         this.answered = true;
-         return true;
       }
+
+      this.answered = true;
+      return true;
    }
 
    public boolean isServerSettings() {
       return false;
    }
 
-   @Nullable
-   public Screen settingsParent() {
+   public @Nullable Screen settingsParent() {
       return null;
    }
 
@@ -98,6 +94,7 @@ public abstract class FormScreen extends Screen {
    protected void buildFooter(int x, int y, int width, int height) {
    }
 
+   @Override
    protected void init() {
       this.panelWidth = Math.min(this.preferredWidth(), this.width - 8);
       this.panelHeight = Math.min(this.preferredHeight(), this.height - 8);
@@ -120,6 +117,7 @@ public abstract class FormScreen extends Screen {
       this.addRenderableWidget(new FormScreen.CloseButton(this.panelX + this.panelWidth - 15 - 5, this.panelY + 4));
    }
 
+   @Override
    public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
       this.extractTransparentBackground(graphics);
       String dialog = this.dialogTexture();
@@ -157,28 +155,32 @@ public abstract class FormScreen extends Screen {
       this.minecraft.gui.hud.extractDeferredSubtitles();
    }
 
+   @Override
    public boolean isPauseScreen() {
       return false;
    }
 
+   @Override
    public void onClose() {
       this.host.cancel(this);
    }
 
+   @Override
    public void removed() {
       this.host.removed(this);
    }
 
    private final class CloseButton extends AbstractButton {
       CloseButton(int x, int y) {
-         Objects.requireNonNull(FormScreen.this);
          super(x, y, 15, 15, CommonComponents.GUI_CANCEL);
       }
 
+      @Override
       public void onPress(InputWithModifiers input) {
          FormScreen.this.onClose();
       }
 
+      @Override
       protected void extractContents(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
          String texture = this.isHoveredOrFocused() ? "textures/ui/close_button_hover" : "textures/ui/close_button_default";
          BedrockTextures.pack(texture)
@@ -188,6 +190,7 @@ public abstract class FormScreen extends Screen {
             );
       }
 
+      @Override
       protected void updateWidgetNarration(NarrationElementOutput output) {
          this.defaultButtonNarrationText(output);
       }

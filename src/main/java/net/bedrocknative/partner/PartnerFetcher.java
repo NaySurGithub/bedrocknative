@@ -48,7 +48,7 @@ public final class PartnerFetcher implements PartnerServers.Fetch {
          HttpRequest request;
          try {
             request = HttpRequest.newBuilder(uri).timeout(TIMEOUT).header("User-Agent", "BedrockNative").header("Accept", accept).GET().build();
-         } catch (IllegalArgumentException var14) {
+         } catch (IllegalArgumentException e) {
             throw new IOException("invalid URL");
          }
 
@@ -57,14 +57,14 @@ public final class PartnerFetcher implements PartnerServers.Fetch {
          HttpResponse<byte[]> response;
          try {
             response = sent.get(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
-         } catch (TimeoutException var15) {
+         } catch (TimeoutException e) {
             sent.cancel(true);
             throw new IOException("no full answer within " + TIMEOUT.toSeconds() + " s");
-         } catch (InterruptedException var16) {
+         } catch (InterruptedException e) {
             sent.cancel(true);
-            throw var16;
-         } catch (ExecutionException var17) {
-            Throwable cause = var17.getCause();
+            throw e;
+         } catch (ExecutionException e) {
+            Throwable cause = e.getCause();
             throw cause instanceof IOException io
                ? new IOException(io.getMessage() == null ? io.getClass().getSimpleName() : io.getMessage())
                : new IOException(String.valueOf(cause));
@@ -92,7 +92,7 @@ public final class PartnerFetcher implements PartnerServers.Fetch {
 
          try {
             uri = uri.resolve(location.trim());
-         } catch (IllegalArgumentException var13) {
+         } catch (IllegalArgumentException e) {
             throw new IOException("invalid redirect target");
          }
 

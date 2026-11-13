@@ -45,8 +45,7 @@ final class BedrockFont {
       return this.metrics;
    }
 
-   @Nullable
-   BedrockTextures.Texture texture(int page) {
+   BedrockTextures.@Nullable Texture texture(int page) {
       if (page >= 0 && page < this.pageTextures.length) {
          Optional<BedrockTextures.Texture> known = this.pageTextures[page];
          if (known == null) {

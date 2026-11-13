@@ -28,61 +28,62 @@ public final class FeaturedServers {
       Path file = configFolder.resolve("featured-servers.json");
       if (!Files.isRegularFile(file)) {
          return List.of();
-      } else {
-         try {
-            if (Files.size(file) > 262144L) {
-               BedrockNative.LOGGER.warn("Ore UI: {} is too large, no featured servers", file);
-               return List.of();
-            } else {
-               return parse(Files.readString(file, StandardCharsets.UTF_8), configFolder);
-            }
-         } catch (JsonParseException | IllegalStateException | IOException var3) {
-            BedrockNative.LOGGER.warn("Ore UI: couldn't read {}, no featured servers", file, var3);
+      }
+
+      try {
+         if (Files.size(file) > 262144L) {
+            BedrockNative.LOGGER.warn("Ore UI: {} is too large, no featured servers", file);
             return List.of();
+         } else {
+            return parse(Files.readString(file, StandardCharsets.UTF_8), configFolder);
          }
+      } catch (IOException | JsonParseException | IllegalStateException e) {
+         BedrockNative.LOGGER.warn("Ore UI: couldn't read {}, no featured servers", file, e);
+         return List.of();
       }
    }
 
    static List<FeaturedServers.Server> parse(String json, Path configFolder) {
       JsonElement root = JsonParser.parseString(json);
-      JsonArray array = root instanceof JsonObject object && object.get("servers") instanceof JsonArray serversx
-         ? serversx
+      JsonArray array = root instanceof JsonObject object && object.get("servers") instanceof JsonArray servers
+         ? servers
          : (root instanceof JsonArray servers ? servers : null);
       if (array == null) {
          return List.of();
-      } else {
-         List<FeaturedServers.Server> serversxx = new ArrayList<>();
+      }
 
-         for (JsonElement element : array) {
-            if (serversxx.size() >= 32) {
-               break;
-            }
+      List<FeaturedServers.Server> servers = new ArrayList<>();
 
-            if (element instanceof JsonObject entry) {
-               String name = text(entry, "name");
-               String address = text(entry, "address").trim();
-               if (!name.isBlank() && !address.isEmpty() && address.indexOf(32) < 0) {
-                  JsonElement var12 = entry.get("port");
-                  int port = var12 instanceof JsonElement && var12.isJsonPrimitive() && var12.getAsJsonPrimitive().isNumber() ? var12.getAsInt() : 19132;
-                  if (port >= 1 && port <= 65535) {
-                     serversxx.add(
-                        new FeaturedServers.Server(
-                           name.strip(),
-                           address,
-                           port,
-                           text(entry, "message"),
-                           text(entry, "description"),
-                           picture(entry, "icon", configFolder),
-                           picture(entry, "banner", configFolder)
-                        )
-                     );
-                  }
+      for (JsonElement element : array) {
+         if (servers.size() >= 32) {
+            break;
+         }
+
+         if (element instanceof JsonObject entry) {
+            String name = text(entry, "name");
+            String address = text(entry, "address").trim();
+            if (!name.isBlank() && !address.isEmpty() && address.indexOf(32) < 0) {
+               int port = entry.get("port") instanceof JsonElement value && value.isJsonPrimitive() && value.getAsJsonPrimitive().isNumber()
+                  ? value.getAsInt()
+                  : 19132;
+               if (port >= 1 && port <= 65535) {
+                  servers.add(
+                     new FeaturedServers.Server(
+                        name.strip(),
+                        address,
+                        port,
+                        text(entry, "message"),
+                        text(entry, "description"),
+                        picture(entry, "icon", configFolder),
+                        picture(entry, "banner", configFolder)
+                     )
+                  );
                }
             }
          }
-
-         return List.copyOf(serversxx);
       }
+
+      return List.copyOf(servers);
    }
 
    private static String text(JsonObject entry, String key) {
@@ -95,14 +96,13 @@ public final class FeaturedServers {
       }
    }
 
-   @Nullable
-   private static Path picture(JsonObject entry, String key, Path configFolder) {
+   private static @Nullable Path picture(JsonObject entry, String key, Path configFolder) {
       String name = text(entry, key).trim();
       if (!name.isEmpty() && !name.contains("://") && name.toLowerCase(Locale.ROOT).endsWith(".png")) {
          try {
             Path path = configFolder.resolve(name).toAbsolutePath().normalize();
             return Files.isRegularFile(path) ? path : null;
-         } catch (RuntimeException var5) {
+         } catch (RuntimeException e) {
             return null;
          }
       } else {

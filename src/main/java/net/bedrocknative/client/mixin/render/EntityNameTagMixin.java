@@ -25,16 +25,13 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin({EntityRenderer.class})
+@Mixin(EntityRenderer.class)
 public abstract class EntityNameTagMixin {
    @Shadow
    @Final
    protected EntityRenderDispatcher entityRenderDispatcher;
 
-   @Inject(
-      method = {"extractNameTags(Lnet/minecraft/world/entity/Entity;Lnet/minecraft/client/renderer/entity/state/EntityRenderState;FDD)V"},
-      at = {@At("TAIL")}
-   )
+   @Inject(method = "extractNameTags(Lnet/minecraft/world/entity/Entity;Lnet/minecraft/client/renderer/entity/state/EntityRenderState;FDD)V", at = @At("TAIL"))
    private void bedrocknative$bedrockTag(
       Entity entity, EntityRenderState state, float partialTicks, double nameTagDistance, double belowNameDistance, CallbackInfo ci
    ) {
@@ -63,8 +60,8 @@ public abstract class EntityNameTagMixin {
    }
 
    @Inject(
-      method = {"submitNameDisplay(Lnet/minecraft/client/renderer/entity/state/EntityRenderState;Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;Lnet/minecraft/client/renderer/state/level/CameraRenderState;I)V"},
-      at = {@At("HEAD")},
+      method = "submitNameDisplay(Lnet/minecraft/client/renderer/entity/state/EntityRenderState;Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;Lnet/minecraft/client/renderer/state/level/CameraRenderState;I)V",
+      at = @At("HEAD"),
       cancellable = true
    )
    private void bedrocknative$drawBedrockTag(
@@ -79,11 +76,7 @@ public abstract class EntityNameTagMixin {
       }
    }
 
-   @Inject(
-      method = {"shouldRender"},
-      at = {@At("HEAD")},
-      cancellable = true
-   )
+   @Inject(method = "shouldRender", at = @At("HEAD"), cancellable = true)
    private void bedrocknative$keepTagInView(
       Entity entity, Frustum culler, double camX, double camY, double camZ, float partialTicks, CallbackInfoReturnable<Boolean> cir
    ) {

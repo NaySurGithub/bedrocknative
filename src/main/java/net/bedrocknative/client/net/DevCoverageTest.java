@@ -220,7 +220,7 @@ final class DevCoverageTest {
       this.report(
          "riding",
          () -> {
-            Entity pig = (Entity)this.minecraft
+            Entity pig = this.minecraft
                .level
                .getEntitiesOfClass(Entity.class, this.minecraft.player.getBoundingBox().inflate(8.0), entity -> entity.getType() == EntityTypes.PIG)
                .stream()
@@ -503,7 +503,7 @@ final class DevCoverageTest {
    private static void sleep(long millis) {
       try {
          Thread.sleep(millis);
-      } catch (InterruptedException var3) {
+      } catch (InterruptedException e) {
          Thread.currentThread().interrupt();
       }
    }

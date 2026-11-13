@@ -25,8 +25,7 @@ public final class LegacyTextureNames {
       "white", "orange", "magenta", "light_blue", "yellow", "lime", "pink", "gray", "light_gray", "cyan", "purple", "blue", "brown", "green", "red", "black"
    };
    private static final Map<BedrockTextureMap.Atlas, Map<String, List<LegacyTextureNames.Candidate>>> BUNDLED = new ConcurrentHashMap<>();
-   @Nullable
-   private static volatile Map<String, List<String>> bundledNames;
+   private static volatile @Nullable Map<String, List<String>> bundledNames;
 
    private LegacyTextureNames() {
    }
@@ -44,8 +43,8 @@ public final class LegacyTextureNames {
             }
 
             names = parse(new InputStreamReader(input, StandardCharsets.UTF_8));
-         } catch (IOException var6) {
-            throw new UncheckedIOException(var6);
+         } catch (IOException e) {
+            throw new UncheckedIOException(e);
          }
 
          bundledNames = names;
@@ -121,49 +120,46 @@ public final class LegacyTextureNames {
       String folder = oldFolder(sprite.substring(0, slash + 1));
       if (folder == null) {
          return List.of();
-      } else {
-         String name = sprite.substring(slash + 1);
-         Map<String, LegacyTextureNames.Candidate> found = new LinkedHashMap<>();
-         if (entry.frames() > 0) {
-            int cut = name.lastIndexOf(95);
-            if (cut > 0 && routes.contains(LegacyTextureNames.Route.TABLE) && name.substring(cut + 1).chars().allMatch(Character::isDigit)) {
-               String file = folder + name.substring(0, cut) + ".png";
-               found.put(
-                  file, new LegacyTextureNames.Candidate(file, LegacyTextureNames.Route.TABLE, Integer.parseInt(name.substring(cut + 1)), entry.frames())
-               );
-            }
+      }
 
-            return new ArrayList<>(found.values());
-         } else {
-            if (routes.contains(LegacyTextureNames.Route.TABLE)) {
-               for (String old : names.getOrDefault(sprite, List.of())) {
-                  found.putIfAbsent(folder + old + ".png", new LegacyTextureNames.Candidate(folder + old + ".png", LegacyTextureNames.Route.TABLE, 0, 0));
-               }
-            }
-
-            if (routes.contains(LegacyTextureNames.Route.BEDROCK_NAME)
-               && !names.containsKey(sprite)
-               && entry.keepJava() == null
-               && entry.op() == null
-               && entry.transform() == null
-               && entry.paths().isEmpty()
-               && entry.path() != null
-               && entry.path().startsWith(folder)) {
-               String file = entry.path() + ".png";
-               found.putIfAbsent(file, new LegacyTextureNames.Candidate(file, LegacyTextureNames.Route.BEDROCK_NAME, 0, 0));
-            }
-
-            if (routes.contains(LegacyTextureNames.Route.JAVA_NAME)) {
-               found.putIfAbsent(folder + name + ".png", new LegacyTextureNames.Candidate(folder + name + ".png", LegacyTextureNames.Route.JAVA_NAME, 0, 0));
-            }
-
-            return new ArrayList<>(found.values());
+      String name = sprite.substring(slash + 1);
+      Map<String, LegacyTextureNames.Candidate> found = new LinkedHashMap<>();
+      if (entry.frames() > 0) {
+         int cut = name.lastIndexOf(95);
+         if (cut > 0 && routes.contains(LegacyTextureNames.Route.TABLE) && name.substring(cut + 1).chars().allMatch(Character::isDigit)) {
+            String file = folder + name.substring(0, cut) + ".png";
+            found.put(file, new LegacyTextureNames.Candidate(file, LegacyTextureNames.Route.TABLE, Integer.parseInt(name.substring(cut + 1)), entry.frames()));
          }
+
+         return new ArrayList<>(found.values());
+      } else {
+         if (routes.contains(LegacyTextureNames.Route.TABLE)) {
+            for (String old : names.getOrDefault(sprite, List.of())) {
+               found.putIfAbsent(folder + old + ".png", new LegacyTextureNames.Candidate(folder + old + ".png", LegacyTextureNames.Route.TABLE, 0, 0));
+            }
+         }
+
+         if (routes.contains(LegacyTextureNames.Route.BEDROCK_NAME)
+            && !names.containsKey(sprite)
+            && entry.keepJava() == null
+            && entry.op() == null
+            && entry.transform() == null
+            && entry.paths().isEmpty()
+            && entry.path() != null
+            && entry.path().startsWith(folder)) {
+            String file = entry.path() + ".png";
+            found.putIfAbsent(file, new LegacyTextureNames.Candidate(file, LegacyTextureNames.Route.BEDROCK_NAME, 0, 0));
+         }
+
+         if (routes.contains(LegacyTextureNames.Route.JAVA_NAME)) {
+            found.putIfAbsent(folder + name + ".png", new LegacyTextureNames.Candidate(folder + name + ".png", LegacyTextureNames.Route.JAVA_NAME, 0, 0));
+         }
+
+         return new ArrayList<>(found.values());
       }
    }
 
-   @Nullable
-   public static String oldFolder(String javaFolder) {
+   public static @Nullable String oldFolder(String javaFolder) {
       return switch (javaFolder) {
          case "block/" -> "textures/blocks/";
          case "item/" -> "textures/items/";
@@ -181,7 +177,7 @@ public final class LegacyTextureNames {
       }
    }
 
-   public static enum Route {
+   public enum Route {
       TABLE,
       BEDROCK_NAME,
       JAVA_NAME;

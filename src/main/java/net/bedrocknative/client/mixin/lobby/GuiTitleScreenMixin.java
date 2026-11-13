@@ -7,16 +7,9 @@ import net.minecraft.client.gui.screens.TitleScreen;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 
-@Mixin({Gui.class})
+@Mixin(Gui.class)
 public abstract class GuiTitleScreenMixin {
-   @ModifyExpressionValue(
-      method = {"setScreen"},
-      at = {@At(
-         value = "NEW",
-         target = "()Lnet/minecraft/client/gui/screens/TitleScreen;"
-      )},
-      require = 0
-   )
+   @ModifyExpressionValue(method = "setScreen", at = @At(value = "NEW", target = "()Lnet/minecraft/client/gui/screens/TitleScreen;"), require = 0)
    private TitleScreen bedrocknative$bedrockStartScreen(TitleScreen java) {
       return BedrockLobby.titleScreen(java);
    }

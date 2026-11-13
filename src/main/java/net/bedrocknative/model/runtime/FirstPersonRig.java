@@ -38,9 +38,7 @@ public final class FirstPersonRig implements WearerBones {
    }
 
    private static int which(String name) {
-      String var1 = name.toLowerCase(Locale.ROOT);
-
-      return switch (var1) {
+      return switch (name.toLowerCase(Locale.ROOT)) {
          case "rightitem" -> 1;
          case "rightarm", "rightsleeve", "rightarmarmor" -> 2;
          case "leftitem" -> 3;
@@ -65,9 +63,8 @@ public final class FirstPersonRig implements WearerBones {
       return which(name) != 0 || name.equalsIgnoreCase("root");
    }
 
-   @Nullable
    @Override
-   public float[] pivot(String name) {
+   public float @Nullable [] pivot(String name) {
       return switch (which(name)) {
          case 1 -> RIGHT_ITEM_PIVOT;
          case 2 -> RIGHT_ARM_PIVOT;

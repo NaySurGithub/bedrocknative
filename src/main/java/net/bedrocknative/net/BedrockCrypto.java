@@ -35,8 +35,8 @@ public final class BedrockCrypto {
          KeyPairGenerator generator = KeyPairGenerator.getInstance("EC");
          generator.initialize(new ECGenParameterSpec("secp384r1"), RANDOM);
          return generator.generateKeyPair();
-      } catch (GeneralSecurityException var1) {
-         throw new IllegalStateException("P-384 key generation unavailable", var1);
+      } catch (GeneralSecurityException e) {
+         throw new IllegalStateException("P-384 key generation unavailable", e);
       }
    }
 
@@ -73,8 +73,8 @@ public final class BedrockCrypto {
 
       try {
          return jws.getCompactSerialization();
-      } catch (JoseException var4) {
-         throw new IllegalStateException("Unable to sign JWT", var4);
+      } catch (JoseException e) {
+         throw new IllegalStateException("Unable to sign JWT", e);
       }
    }
 
@@ -89,8 +89,8 @@ public final class BedrockCrypto {
          } else {
             return new BedrockCrypto.SelfSignedJwt(key, jws.getUnverifiedPayload());
          }
-      } catch (JoseException var3) {
-         throw new GeneralSecurityException("Malformed JWT", var3);
+      } catch (JoseException e) {
+         throw new GeneralSecurityException("Malformed JWT", e);
       }
    }
 
@@ -109,8 +109,8 @@ public final class BedrockCrypto {
          Cipher cipher = Cipher.getInstance("AES/CTR/NoPadding");
          cipher.init(encrypt ? 1 : 2, key, new IvParameterSpec(iv));
          return cipher;
-      } catch (GeneralSecurityException var4) {
-         throw new IllegalStateException("AES-CTR unavailable", var4);
+      } catch (GeneralSecurityException e) {
+         throw new IllegalStateException("AES-CTR unavailable", e);
       }
    }
 

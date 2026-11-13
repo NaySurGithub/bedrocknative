@@ -30,18 +30,18 @@ public final class RemotePlayerPose {
    public float glideScale(float partialTick) {
       if (this.glideTicks == 0) {
          return 0.0F;
-      } else {
-         float ticks = this.glideTicks + partialTick;
-         return Math.clamp(ticks * ticks / 100.0F, 0.0F, 1.0F);
       }
+
+      float ticks = this.glideTicks + partialTick;
+      return Math.clamp(ticks * ticks / 100.0F, 0.0F, 1.0F);
    }
 
    public float glidingSpeedValue(double speedSquared) {
       if (this.glideTicks == 0) {
          return 1.0F;
-      } else {
-         float value = (float)(speedSquared / 0.2);
-         return Math.max(1.0F, value * value * value);
       }
+
+      float value = (float)(speedSquared / 0.2);
+      return Math.max(1.0F, value * value * value);
    }
 }

@@ -60,11 +60,11 @@ import net.minecraft.client.resources.model.geometry.BakedQuad;
 import net.minecraft.client.resources.model.geometry.ItemQuads;
 import net.minecraft.client.resources.model.geometry.BakedQuad.MaterialInfo;
 import net.minecraft.client.resources.model.geometry.QuadCollection.Builder;
+import net.minecraft.client.resources.model.sprite.Material;
 import net.minecraft.core.Direction;
 import net.minecraft.data.AtlasIds;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Util;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.LevelChunkSection;
@@ -79,24 +79,16 @@ public final class BedrockBlockModels {
    private static final int BIRCH = -8345771;
    private static final int SPRUCE = -10380959;
    private static final Set<String> LOGGED = ConcurrentHashMap.newKeySet();
-   @Nullable
-   private static volatile BlockStateModel[] models;
-   @Nullable
-   private static int[] restitchAsked;
-   @Nullable
-   private static SlotMemory slotMemory;
-   @Nullable
-   private static volatile String sessionServer;
-   @Nullable
-   private static volatile int[] rememberedSlots;
+   private static volatile BlockStateModel @Nullable [] models;
+   private static int @Nullable [] restitchAsked;
+   private static @Nullable SlotMemory slotMemory;
+   private static volatile @Nullable String sessionServer;
+   private static volatile int @Nullable [] rememberedSlots;
    private static final Map<String, BedrockBlockModels.ItemLook> items = new ConcurrentHashMap<>();
-   @Nullable
-   private static volatile BedrockBlockModels.Prepared itemPrepared;
+   private static volatile BedrockBlockModels.@Nullable Prepared itemPrepared;
    private static volatile Map<String, BedrockBlockModels.Placed> itemPlaced = Map.of();
-   @Nullable
-   private static volatile TextureAtlasSprite itemMissing;
-   @Nullable
-   private static BedrockBlockModels.Prepared prepared;
+   private static volatile @Nullable TextureAtlasSprite itemMissing;
+   private static BedrockBlockModels.@Nullable Prepared prepared;
    private static List<BedrockBlockModels.Animated> animated = List.of();
    private static long animationTick;
    private static int generation;
@@ -108,50 +100,48 @@ public final class BedrockBlockModels {
    private BedrockBlockModels() {
    }
 
-   @Nullable
-   public static BlockStateModel model(BlockState state) {
+   public static @Nullable BlockStateModel model(BlockState state) {
       BlockStateModel[] current = models;
       if (current != null && state.getBlock() instanceof CarrierBlock) {
-         int slot = (Integer)state.getValue(CarrierBlock.SLOT);
+         int slot = state.getValue(CarrierBlock.SLOT);
          return slot < current.length ? current[slot] : null;
       } else {
          return null;
       }
    }
 
-   @Nullable
-   public static BedrockBlockModels.ItemLook item(String block) {
+   public static BedrockBlockModels.@Nullable ItemLook item(String block) {
       BedrockBlockModels.ItemLook known = items.get(block);
       if (known != null) {
          return known;
-      } else {
-         BedrockBlockModels.Prepared content = itemPrepared;
-         Map<String, BedrockBlockModels.Placed> placed = itemPlaced;
-         TextureAtlasSprite missing = itemMissing;
-         if (content != null && missing != null) {
-            synchronized (items) {
-               known = items.get(block);
-               if (known != null) {
-                  return known;
-               } else {
-                  int slot = content.set().firstSlot(block);
-                  if (slot < 0) {
-                     return null;
-                  } else {
-                     CustomBlockLooks.Look look = content.looks().bySlot()[slot];
-                     List<BakedQuad> quads = quads(look, placed, missing, false);
-                     look.releaseQuads();
-                     Vector3fc[] extents = CuboidItemModelWrapper.computeExtents(quads);
-                     BlockItemDisplay display = content.looks().itemDisplays().get(block);
-                     BedrockBlockModels.ItemLook built = new BedrockBlockModels.ItemLook(ItemQuads.split(quads), () -> extents, display, extents);
-                     items.put(block, built);
-                     return built;
-                  }
-               }
+      }
+
+      BedrockBlockModels.Prepared content = itemPrepared;
+      Map<String, BedrockBlockModels.Placed> placed = itemPlaced;
+      TextureAtlasSprite missing = itemMissing;
+      if (content != null && missing != null) {
+         synchronized (items) {
+            known = items.get(block);
+            if (known != null) {
+               return known;
             }
-         } else {
-            return null;
+
+            int slot = content.set().firstSlot(block);
+            if (slot < 0) {
+               return null;
+            }
+
+            CustomBlockLooks.Look look = content.looks().bySlot()[slot];
+            List<BakedQuad> quads = quads(look, placed, missing, false);
+            look.releaseQuads();
+            Vector3fc[] extents = CuboidItemModelWrapper.computeExtents(quads);
+            BlockItemDisplay display = content.looks().itemDisplays().get(block);
+            BedrockBlockModels.ItemLook built = new BedrockBlockModels.ItemLook(ItemQuads.split(quads), () -> extents, display, extents);
+            items.put(block, built);
+            return built;
          }
+      } else {
+         return null;
       }
    }
 
@@ -235,7 +225,7 @@ public final class BedrockBlockModels {
                   BlockTintSources.dryFoliage(),
                   BlockTintSources.water()
                ),
-               new Block[]{CustomBlocks.CARRIER}
+               CustomBlocks.CARRIER
             );
       }
 
@@ -294,8 +284,8 @@ public final class BedrockBlockModels {
                   if (slot.show(atlas, tick)) {
                      budget--;
                   }
-               } catch (RuntimeException var13) {
-                  BedrockNative.LOGGER.warn("Bedrock blocks: flipbook {} stopped", slot.key, var13);
+               } catch (RuntimeException e) {
+                  BedrockNative.LOGGER.warn("Bedrock blocks: flipbook {} stopped", slot.key, e);
                   if (failed == null) {
                      failed = new ArrayList<>();
                   }
@@ -408,31 +398,30 @@ public final class BedrockBlockModels {
       ClientLevel level = minecraft.level;
       if (level == null) {
          return 0;
-      } else {
-         int redrawn = 0;
-         AtomicReferenceArray<LevelChunk> chunks = level.getChunkSource().storage.chunks;
+      }
 
-         for (int i = 0; i < chunks.length(); i++) {
-            LevelChunk chunk = chunks.get(i);
-            if (chunk != null) {
-               LevelChunkSection[] sections = chunk.getSections();
+      int redrawn = 0;
+      AtomicReferenceArray<LevelChunk> chunks = level.getChunkSource().storage.chunks;
 
-               for (int index = 0; index < sections.length; index++) {
-                  LevelChunkSection section = sections[index];
-                  if (!section.hasOnlyAir() && section.maybeHas(state -> state.is(CustomBlocks.CARRIER))) {
-                     minecraft.levelExtractor.setSectionDirty(chunk.getPos().x(), level.getSectionYFromSectionIndex(index), chunk.getPos().z());
-                     redrawn++;
-                  }
+      for (int i = 0; i < chunks.length(); i++) {
+         LevelChunk chunk = chunks.get(i);
+         if (chunk != null) {
+            LevelChunkSection[] sections = chunk.getSections();
+
+            for (int index = 0; index < sections.length; index++) {
+               LevelChunkSection section = sections[index];
+               if (!section.hasOnlyAir() && section.maybeHas(state -> state.is(CustomBlocks.CARRIER))) {
+                  minecraft.levelExtractor.setSectionDirty(chunk.getPos().x(), level.getSectionYFromSectionIndex(index), chunk.getPos().z());
+                  redrawn++;
                }
             }
          }
-
-         return redrawn;
       }
+
+      return redrawn;
    }
 
-   @Nullable
-   private static BedrockBlockModels.Prepared cancelled(Map<String, BedrockBlockModels.Image> images) {
+   private static BedrockBlockModels.@Nullable Prepared cancelled(Map<String, BedrockBlockModels.Image> images) {
       images.values().forEach(image -> image.image().close());
       return null;
    }
@@ -440,102 +429,99 @@ public final class BedrockBlockModels {
    private static BedrockBlockModels.Prepared prepare(PackStack stack, CustomBlockSet set, AtlasPacking packing, BooleanSupplier cancelled) {
       if (cancelled.getAsBoolean()) {
          return null;
-      } else {
-         CustomBlockLooks.Loaded looks = CustomBlockLooks.load(stack, set);
-         Map<String, BedrockBlockModels.Image> images = new LinkedHashMap<>();
-         int animatedCount = 0;
+      }
 
-         for (CustomBlockLooks.Texture texture : looks.textures().values()) {
-            if (cancelled.getAsBoolean()) {
-               return cancelled(images);
-            }
+      CustomBlockLooks.Loaded looks = CustomBlockLooks.load(stack, set);
+      Map<String, BedrockBlockModels.Image> images = new LinkedHashMap<>();
+      int animatedCount = 0;
 
-            BedrockBlockModels.Image image = read(stack, texture, looks);
-            if (image != null) {
-               images.put(texture.key(), image);
-               animatedCount += image.animation() != null ? 1 : 0;
-            }
-         }
-
+      for (CustomBlockLooks.Texture texture : looks.textures().values()) {
          if (cancelled.getAsBoolean()) {
             return cancelled(images);
-         } else {
-            List<int[]> sizes = new ArrayList<>(images.size());
-            images.values().forEach(image -> sizes.add(new int[]{image.width(), image.height()}));
-            SlotPlan.Plan plan = SlotPlan.plan(sizes, SlotPlan.budget(packing.maxSide()), packing.padding(), packing.granularity());
-            BlockProblems problems = looks.problems();
-            problems.log(LOGGED, BedrockNative.LOGGER::info);
-            BedrockNative.LOGGER
-               .info(
-                  "Bedrock blocks: {} custom states, {} textures ({} read, {} flipbooks) in slots {}, {} blocks with missing textures, problems {}",
-                  new Object[]{
-                     set.size(), looks.textures().size(), images.size(), animatedCount, plan, problems.blocksWithMissingTextures(), problems.summary()
-                  }
-               );
-            if (!looks.itemDisplays().isEmpty()) {
-               List<String> named = new ArrayList<>(new TreeSet<>(looks.itemDisplays().keySet()));
-               BedrockNative.LOGGER
-                  .info(
-                     "Bedrock block items: {} of {} custom blocks placed by their geometry's item_display_transforms {}",
-                     new Object[]{named.size(), set.blocks().size(), named.size() > 12 ? named.subList(0, 12) + " ..." : named}
-                  );
-            }
+         }
 
-            if (plan.unplaced() > 0) {
-               BedrockNative.LOGGER
-                  .warn(
-                     "Bedrock blocks: {} of {} textures don't fit the block atlas even in 16 px slots (GPU limit {} px, padding {}); they show the missing texture",
-                     new Object[]{plan.unplaced(), images.size(), packing.maxSide(), packing.padding()}
-                  );
-            }
-
-            return new BedrockBlockModels.Prepared(set, looks, images, plan, pictures(images, plan, packing));
+         BedrockBlockModels.Image image = read(stack, texture, looks);
+         if (image != null) {
+            images.put(texture.key(), image);
+            animatedCount += image.animation() != null ? 1 : 0;
          }
       }
+
+      if (cancelled.getAsBoolean()) {
+         return cancelled(images);
+      }
+
+      List<int[]> sizes = new ArrayList<>(images.size());
+      images.values().forEach(image -> sizes.add(new int[]{image.width(), image.height()}));
+      SlotPlan.Plan plan = SlotPlan.plan(sizes, SlotPlan.budget(packing.maxSide()), packing.padding(), packing.granularity());
+      BlockProblems problems = looks.problems();
+      problems.log(LOGGED, BedrockNative.LOGGER::info);
+      BedrockNative.LOGGER
+         .info(
+            "Bedrock blocks: {} custom states, {} textures ({} read, {} flipbooks) in slots {}, {} blocks with missing textures, problems {}",
+            new Object[]{set.size(), looks.textures().size(), images.size(), animatedCount, plan, problems.blocksWithMissingTextures(), problems.summary()}
+         );
+      if (!looks.itemDisplays().isEmpty()) {
+         List<String> named = new ArrayList<>(new TreeSet<>(looks.itemDisplays().keySet()));
+         BedrockNative.LOGGER
+            .info(
+               "Bedrock block items: {} of {} custom blocks placed by their geometry's item_display_transforms {}",
+               new Object[]{named.size(), set.blocks().size(), named.size() > 12 ? named.subList(0, 12) + " ..." : named}
+            );
+      }
+
+      if (plan.unplaced() > 0) {
+         BedrockNative.LOGGER
+            .warn(
+               "Bedrock blocks: {} of {} textures don't fit the block atlas even in 16 px slots (GPU limit {} px, padding {}); they show the missing texture",
+               new Object[]{plan.unplaced(), images.size(), packing.maxSide(), packing.padding()}
+            );
+      }
+
+      return new BedrockBlockModels.Prepared(set, looks, images, plan, pictures(images, plan, packing));
    }
 
    private static Map<String, BedrockBlockModels.SlotPicture> pictures(Map<String, BedrockBlockModels.Image> images, SlotPlan.Plan plan, AtlasPacking packing) {
       Map<String, BedrockBlockModels.SlotPicture> pictures = new HashMap<>();
       if (!SLOT_PICTURES) {
          return pictures;
-      } else {
-         int mipLevels = Integer.numberOfTrailingZeros(packing.granularity());
-         int texture = -1;
+      }
 
-         for (Entry<String, BedrockBlockModels.Image> entry : images.entrySet()) {
-            texture++;
-            BedrockBlockModels.Image image = entry.getValue();
-            int planned = texture < plan.classes().length ? plan.classes()[texture] : -1;
-            if (planned >= 0 && image.animation() == null) {
-               int size = BlockSlotSource.SIZES[planned];
-               NativeImage fitted = fit(image.image(), 0, image.width(), image.height(), size);
+      int mipLevels = Integer.numberOfTrailingZeros(packing.granularity());
+      int texture = -1;
 
-               try {
-                  int levels = Math.min(mipLevels + 1, Integer.numberOfTrailingZeros(size) + 1);
-                  pictures.put(
-                     entry.getKey(),
-                     new BedrockBlockModels.SlotPicture(
-                        size,
-                        packing.padding(),
-                        fitted.getWidth(),
-                        fitted.getHeight(),
-                        slotPictures(BlockSlotSource.slot(size, 0), fitted, size, packing.padding(), levels)
-                     )
-                  );
-               } finally {
-                  if (fitted != image.image()) {
-                     fitted.close();
-                  }
+      for (Entry<String, BedrockBlockModels.Image> entry : images.entrySet()) {
+         texture++;
+         BedrockBlockModels.Image image = entry.getValue();
+         int planned = texture < plan.classes().length ? plan.classes()[texture] : -1;
+         if (planned >= 0 && image.animation() == null) {
+            int size = BlockSlotSource.SIZES[planned];
+            NativeImage fitted = fit(image.image(), 0, image.width(), image.height(), size);
+
+            try {
+               int levels = Math.min(mipLevels + 1, Integer.numberOfTrailingZeros(size) + 1);
+               pictures.put(
+                  entry.getKey(),
+                  new BedrockBlockModels.SlotPicture(
+                     size,
+                     packing.padding(),
+                     fitted.getWidth(),
+                     fitted.getHeight(),
+                     slotPictures(BlockSlotSource.slot(size, 0), fitted, size, packing.padding(), levels)
+                  )
+               );
+            } finally {
+               if (fitted != image.image()) {
+                  fitted.close();
                }
             }
          }
-
-         return pictures;
       }
+
+      return pictures;
    }
 
-   @Nullable
-   private static BedrockBlockModels.Image read(PackStack stack, CustomBlockLooks.Texture texture, CustomBlockLooks.Loaded looks) {
+   private static BedrockBlockModels.@Nullable Image read(PackStack stack, CustomBlockLooks.Texture texture, CustomBlockLooks.Loaded looks) {
       boolean fallback = texture.flipbook() != null && texture.still() != null && !texture.still().equals(texture.path());
       NativeImage image = decode(stack, texture.path(), texture, looks, !fallback);
       boolean strip = image != null && texture.flipbook() != null;
@@ -545,25 +531,25 @@ public final class BedrockBlockModels {
 
       if (image == null) {
          return null;
-      } else {
-         if (texture.opaque()) {
-            forceOpaque(image);
-         }
+      }
 
-         int width = image.getWidth();
-         if (strip) {
-            int frames = image.getHeight() / Math.max(1, width);
-            FlipbookAnimation animation = frames >= 2 ? FlipbookAnimation.of(texture.flipbook(), frames) : null;
-            if (animation != null) {
-               return new BedrockBlockModels.Image(image, animation);
-            } else {
-               return image.getHeight() <= width
-                  ? new BedrockBlockModels.Image(image, null)
-                  : new BedrockBlockModels.Image(frame(image, FlipbookAnimation.stillFrame(texture.flipbook(), frames)), null);
-            }
+      if (texture.opaque()) {
+         forceOpaque(image);
+      }
+
+      int width = image.getWidth();
+      if (strip) {
+         int frames = image.getHeight() / Math.max(1, width);
+         FlipbookAnimation animation = frames >= 2 ? FlipbookAnimation.of(texture.flipbook(), frames) : null;
+         if (animation != null) {
+            return new BedrockBlockModels.Image(image, animation);
          } else {
-            return new BedrockBlockModels.Image(texture.firstFrame() && image.getHeight() > width ? frame(image, 0) : image, null);
+            return image.getHeight() <= width
+               ? new BedrockBlockModels.Image(image, null)
+               : new BedrockBlockModels.Image(frame(image, FlipbookAnimation.stillFrame(texture.flipbook(), frames)), null);
          }
+      } else {
+         return new BedrockBlockModels.Image(texture.firstFrame() && image.getHeight() > width ? frame(image, 0) : image, null);
       }
    }
 
@@ -575,8 +561,7 @@ public final class BedrockBlockModels {
       return frame;
    }
 
-   @Nullable
-   private static NativeImage decode(PackStack stack, String path, CustomBlockLooks.Texture texture, CustomBlockLooks.Loaded looks, boolean report) {
+   private static @Nullable NativeImage decode(PackStack stack, String path, CustomBlockLooks.Texture texture, CustomBlockLooks.Loaded looks, boolean report) {
       Optional<PackStack.Resource> resource = stack.texture(path);
       if (resource.isEmpty()) {
          if (report) {
@@ -587,12 +572,12 @@ public final class BedrockBlockModels {
       } else {
          try {
             return BedrockTextures.decode(resource.get().data());
-         } catch (RuntimeException | IOException var7) {
+         } catch (IOException | RuntimeException e) {
             if (report) {
-               problem(looks, texture, BlockProblems.Reason.TEXTURE_UNREADABLE, resource.get().path() + ": " + var7.getMessage());
+               problem(looks, texture, BlockProblems.Reason.TEXTURE_UNREADABLE, resource.get().path() + ": " + e.getMessage());
             }
 
-            BedrockNative.LOGGER.debug("Couldn't decode Bedrock block texture {}", resource.get().path(), var7);
+            BedrockNative.LOGGER.debug("Couldn't decode Bedrock block texture {}", resource.get().path(), e);
             return null;
          }
       }
@@ -793,12 +778,12 @@ public final class BedrockBlockModels {
       int needed = Math.max(width, height);
       if (needed <= size && y == 0 && width == image.getWidth() && height == image.getHeight()) {
          return image;
-      } else {
-         float factor = Math.min(1.0F, (float)size / needed);
-         NativeImage fitted = new NativeImage(Math.max(1, Math.round(width * factor)), Math.max(1, Math.round(height * factor)), false);
-         image.resizeSubRectTo(0, y, width, height, fitted);
-         return fitted;
       }
+
+      float factor = Math.min(1.0F, (float)size / needed);
+      NativeImage fitted = new NativeImage(Math.max(1, Math.round(width * factor)), Math.max(1, Math.round(height * factor)), false);
+      image.resizeSubRectTo(0, y, width, height, fitted);
+      return fitted;
    }
 
    private static int sizeClass(int planned, List<ArrayDeque<TextureAtlasSprite>> free) {
@@ -808,9 +793,9 @@ public final class BedrockBlockModels {
          }
       }
 
-      for (int sizeClassx = planned - 1; sizeClassx >= 0; sizeClassx--) {
-         if (!free.get(sizeClassx).isEmpty()) {
-            return sizeClassx;
+      for (int sizeClass = planned - 1; sizeClass >= 0; sizeClass--) {
+         if (!free.get(sizeClass).isEmpty()) {
+            return sizeClass;
          }
       }
 
@@ -897,9 +882,7 @@ public final class BedrockBlockModels {
          );
       }
 
-      net.minecraft.client.resources.model.sprite.Material.Baked particleMaterial = new net.minecraft.client.resources.model.sprite.Material.Baked(
-         particle != null ? particle : missing, false
-      );
+      Material.Baked particleMaterial = new Material.Baked(particle != null ? particle : missing, false);
       SimpleModelWrapper part = new SimpleModelWrapper(builder.build(), ambientOcclusion, particleMaterial);
       return new CustomBlockStateModel(prepared, part, state != null ? state.state().name() : "", state != null ? state.geometry().cullingLayer() : null);
    }
@@ -963,8 +946,7 @@ public final class BedrockBlockModels {
       private final FlipbookAnimation animation;
       private long shown = Long.MIN_VALUE;
       private int frame = -1;
-      @Nullable
-      private NativeImage scratch;
+      private @Nullable NativeImage scratch;
 
       Animated(String key, TextureAtlasSprite sprite, NativeImage[] frames, FlipbookAnimation animation) {
          this.key = key;
@@ -981,33 +963,33 @@ public final class BedrockBlockModels {
          long picture = this.animation.picture(tick);
          if (picture == this.shown) {
             return false;
-         } else {
-            this.shown = picture;
-            this.frame = this.animation.frame(tick);
-            float blend = this.animation.blendFactor(tick);
-            NativeImage from = this.frames[this.frame];
-            if (blend <= 0.0F) {
-               BedrockBlockModels.upload(atlas, this.sprite, from);
-               return false;
-            } else {
-               NativeImage to = this.frames[this.animation.nextFrame(tick)];
-               int count = from.getWidth() * from.getHeight();
-               if (this.scratch == null) {
-                  this.scratch = new NativeImage(from.getWidth(), from.getHeight(), false);
-               }
-
-               IntBuffer source = MemoryUtil.memIntBuffer(from.getPointer(), count);
-               IntBuffer target = MemoryUtil.memIntBuffer(to.getPointer(), count);
-               IntBuffer out = MemoryUtil.memIntBuffer(this.scratch.getPointer(), count);
-
-               for (int i = 0; i < count; i++) {
-                  out.put(i, FlipbookAnimation.lerp(source.get(i), target.get(i), blend));
-               }
-
-               BedrockBlockModels.upload(atlas, this.sprite, this.scratch);
-               return true;
-            }
          }
+
+         this.shown = picture;
+         this.frame = this.animation.frame(tick);
+         float blend = this.animation.blendFactor(tick);
+         NativeImage from = this.frames[this.frame];
+         if (blend <= 0.0F) {
+            BedrockBlockModels.upload(atlas, this.sprite, from);
+            return false;
+         }
+
+         NativeImage to = this.frames[this.animation.nextFrame(tick)];
+         int count = from.getWidth() * from.getHeight();
+         if (this.scratch == null) {
+            this.scratch = new NativeImage(from.getWidth(), from.getHeight(), false);
+         }
+
+         IntBuffer source = MemoryUtil.memIntBuffer(from.getPointer(), count);
+         IntBuffer target = MemoryUtil.memIntBuffer(to.getPointer(), count);
+         IntBuffer out = MemoryUtil.memIntBuffer(this.scratch.getPointer(), count);
+
+         for (int i = 0; i < count; i++) {
+            out.put(i, FlipbookAnimation.lerp(source.get(i), target.get(i), blend));
+         }
+
+         BedrockBlockModels.upload(atlas, this.sprite, this.scratch);
+         return true;
       }
 
       void close() {

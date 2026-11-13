@@ -27,8 +27,8 @@ public final class DpapiProtection implements Protection {
    public byte[] seal(byte[] plain) throws IOException {
       try {
          return Crypt32Util.cryptProtectData(plain, this.entropy, 1, "BedrockNative Xbox sign-in", null);
-      } catch (LinkageError | RuntimeException var3) {
-         throw new IOException("Windows could not protect the sign-in (" + var3.getClass().getSimpleName() + ")");
+      } catch (RuntimeException | LinkageError e) {
+         throw new IOException("Windows could not protect the sign-in (" + e.getClass().getSimpleName() + ")");
       }
    }
 
@@ -36,8 +36,8 @@ public final class DpapiProtection implements Protection {
    public byte[] open(byte[] sealed) throws IOException {
       try {
          return Crypt32Util.cryptUnprotectData(sealed, this.entropy, 1, null);
-      } catch (LinkageError | RuntimeException var3) {
-         throw new VaultUnreadableException("Windows could not open the saved sign-in for this Windows user (" + var3.getClass().getSimpleName() + ")");
+      } catch (RuntimeException | LinkageError e) {
+         throw new VaultUnreadableException("Windows could not open the saved sign-in for this Windows user (" + e.getClass().getSimpleName() + ")");
       }
    }
 }

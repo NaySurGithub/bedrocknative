@@ -18,12 +18,9 @@ public final class UiValue {
    public static final UiValue EMPTY = new UiValue(UiValue.Kind.STRING, 0.0, "", null);
    private final UiValue.Kind kind;
    private final double number;
-   @Nullable
-   private final String string;
-   @Nullable
-   private final JsonElement json;
-   @Nullable
-   private float[] floats;
+   private final @Nullable String string;
+   private final @Nullable JsonElement json;
+   private float @Nullable [] floats;
 
    private UiValue(UiValue.Kind kind, double number, @Nullable String string, @Nullable JsonElement json) {
       this.kind = kind;
@@ -55,7 +52,9 @@ public final class UiValue {
    public static UiValue of(@Nullable JsonElement json) {
       if (json == null || json.isJsonNull()) {
          return NULL;
-      } else if (json instanceof JsonPrimitive primitive) {
+      }
+
+      if (json instanceof JsonPrimitive primitive) {
          if (primitive.isBoolean()) {
             return of(primitive.getAsBoolean());
          } else {
@@ -131,40 +130,36 @@ public final class UiValue {
       };
    }
 
-   @Nullable
-   public String stringOrNull() {
+   public @Nullable String stringOrNull() {
       return this.kind == UiValue.Kind.STRING ? this.string : null;
    }
 
-   @Nullable
-   public JsonArray array() {
+   public @Nullable JsonArray array() {
       return this.kind == UiValue.Kind.ARRAY ? this.json.getAsJsonArray() : null;
    }
 
-   @Nullable
-   public JsonObject object() {
+   public @Nullable JsonObject object() {
       return this.kind == UiValue.Kind.OBJECT ? this.json.getAsJsonObject() : null;
    }
 
-   @Nullable
-   public float[] floats() {
+   public float @Nullable [] floats() {
       if (this.kind != UiValue.Kind.ARRAY) {
          return null;
-      } else {
-         float[] cached = this.floats;
-         if (cached == null) {
-            JsonArray array = this.json.getAsJsonArray();
-            cached = new float[array.size()];
+      }
 
-            for (int i = 0; i < cached.length; i++) {
-               cached[i] = (float)of(array.get(i)).asNumber();
-            }
+      float[] cached = this.floats;
+      if (cached == null) {
+         JsonArray array = this.json.getAsJsonArray();
+         cached = new float[array.size()];
 
-            this.floats = cached;
+         for (int i = 0; i < cached.length; i++) {
+            cached[i] = (float)of(array.get(i)).asNumber();
          }
 
-         return cached;
+         this.floats = cached;
       }
+
+      return cached;
    }
 
    public JsonElement toJson() {
@@ -189,12 +184,12 @@ public final class UiValue {
       String trimmed = text.trim();
       if (trimmed.isEmpty()) {
          return 0.0;
-      } else {
-         try {
-            return Double.parseDouble(trimmed);
-         } catch (NumberFormatException var3) {
-            return 0.0;
-         }
+      }
+
+      try {
+         return Double.parseDouble(trimmed);
+      } catch (NumberFormatException e) {
+         return 0.0;
       }
    }
 
@@ -202,7 +197,9 @@ public final class UiValue {
    public boolean equals(Object other) {
       if (this == other) {
          return true;
-      } else if (other instanceof UiValue value && value.kind == this.kind) {
+      }
+
+      if (other instanceof UiValue value && value.kind == this.kind) {
          return switch (this.kind) {
             case NULL -> true;
             case BOOL, NUMBER -> Double.compare(this.number, value.number) == 0;
@@ -229,7 +226,7 @@ public final class UiValue {
       return this.kind == UiValue.Kind.STRING ? "'" + this.string + "'" : this.asString();
    }
 
-   public static enum Kind {
+   public enum Kind {
       NULL,
       BOOL,
       NUMBER,

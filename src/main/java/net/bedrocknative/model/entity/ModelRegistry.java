@@ -204,15 +204,14 @@ public final class ModelRegistry {
                   this.files++;
                   action.accept(json);
                }
-            } catch (RuntimeException | IOException var9) {
-               BedrockNative.LOGGER.warn("Couldn't load Bedrock {} from {}: {}", new Object[]{path, source, var9.toString()});
+            } catch (IOException | RuntimeException e) {
+               BedrockNative.LOGGER.warn("Couldn't load Bedrock {} from {}: {}", new Object[]{path, source, e.toString()});
             }
          }
       }
    }
 
-   @Nullable
-   private static ClientEntityDef select(List<ClientEntityDef> candidates) {
+   private static @Nullable ClientEntityDef select(List<ClientEntityDef> candidates) {
       ClientEntityDef best = null;
 
       for (ClientEntityDef candidate : candidates) {
@@ -243,8 +242,8 @@ public final class ModelRegistry {
          if (version != null && version.isJsonPrimitive()) {
             return MolangVersion.ofEngineVersion(version.getAsString());
          }
-      } catch (RuntimeException | IOException var5) {
-         BedrockNative.LOGGER.debug("No readable manifest in {}: {}", source, var5.toString());
+      } catch (IOException | RuntimeException e) {
+         BedrockNative.LOGGER.debug("No readable manifest in {}: {}", source, e.toString());
       }
 
       return MolangVersion.BEFORE_VERSIONING;
@@ -254,8 +253,7 @@ public final class ModelRegistry {
       return MolangVersion.parse("1.26.63");
    }
 
-   @Nullable
-   public ClientEntityDef entity(String identifier) {
+   public @Nullable ClientEntityDef entity(String identifier) {
       return this.entities.get(identifier);
    }
 
@@ -263,8 +261,7 @@ public final class ModelRegistry {
       return this.baseEntities.contains(identifier);
    }
 
-   @Nullable
-   public ClientEntityDef baseEntity(String identifier) {
+   public @Nullable ClientEntityDef baseEntity(String identifier) {
       return this.baseDefinitions.get(identifier);
    }
 
@@ -281,8 +278,7 @@ public final class ModelRegistry {
       return Collections.unmodifiableCollection(this.entities.values());
    }
 
-   @Nullable
-   public ClientEntityDef attachableByIdentifier(String identifier) {
+   public @Nullable ClientEntityDef attachableByIdentifier(String identifier) {
       return this.attachables.get(identifier);
    }
 
@@ -290,8 +286,7 @@ public final class ModelRegistry {
       return Collections.unmodifiableCollection(this.attachables.values());
    }
 
-   @Nullable
-   public ClientEntityDef attachable(String itemId, MolangEnv env) {
+   public @Nullable ClientEntityDef attachable(String itemId, MolangEnv env) {
       ClientEntityDef match = null;
 
       for (ClientEntityDef candidate : this.itemAttachables) {
@@ -303,24 +298,21 @@ public final class ModelRegistry {
 
       if (match != null) {
          return match;
-      } else {
-         ClientEntityDef byIdentifier = this.attachables.get(itemId);
-         return byIdentifier != null && byIdentifier.items() == null ? byIdentifier : null;
       }
+
+      ClientEntityDef byIdentifier = this.attachables.get(itemId);
+      return byIdentifier != null && byIdentifier.items() == null ? byIdentifier : null;
    }
 
-   @Nullable
-   public AnimationDef animation(String name) {
+   public @Nullable AnimationDef animation(String name) {
       return this.animations.get(name);
    }
 
-   @Nullable
-   public ControllerDef controller(String name) {
+   public @Nullable ControllerDef controller(String name) {
       return this.controllers.get(name);
    }
 
-   @Nullable
-   public RenderControllerDef renderController(String name) {
+   public @Nullable RenderControllerDef renderController(String name) {
       return this.renderControllers.get(name);
    }
 
@@ -328,8 +320,7 @@ public final class ModelRegistry {
       return this.materials;
    }
 
-   @Nullable
-   public GeometryDef geometry(String identifier) {
+   public @Nullable GeometryDef geometry(String identifier) {
       return this.geometries.get(identifier);
    }
 
@@ -337,19 +328,17 @@ public final class ModelRegistry {
       return this.geometries;
    }
 
-   @Nullable
-   public MeshedGeometry mesh(String identifier) {
+   public @Nullable MeshedGeometry mesh(String identifier) {
       MeshedGeometry cached = this.meshes.get(identifier);
       if (cached != null) {
          return cached;
-      } else {
-         GeometryDef geometry = this.geometries.get(identifier);
-         return geometry == null ? null : this.meshes.computeIfAbsent(identifier, key -> GeometryMesher.mesh(geometry));
       }
+
+      GeometryDef geometry = this.geometries.get(identifier);
+      return geometry == null ? null : this.meshes.computeIfAbsent(identifier, key -> GeometryMesher.mesh(geometry));
    }
 
-   @Nullable
-   public MeshedGeometry mesh(String identifier, ClientEntityDef definition) {
+   public @Nullable MeshedGeometry mesh(String identifier, ClientEntityDef definition) {
       GeometryDef geometry = this.geometries.get(identifier);
       return geometry != null && GeometryMesher.hasTextureMeshes(geometry)
          ? this.textureMeshed
@@ -361,20 +350,19 @@ public final class ModelRegistry {
          : this.mesh(identifier);
    }
 
-   @Nullable
-   public TextureMesher.Pixels image(String path) {
+   public TextureMesher.@Nullable Pixels image(String path) {
       Object held = this.images.get(path);
       if (held == NO_IMAGE) {
          return null;
-      } else {
-         TextureMesher.Pixels pixels = held instanceof SoftReference<?> reference ? (TextureMesher.Pixels)reference.get() : null;
-         if (pixels == null) {
-            pixels = this.readImage(path);
-            this.images.put(path, pixels == null ? NO_IMAGE : new SoftReference<>(pixels));
-         }
-
-         return pixels;
       }
+
+      TextureMesher.Pixels pixels = held instanceof SoftReference<?> reference ? (TextureMesher.Pixels)reference.get() : null;
+      if (pixels == null) {
+         pixels = this.readImage(path);
+         this.images.put(path, pixels == null ? NO_IMAGE : new SoftReference<>(pixels));
+      }
+
+      return pixels;
    }
 
    public ModelRegistry.Warmed warm(ClientEntityDef definition) {
@@ -413,20 +401,19 @@ public final class ModelRegistry {
       return new ModelRegistry.Warmed(decoded, pixels, meshed);
    }
 
-   @Nullable
-   private TextureMesher.Pixels warmImage(String path) {
+   private TextureMesher.@Nullable Pixels warmImage(String path) {
       if (this.images.containsKey(path)) {
          return null;
-      } else {
-         TextureMesher.Pixels decoded;
-         try {
-            decoded = this.readImage(path);
-         } catch (RuntimeException var4) {
-            return null;
-         }
-
-         return this.images.putIfAbsent(path, decoded == null ? NO_IMAGE : new SoftReference<>(decoded)) == null ? decoded : null;
       }
+
+      TextureMesher.Pixels decoded;
+      try {
+         decoded = this.readImage(path);
+      } catch (RuntimeException e) {
+         return null;
+      }
+
+      return this.images.putIfAbsent(path, decoded == null ? NO_IMAGE : new SoftReference<>(decoded)) == null ? decoded : null;
    }
 
    private boolean warmMesh(String identifier, ClientEntityDef definition) {
@@ -434,21 +421,23 @@ public final class ModelRegistry {
          GeometryDef geometry = this.geometries.get(identifier);
          if (geometry == null) {
             return false;
-         } else if (!GeometryMesher.hasTextureMeshes(geometry)) {
-            return this.meshes.containsKey(identifier) ? false : this.meshes.putIfAbsent(identifier, GeometryMesher.mesh(geometry)) == null;
-         } else {
-            Map<String, MeshedGeometry> own = this.textureMeshed.computeIfAbsent(definition, key -> new ConcurrentHashMap<>());
-            if (own.containsKey(identifier)) {
-               return false;
-            } else {
-               MeshedGeometry mesh = GeometryMesher.mesh(geometry, name -> {
-                  String path = definition.texture(name);
-                  return path != null ? this.image(path) : null;
-               });
-               return own.putIfAbsent(identifier, mesh) == null;
-            }
          }
-      } catch (RuntimeException var6) {
+
+         if (!GeometryMesher.hasTextureMeshes(geometry)) {
+            return this.meshes.containsKey(identifier) ? false : this.meshes.putIfAbsent(identifier, GeometryMesher.mesh(geometry)) == null;
+         }
+
+         Map<String, MeshedGeometry> own = this.textureMeshed.computeIfAbsent(definition, key -> new ConcurrentHashMap<>());
+         if (own.containsKey(identifier)) {
+            return false;
+         }
+
+         MeshedGeometry mesh = GeometryMesher.mesh(geometry, name -> {
+            String path = definition.texture(name);
+            return path != null ? this.image(path) : null;
+         });
+         return own.putIfAbsent(identifier, mesh) == null;
+      } catch (RuntimeException e) {
          return false;
       }
    }
@@ -462,27 +451,26 @@ public final class ModelRegistry {
       return this.meshes.containsKey(identifier) || own != null && own.containsKey(identifier);
    }
 
-   @Nullable
-   private TextureMesher.Pixels readImage(String path) {
+   private TextureMesher.@Nullable Pixels readImage(String path) {
       if (PackPaths.escapes(path)) {
          return null;
-      } else {
-         for (PackSource pack : this.packs) {
-            for (String extension : new String[]{".png", ".tga", ".jpg"}) {
-               try {
-                  Optional<byte[]> data = pack.read(path + extension);
-                  if (!data.isEmpty()) {
-                     ArgbImage image = BedrockImages.decode(data.get());
-                     return new TextureMesher.Pixels(image.width(), image.height(), image.argb());
-                  }
-               } catch (RuntimeException | IOException var10) {
-                  BedrockNative.LOGGER.warn("Couldn't read the texture {}{} of {}: {}", new Object[]{path, extension, pack, var10.toString()});
+      }
+
+      for (PackSource pack : this.packs) {
+         for (String extension : new String[]{".png", ".tga", ".jpg"}) {
+            try {
+               Optional<byte[]> data = pack.read(path + extension);
+               if (!data.isEmpty()) {
+                  ArgbImage image = BedrockImages.decode(data.get());
+                  return new TextureMesher.Pixels(image.width(), image.height(), image.argb());
                }
+            } catch (IOException | RuntimeException e) {
+               BedrockNative.LOGGER.warn("Couldn't read the texture {}{} of {}: {}", new Object[]{path, extension, pack, e.toString()});
             }
          }
-
-         return null;
       }
+
+      return null;
    }
 
    public MolangCache molang() {

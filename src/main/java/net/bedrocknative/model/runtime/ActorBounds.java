@@ -15,16 +15,16 @@ public final class ActorBounds {
          float y = visible[3];
          float z = visible[4];
          return new float[]{x - halfWidth, y - halfHeight, z - halfWidth, x + halfWidth, y + halfHeight, z + halfWidth};
-      } else {
-         float[] cubes = mesh.cubeBounds();
-         float[] box = new float[6];
-
-         for (int i = 0; i < 6; i++) {
-            box[i] = cubes[i] / 16.0F;
-         }
-
-         return box;
       }
+
+      float[] cubes = mesh.cubeBounds();
+      float[] box = new float[6];
+
+      for (int i = 0; i < 6; i++) {
+         box[i] = cubes[i] / 16.0F;
+      }
+
+      return box;
    }
 
    public static void world(float[] local, double x, double y, double z, float bodyYaw, float scaleX, float scaleY, float scaleZ, double[] out) {

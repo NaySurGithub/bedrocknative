@@ -13,8 +13,7 @@ import org.jspecify.annotations.Nullable;
 
 public final class EntityParticleAnchor implements ParticleAnchor {
    private final Entity entity;
-   @Nullable
-   private final String locator;
+   private final @Nullable String locator;
    private final double offsetX;
    private final double offsetY;
    private final double offsetZ;
@@ -72,6 +71,6 @@ public final class EntityParticleAnchor implements ParticleAnchor {
    @Override
    public MolangActor actor() {
       ActorState state = BedrockActors.state(this.entity);
-      return (MolangActor)(state != null ? state.view() : MolangActor.NONE);
+      return state != null ? state.view() : MolangActor.NONE;
    }
 }

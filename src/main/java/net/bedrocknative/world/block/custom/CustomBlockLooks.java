@@ -82,8 +82,8 @@ public final class CustomBlockLooks {
          List<CustomBlockModel.ModelQuad> quads;
          try {
             quads = CustomBlockModel.build(state, geometry);
-         } catch (RuntimeException var34) {
-            BedrockNative.LOGGER.warn("Couldn't build the model of {}", state, var34);
+         } catch (RuntimeException e) {
+            BedrockNative.LOGGER.warn("Couldn't build the model of {}", state, e);
             built = CustomBlockState.read(state.state(), Map.of());
             builtGeometry = null;
             quads = CustomBlockModel.build(built, null);
@@ -127,8 +127,8 @@ public final class CustomBlockLooks {
          soundTypes[slot] = soundType(state, entry);
       }
 
-      for (String blockx : set.overflowBlocks()) {
-         problems.add(blockx, BlockProblems.Reason.NO_CARRIER_SLOT, "past the 65536 carrier states; shows the stone placeholder");
+      for (String block : set.overflowBlocks()) {
+         problems.add(block, BlockProblems.Reason.NO_CARRIER_SLOT, "past the 65536 carrier states; shows the stone placeholder");
       }
 
       Map<String, CustomBlockLooks.Texture> finished = new LinkedHashMap<>();
@@ -152,8 +152,7 @@ public final class CustomBlockLooks {
       );
    }
 
-   @Nullable
-   private static String textureKey(
+   private static @Nullable String textureKey(
       String block,
       CustomBlockModel.ModelQuad quad,
       BlockMaterial material,
@@ -172,32 +171,34 @@ public final class CustomBlockLooks {
       if (name == null) {
          problems.add(block, BlockProblems.Reason.NO_TEXTURE_NAMED, "face " + quad.face() + ": the material names no texture and blocks.json has none");
          return null;
-      } else {
-         List<String> paths = terrain.get(name);
-         String still = paths != null && !paths.isEmpty() ? paths.getFirst() : null;
-         FlipbookData.Flipbook flipbook = flipbooks.get(name, 0);
-         if (flipbook != null) {
-            String key = "flipbook " + name;
-            textures.putIfAbsent(key, new CustomBlockLooks.Texture(key, flipbook.texture(), flipbook, still, false, false));
-            return key;
-         } else if (still != null) {
-            textures.putIfAbsent(still, new CustomBlockLooks.Texture(still, still, null, null, false, false));
-            return still;
-         } else {
-            String unreadable = hints.terrain();
-            if (unreadable != null) {
-               problems.add(
-                  block,
-                  BlockProblems.Reason.ENCRYPTED_PACK,
-                  "short name '" + name + "' (face " + quad.face() + ") in no terrain_texture.json read (" + unreadable + ")"
-               );
-            } else {
-               problems.add(block, BlockProblems.Reason.TEXTURE_KEY_MISSING, "short name '" + name + "' (face " + quad.face() + ") in no terrain_texture.json");
-            }
-
-            return null;
-         }
       }
+
+      List<String> paths = terrain.get(name);
+      String still = paths != null && !paths.isEmpty() ? paths.getFirst() : null;
+      FlipbookData.Flipbook flipbook = flipbooks.get(name, 0);
+      if (flipbook != null) {
+         String key = "flipbook " + name;
+         textures.putIfAbsent(key, new CustomBlockLooks.Texture(key, flipbook.texture(), flipbook, still, false, false));
+         return key;
+      }
+
+      if (still != null) {
+         textures.putIfAbsent(still, new CustomBlockLooks.Texture(still, still, null, null, false, false));
+         return still;
+      }
+
+      String unreadable = hints.terrain();
+      if (unreadable != null) {
+         problems.add(
+            block,
+            BlockProblems.Reason.ENCRYPTED_PACK,
+            "short name '" + name + "' (face " + quad.face() + ") in no terrain_texture.json read (" + unreadable + ")"
+         );
+      } else {
+         problems.add(block, BlockProblems.Reason.TEXTURE_KEY_MISSING, "short name '" + name + "' (face " + quad.face() + ") in no terrain_texture.json");
+      }
+
+      return null;
    }
 
    private static List<BlockCullingRules.Check> checks(CustomBlockState state, CustomBlockModel.ModelQuad quad, List<BlockCullingRules.Rule> rules) {
@@ -220,33 +221,33 @@ public final class CustomBlockLooks {
       if (state.soundType() != null) {
          return state.soundType();
       } else {
-         if (entry instanceof JsonObject object) {
-            JsonElement var4 = object.get("sound");
-            if (var4 instanceof JsonElement && var4.isJsonPrimitive() && !var4.getAsString().isBlank()) {
-               return var4.getAsString().trim().toLowerCase(Locale.ROOT);
-            }
-         }
-
-         return "normal";
+         return entry instanceof JsonObject object
+               && object.get("sound") instanceof JsonElement sound
+               && sound.isJsonPrimitive()
+               && !sound.getAsString().isBlank()
+            ? sound.getAsString().trim().toLowerCase(Locale.ROOT)
+            : "normal";
       }
    }
 
-   // $VF: One or more variable merging failures!
-   // $VF: Could not properly define all variable types!
-   // Please report this to the Vineflower issue tracker, at https://github.com/Vineflower/vineflower/issues with a copy of the class file (if you have the rights to distribute it!)
-   @Nullable
-   static String blocksJsonTexture(@Nullable JsonElement entry, String face) {
+   static @Nullable String blocksJsonTexture(@Nullable JsonElement entry, String face) {
       JsonElement textures = entry instanceof JsonObject object ? object.get("textures") : null;
       if (textures == null) {
          return null;
-      } else if (textures.isJsonPrimitive()) {
+      }
+
+      if (textures.isJsonPrimitive()) {
          return textures.getAsString();
-      } else if (textures instanceof JsonObject byFace) {
-         <unknown> var11;
-         for (String key : var11_1) {
-            JsonElement var8 = byFace.get(key);
-            if (var8 instanceof JsonElement && var8.isJsonPrimitive()) {
-               return var8.getAsString();
+      }
+
+      if (textures instanceof JsonObject byFace) {
+         for (String key : switch (face) {
+            case "up", "down" -> List.of(face);
+            case "north", "south", "east", "west" -> List.of(face, "side");
+            default -> List.of("side", "north", "up");
+         }) {
+            if (byFace.get(key) instanceof JsonElement value && value.isJsonPrimitive()) {
+               return value.getAsString();
             }
          }
 
@@ -271,8 +272,8 @@ public final class CustomBlockLooks {
                      )
                   );
             }
-         } catch (IOException var6) {
-            BedrockNative.LOGGER.warn("Couldn't read blocks.json from {}", pack, var6);
+         } catch (IOException e) {
+            BedrockNative.LOGGER.warn("Couldn't read blocks.json from {}", pack, e);
          }
       }
 
@@ -284,43 +285,43 @@ public final class CustomBlockLooks {
       List<String> unreadable = new ArrayList<>();
       if (wanted.isEmpty()) {
          return new CustomBlockLooks.GeometryScan(found, unreadable);
-      } else {
-         for (PackSource pack : stack.packs()) {
-            for (String file : pack.list("models")) {
-               if (found.keySet().containsAll(wanted)) {
-                  return new CustomBlockLooks.GeometryScan(found, unreadable);
-               }
+      }
 
-               if (file.toLowerCase(Locale.ROOT).endsWith(".json")) {
-                  try {
-                     Optional<byte[]> data = pack.read(file);
-                     if (!data.isEmpty()) {
-                        if (!looksLikeJson(data.get())) {
-                           unreadable.add(file + " in " + pack);
-                        } else {
-                           String text = new String(data.get(), StandardCharsets.UTF_8);
-                           if (!wanted.stream().noneMatch(text::contains)) {
-                              JsonObject root = TextureData.json(data.get(), file + " in " + pack);
-                              if (root != null) {
-                                 BlockGeometry.parseFile(root).forEach((id, geometry) -> {
-                                    if (wanted.contains(id)) {
-                                       found.putIfAbsent(id, geometry);
-                                    }
-                                 });
-                              }
+      for (PackSource pack : stack.packs()) {
+         for (String file : pack.list("models")) {
+            if (found.keySet().containsAll(wanted)) {
+               return new CustomBlockLooks.GeometryScan(found, unreadable);
+            }
+
+            if (file.toLowerCase(Locale.ROOT).endsWith(".json")) {
+               try {
+                  Optional<byte[]> data = pack.read(file);
+                  if (!data.isEmpty()) {
+                     if (!looksLikeJson(data.get())) {
+                        unreadable.add(file + " in " + pack);
+                     } else {
+                        String text = new String(data.get(), StandardCharsets.UTF_8);
+                        if (!wanted.stream().noneMatch(text::contains)) {
+                           JsonObject root = TextureData.json(data.get(), file + " in " + pack);
+                           if (root != null) {
+                              BlockGeometry.parseFile(root).forEach((id, geometry) -> {
+                                 if (wanted.contains(id)) {
+                                    found.putIfAbsent(id, geometry);
+                                 }
+                              });
                            }
                         }
                      }
-                  } catch (RuntimeException | IOException var11) {
-                     unreadable.add(file + " in " + pack);
-                     BedrockNative.LOGGER.warn("Couldn't read geometry {} from {}", new Object[]{file, pack, var11});
                   }
+               } catch (IOException | RuntimeException e) {
+                  unreadable.add(file + " in " + pack);
+                  BedrockNative.LOGGER.warn("Couldn't read geometry {} from {}", new Object[]{file, pack, e});
                }
             }
          }
-
-         return new CustomBlockLooks.GeometryScan(found, unreadable);
       }
+
+      return new CustomBlockLooks.GeometryScan(found, unreadable);
    }
 
    static boolean looksLikeJson(byte[] data) {
@@ -342,10 +343,8 @@ public final class CustomBlockLooks {
    private static final class Hints {
       private final PackStack stack;
       private final CustomBlockLooks.GeometryScan scan;
-      @Nullable
-      private String terrain;
-      @Nullable
-      private String geometry;
+      private @Nullable String terrain;
+      private @Nullable String geometry;
       private boolean terrainChecked;
       private boolean geometryChecked;
 
@@ -354,8 +353,7 @@ public final class CustomBlockLooks {
          this.scan = scan;
       }
 
-      @Nullable
-      String terrain() {
+      @Nullable String terrain() {
          if (!this.terrainChecked) {
             this.terrainChecked = true;
             List<String> unreadable = new ArrayList<>(PackStack.skippedServerPacks());
@@ -366,8 +364,7 @@ public final class CustomBlockLooks {
          return this.terrain;
       }
 
-      @Nullable
-      String geometry() {
+      @Nullable String geometry() {
          if (!this.geometryChecked) {
             this.geometryChecked = true;
             List<String> unreadable = new ArrayList<>(PackStack.skippedServerPacks());
@@ -381,8 +378,7 @@ public final class CustomBlockLooks {
          return this.geometry;
       }
 
-      @Nullable
-      private static String describe(List<String> unreadable) {
+      private static @Nullable String describe(List<String> unreadable) {
          if (unreadable.isEmpty()) {
             return null;
          } else {
@@ -409,15 +405,14 @@ public final class CustomBlockLooks {
    }
 
    public static final class Look {
-      private final List<String> textures;
+      private final List<@Nullable String> textures;
       private final List<List<BlockCullingRules.Check>> culls;
       private final CustomBlockState state;
-      @Nullable
-      private final BlockGeometry geometry;
+      private final @Nullable BlockGeometry geometry;
       private List<CustomBlockModel.ModelQuad> quads = List.of();
       private boolean released = true;
 
-      public Look(List<String> textures, List<List<BlockCullingRules.Check>> culls, CustomBlockState state, @Nullable BlockGeometry geometry) {
+      public Look(List<@Nullable String> textures, List<List<BlockCullingRules.Check>> culls, CustomBlockState state, @Nullable BlockGeometry geometry) {
          this.textures = textures;
          this.culls = culls;
          this.state = state;
@@ -433,7 +428,7 @@ public final class CustomBlockLooks {
          return this.quads;
       }
 
-      public List<String> textures() {
+      public List<@Nullable String> textures() {
          return this.textures;
       }
 
@@ -447,6 +442,6 @@ public final class CustomBlockLooks {
       }
    }
 
-   public record Texture(String key, String path, @Nullable FlipbookData.Flipbook flipbook, @Nullable String still, boolean opaque, boolean firstFrame) {
+   public record Texture(String key, String path, FlipbookData.@Nullable Flipbook flipbook, @Nullable String still, boolean opaque, boolean firstFrame) {
    }
 }

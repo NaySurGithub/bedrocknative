@@ -43,8 +43,7 @@ public final class BaseDownload {
    private static final AtomicBoolean QUEUED = new AtomicBoolean();
    private static volatile BooleanSupplier allowed = () -> false;
    private static volatile boolean running;
-   @Nullable
-   private static volatile BaseDownload.Result last;
+   private static volatile BaseDownload.@Nullable Result last;
 
    private BaseDownload() {
    }
@@ -61,8 +60,7 @@ public final class BaseDownload {
       return running || QUEUED.get();
    }
 
-   @Nullable
-   public static BaseDownload.Result last() {
+   public static BaseDownload.@Nullable Result last() {
       return last;
    }
 
@@ -110,22 +108,21 @@ public final class BaseDownload {
       }
    }
 
-   @Nullable
-   static BaseTable.Entry find(BaseTable table, String path) {
+   static BaseTable.@Nullable Entry find(BaseTable table, String path) {
       String clean = path.replace('\\', '/');
       BaseTable.Entry entry = table.entry(clean).orElse(null);
       if (entry != null) {
          return entry;
-      } else {
-         for (String extension : List.of(".ogg", ".fsb", ".wav", ".png", ".tga", ".json")) {
-            entry = table.entry(clean + extension).orElse(null);
-            if (entry != null) {
-               return entry;
-            }
-         }
-
-         return null;
       }
+
+      for (String extension : List.of(".ogg", ".fsb", ".wav", ".png", ".tga", ".json")) {
+         entry = table.entry(clean + extension).orElse(null);
+         if (entry != null) {
+            return entry;
+         }
+      }
+
+      return null;
    }
 
    private static void schedule() {
@@ -147,15 +144,15 @@ public final class BaseDownload {
                      LISTENERS.forEach(listener -> {
                         try {
                            listener.accept(result);
-                        } catch (RuntimeException var3x) {
-                           BedrockNative.LOGGER.warn("Base download: a listener failed", var3x);
+                        } catch (RuntimeException ex) {
+                           BedrockNative.LOGGER.warn("Base download: a listener failed", ex);
                         }
                      });
                   }
-               } catch (InterruptedException var9) {
+               } catch (InterruptedException e) {
                   Thread.currentThread().interrupt();
-               } catch (RuntimeException var10) {
-                  BedrockNative.LOGGER.warn("Base download failed", var10);
+               } catch (RuntimeException e) {
+                  BedrockNative.LOGGER.warn("Base download failed", e);
                } finally {
                   running = false;
                   client.close();
@@ -172,24 +169,18 @@ public final class BaseDownload {
 
       try {
          Files.createDirectories(folder);
-      } catch (IOException var24) {
-         BedrockNative.LOGGER.warn("Base download: can't create {}: {}", folder, var24.getMessage());
+      } catch (IOException e) {
+         BedrockNative.LOGGER.warn("Base download: can't create {}: {}", folder, e.getMessage());
          return new BaseDownload.Result(0, 0, 0, 0L, 0, false, List.of(), "can't create the folder", null, 0L);
       }
 
       Path lockFile = folder.resolveSibling(folder.getFileName() + ".lock");
 
-      try {
-         BaseDownload.Result var21;
-         try (
-            FileChannel channel = FileChannel.open(lockFile, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
-            FileLock lock = tryLock(channel);
-         ) {
-            if (lock == null) {
-               BedrockNative.LOGGER.info("Base download: another game is downloading into {}; this one uses the base once it is complete", folder);
-               return new BaseDownload.Result(0, 0, 0, 0L, 0, false, List.of(), "another game is downloading", null, 0L);
-            }
-
+      try (
+         FileChannel channel = FileChannel.open(lockFile, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
+         FileLock lock = tryLock(channel);
+      ) {
+         if (lock != null) {
             Set<BaseTable.Entry> plan = new LinkedHashSet<>();
             boolean wasComplete = DownloadedBase.check(folder, table);
             if (core) {
@@ -237,12 +228,13 @@ public final class BaseDownload {
                millis
             );
             log(table, result, run, plan.size(), complete);
-            var21 = result;
+            return result;
+         } else {
+            BedrockNative.LOGGER.info("Base download: another game is downloading into {}; this one uses the base once it is complete", folder);
+            return new BaseDownload.Result(0, 0, 0, 0L, 0, false, List.of(), "another game is downloading", null, 0L);
          }
-
-         return var21;
-      } catch (IOException var27) {
-         BedrockNative.LOGGER.warn("Base download: {}", var27.getMessage());
+      } catch (IOException e) {
+         BedrockNative.LOGGER.warn("Base download: {}", e.getMessage());
          return new BaseDownload.Result(
             0,
             run.written.get(),
@@ -251,18 +243,17 @@ public final class BaseDownload {
             run.requests.get(),
             false,
             List.copyOf(run.done),
-            var27.getMessage(),
+            e.getMessage(),
             null,
             (System.nanoTime() - started) / 1000000L
          );
       }
    }
 
-   @Nullable
-   private static FileLock tryLock(FileChannel channel) throws IOException {
+   private static @Nullable FileLock tryLock(FileChannel channel) throws IOException {
       try {
          return channel.tryLock();
-      } catch (OverlappingFileLockException var2) {
+      } catch (OverlappingFileLockException e) {
          return null;
       }
    }
@@ -271,27 +262,27 @@ public final class BaseDownload {
       List<BaseTable.Entry> entries = table.entries(BaseTable.Part.CORE);
       if (!store.missing(entries).isEmpty()) {
          return false;
-      } else {
-         List<BaseTable.Entry> changed = new ArrayList<>();
+      }
 
-         for (BaseTable.Entry entry : entries) {
-            if (!run.done.contains(entry.path()) && !store.verified(entry)) {
-               changed.add(entry);
-            }
-         }
+      List<BaseTable.Entry> changed = new ArrayList<>();
 
-         if (changed.isEmpty()) {
-            DownloadedBase.markComplete(folder, table, entries.size(), table.bytes(BaseTable.Part.CORE));
-            return true;
-         } else {
-            for (BaseTable.Entry entryx : changed) {
-               Files.deleteIfExists(store.file(entryx));
-            }
-
-            run.note(changed.size() + " stored files differed from the table and were removed (" + changed.getFirst().path() + "...)");
-            return false;
+      for (BaseTable.Entry entry : entries) {
+         if (!run.done.contains(entry.path()) && !store.verified(entry)) {
+            changed.add(entry);
          }
       }
+
+      if (changed.isEmpty()) {
+         DownloadedBase.markComplete(folder, table, entries.size(), table.bytes(BaseTable.Part.CORE));
+         return true;
+      }
+
+      for (BaseTable.Entry entry : changed) {
+         Files.deleteIfExists(store.file(entry));
+      }
+
+      run.note(changed.size() + " stored files differed from the table and were removed (" + changed.getFirst().path() + "...)");
+      return false;
    }
 
    private static void log(BaseTable table, BaseDownload.Result result, FetchRun run, int planned, boolean complete) {

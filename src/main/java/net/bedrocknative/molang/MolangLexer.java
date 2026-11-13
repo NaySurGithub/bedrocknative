@@ -39,7 +39,7 @@ final class MolangLexer {
                float value;
                try {
                   value = Float.parseFloat(!text.endsWith("f") && !text.endsWith("F") ? text : text.substring(0, text.length() - 1));
-               } catch (NumberFormatException var13) {
+               } catch (NumberFormatException e) {
                   throw new MolangException("Bad number '" + text + "'", start);
                }
 
@@ -47,11 +47,11 @@ final class MolangLexer {
             } else if (c == '\'') {
                int end = source.indexOf(39, i + 1);
                if (end < 0) {
-                  throw new MolangException("Unterminated string", i);
+                  throw new MolangException("Unterminated string", start);
                }
 
                String text = source.substring(i + 1, end);
-               tokens.add(new MolangLexer.Token(MolangLexer.Kind.STRING, lowerCaseStrings ? text.toLowerCase(Locale.ROOT) : text, 0.0F, i));
+               tokens.add(new MolangLexer.Token(MolangLexer.Kind.STRING, lowerCaseStrings ? text.toLowerCase(Locale.ROOT) : text, 0.0F, start));
                i = end + 1;
             } else if (!Character.isLetter(c) && c != '_') {
                String operator = null;
@@ -71,10 +71,10 @@ final class MolangLexer {
                   }
 
                   if (operator == null) {
-                     throw new MolangException("Unexpected character '" + c + "'", i);
+                     throw new MolangException("Unexpected character '" + c + "'", start);
                   }
 
-                  tokens.add(new MolangLexer.Token(MolangLexer.Kind.OP, operator, 0.0F, i));
+                  tokens.add(new MolangLexer.Token(MolangLexer.Kind.OP, operator, 0.0F, start));
                   i += operator.length();
                   break;
                }
@@ -96,15 +96,15 @@ final class MolangLexer {
    private static String alias(String name, List<MolangLexer.Token> tokens) {
       if (!tokens.isEmpty() && tokens.getLast().is(".")) {
          return name;
-      } else {
-         return switch (name) {
-            case "q" -> "query";
-            case "v" -> "variable";
-            case "t" -> "temp";
-            case "c" -> "context";
-            default -> name;
-         };
       }
+
+      return switch (name) {
+         case "q" -> "query";
+         case "v" -> "variable";
+         case "t" -> "temp";
+         case "c" -> "context";
+         default -> name;
+      };
    }
 
    private static int number(String source, int i) {
@@ -163,7 +163,7 @@ final class MolangLexer {
       return Character.isLetterOrDigit(c) || c == '_';
    }
 
-   static enum Kind {
+   enum Kind {
       NUMBER,
       STRING,
       IDENT,

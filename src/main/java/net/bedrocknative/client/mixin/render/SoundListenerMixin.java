@@ -7,12 +7,9 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
 
-@Mixin({SoundEngine.class})
+@Mixin(SoundEngine.class)
 public abstract class SoundListenerMixin {
-   @ModifyVariable(
-      method = {"updateSource"},
-      at = {@At("STORE")}
-   )
+   @ModifyVariable(method = "updateSource", at = @At("STORE"))
    private ListenerTransform bedrocknative$listener(ListenerTransform transform) {
       return BedrockCamera.listener(transform);
    }

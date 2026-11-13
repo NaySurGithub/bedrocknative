@@ -41,8 +41,7 @@ public final class JsonUiChatScreen extends ChatScreen implements JsonUiHost, Ch
    private final ChatData data;
    private boolean opened;
    private boolean uiPressed;
-   @Nullable
-   private UiControl highlighted;
+   private @Nullable UiControl highlighted;
 
    private JsonUiChatScreen(String initial, boolean isDraft, boolean closeOnSubmit, JsonUiScreen ui, ChatData data) {
       super(initial, isDraft, closeOnSubmit);
@@ -57,33 +56,33 @@ public final class JsonUiChatScreen extends ChatScreen implements JsonUiHost, Ch
          UiDefinitionSet definitions = JsonUi.definitions();
          if (definitions == null) {
             return java;
-         } else {
-            try {
-               ChatData data = new ChatData();
-               Options options = minecraft.options;
-               JsonUiScreen ui = JsonUiScreen.create(
-                  definitions, "chat.chat_screen", ChatData.variables((Double)options.chatScale().get(), (Double)options.chatLineSpacing().get() * 10.0), data
+         }
+
+         try {
+            ChatData data = new ChatData();
+            Options options = minecraft.options;
+            JsonUiScreen ui = JsonUiScreen.create(
+               definitions, "chat.chat_screen", ChatData.variables(options.chatScale().get(), options.chatLineSpacing().get() * 10.0), data
+            );
+            if (ui != null && JsonUi.use("chat", ui.instance())) {
+               ui.instance().problems().log("chat screen");
+               ChatScreenAccessor accessor = (ChatScreenAccessor)java;
+               JsonUiChatScreen screen = new JsonUiChatScreen(
+                  accessor.bedrocknative$initial(), accessor.bedrocknative$isDraft(), accessor.bedrocknative$closeOnSubmit(), ui, data
                );
-               if (ui != null && JsonUi.use("chat", ui.instance())) {
-                  ui.instance().problems().log("chat screen");
-                  ChatScreenAccessor accessor = (ChatScreenAccessor)java;
-                  JsonUiChatScreen screen = new JsonUiChatScreen(
-                     accessor.bedrocknative$initial(), accessor.bedrocknative$isDraft(), accessor.bedrocknative$closeOnSubmit(), ui, data
-                  );
-                  ui.fallback(() -> {
-                     failed = true;
-                     if (minecraft.gui.screen() == screen) {
-                        minecraft.gui.setScreen(new ChatScreen(screen.input.getValue(), false));
-                     }
-                  });
-                  return screen;
-               } else {
-                  return java;
-               }
-            } catch (RuntimeException var8) {
-               BedrockNative.LOGGER.warn("JSON UI couldn't build the chat screen; the Java screen shows it", var8);
+               ui.fallback(() -> {
+                  failed = true;
+                  if (minecraft.gui.screen() == screen) {
+                     minecraft.gui.setScreen(new ChatScreen(screen.input.getValue(), false));
+                  }
+               });
+               return screen;
+            } else {
                return java;
             }
+         } catch (RuntimeException e) {
+            BedrockNative.LOGGER.warn("JSON UI couldn't build the chat screen; the Java screen shows it", e);
+            return java;
          }
       } else {
          return java;
@@ -134,6 +133,7 @@ public final class JsonUiChatScreen extends ChatScreen implements JsonUiHost, Ch
       this.ui.instance().factoryEvent("messages_factory", "chat_screen_messages", Map.of(), Map.of("#text", UiValue.of(line)));
    }
 
+   @Override
    protected void init() {
       super.init();
       this.ui.resize(this.width, this.height);
@@ -145,8 +145,7 @@ public final class JsonUiChatScreen extends ChatScreen implements JsonUiHost, Ch
       }
    }
 
-   @Nullable
-   private UiControl box() {
+   private @Nullable UiControl box() {
       UiControl[] found = new UiControl[]{null};
       UiControl root = this.ui.instance().root();
       if (root != null) {
@@ -161,7 +160,7 @@ public final class JsonUiChatScreen extends ChatScreen implements JsonUiHost, Ch
    }
 
    private CommandSuggestions suggestions() {
-      return ((ChatScreenAccessor)this).bedrocknative$commandSuggestions();
+      return ((ChatScreenAccessor)(Object)this).bedrocknative$commandSuggestions();
    }
 
    private void refresh() {
@@ -222,9 +221,11 @@ public final class JsonUiChatScreen extends ChatScreen implements JsonUiHost, Ch
       }
    }
 
+   @Override
    public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
    }
 
+   @Override
    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
       if (!this.ui.failed()) {
          this.refresh();
@@ -235,10 +236,12 @@ public final class JsonUiChatScreen extends ChatScreen implements JsonUiHost, Ch
       }
    }
 
+   @Override
    public void mouseMoved(double x, double y) {
       this.ui.mouseMoved(x, y);
    }
 
+   @Override
    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
       if (event.button() == 1 && this.ui.topmost(event.x(), event.y()) != null) {
          this.uiPressed = true;
@@ -249,6 +252,7 @@ public final class JsonUiChatScreen extends ChatScreen implements JsonUiHost, Ch
       }
    }
 
+   @Override
    public boolean mouseReleased(MouseButtonEvent event) {
       if (this.uiPressed && event.button() == 1) {
          this.uiPressed = false;
@@ -259,10 +263,12 @@ public final class JsonUiChatScreen extends ChatScreen implements JsonUiHost, Ch
       }
    }
 
+   @Override
    public boolean mouseDragged(MouseButtonEvent event, double dx, double dy) {
       return this.uiPressed && this.ui.mouseDragged(event);
    }
 
+   @Override
    public boolean mouseScrolled(double x, double y, double scrollX, double scrollY) {
       SuggestionsView view = (SuggestionsView)this.suggestions();
       if (view.bedrocknative$listShown()) {

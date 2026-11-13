@@ -59,8 +59,7 @@ public final class XboxProblemText {
       return new XboxProblemText.Text(title, body, errorLine, action);
    }
 
-   @Nullable
-   private static String actionLabel(XboxProblem problem, XboxProblemText.Texts texts) {
+   private static @Nullable String actionLabel(XboxProblem problem, XboxProblemText.Texts texts) {
       return switch (problem.action()) {
          case NONE -> null;
          case TRY_AGAIN -> texts.mod("bedrocknative.accounts.problem.action.try_again");
@@ -77,13 +76,13 @@ public final class XboxProblemText {
    static String host(@Nullable String link) {
       if (link == null) {
          return "";
-      } else {
-         try {
-            String host = URI.create(link).getHost();
-            return host == null ? link : (host.startsWith("www.") ? host.substring(4) : host);
-         } catch (IllegalArgumentException var2) {
-            return link;
-         }
+      }
+
+      try {
+         String host = URI.create(link).getHost();
+         return host == null ? link : (host.startsWith("www.") ? host.substring(4) : host);
+      } catch (IllegalArgumentException e) {
+         return link;
       }
    }
 
@@ -139,11 +138,10 @@ public final class XboxProblemText {
       return installTexts(BedrockLanguage.textsFolder(), OreInstall.textsFolder(), javaCode);
    }
 
-   public static XboxProblemText.Texts texts(final Function<String, String> bedrockRaw, final Function<String, String> modRaw) {
+   public static XboxProblemText.Texts texts(final Function<String, @Nullable String> bedrockRaw, final Function<String, String> modRaw) {
       return new XboxProblemText.Texts() {
-         @Nullable
          @Override
-         public String bedrock(String key, Object... args) {
+         public @Nullable String bedrock(String key, Object... args) {
             String raw = bedrockRaw.apply(key);
             return raw == null ? null : XboxProblemText.fill(raw, args);
          }
@@ -158,49 +156,49 @@ public final class XboxProblemText {
    static String fill(String text, Object... args) {
       if (text.indexOf(37) < 0) {
          return text;
-      } else {
-         StringBuilder out = new StringBuilder();
-         int next = 0;
-
-         for (int i = 0; i < text.length(); i++) {
-            char c = text.charAt(i);
-            if (c == '%' && i + 1 < text.length()) {
-               char d = text.charAt(i + 1);
-               if (d == '%') {
-                  out.append('%');
-                  i++;
-               } else {
-                  int j = i + 1;
-
-                  while (j < text.length() && Character.isDigit(text.charAt(j))) {
-                     j++;
-                  }
-
-                  int index;
-                  int end;
-                  if (j <= i + 1 || j + 1 >= text.length() || text.charAt(j) != '$' || text.charAt(j + 1) != 's' && text.charAt(j + 1) != 'd') {
-                     if (d != 's' && d != 'd') {
-                        out.append(c);
-                        continue;
-                     }
-
-                     index = next++;
-                     end = i + 1;
-                  } else {
-                     index = Integer.parseInt(text.substring(i + 1, j)) - 1;
-                     end = j + 1;
-                  }
-
-                  out.append(index >= 0 && index < args.length ? String.valueOf(args[index]) : "");
-                  i = end;
-               }
-            } else {
-               out.append(c);
-            }
-         }
-
-         return out.toString();
       }
+
+      StringBuilder out = new StringBuilder();
+      int next = 0;
+
+      for (int i = 0; i < text.length(); i++) {
+         char c = text.charAt(i);
+         if (c == '%' && i + 1 < text.length()) {
+            char d = text.charAt(i + 1);
+            if (d == '%') {
+               out.append('%');
+               i++;
+            } else {
+               int j = i + 1;
+
+               while (j < text.length() && Character.isDigit(text.charAt(j))) {
+                  j++;
+               }
+
+               int index;
+               int end;
+               if (j <= i + 1 || j + 1 >= text.length() || text.charAt(j) != '$' || text.charAt(j + 1) != 's' && text.charAt(j + 1) != 'd') {
+                  if (d != 's' && d != 'd') {
+                     out.append(c);
+                     continue;
+                  }
+
+                  index = next++;
+                  end = i + 1;
+               } else {
+                  index = Integer.parseInt(text.substring(i + 1, j)) - 1;
+                  end = j + 1;
+               }
+
+               out.append(index >= 0 && index < args.length ? String.valueOf(args[index]) : "");
+               i = end;
+            }
+         } else {
+            out.append(c);
+         }
+      }
+
+      return out.toString();
    }
 
    public record Text(@Nullable String title, String body, @Nullable String errorLine, @Nullable String action) {
@@ -220,8 +218,7 @@ public final class XboxProblemText {
    }
 
    public interface Texts {
-      @Nullable
-      String bedrock(String var1, Object... var2);
+      @Nullable String bedrock(String var1, Object... var2);
 
       String mod(String var1, Object... var2);
    }

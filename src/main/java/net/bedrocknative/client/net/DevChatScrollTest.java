@@ -36,9 +36,9 @@ final class DevChatScrollTest {
 
    void run() {
       Window window = this.minecraft.getWindow();
-      int width = this.<Integer>onClient(window::getScreenWidth);
-      int height = this.<Integer>onClient(window::getScreenHeight);
-      int guiScale = this.onClient(() -> (Integer)this.minecraft.options.guiScale().get());
+      int width = this.onClient(window::getScreenWidth);
+      int height = this.onClient(window::getScreenHeight);
+      int guiScale = this.onClient(() -> this.minecraft.options.guiScale().get());
 
       try {
          sleep(2000L);
@@ -46,9 +46,9 @@ final class DevChatScrollTest {
          this.list("scale4", 1920, 1080, 4);
          this.resizeWhileOpen();
          this.mentions();
-      } catch (RuntimeException var9) {
-         this.failures.add("exception: " + var9);
-         BedrockNative.LOGGER.error("Dev commands-scroll test failed with an exception", var9);
+      } catch (RuntimeException e) {
+         this.failures.add("exception: " + e);
+         BedrockNative.LOGGER.error("Dev commands-scroll test failed with an exception", e);
       } finally {
          this.run(() -> {
             this.minecraft.gui.setScreen(null);
@@ -69,7 +69,7 @@ final class DevChatScrollTest {
          this.minecraft.options.guiScale().set(scale);
       });
 
-      for (int i = 0; i < 20 && this.<Integer>onClient(window::getWidth) != width; i++) {
+      for (int i = 0; i < 20 && this.onClient(window::getWidth) != width; i++) {
          sleep(250L);
       }
 
@@ -186,9 +186,10 @@ final class DevChatScrollTest {
          "resize while open: rows fill the new free height (" + (after == null ? -1 : after.rows()) + ", expected " + expected + ")",
          after != null && after.rows() == expected
       );
+      SuggestionWindow shownAfter = after;
       this.check(
          "resize while open: the chosen entry in sight, every row shown",
-         after != null && after.shows(after.selected()) && this.shown().size() == after.visible()
+         shownAfter != null && shownAfter.shows(shownAfter.selected()) && this.shown().size() == shownAfter.visible()
       );
       this.screenshot("chat-scroll-resized");
       this.run(() -> this.minecraft.gui.setScreen(null));
@@ -306,7 +307,7 @@ final class DevChatScrollTest {
    private static void sleep(long millis) {
       try {
          Thread.sleep(millis);
-      } catch (InterruptedException var3) {
+      } catch (InterruptedException e) {
          Thread.currentThread().interrupt();
       }
    }

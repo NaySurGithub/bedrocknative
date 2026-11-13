@@ -9,15 +9,9 @@ import net.minecraft.client.gui.Hud;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 
-@Mixin({Hud.class})
+@Mixin(Hud.class)
 public abstract class AttackIndicatorMixin {
-   @WrapOperation(
-      method = {"extractCrosshair"},
-      at = {@At(
-         value = "INVOKE",
-         target = "Lnet/minecraft/client/OptionInstance;get()Ljava/lang/Object;"
-      )}
-   )
+   @WrapOperation(method = "extractCrosshair", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/OptionInstance;get()Ljava/lang/Object;"))
    private Object bedrocknative$noAttackIndicator(OptionInstance<?> option, Operation<Object> original) {
       return BedrockMovement.active() ? AttackIndicatorStatus.OFF : original.call(new Object[]{option});
    }

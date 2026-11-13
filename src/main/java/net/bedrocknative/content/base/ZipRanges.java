@@ -42,8 +42,7 @@ final class ZipRanges {
    private final long expectedSize;
    private final String root;
    private final BaseHosts hosts;
-   @Nullable
-   private URI resolved;
+   private @Nullable URI resolved;
 
    ZipRanges(HttpClient client, URI release, long expectedSize, String root, BaseHosts hosts) {
       this.client = client;
@@ -57,8 +56,8 @@ final class ZipRanges {
       ZipRanges.Directory found;
       try {
          found = this.directory(run);
-      } catch (IOException var17) {
-         run.note("release zip not used: " + var17.getMessage());
+      } catch (IOException e) {
+         run.note("release zip not used: " + e.getMessage());
          return;
       }
 
@@ -91,17 +90,17 @@ final class ZipRanges {
 
          for (BaseTable.Entry entry : entries) {
             String name = prefix + this.root + entry.path();
-            ZipRanges.Member memberx = byName.get(name);
-            if (memberx == null) {
-               memberx = byLowerName.get(name.toLowerCase(Locale.ROOT));
+            ZipRanges.Member member = byName.get(name);
+            if (member == null) {
+               member = byLowerName.get(name.toLowerCase(Locale.ROOT));
             }
 
-            if (memberx != null
-               && !memberx.encrypted()
-               && memberx.size() == entry.size()
-               && (memberx.method() == 0 || memberx.method() == 8)
-               && memberx.compressedSize() <= 134217728L) {
-               wanted.add(new ZipRanges.Wanted(entry, memberx, ends.get(memberx)));
+            if (member != null
+               && !member.encrypted()
+               && member.size() == entry.size()
+               && (member.method() == 0 || member.method() == 8)
+               && member.compressedSize() <= 134217728L) {
+               wanted.add(new ZipRanges.Wanted(entry, member, ends.get(member)));
             }
          }
 
@@ -116,9 +115,9 @@ final class ZipRanges {
             try {
                this.readRange(range, store, run);
                failedInARow = 0;
-            } catch (IOException var16) {
+            } catch (IOException e) {
                failedInARow++;
-               run.note("release zip range failed: " + var16.getMessage());
+               run.note("release zip range failed: " + e.getMessage());
             }
          }
       }
@@ -188,7 +187,7 @@ final class ZipRanges {
             byte[] data;
             try {
                data = member.method() == 0 ? stored : inflate(stored, member.size());
-            } catch (DataFormatException var23) {
+            } catch (DataFormatException e) {
                run.failed(wanted.entry().path(), "broken deflate data");
                continue;
             }
@@ -202,8 +201,8 @@ final class ZipRanges {
                   store.write(wanted.entry(), data, data.length);
                   run.written(wanted.entry());
                   run.bytes.addAndGet(data.length);
-               } catch (BaseStore.Mismatch var22) {
-                  run.failed(wanted.entry().path(), var22.getMessage());
+               } catch (BaseStore.Mismatch e) {
+                  run.failed(wanted.entry().path(), e.getMessage());
                }
             }
          }
@@ -213,114 +212,111 @@ final class ZipRanges {
    static byte[] inflate(byte[] stored, long size) throws DataFormatException {
       if (size > 67108864L) {
          throw new DataFormatException("too large");
-      } else {
-         Inflater inflater = new Inflater(true);
+      }
 
-         byte[] probe;
-         try {
-            inflater.setInput(stored);
-            byte[] out = new byte[(int)size];
-            int total = 0;
+      Inflater inflater = new Inflater(true);
 
-            while (total < out.length && !inflater.finished()) {
-               int read = inflater.inflate(out, total, out.length - total);
-               if (read == 0 && (inflater.needsInput() || inflater.needsDictionary())) {
-                  break;
-               }
+      try {
+         inflater.setInput(stored);
+         byte[] out = new byte[(int)size];
+         int total = 0;
 
-               total += read;
+         while (total < out.length && !inflater.finished()) {
+            int read = inflater.inflate(out, total, out.length - total);
+            if (read == 0 && (inflater.needsInput() || inflater.needsDictionary())) {
+               break;
             }
 
-            if (total != out.length) {
-               throw new DataFormatException("inflated " + total + " of " + size + " bytes");
-            }
-
-            if (!inflater.finished()) {
-               probe = new byte[1];
-               if (inflater.inflate(probe) > 0) {
-                  throw new DataFormatException("longer than " + size + " bytes");
-               }
-            }
-
-            probe = out;
-         } finally {
-            inflater.end();
+            total += read;
          }
 
-         return probe;
+         if (total != out.length) {
+            throw new DataFormatException("inflated " + total + " of " + size + " bytes");
+         }
+
+         if (!inflater.finished()) {
+            byte[] probe = new byte[1];
+            if (inflater.inflate(probe) > 0) {
+               throw new DataFormatException("longer than " + size + " bytes");
+            }
+         }
+
+         return out;
+      } finally {
+         inflater.end();
       }
    }
 
    ZipRanges.Directory directory(FetchRun run) throws IOException, InterruptedException {
       if (this.expectedSize <= 22L) {
          throw new IOException("no zip size in the table");
-      } else {
-         long tailStart = Math.max(0L, this.expectedSize - 65536L);
+      }
 
-         byte[] tail;
-         try (InputStream in = this.get(tailStart, this.expectedSize - 1L, run)) {
-            tail = in.readNBytes((int)(this.expectedSize - tailStart));
+      long tailStart = Math.max(0L, this.expectedSize - 65536L);
+
+      byte[] tail;
+      try (InputStream in = this.get(tailStart, this.expectedSize - 1L, run)) {
+         tail = in.readNBytes((int)(this.expectedSize - tailStart));
+      }
+
+      ByteBuffer buffer = ByteBuffer.wrap(tail).order(ByteOrder.LITTLE_ENDIAN);
+      int end = -1;
+
+      for (int i = tail.length - 22; i >= 0 && i >= tail.length - 22 - 65535; i--) {
+         if (buffer.getInt(i) == 101010256) {
+            end = i;
+            break;
+         }
+      }
+
+      if (end < 0) {
+         throw new IOException("no end of central directory");
+      }
+
+      long entries = buffer.getShort(end + 10) & 65535;
+      long directorySize = buffer.getInt(end + 12) & 4294967295L;
+      long directoryOffset = buffer.getInt(end + 16) & 4294967295L;
+      if (entries == 65535L || directorySize == 4294967295L || directoryOffset == 4294967295L) {
+         if (end < 20 || buffer.getInt(end - 20) != 117853008) {
+            throw new IOException("ZIP64 locator missing");
          }
 
-         ByteBuffer buffer = ByteBuffer.wrap(tail).order(ByteOrder.LITTLE_ENDIAN);
-         int end = -1;
-
-         for (int i = tail.length - 22; i >= 0 && i >= tail.length - 22 - 65535; i--) {
-            if (buffer.getInt(i) == 101010256) {
-               end = i;
-               break;
-            }
-         }
-
-         if (end < 0) {
-            throw new IOException("no end of central directory");
+         long record = buffer.getLong(end - 12);
+         ByteBuffer zip64;
+         if (record >= tailStart && record - tailStart + 56L <= tail.length) {
+            zip64 = ByteBuffer.wrap(tail, (int)(record - tailStart), 56).slice().order(ByteOrder.LITTLE_ENDIAN);
          } else {
-            long entries = buffer.getShort(end + 10) & '\uffff';
-            long directorySize = buffer.getInt(end + 12) & 4294967295L;
-            long directoryOffset = buffer.getInt(end + 16) & 4294967295L;
-            if (entries == 65535L || directorySize == 4294967295L || directoryOffset == 4294967295L) {
-               if (end < 20 || buffer.getInt(end - 20) != 117853008) {
-                  throw new IOException("ZIP64 locator missing");
-               }
-
-               long record = buffer.getLong(end - 12);
-               ByteBuffer zip64;
-               if (record >= tailStart && record - tailStart + 56L <= tail.length) {
-                  zip64 = ByteBuffer.wrap(tail, (int)(record - tailStart), 56).slice().order(ByteOrder.LITTLE_ENDIAN);
-               } else {
-                  try (InputStream in = this.get(record, record + 55L, run)) {
-                     zip64 = ByteBuffer.wrap(in.readNBytes(56)).order(ByteOrder.LITTLE_ENDIAN);
-                  }
-               }
-
-               if (zip64.limit() < 56 || zip64.getInt(0) != 101075792) {
-                  throw new IOException("ZIP64 end record missing");
-               }
-
-               entries = zip64.getLong(32);
-               directorySize = zip64.getLong(40);
-               directoryOffset = zip64.getLong(48);
-            }
-
-            if (entries <= 200000L && directorySize <= 33554432L && directoryOffset + directorySize <= this.expectedSize) {
-               byte[] directory;
-               if (directoryOffset >= tailStart) {
-                  directory = Arrays.copyOfRange(tail, (int)(directoryOffset - tailStart), (int)(directoryOffset - tailStart + directorySize));
-               } else {
-                  try (InputStream in = this.get(directoryOffset, directoryOffset + directorySize - 1L, run)) {
-                     directory = in.readNBytes((int)directorySize);
-                  }
-               }
-
-               if (directory.length != directorySize) {
-                  throw new IOException("central directory cut short");
-               } else {
-                  return new ZipRanges.Directory(parseDirectory(directory, entries), directoryOffset);
-               }
-            } else {
-               throw new IOException("central directory out of bounds");
+            try (InputStream in = this.get(record, record + 55L, run)) {
+               zip64 = ByteBuffer.wrap(in.readNBytes(56)).order(ByteOrder.LITTLE_ENDIAN);
             }
          }
+
+         if (zip64.limit() < 56 || zip64.getInt(0) != 101075792) {
+            throw new IOException("ZIP64 end record missing");
+         }
+
+         entries = zip64.getLong(32);
+         directorySize = zip64.getLong(40);
+         directoryOffset = zip64.getLong(48);
+      }
+
+      if (entries <= 200000L && directorySize <= 33554432L && directoryOffset + directorySize <= this.expectedSize) {
+         byte[] directory;
+         if (directoryOffset >= tailStart) {
+            directory = Arrays.copyOfRange(tail, (int)(directoryOffset - tailStart), (int)(directoryOffset - tailStart + directorySize));
+         } else {
+            try (InputStream in = this.get(directoryOffset, directoryOffset + directorySize - 1L, run)) {
+               directory = in.readNBytes((int)directorySize);
+            }
+         }
+
+         if (directory.length != directorySize) {
+            throw new IOException("central directory cut short");
+         } else {
+            return new ZipRanges.Directory(parseDirectory(directory, entries), directoryOffset);
+         }
+      } else {
+         throw new IOException("central directory out of bounds");
       }
    }
 

@@ -52,8 +52,7 @@ public record BedrockSpriteSource(BedrockTextureMap.Atlas atlas) implements Spri
       SpriteSources.ID_MAPPER.put(TYPE, MAP_CODEC);
    }
 
-   @Nullable
-   public static BedrockSpriteSource.Stitch last(BedrockTextureMap.Atlas atlas) {
+   public static BedrockSpriteSource.@Nullable Stitch last(BedrockTextureMap.Atlas atlas) {
       return LAST.get(atlas);
    }
 
@@ -68,16 +67,17 @@ public record BedrockSpriteSource(BedrockTextureMap.Atlas atlas) implements Spri
 
       if (ours.isEmpty()) {
          return false;
-      } else {
-         if (!sources.subList(sources.size() - ours.size(), sources.size()).equals(ours)) {
-            sources.removeIf(sourcex -> sourcex instanceof BedrockSpriteSource);
-            sources.addAll(ours);
-         }
-
-         return true;
       }
+
+      if (!sources.subList(sources.size() - ours.size(), sources.size()).equals(ours)) {
+         sources.removeIf(sourcex -> sourcex instanceof BedrockSpriteSource);
+         sources.addAll(ours);
+      }
+
+      return true;
    }
 
+   @Override
    public void run(ResourceManager resourceManager, Output output) {
       BedrockTextureSet set = BedrockVanillaTextures.armed(this.atlas);
       if (set == null) {
@@ -94,7 +94,7 @@ public record BedrockSpriteSource(BedrockTextureMap.Atlas atlas) implements Spri
          for (BedrockTextureSet.Sprite sprite : set.sprites().values()) {
             Identifier id = Identifier.withDefaultNamespace(sprite.name());
             Identifier file = TEXTURE_ID_CONVERTER.idToFile(id);
-            Resource top = (Resource)resourceManager.getResource(file).orElse(null);
+            Resource top = resourceManager.getResource(file).orElse(null);
             Resource shown = provenance != null ? provenance.file(id) : top;
             stitch.offered.incrementAndGet();
             LegacyJavaPacks.Found old = legacy.isEmpty() ? null : legacy.find(oldNames.getOrDefault(sprite.name(), List.of()), shown);
@@ -104,7 +104,8 @@ public record BedrockSpriteSource(BedrockTextureMap.Atlas atlas) implements Spri
                   stitch.javaPacks.add(sprite.name());
                   if (old != null) {
                      stitch.legacyPacks.add(sprite.name());
-                     output.add(id, loader -> loadLegacy(loader, id, old, () -> shown != null ? loader.loadSprite(id, shown) : null));
+                     Resource below = shown;
+                     output.add(id, loader -> loadLegacy(loader, id, old, () -> below != null ? loader.loadSprite(id, below) : null));
                   }
                   continue;
                }
@@ -121,9 +122,7 @@ public record BedrockSpriteSource(BedrockTextureMap.Atlas atlas) implements Spri
             for (Entry<String, List<LegacyTextureNames.Candidate>> entry : oldNames.entrySet()) {
                if (!set.sprites().containsKey(entry.getKey())) {
                   Identifier id = Identifier.withDefaultNamespace(entry.getKey());
-                  Resource shown = provenance != null
-                     ? provenance.file(id)
-                     : (Resource)resourceManager.getResource(TEXTURE_ID_CONVERTER.idToFile(id)).orElse(null);
+                  Resource shown = provenance != null ? provenance.file(id) : resourceManager.getResource(TEXTURE_ID_CONVERTER.idToFile(id)).orElse(null);
                   LegacyJavaPacks.Found old = legacy.find(entry.getValue(), shown);
                   if (old != null) {
                      packs.add(old.packId());
@@ -168,8 +167,9 @@ public record BedrockSpriteSource(BedrockTextureMap.Atlas atlas) implements Spri
       }
    }
 
-   @Nullable
-   private static SpriteContents loadLegacy(SpriteResourceLoader loader, Identifier id, LegacyJavaPacks.Found old, Supplier<SpriteContents> fallback) {
+   private static @Nullable SpriteContents loadLegacy(
+      SpriteResourceLoader loader, Identifier id, LegacyJavaPacks.Found old, Supplier<@Nullable SpriteContents> fallback
+   ) {
       SpriteContents contents = old.load(loader, id);
       return contents != null ? contents : fallback.get();
    }
@@ -185,23 +185,22 @@ public record BedrockSpriteSource(BedrockTextureMap.Atlas atlas) implements Spri
          }
 
          return new SpriteContents(id, new FrameSize(pixels.width(), pixels.height()), image, Optional.empty(), List.of(), Optional.empty());
-      } catch (RuntimeException var5) {
+      } catch (RuntimeException e) {
          image.close();
-         throw var5;
+         throw e;
       }
    }
 
    private static String names(Set<String> sprites) {
       if (sprites.isEmpty()) {
          return "";
-      } else {
-         List<String> sorted = new ArrayList<>(new TreeSet<>(sprites));
-         return " " + sorted.subList(0, Math.min(8, sorted.size())) + (sorted.size() > 8 ? " and " + (sorted.size() - 8) + " more" : "");
       }
+
+      List<String> sorted = new ArrayList<>(new TreeSet<>(sprites));
+      return " " + sorted.subList(0, Math.min(8, sorted.size())) + (sorted.size() > 8 ? " and " + (sorted.size() - 8) + " more" : "");
    }
 
-   @Nullable
-   private SpriteContents load(
+   private @Nullable SpriteContents load(
       SpriteResourceLoader loader,
       Identifier id,
       BedrockTextureSet.Sprite sprite,
@@ -221,9 +220,10 @@ public record BedrockSpriteSource(BedrockTextureMap.Atlas atlas) implements Spri
                javaImage = BedrockImages.decode(input.readAllBytes());
             }
 
+            ArgbImage image = javaImage;
             javaFrame = metadata.getSection(AnimationMetadataSection.TYPE)
-               .map(animation -> animation.calculateFrameSize(javaImage.width(), javaImage.height()))
-               .orElse(new FrameSize(javaImage.width(), javaImage.height()));
+               .map(animation -> animation.calculateFrameSize(image.width(), image.height()))
+               .orElse(new FrameSize(image.width(), image.height()));
          }
 
          ArgbImage fitted = javaFrame == null
@@ -243,9 +243,9 @@ public record BedrockSpriteSource(BedrockTextureMap.Atlas atlas) implements Spri
             stitch.fromBedrock.add(sprite.name());
             return contents;
          }
-      } catch (Exception var16) {
+      } catch (Exception e) {
          stitch.fallback("error");
-         BedrockNative.LOGGER.warn("Couldn't use Bedrock texture {} for {}; Java's stays", new Object[]{sprite.source(), id, var16});
+         BedrockNative.LOGGER.warn("Couldn't use Bedrock texture {} for {}; Java's stays", new Object[]{sprite.source(), id, e});
          return fallback != null ? loader.loadSprite(id, fallback) : null;
       }
    }
@@ -263,23 +263,24 @@ public record BedrockSpriteSource(BedrockTextureMap.Atlas atlas) implements Spri
          BedrockTextureSet.Animation animation = sprite.animation();
          if (animation == null) {
             return new SpriteContents(id, new FrameSize(pixels.width(), pixels.height()), image, Optional.empty(), List.of(), textureInfo);
-         } else {
-            int frameCount = pixels.height() / pixels.width();
-            boolean everyFrameInOrder = animation.frames().equals(IntStream.range(0, frameCount).boxed().toList());
-            Optional<List<AnimationFrame>> frames = everyFrameInOrder
-               ? Optional.empty()
-               : Optional.of(animation.frames().stream().<AnimationFrame>map(AnimationFrame::new).toList());
-            AnimationMetadataSection metadata = new AnimationMetadataSection(
-               frames, Optional.empty(), Optional.empty(), animation.ticksPerFrame(), animation.interpolate()
-            );
-            return new SpriteContents(id, new FrameSize(pixels.width(), pixels.width()), image, Optional.of(metadata), List.of(), textureInfo);
          }
-      } catch (RuntimeException var10) {
+
+         int frameCount = pixels.height() / pixels.width();
+         boolean everyFrameInOrder = animation.frames().equals(IntStream.range(0, frameCount).boxed().toList());
+         Optional<List<AnimationFrame>> frames = everyFrameInOrder
+            ? Optional.empty()
+            : Optional.of(animation.frames().stream().map(AnimationFrame::new).toList());
+         AnimationMetadataSection metadata = new AnimationMetadataSection(
+            frames, Optional.empty(), Optional.empty(), animation.ticksPerFrame(), animation.interpolate()
+         );
+         return new SpriteContents(id, new FrameSize(pixels.width(), pixels.width()), image, Optional.of(metadata), List.of(), textureInfo);
+      } catch (RuntimeException e) {
          image.close();
-         throw var10;
+         throw e;
       }
    }
 
+   @Override
    public MapCodec<BedrockSpriteSource> codec() {
       return MAP_CODEC;
    }
@@ -293,8 +294,7 @@ public record BedrockSpriteSource(BedrockTextureMap.Atlas atlas) implements Spri
       private final Set<String> serverOverJavaPacks = ConcurrentHashMap.newKeySet();
       private final Set<String> legacyPacks = ConcurrentHashMap.newKeySet();
       private final AtomicInteger legacyModelSprites = new AtomicInteger();
-      @Nullable
-      private volatile LegacyJavaPacks.Strips legacyStrips;
+      private volatile LegacyJavaPacks.@Nullable Strips legacyStrips;
 
       public int offered() {
          return this.offered.get();

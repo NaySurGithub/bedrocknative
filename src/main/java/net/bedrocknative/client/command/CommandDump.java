@@ -83,8 +83,8 @@ final class CommandDump {
 
       try {
          Files.writeString(gameDirectory.resolve("bedrock-commands.txt"), out);
-      } catch (IOException var15) {
-         BedrockNative.LOGGER.warn("Could not write the command dump", var15);
+      } catch (IOException e) {
+         BedrockNative.LOGGER.warn("Could not write the command dump", e);
       }
    }
 }

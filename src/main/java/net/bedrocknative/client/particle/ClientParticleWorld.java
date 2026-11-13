@@ -33,42 +33,42 @@ final class ClientParticleWorld implements ParticleWorld {
       ClientLevel level = Minecraft.getInstance().level;
       if (level == null) {
          return 0;
-      } else {
-         this.clip.minX = x - radius;
-         this.clip.minY = y - radius;
-         this.clip.minZ = z - radius;
-         this.clip.maxX = x + radius;
-         this.clip.maxY = y + radius;
-         this.clip.maxZ = z + radius;
-         int blocked = 0;
+      }
 
-         for (int axis : AXES) {
-            double wanted = motion[axis];
-            if (wanted != 0.0) {
-               double allowed = this.sweep(level, axis, wanted);
-               motion[axis] = allowed;
-               if (Math.abs(allowed - wanted) > 1.0E-7) {
-                  blocked |= axis == 0 ? 1 : (axis == 1 ? 2 : 4);
-               }
+      this.clip.minX = x - radius;
+      this.clip.minY = y - radius;
+      this.clip.minZ = z - radius;
+      this.clip.maxX = x + radius;
+      this.clip.maxY = y + radius;
+      this.clip.maxZ = z + radius;
+      int blocked = 0;
 
-               switch (axis) {
-                  case 0:
-                     this.clip.minX += allowed;
-                     this.clip.maxX += allowed;
-                     break;
-                  case 1:
-                     this.clip.minY += allowed;
-                     this.clip.maxY += allowed;
-                     break;
-                  default:
-                     this.clip.minZ += allowed;
-                     this.clip.maxZ += allowed;
-               }
+      for (int axis : AXES) {
+         double wanted = motion[axis];
+         if (wanted != 0.0) {
+            double allowed = this.sweep(level, axis, wanted);
+            motion[axis] = allowed;
+            if (Math.abs(allowed - wanted) > 1.0E-7) {
+               blocked |= axis == 0 ? 1 : (axis == 1 ? 2 : 4);
+            }
+
+            switch (axis) {
+               case 0:
+                  this.clip.minX += allowed;
+                  this.clip.maxX += allowed;
+                  break;
+               case 1:
+                  this.clip.minY += allowed;
+                  this.clip.maxY += allowed;
+                  break;
+               default:
+                  this.clip.minZ += allowed;
+                  this.clip.maxZ += allowed;
             }
          }
-
-         return blocked;
       }
+
+      return blocked;
    }
 
    private double sweep(ClientLevel level, int axis, double motion) {
@@ -118,28 +118,30 @@ final class ClientParticleWorld implements ParticleWorld {
       ClientLevel level = Minecraft.getInstance().level;
       if (level == null) {
          return "minecraft:air";
-      } else {
-         this.cursor.set(x, y, z);
-         BlockState state = level.getBlockState(this.cursor);
-         String name = this.names.get(state);
-         if (name == null) {
-            name = bedrockName(state);
-            this.names.put(state, name);
-         }
-
-         return name;
       }
+
+      this.cursor.set(x, y, z);
+      BlockState state = level.getBlockState(this.cursor);
+      String name = this.names.get(state);
+      if (name == null) {
+         name = bedrockName(state);
+         this.names.put(state, name);
+      }
+
+      return name;
    }
 
    private static String bedrockName(BlockState state) {
       if (state.isAir()) {
          return "minecraft:air";
-      } else if (state.getFluidState().isSource() && state.getBlock() == Blocks.WATER) {
-         return "minecraft:water";
-      } else {
-         String name = BlockMappings.get().bedrockName(BlockMappings.get().toBedrock(state));
-         return name != null ? name : "minecraft:air";
       }
+
+      if (state.getFluidState().isSource() && state.getBlock() == Blocks.WATER) {
+         return "minecraft:water";
+      }
+
+      String name = BlockMappings.get().bedrockName(BlockMappings.get().toBedrock(state));
+      return name != null ? name : "minecraft:air";
    }
 
    @Override
@@ -165,9 +167,8 @@ final class ClientParticleWorld implements ParticleWorld {
       }
    }
 
-   @Nullable
    @Override
-   public ParticleEffect effect(String identifier) {
+   public @Nullable ParticleEffect effect(String identifier) {
       ParticleEffects effects = BedrockParticleEngine.effects();
       return effects != null ? effects.get(identifier) : null;
    }
@@ -194,6 +195,7 @@ final class ClientParticleWorld implements ParticleWorld {
       int axis;
       double motion;
 
+      @Override
       public void consume(double x1, double y1, double z1, double x2, double y2, double z2) {
          this.box(x1 + this.offsetX, y1 + this.offsetY, z1 + this.offsetZ, x2 + this.offsetX, y2 + this.offsetY, z2 + this.offsetZ);
       }

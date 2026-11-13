@@ -18,12 +18,12 @@ public interface Protection {
          if (Files.getFileStore(path).supportsFileAttributeView("posix")) {
             Files.setPosixFilePermissions(path, PosixFilePermissions.fromString(Files.isDirectory(path) ? "rwx------" : "rw-------"));
          }
-      } catch (UnsupportedOperationException | IOException var3) {
+      } catch (IOException | UnsupportedOperationException var3) {
       }
    }
 
    static Protection standard() {
-      return (Protection)(System.getProperty("os.name", "").toLowerCase(Locale.ROOT).contains("win") ? new DpapiProtection() : ownerOnly());
+      return System.getProperty("os.name", "").toLowerCase(Locale.ROOT).contains("win") ? new DpapiProtection() : ownerOnly();
    }
 
    static Protection ownerOnly() {

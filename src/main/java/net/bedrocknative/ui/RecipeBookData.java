@@ -42,8 +42,7 @@ public final class RecipeBookData implements UiDataSource {
       RecipeBookData.Tab.SEARCH
    );
    private final ContainerData slots;
-   @Nullable
-   private RecipeBookData.Actions actions;
+   private RecipeBookData.@Nullable Actions actions;
    private List<RecipeBookData.Cell> cells = List.of();
    private RecipeBookData.Tab tab = RecipeBookData.Tab.SEARCH;
    private RecipeBookData.Layout layout = RecipeBookData.Layout.RECIPE_BOOK;
@@ -60,7 +59,7 @@ public final class RecipeBookData implements UiDataSource {
       return this.slots;
    }
 
-   public void actions(@Nullable RecipeBookData.Actions target) {
+   public void actions(RecipeBookData.@Nullable Actions target) {
       this.actions = target;
    }
 
@@ -160,33 +159,35 @@ public final class RecipeBookData implements UiDataSource {
    public UiValue item(String collection, int index, String name) {
       if (!collection.equals("recipe_book")) {
          return this.slots.item(collection, index, name);
-      } else if (index >= 0) {
+      }
+
+      if (index >= 0) {
          if (index >= this.cells.size()) {
             return UiValue.NULL;
-         } else {
-            RecipeBookData.Cell cell = this.cells.get(index);
-
-            return switch (name) {
-               case "#recipe_hover_text", "#hover_text" -> UiValue.of(cell.hoverText());
-               case "#recipe_craftable_count", "#inventory_stack_count" -> UiValue.of(cell.countText());
-               case "#stack_count_visible" -> UiValue.of(!cell.countText().isEmpty());
-               case "#is_creative_selected_slot", "#is_selected_slot" -> UiValue.of(cell.selected());
-               case "#item_durability_visible", "#item_storage_visible", "#inactive_item", "#item_lock", "#item_lock_in_slot", "#item_lock_in_inventory" -> UiValue.FALSE;
-               case "#container_item_background_texture" -> UiValue.of(texture(cell));
-               case "#container_item_modifier" -> UiValue.of(
-                  cell.kind() == RecipeBookData.Kind.HEAD_CLOSED ? 2.0 : (cell.kind() == RecipeBookData.Kind.HEAD_OPEN ? 1.0 : 0.0)
-               );
-               case "#container_item_background" -> {
-                  yield UiValue.of(switch (cell.kind()) {
-                     case ENTRY -> cell.craftable() ? 0.0 : 5.0;
-                     case HEAD_CLOSED -> 1.0;
-                     case HEAD_OPEN -> 2.0;
-                     case GROUP_ENTRY -> cell.craftable() ? 3.0 : 5.0;
-                  });
-               }
-               default -> UiValue.NULL;
-            };
          }
+
+         RecipeBookData.Cell cell = this.cells.get(index);
+
+         return switch (name) {
+            case "#recipe_hover_text", "#hover_text" -> UiValue.of(cell.hoverText());
+            case "#recipe_craftable_count", "#inventory_stack_count" -> UiValue.of(cell.countText());
+            case "#stack_count_visible" -> UiValue.of(!cell.countText().isEmpty());
+            case "#is_creative_selected_slot", "#is_selected_slot" -> UiValue.of(cell.selected());
+            case "#item_durability_visible", "#item_storage_visible", "#inactive_item", "#item_lock", "#item_lock_in_slot", "#item_lock_in_inventory" -> UiValue.FALSE;
+            case "#container_item_background_texture" -> UiValue.of(texture(cell));
+            case "#container_item_modifier" -> UiValue.of(
+               cell.kind() == RecipeBookData.Kind.HEAD_CLOSED ? 2.0 : (cell.kind() == RecipeBookData.Kind.HEAD_OPEN ? 1.0 : 0.0)
+            );
+            case "#container_item_background" -> {
+               yield UiValue.of(switch (cell.kind()) {
+                  case ENTRY -> cell.craftable() ? 0.0 : 5.0;
+                  case HEAD_CLOSED -> 1.0;
+                  case HEAD_OPEN -> 2.0;
+                  case GROUP_ENTRY -> cell.craftable() ? 3.0 : 5.0;
+               });
+            }
+            default -> UiValue.NULL;
+         };
       } else {
          return !name.equals("#recipe_book_total_items") && !name.equals("#collection_total_items") ? UiValue.NULL : UiValue.of(this.cells.size());
       }
@@ -201,9 +202,8 @@ public final class RecipeBookData implements UiDataSource {
       };
    }
 
-   @Nullable
    @Override
-   public String kind(String collection, int index) {
+   public @Nullable String kind(String collection, int index) {
       return null;
    }
 
@@ -287,19 +287,19 @@ public final class RecipeBookData implements UiDataSource {
    public record Cell(String hoverText, RecipeBookData.Kind kind, boolean craftable, String countText, boolean selected) {
    }
 
-   public static enum Kind {
+   public enum Kind {
       ENTRY,
       HEAD_CLOSED,
       HEAD_OPEN,
       GROUP_ENTRY;
    }
 
-   public static enum Layout {
+   public enum Layout {
       RECIPE_BOOK,
       SURVIVAL;
    }
 
-   public static enum Tab {
+   public enum Tab {
       CONSTRUCTION,
       EQUIPMENT,
       ITEMS,

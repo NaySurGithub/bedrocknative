@@ -14,36 +14,28 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyConstant;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin({AbstractBoat.class})
+@Mixin(AbstractBoat.class)
 public abstract class AbstractBoatMixin {
-   @Inject(
-      method = {"floatBoat"},
-      at = {@At("HEAD")},
-      cancellable = true
-   )
+   @Inject(method = "floatBoat", at = @At("HEAD"), cancellable = true)
    private void bedrocknative$noJavaFloat(CallbackInfo ci) {
-      if (BedrockVehicles.predictable((AbstractBoat)this)) {
+      if (BedrockVehicles.predictable((AbstractBoat)(Object)this)) {
          ci.cancel();
       }
    }
 
-   @Inject(
-      method = {"controlBoat"},
-      at = {@At("HEAD")},
-      cancellable = true
-   )
+   @Inject(method = "controlBoat", at = @At("HEAD"), cancellable = true)
    private void bedrocknative$noJavaPaddles(CallbackInfo ci) {
-      if (BedrockVehicles.predictable((AbstractBoat)this)) {
+      if (BedrockVehicles.predictable((AbstractBoat)(Object)this)) {
          ci.cancel();
       }
    }
 
    @WrapOperation(
-      method = {"tick"},
-      at = {@At(
+      method = "tick",
+      at = @At(
          value = "INVOKE",
          target = "Lnet/minecraft/world/entity/vehicle/boat/AbstractBoat;move(Lnet/minecraft/world/entity/MoverType;Lnet/minecraft/world/phys/Vec3;)V"
-      )}
+      )
    )
    private void bedrocknative$noJavaMove(AbstractBoat self, MoverType type, Vec3 delta, Operation<Void> original) {
       if (!BedrockVehicles.predictable(self)) {
@@ -51,14 +43,7 @@ public abstract class AbstractBoatMixin {
       }
    }
 
-   @ModifyConstant(
-      method = {"clampRotation"},
-      constant = {@Constant(
-         floatValue = 105.0F
-      ), @Constant(
-         floatValue = -105.0F
-      )}
-   )
+   @ModifyConstant(method = "clampRotation", constant = {@Constant(floatValue = 105.0F), @Constant(floatValue = -105.0F)})
    private float bedrocknative$seatLock(float limit) {
       return BedrockMovement.active() ? Math.signum(limit) * 90.0F : limit;
    }

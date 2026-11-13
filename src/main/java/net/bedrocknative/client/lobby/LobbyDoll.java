@@ -30,12 +30,9 @@ final class LobbyDoll {
    private static final float START_ROTATION = 30.0F;
    private static final int FACE_SIZE = 8;
    private final Minecraft minecraft;
-   @Nullable
-   private Simple wide;
-   @Nullable
-   private Simple slim;
-   @Nullable
-   private Identifier texture;
+   private @Nullable Simple wide;
+   private @Nullable Simple slim;
+   private @Nullable Identifier texture;
    private boolean slimModel;
    private boolean resolved;
    private float rotation = 30.0F;
@@ -121,49 +118,47 @@ final class LobbyDoll {
                this.texture = SKIN;
                return;
             }
-         } catch (RuntimeException var2) {
-            BedrockNative.LOGGER.debug("Bedrock lobby: the Bedrock skin can't be shown, Java's is", var2);
+         } catch (RuntimeException e) {
+            BedrockNative.LOGGER.debug("Bedrock lobby: the Bedrock skin can't be shown, Java's is", e);
          }
 
-         PlayerSkin java = (PlayerSkin)this.minecraft.getSkinManager().createLookup(this.minecraft.getGameProfile(), false).get();
+         PlayerSkin java = this.minecraft.getSkinManager().createLookup(this.minecraft.getGameProfile(), false).get();
          this.texture = java.body().texturePath();
          this.slimModel = java.model() == PlayerModelType.SLIM;
       }
    }
 
-   @Nullable
-   private NativeImage classic(BedrockSkin skin) {
+   private @Nullable NativeImage classic(BedrockSkin skin) {
       if (skin.persona()) {
          return null;
-      } else {
-         JsonObject claims = skin.claims();
-         int width = number(claims.get("SkinImageWidth"));
-         int height = number(claims.get("SkinImageHeight"));
-         if (width == 64 && height == 64) {
-            JsonElement rgba = claims.get("SkinData");
-            if (rgba instanceof JsonElement && rgba.isJsonPrimitive()) {
-               byte[] rgbax = Base64.getDecoder().decode(rgba.getAsString());
-               if (rgbax.length != width * height * 4) {
-                  return null;
-               }
+      }
 
-               JsonElement y = claims.get("ArmSize");
-               this.slimModel = y instanceof JsonElement && y.isJsonPrimitive() && "slim".equals(y.getAsString());
-               NativeImage image = new NativeImage(width, height, false);
-               int yx = 0;
-
-               for (int i = 0; yx < height; yx++) {
-                  for (int x = 0; x < width; i += 4) {
-                     int argb = (rgbax[i + 3] & 255) << 24 | (rgbax[i] & 255) << 16 | (rgbax[i + 1] & 255) << 8 | rgbax[i + 2] & 255;
-                     image.setPixel(x, yx, argb);
-                     x++;
-                  }
-               }
-
-               return image;
-            }
+      JsonObject claims = skin.claims();
+      int width = number(claims.get("SkinImageWidth"));
+      int height = number(claims.get("SkinImageHeight"));
+      if (width == 64 && height == 64 && claims.get("SkinData") instanceof JsonElement data && data.isJsonPrimitive()) {
+         byte[] rgba = Base64.getDecoder().decode(data.getAsString());
+         if (rgba.length != width * height * 4) {
+            return null;
          }
 
+         this.slimModel = claims.get("ArmSize") instanceof JsonElement arms && arms.isJsonPrimitive() && "slim".equals(arms.getAsString());
+         NativeImage image = new NativeImage(width, height, false);
+         int y = 0;
+         int i = 0;
+
+         while (y < height) {
+            for (int x = 0; x < width; i += 4) {
+               int argb = (rgba[i + 3] & 255) << 24 | (rgba[i] & 255) << 16 | (rgba[i + 1] & 255) << 8 | rgba[i + 2] & 255;
+               image.setPixel(x, y, argb);
+               x++;
+            }
+
+            y++;
+         }
+
+         return image;
+      } else {
          return null;
       }
    }

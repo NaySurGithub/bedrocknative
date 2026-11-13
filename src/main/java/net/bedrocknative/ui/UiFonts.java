@@ -32,10 +32,8 @@ public final class UiFonts {
    private final Function<String, Optional<byte[]>> reader;
    private final Map<String, FutureTask<Optional<UiVectorFont>>> loaded = new ConcurrentHashMap<>();
    private final Map<String, Optional<UiVectorFont>> byType = new ConcurrentHashMap<>();
-   @Nullable
-   private final PackStack stack;
-   @Nullable
-   private volatile Optional<UiVectorFont> defaultFont;
+   private final @Nullable PackStack stack;
+   private volatile @Nullable Optional<UiVectorFont> defaultFont;
 
    private UiFonts(Map<String, UiFonts.Declared> fonts, Map<String, List<String>> aliases, Function<String, Optional<byte[]>> reader, @Nullable PackStack stack) {
       this.fonts = fonts;
@@ -44,8 +42,7 @@ public final class UiFonts {
       this.stack = stack;
    }
 
-   @Nullable
-   public UiVectorFont defaultFont() {
+   public @Nullable UiVectorFont defaultFont() {
       Optional<UiVectorFont> known = this.defaultFont;
       if (known == null) {
          synchronized (this) {
@@ -55,8 +52,8 @@ public final class UiFonts {
 
                try {
                   font = this.stack == null ? null : MojanglesFont.load(this.stack);
-               } catch (RuntimeException var6) {
-                  BedrockNative.LOGGER.info("JSON UI default font is unreadable: {}", var6.toString());
+               } catch (RuntimeException e) {
+                  BedrockNative.LOGGER.info("JSON UI default font is unreadable: {}", e.toString());
                }
 
                known = Optional.ofNullable(font);
@@ -100,8 +97,8 @@ public final class UiFonts {
          JsonObject root;
          try {
             root = UiJson.parseObject(data);
-         } catch (UiJson.Error var18) {
-            BedrockNative.LOGGER.debug("Unreadable {}: {}", "font/font_metadata.json", var18.getMessage());
+         } catch (UiJson.Error e) {
+            BedrockNative.LOGGER.debug("Unreadable {}: {}", "font/font_metadata.json", e.getMessage());
             continue;
          }
 
@@ -122,8 +119,8 @@ public final class UiFonts {
          }
 
          if (root.get("font_aliases") instanceof JsonArray list) {
-            for (JsonElement elementx : list) {
-               if (elementx instanceof JsonObject alias && UiModifications.string(alias.get("alias")) != null) {
+            for (JsonElement element : list) {
+               if (element instanceof JsonObject alias && UiModifications.string(alias.get("alias")) != null) {
                   List<String> references = new ArrayList<>();
                   JsonElement var27 = alias.get("fonts");
                   if (var27 instanceof JsonArray) {
@@ -158,8 +155,8 @@ public final class UiFonts {
             try {
                font.warm();
                ready++;
-            } catch (RuntimeException var7) {
-               BedrockNative.LOGGER.debug("JSON UI font {} could not be readied: {}", name, var7.toString());
+            } catch (RuntimeException e) {
+               BedrockNative.LOGGER.debug("JSON UI font {} could not be readied: {}", name, e.toString());
             }
          }
       }
@@ -183,8 +180,7 @@ public final class UiFonts {
       return 0.0F;
    }
 
-   @Nullable
-   public UiVectorFont font(@Nullable String fontType) {
+   public @Nullable UiVectorFont font(@Nullable String fontType) {
       if (fontType != null && !fontType.isEmpty()) {
          Optional<UiVectorFont> known = this.byType.get(fontType);
          if (known == null) {
@@ -198,8 +194,7 @@ public final class UiFonts {
       }
    }
 
-   @Nullable
-   private UiVectorFont lookup(String fontType) {
+   private @Nullable UiVectorFont lookup(String fontType) {
       String name = fontType.toLowerCase(Locale.ROOT);
       if (name.equals("smooth")) {
          for (String smooth : SMOOTH) {
@@ -215,30 +210,28 @@ public final class UiFonts {
       }
    }
 
-   @Nullable
-   public TtfFont ttf(@Nullable String fontType) {
+   public @Nullable TtfFont ttf(@Nullable String fontType) {
       return this.font(fontType) instanceof TtfFont ttf ? ttf : null;
    }
 
-   @Nullable
-   private UiVectorFont resolve(String name, int depth) {
+   private @Nullable UiVectorFont resolve(String name, int depth) {
       UiFonts.Declared declared = this.fonts.get(name);
       if (declared != null) {
          return this.loadOnce(name, declared).orElse(null);
-      } else {
-         List<String> references = this.aliases.get(name);
-         if (references != null && depth < 4) {
-            for (String reference : references) {
-               UiVectorFont font = this.resolve(reference, depth + 1);
-               if (font != null) {
-                  return font;
-               }
-            }
+      }
 
-            return null;
-         } else {
-            return null;
+      List<String> references = this.aliases.get(name);
+      if (references != null && depth < 4) {
+         for (String reference : references) {
+            UiVectorFont font = this.resolve(reference, depth + 1);
+            if (font != null) {
+               return font;
+            }
          }
+
+         return null;
+      } else {
+         return null;
       }
    }
 
@@ -255,14 +248,14 @@ public final class UiFonts {
 
       try {
          return task.get();
-      } catch (InterruptedException var7) {
+      } catch (InterruptedException e) {
          Thread.currentThread().interrupt();
          return Optional.empty();
-      } catch (ExecutionException var8) {
-         if (var8.getCause() instanceof RuntimeException runtime) {
+      } catch (ExecutionException e) {
+         if (e.getCause() instanceof RuntimeException runtime) {
             throw runtime;
          } else {
-            throw new IllegalStateException(var8.getCause());
+            throw new IllegalStateException(e.getCause());
          }
       }
    }
@@ -279,21 +272,19 @@ public final class UiFonts {
    }
 
    private Optional<UiVectorFont> read(UiFonts.Declared declared) {
-      String var3 = declared.format();
-
-      UiVectorFont font = (UiVectorFont)(switch (var3) {
+      UiVectorFont font = switch (declared.format()) {
          case "ttf" -> {
             String file = declared.file().endsWith(".ttf") ? declared.file() : declared.file() + ".ttf";
 
             Optional<byte[]> data;
             try {
                data = this.reader.apply(file);
-            } catch (RuntimeException var9) {
+            } catch (RuntimeException e) {
                data = Optional.empty();
             }
 
             TtfFont ttf = data.<TtfFont>map(bytes -> TtfFont.load(declared.name(), bytes)).orElse(null);
-            Object var11 = ttf != null && declared.lineHeight() > 0.0F && ttf.lineHeight() > 0.0F
+            UiVectorFont var11 = ttf != null && declared.lineHeight() > 0.0F && ttf.lineHeight() > 0.0F
                ? new ScaledVectorFont(ttf, declared.lineHeight() / ttf.lineHeight())
                : ttf;
             yield var11;
@@ -302,7 +293,7 @@ public final class UiFonts {
             MsdfFont msdf = new MsdfFont(declared.name(), declared.file(), path -> {
                try {
                   return this.reader.apply(path);
-               } catch (RuntimeException var3x) {
+               } catch (RuntimeException e) {
                   return Optional.empty();
                }
             });
@@ -310,10 +301,9 @@ public final class UiFonts {
             yield var10;
          }
          default -> {
-            Object var5 = null;
-            yield var5;
+            yield null;
          }
-      });
+      };
       if (font == null) {
          BedrockNative.LOGGER
             .info(

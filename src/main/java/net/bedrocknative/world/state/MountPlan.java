@@ -34,7 +34,7 @@ public record MountPlan(List<MountPlan.Entry> slots, int columns) {
    public record Entry(MountPlan.Kind kind, int slot) {
    }
 
-   public static enum Kind {
+   public enum Kind {
       EQUIP,
       CHEST,
       INACTIVE;

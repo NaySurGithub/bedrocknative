@@ -35,11 +35,11 @@ public final class BedrockImages {
       byte[] rest = input.readNBytes(Math.max(0, maxBytes - head.length) + 1);
       if (head.length + rest.length > maxBytes) {
          throw new IOException("image file larger than " + maxBytes + " bytes");
-      } else {
-         byte[] all = Arrays.copyOf(head, head.length + rest.length);
-         System.arraycopy(rest, 0, all, head.length, rest.length);
-         return all;
       }
+
+      byte[] all = Arrays.copyOf(head, head.length + rest.length);
+      System.arraycopy(rest, 0, all, head.length, rest.length);
+      return all;
    }
 
    public static ArgbImage decode(byte[] data) throws IOException {
@@ -55,66 +55,56 @@ public final class BedrockImages {
    public static long pixelCount(byte[] data) throws IOException {
       if (!isPng(data) && !isJpeg(data)) {
          throw new IOException("not a PNG or JPEG image");
-      } else {
-         try {
-            long var4;
-            try (ImageInputStream input = new MemoryCacheImageInputStream(new ByteArrayInputStream(data))) {
-               Iterator<ImageReader> readers = ImageIO.getImageReaders(input);
-               if (!readers.hasNext()) {
-                  throw new IOException("unreadable image");
-               }
+      }
 
-               ImageReader reader = readers.next();
-
-               try {
-                  reader.setInput(input, true, true);
-                  var4 = (long)reader.getWidth(0) * reader.getHeight(0);
-               } finally {
-                  reader.dispose();
-               }
-            }
-
-            return var4;
-         } catch (RuntimeException var14) {
-            throw new IOException("unreadable image: " + var14, var14);
+      try (ImageInputStream input = new MemoryCacheImageInputStream(new ByteArrayInputStream(data))) {
+         Iterator<ImageReader> readers = ImageIO.getImageReaders(input);
+         if (!readers.hasNext()) {
+            throw new IOException("unreadable image");
          }
+
+         ImageReader reader = readers.next();
+
+         try {
+            reader.setInput(input, true, true);
+            return (long)reader.getWidth(0) * reader.getHeight(0);
+         } finally {
+            reader.dispose();
+         }
+      } catch (RuntimeException e) {
+         throw new IOException("unreadable image: " + e, e);
       }
    }
 
    private static ArgbImage decodeImageIo(byte[] data) throws IOException {
-      try {
-         ArgbImage var11;
-         try (ImageInputStream input = new MemoryCacheImageInputStream(new ByteArrayInputStream(data))) {
-            Iterator<ImageReader> readers = ImageIO.getImageReaders(input);
-            if (!readers.hasNext()) {
-               throw new IOException("unreadable image");
-            }
-
-            ImageReader reader = readers.next();
-
-            try {
-               reader.setInput(input, true, false);
-               int width = reader.getWidth(0);
-               int height = reader.getHeight(0);
-               ImageLimits.requireSource(width, height, isJpeg(data) ? 33554432L : 67108864L);
-               int step = ImageLimits.step(width, height);
-               ImageReadParam param = reader.getDefaultReadParam();
-               if (step > 1) {
-                  param.setSourceSubsampling(step, step, 0, 0);
-               }
-
-               BufferedImage image = reader.read(0, param);
-               ArgbImage pixels = pixels(image);
-               int[] key = isPng(data) && mayHaveGreyKey(data) ? greyTransparencyKey(reader.getImageMetadata(0)) : null;
-               var11 = key != null ? clearKey(image, pixels, key[0], key[1]) : pixels;
-            } finally {
-               reader.dispose();
-            }
+      try (ImageInputStream input = new MemoryCacheImageInputStream(new ByteArrayInputStream(data))) {
+         Iterator<ImageReader> readers = ImageIO.getImageReaders(input);
+         if (!readers.hasNext()) {
+            throw new IOException("unreadable image");
          }
 
-         return var11;
-      } catch (RuntimeException var20) {
-         throw new IOException("undecodable image: " + var20, var20);
+         ImageReader reader = readers.next();
+
+         try {
+            reader.setInput(input, true, false);
+            int width = reader.getWidth(0);
+            int height = reader.getHeight(0);
+            ImageLimits.requireSource(width, height, isJpeg(data) ? 33554432L : 67108864L);
+            int step = ImageLimits.step(width, height);
+            ImageReadParam param = reader.getDefaultReadParam();
+            if (step > 1) {
+               param.setSourceSubsampling(step, step, 0, 0);
+            }
+
+            BufferedImage image = reader.read(0, param);
+            ArgbImage pixels = pixels(image);
+            int[] key = isPng(data) && mayHaveGreyKey(data) ? greyTransparencyKey(reader.getImageMetadata(0)) : null;
+            return key != null ? clearKey(image, pixels, key[0], key[1]) : pixels;
+         } finally {
+            reader.dispose();
+         }
+      } catch (RuntimeException e) {
+         throw new IOException("undecodable image: " + e, e);
       }
    }
 
@@ -178,8 +168,7 @@ public final class BedrockImages {
       }
    }
 
-   @Nullable
-   private static int[] greyTransparencyKey(@Nullable IIOMetadata metadata) {
+   private static int @Nullable [] greyTransparencyKey(@Nullable IIOMetadata metadata) {
       if (metadata != null && Arrays.asList(metadata.getMetadataFormatNames()).contains("javax_imageio_png_1.0")) {
          Node root = metadata.getAsTree("javax_imageio_png_1.0");
          int bitDepth = -1;
@@ -191,9 +180,9 @@ public final class BedrockImages {
          }
 
          if (bitDepth > 0 && bitDepth < 8) {
-            for (Node nodex = root.getFirstChild(); nodex != null; nodex = nodex.getNextSibling()) {
-               if (nodex.getNodeName().equals("tRNS")) {
-                  for (Node child = nodex.getFirstChild(); child != null; child = child.getNextSibling()) {
+            for (Node node = root.getFirstChild(); node != null; node = node.getNextSibling()) {
+               if (node.getNodeName().equals("tRNS")) {
+                  for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
                      if (child.getNodeName().equals("tRNS_Grayscale")) {
                         return new int[]{Integer.parseInt(attribute(child, "gray")), bitDepth};
                      }

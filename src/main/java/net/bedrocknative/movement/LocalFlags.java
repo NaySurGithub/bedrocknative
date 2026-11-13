@@ -9,13 +9,11 @@ public final class LocalFlags {
    private LocalFlags() {
    }
 
-   @Nullable
-   public static Boolean gravity(Map<EntityFlag, Boolean> received) {
+   public static @Nullable Boolean gravity(Map<EntityFlag, Boolean> received) {
       return received.get(EntityFlag.HAS_GRAVITY);
    }
 
-   @Nullable
-   public static Boolean collision(Map<EntityFlag, Boolean> received) {
+   public static @Nullable Boolean collision(Map<EntityFlag, Boolean> received) {
       return received.get(EntityFlag.HAS_COLLISION);
    }
 

@@ -65,24 +65,23 @@ public final class TransportMemory {
          }
 
          this.trim();
-      } catch (JsonParseException | IllegalStateException | IOException var6) {
-         BedrockNative.LOGGER.warn("Couldn't read {}, starting empty: {}", "transports.json", var6.toString());
+      } catch (IOException | JsonParseException | IllegalStateException e) {
+         BedrockNative.LOGGER.warn("Couldn't read {}, starting empty: {}", "transports.json", e.toString());
          this.entries.clear();
       }
    }
 
-   @Nullable
-   private static TransportMemory.Entry entry(JsonElement value) {
+   private static TransportMemory.@Nullable Entry entry(JsonElement value) {
       if (value instanceof JsonObject object && object.get("kind") instanceof JsonPrimitive kindName && kindName.isString()) {
          TransportKind kind = TransportKind.byId(kindName.getAsString());
          if (kind == null) {
             return null;
-         } else {
-            SignalingScheme scheme = object.get("scheme") instanceof JsonPrimitive text && text.isString() ? SignalingScheme.byId(text.getAsString()) : null;
-            int port = object.get("port") instanceof JsonPrimitive number && number.isNumber() ? number.getAsInt() : 0;
-            long at = object.get("at") instanceof JsonPrimitive time && time.isNumber() ? time.getAsLong() : 0L;
-            return new TransportMemory.Entry(kind, kind == TransportKind.NETHERNET ? scheme : null, port > 0 && port <= 65535 ? port : 0, at);
          }
+
+         SignalingScheme scheme = object.get("scheme") instanceof JsonPrimitive text && text.isString() ? SignalingScheme.byId(text.getAsString()) : null;
+         int port = object.get("port") instanceof JsonPrimitive number && number.isNumber() ? number.getAsInt() : 0;
+         long at = object.get("at") instanceof JsonPrimitive time && time.isNumber() ? time.getAsLong() : 0L;
+         return new TransportMemory.Entry(kind, kind == TransportKind.NETHERNET ? scheme : null, port > 0 && port <= 65535 ? port : 0, at);
       } else {
          return null;
       }
@@ -92,8 +91,7 @@ public final class TransportMemory {
       return ServerTarget.hostPort(host, port);
    }
 
-   @Nullable
-   public synchronized TransportMemory.Entry get(String host, int port) {
+   public synchronized TransportMemory.@Nullable Entry get(String host, int port) {
       return this.entries.get(key(host, port));
    }
 
@@ -164,8 +162,8 @@ public final class TransportMemory {
          Path temp = this.file.resolveSibling(this.file.getFileName() + ".tmp");
          Files.writeString(temp, new GsonBuilder().setPrettyPrinting().create().toJson(root) + "\n", StandardCharsets.UTF_8);
          Files.move(temp, this.file, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-      } catch (IOException var6) {
-         BedrockNative.LOGGER.warn("Couldn't write {}: {}", "transports.json", var6.toString());
+      } catch (IOException e) {
+         BedrockNative.LOGGER.warn("Couldn't write {}: {}", "transports.json", e.toString());
       }
    }
 

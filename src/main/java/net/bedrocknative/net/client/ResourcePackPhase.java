@@ -68,17 +68,12 @@ final class ResourcePackPhase {
    private final Map<UUID, Path> available = new HashMap<>();
    private final Map<UUID, Path> cachedOptional = new HashMap<>();
    private final Map<UUID, ResourcePackPhase.Download> downloads = new LinkedHashMap<>();
-   @Nullable
-   private PackCache cache;
+   private @Nullable PackCache cache;
    private boolean serverRequired;
-   @Nullable
-   private ResourcePackPhase.Download active;
-   @Nullable
-   private ResourcePackPhase.Download cdnActive;
-   @Nullable
-   private ScheduledFuture<?> watchdog;
-   @Nullable
-   private ScheduledFuture<?> stackWait;
+   private ResourcePackPhase.@Nullable Download active;
+   private ResourcePackPhase.@Nullable Download cdnActive;
+   private @Nullable ScheduledFuture<?> watchdog;
+   private @Nullable ScheduledFuture<?> stackWait;
    private boolean answered;
    private boolean stackReceived;
    private volatile boolean closed;
@@ -108,8 +103,8 @@ final class ResourcePackPhase {
             if (!this.closed) {
                try {
                   task.run();
-               } catch (RuntimeException var3x) {
-                  BedrockNative.LOGGER.error("Resource pack phase failed", var3x);
+               } catch (RuntimeException e) {
+                  BedrockNative.LOGGER.error("Resource pack phase failed", e);
                   this.server.fail(failure());
                }
             }
@@ -175,7 +170,7 @@ final class ResourcePackPhase {
          }
 
          this.trimCache();
-         int cachedx = this.available.size() + this.cachedOptional.size();
+         int cached = this.available.size() + this.cachedOptional.size();
          boolean disabled = this.listener.serverPacksDisabled() && !this.cachedOptional.isEmpty();
          if (!disabled) {
             this.available.putAll(this.cachedOptional);
@@ -187,7 +182,7 @@ final class ResourcePackPhase {
                new Object[]{
                   this.offered.size(),
                   this.serverRequired ? " (required)" : "",
-                  cachedx,
+                  cached,
                   disabled ? ", " + this.cachedOptional.size() + " left out (server packs disabled)" : ""
                }
             );
@@ -231,10 +226,8 @@ final class ResourcePackPhase {
          if (fetch.isEmpty()) {
             this.haveAllPacks();
          } else {
-            ResourcePackPhase.Mode mode = fetch.stream().allMatch(packx -> !packx.cdnUrl.isEmpty())
-               ? ResourcePackPhase.Mode.CDN
-               : ResourcePackPhase.Mode.CHUNKS;
-            fetch.forEach(packx -> this.downloads.put(packx.uuid, new ResourcePackPhase.Download(packx, mode)));
+            ResourcePackPhase.Mode mode = fetch.stream().allMatch(pack -> !pack.cdnUrl.isEmpty()) ? ResourcePackPhase.Mode.CDN : ResourcePackPhase.Mode.CHUNKS;
+            fetch.forEach(pack -> this.downloads.put(pack.uuid, new ResourcePackPhase.Download(pack, mode)));
             ResourcePackClientResponsePacket request = response(Status.SEND_PACKS);
             if (mode == ResourcePackPhase.Mode.CHUNKS) {
                this.downloads.values().forEach(download -> {
@@ -302,15 +295,15 @@ final class ResourcePackPhase {
       ResourcePackPhase.Download download = this.active;
       if (download != null && download.pack.uuid.equals(id) && index >= 0 && index < download.next && !download.received.get(index)) {
          long start = (long)index * download.chunkSize;
-         if (data.length == Math.min((long)download.chunkSize, download.size - start) && offset == start) {
+         if (data.length == Math.min(download.chunkSize, download.size - start) && offset == start) {
             try {
                ByteBuffer buffer = ByteBuffer.wrap(data);
 
                while (buffer.hasRemaining()) {
                   download.channel.write(buffer, start + buffer.position());
                }
-            } catch (IOException var11) {
-               this.finish(download, "couldn't write the download: " + var11.getMessage());
+            } catch (IOException e) {
+               this.finish(download, "couldn't write the download: " + e.getMessage());
                return;
             }
 
@@ -330,8 +323,8 @@ final class ResourcePackPhase {
                   }
 
                   this.store(download, actual);
-               } catch (IOException var10) {
-                  this.finish(download, var10.getMessage());
+               } catch (IOException e) {
+                  this.finish(download, e.getMessage());
                }
             } else {
                this.requestChunks(download);
@@ -389,9 +382,9 @@ final class ResourcePackPhase {
                }
 
                packs.add(opened);
-            } catch (IOException var16) {
-               BedrockNative.LOGGER.warn("Resource pack {} not applied: {}", pack.id(), var16.getMessage());
-               skipped.add(pack.id() + (pack.contentKey.isEmpty() ? "" : " (encrypted)") + ": " + var16.getMessage());
+            } catch (IOException e) {
+               BedrockNative.LOGGER.warn("Resource pack {} not applied: {}", pack.id(), e.getMessage());
+               skipped.add(pack.id() + (pack.contentKey.isEmpty() ? "" : " (encrypted)") + ": " + e.getMessage());
             }
          } else {
             BedrockNative.LOGGER.debug("Stack pack {}_{} not applied: not downloaded", entry.getPackId(), entry.getPackVersion());
@@ -446,8 +439,8 @@ final class ResourcePackPhase {
                try {
                   download.temp = this.cache.temporary(download.pack.uuid);
                   download.channel = FileChannel.open(download.temp, StandardOpenOption.WRITE);
-               } catch (IOException var4) {
-                  this.finish(download, "couldn't write the download: " + var4.getMessage());
+               } catch (IOException e) {
+                  this.finish(download, "couldn't write the download: " + e.getMessage());
                   return;
                }
 
@@ -487,8 +480,8 @@ final class ResourcePackPhase {
       Path temp;
       try {
          temp = this.cache.temporary(download.pack.uuid);
-      } catch (IOException var10) {
-         this.finish(download, "couldn't write the download: " + var10.getMessage());
+      } catch (IOException e) {
+         this.finish(download, "couldn't write the download: " + e.getMessage());
          return;
       }
 
@@ -513,12 +506,12 @@ final class ResourcePackPhase {
             });
             long millis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started);
             this.execute(() -> this.cdnDone(download, hash, millis));
-         } catch (RuntimeException | IOException var13) {
+         } catch (IOException | RuntimeException e) {
             if (this.closed) {
                delete(temp);
             }
 
-            this.execute(() -> this.cdnFailed(download, var13.getMessage()));
+            this.execute(() -> this.cdnFailed(download, e.getMessage()));
          }
       });
    }
@@ -545,8 +538,8 @@ final class ResourcePackPhase {
 
             BedrockNative.LOGGER.info("CDN download of resource pack {}: {} bytes in {} ms", new Object[]{download.pack.id(), download.bytes, millis});
             this.store(download, hash);
-         } catch (IOException var6) {
-            this.cdnFailed(download, var6.getMessage());
+         } catch (IOException e) {
+            this.cdnFailed(download, e.getMessage());
          }
       }
    }
@@ -590,21 +583,21 @@ final class ResourcePackPhase {
       PackManifest manifest = ZipPack.readManifest(download.temp);
       if (!manifest.uuid().equals(download.pack.uuid)) {
          throw new IOException("manifest.json is pack " + manifest.uuid());
-      } else {
-         if (!PackManifest.sameVersion(manifest.version(), download.pack.version)) {
-            BedrockNative.LOGGER.info("Resource pack {} has manifest version {}", download.pack.id(), manifest.version());
-         }
-
-         this.available.put(download.pack.uuid, this.cache.store(download.pack.uuid, download.pack.version, download.pack.size, download.temp, hash));
-         this.trimCache();
-         download.temp = null;
-         BedrockNative.LOGGER
-            .info(
-               "Downloaded resource pack {} ({} bytes{})",
-               new Object[]{download.pack.id(), download.bytes, download.mode == ResourcePackPhase.Mode.CDN ? " from the CDN" : ""}
-            );
-         this.finish(download, null);
       }
+
+      if (!PackManifest.sameVersion(manifest.version(), download.pack.version)) {
+         BedrockNative.LOGGER.info("Resource pack {} has manifest version {}", download.pack.id(), manifest.version());
+      }
+
+      this.available.put(download.pack.uuid, this.cache.store(download.pack.uuid, download.pack.version, download.pack.size, download.temp, hash));
+      this.trimCache();
+      download.temp = null;
+      BedrockNative.LOGGER
+         .info(
+            "Downloaded resource pack {} ({} bytes{})",
+            new Object[]{download.pack.id(), download.bytes, download.mode == ResourcePackPhase.Mode.CDN ? " from the CDN" : ""}
+         );
+      this.finish(download, null);
    }
 
    private void finish(ResourcePackPhase.Download download, @Nullable String failure) {
@@ -674,9 +667,7 @@ final class ResourcePackPhase {
       long bytes = this.downloads.values().stream().mapToLong(download -> download.done ? Math.max(download.size, download.pack.size) : download.bytes).sum();
       long total = this.downloads.values().stream().mapToLong(download -> download.size > 0L ? download.size : download.pack.size).sum();
       this.listener
-         .onPackProgress(
-            new PackProgress((int)Math.min(done + 1L, (long)this.downloads.size()), this.downloads.size(), Math.min(bytes, total), total, this.answered)
-         );
+         .onPackProgress(new PackProgress((int)Math.min(done + 1L, this.downloads.size()), this.downloads.size(), Math.min(bytes, total), total, this.answered));
    }
 
    private void haveAllPacks() {
@@ -723,16 +714,10 @@ final class ResourcePackPhase {
    }
 
    private static boolean opensWithKey(Path cached, ResourcePackPhase.Offered pack) {
-      try {
-         boolean var3;
-         try (ZipPack ignored = ZipPack.open(cached, pack.contentKey, "")) {
-            var3 = true;
-         }
-
-         return var3;
-      } catch (IOException var7) {
-         BedrockNative.LOGGER
-            .info("Cached resource pack {} doesn't open with the server's content key ({}); downloading it again", pack.id(), var7.getMessage());
+      try (ZipPack ignored = ZipPack.open(cached, pack.contentKey, "")) {
+         return true;
+      } catch (IOException e) {
+         BedrockNative.LOGGER.info("Cached resource pack {} doesn't open with the server's content key ({}); downloading it again", pack.id(), e.getMessage());
          return false;
       }
    }
@@ -763,8 +748,8 @@ final class ResourcePackPhase {
       if (file != null) {
          try {
             Files.deleteIfExists(file);
-         } catch (IOException var2) {
-            BedrockNative.LOGGER.debug("Couldn't delete {}", file, var2);
+         } catch (IOException e) {
+            BedrockNative.LOGGER.debug("Couldn't delete {}", file, e);
          }
       }
    }
@@ -775,11 +760,10 @@ final class ResourcePackPhase {
       return response;
    }
 
-   @Nullable
-   private static UUID uuid(@Nullable String text) {
+   private static @Nullable UUID uuid(@Nullable String text) {
       try {
          return text == null ? null : UUID.fromString(text.trim());
-      } catch (IllegalArgumentException var2) {
+      } catch (IllegalArgumentException e) {
          return null;
       }
    }
@@ -801,18 +785,14 @@ final class ResourcePackPhase {
       int chunkSize;
       int chunkCount;
       byte[] hash;
-      @Nullable
-      String dataInfoVersion;
+      @Nullable String dataInfoVersion;
       boolean requested;
-      @Nullable
-      Path temp;
-      @Nullable
-      FileChannel channel;
+      @Nullable Path temp;
+      @Nullable FileChannel channel;
       BitSet received = new BitSet();
       int next;
       int inFlight;
-      @Nullable
-      CdnDownload cdn;
+      @Nullable CdnDownload cdn;
 
       Download(ResourcePackPhase.Offered pack, ResourcePackPhase.Mode mode) {
          this.pack = pack;
@@ -820,7 +800,7 @@ final class ResourcePackPhase {
       }
    }
 
-   private static enum Mode {
+   private enum Mode {
       CHUNKS,
       CDN;
    }

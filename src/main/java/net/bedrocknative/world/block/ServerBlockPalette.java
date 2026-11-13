@@ -37,8 +37,7 @@ public final class ServerBlockPalette {
    private final List<BedrockBlockState> customOrder;
    private final int excludedBlocks;
    private final int excludedStates;
-   @Nullable
-   private final int[] withAllVanillaHashByIndex;
+   private final int @Nullable [] withAllVanillaHashByIndex;
    private List<String> archetypes = List.of();
    private final ConcurrentHashMap<NbtMap, Integer> persistentIds = new ConcurrentHashMap<>();
    private final ConcurrentHashMap<Integer, Integer> extraIdByHash = new ConcurrentHashMap<>();
@@ -56,7 +55,7 @@ public final class ServerBlockPalette {
       List<BedrockBlockState> customOrder,
       int excludedBlocks,
       int excludedStates,
-      @Nullable int[] withAllVanillaHashByIndex
+      int @Nullable [] withAllVanillaHashByIndex
    ) {
       this.protocol = protocol;
       this.hashed = hashed;
@@ -102,41 +101,41 @@ public final class ServerBlockPalette {
          ServerBlockPalette palette = new ServerBlockPalette(protocol, true, null, null, custom, List.copyOf(customStates), 0, 0, null);
          palette.archetypes = List.copyOf(archetypes);
          return palette;
-      } else {
-         List<BedrockBlockState> numbered = new ArrayList<>(vanilla.size());
-         Set<String> excluded = new HashSet<>();
-
-         for (BedrockBlockState state : vanilla) {
-            if (dataDriven.contains(state.name()) && !defined.contains(state.name())) {
-               excluded.add(state.name());
-            } else {
-               numbered.add(state);
-            }
-         }
-
-         int[] hashByIndex = sortedHashes(numbered, customStates);
-         Int2IntOpenHashMap indexByHash = new Int2IntOpenHashMap(hashByIndex.length);
-
-         for (int i = 0; i < hashByIndex.length; i++) {
-            indexByHash.put(hashByIndex[i], i);
-         }
-
-         indexByHash.defaultReturnValue(indexByHash.get(BedrockBlockHasher.hash("minecraft:air", new TreeMap<>())));
-         int excludedStates = vanilla.size() - numbered.size();
-         ServerBlockPalette palette = new ServerBlockPalette(
-            protocol,
-            false,
-            hashByIndex,
-            indexByHash,
-            custom,
-            List.copyOf(customStates),
-            excluded.size(),
-            excludedStates,
-            excludedStates > 0 ? sortedHashes(vanilla, customStates) : null
-         );
-         palette.archetypes = List.copyOf(archetypes);
-         return palette;
       }
+
+      List<BedrockBlockState> numbered = new ArrayList<>(vanilla.size());
+      Set<String> excluded = new HashSet<>();
+
+      for (BedrockBlockState state : vanilla) {
+         if (dataDriven.contains(state.name()) && !defined.contains(state.name())) {
+            excluded.add(state.name());
+         } else {
+            numbered.add(state);
+         }
+      }
+
+      int[] hashByIndex = sortedHashes(numbered, customStates);
+      Int2IntOpenHashMap indexByHash = new Int2IntOpenHashMap(hashByIndex.length);
+
+      for (int i = 0; i < hashByIndex.length; i++) {
+         indexByHash.put(hashByIndex[i], i);
+      }
+
+      indexByHash.defaultReturnValue(indexByHash.get(BedrockBlockHasher.hash("minecraft:air", new TreeMap<>())));
+      int excludedStates = vanilla.size() - numbered.size();
+      ServerBlockPalette palette = new ServerBlockPalette(
+         protocol,
+         false,
+         hashByIndex,
+         indexByHash,
+         custom,
+         List.copyOf(customStates),
+         excluded.size(),
+         excludedStates,
+         excludedStates > 0 ? sortedHashes(vanilla, customStates) : null
+      );
+      palette.archetypes = List.copyOf(archetypes);
+      return palette;
    }
 
    private static int[] sortedHashes(List<BedrockBlockState> vanilla, List<BedrockBlockState> customs) {
@@ -184,10 +183,10 @@ public final class ServerBlockPalette {
    boolean numbers(int networkId, boolean withAllVanilla) {
       if (this.hashed) {
          return true;
-      } else {
-         int[] numbering = withAllVanilla && this.withAllVanillaHashByIndex != null ? this.withAllVanillaHashByIndex : this.hashByIndex;
-         return networkId >= 0 && networkId < numbering.length || !withAllVanilla && this.extraHashById.containsKey(networkId);
       }
+
+      int[] numbering = withAllVanilla && this.withAllVanillaHashByIndex != null ? this.withAllVanillaHashByIndex : this.hashByIndex;
+      return networkId >= 0 && networkId < numbering.length || !withAllVanilla && this.extraHashById.containsKey(networkId);
    }
 
    public boolean hasOtherNumbering() {
@@ -249,8 +248,7 @@ public final class ServerBlockPalette {
    static Map<String, List<?>> traitStates(NbtMap trait) {
       NbtMap enabled = trait.getCompound("enabled_states", NbtMap.EMPTY);
       Map<String, List<?>> states = new LinkedHashMap<>();
-      String var3 = trait.getString("name");
-      switch (var3) {
+      switch (trait.getString("name")) {
          case "minecraft:placement_direction":
             if (enabled.getBoolean("cardinal_direction", false)) {
                states.put("minecraft:cardinal_direction", List.of("south", "west", "north", "east"));
@@ -316,7 +314,7 @@ public final class ServerBlockPalette {
 
       for (byte b : name.getBytes(StandardCharsets.UTF_8)) {
          hash *= 1099511628211L;
-         hash ^= b & 255;
+         hash ^= b & 0xFF;
       }
 
       return hash;
@@ -341,12 +339,14 @@ public final class ServerBlockPalette {
    int hashOf(int networkId) {
       if (this.hashed) {
          return networkId;
-      } else if (networkId >= 0 && networkId < this.hashByIndex.length) {
-         return this.hashByIndex[networkId];
-      } else {
-         Integer extra = networkId >= 1073741824 ? this.extraHashById.get(networkId) : null;
-         return extra != null ? extra : -2;
       }
+
+      if (networkId >= 0 && networkId < this.hashByIndex.length) {
+         return this.hashByIndex[networkId];
+      }
+
+      Integer extra = networkId >= 1073741824 ? this.extraHashById.get(networkId) : null;
+      return extra != null ? extra : -2;
    }
 
    int networkIdOf(int hash) {
@@ -386,17 +386,17 @@ public final class ServerBlockPalette {
       int total = this.resolutions.values().stream().mapToInt(Integer::intValue).sum();
       if (total == 0) {
          return "none";
-      } else {
-         StringBuilder summary = new StringBuilder()
-            .append(total)
-            .append(" distinct: ")
-            .append(this.resolvedCount(ServerBlockPalette.Resolution.AS_SENT))
-            .append(" as sent");
-         this.appendKind(summary, ServerBlockPalette.Resolution.UPGRADED, "upgraded");
-         this.appendKind(summary, ServerBlockPalette.Resolution.CLOSEST, "closest state of their block");
-         this.appendKind(summary, ServerBlockPalette.Resolution.UNKNOWN, "unknown");
-         return summary.toString();
       }
+
+      StringBuilder summary = new StringBuilder()
+         .append(total)
+         .append(" distinct: ")
+         .append(this.resolvedCount(ServerBlockPalette.Resolution.AS_SENT))
+         .append(" as sent");
+      this.appendKind(summary, ServerBlockPalette.Resolution.UPGRADED, "upgraded");
+      this.appendKind(summary, ServerBlockPalette.Resolution.CLOSEST, "closest state of their block");
+      this.appendKind(summary, ServerBlockPalette.Resolution.UNKNOWN, "unknown");
+      return summary.toString();
    }
 
    private void appendKind(StringBuilder summary, ServerBlockPalette.Resolution resolution, String label) {
@@ -411,7 +411,7 @@ public final class ServerBlockPalette {
       return (BedrockBlockState)this.custom.get(hash);
    }
 
-   public static enum Resolution {
+   public enum Resolution {
       AS_SENT,
       UPGRADED,
       CLOSEST,

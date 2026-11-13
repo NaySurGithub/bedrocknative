@@ -141,8 +141,7 @@ public final class Crafting {
       return Collections.unmodifiableList(this.shapeless);
    }
 
-   @Nullable
-   static String javaTagName(String tag) {
+   static @Nullable String javaTagName(String tag) {
       return !tag.equals("minecraft:trim_templates") && !tag.equals("minecraft:mushrooms_for_stew") ? TAG_ALIASES.getOrDefault(tag, tag) : null;
    }
 
@@ -151,13 +150,7 @@ public final class Crafting {
          return List.copyOf(STEW_MUSHROOM_ITEMS);
       } else {
          return tag.equals("minecraft:trim_templates")
-            ? BuiltInRegistries.ITEM
-               .keySet()
-               .stream()
-               .<String>map(Identifier::toString)
-               .filter(id -> id.endsWith("_armor_trim_smithing_template"))
-               .sorted()
-               .toList()
+            ? BuiltInRegistries.ITEM.keySet().stream().map(Identifier::toString).filter(id -> id.endsWith("_armor_trim_smithing_template")).sorted().toList()
             : List.of();
       }
    }
@@ -217,26 +210,26 @@ public final class Crafting {
 
       if (items.isEmpty()) {
          return null;
-      } else {
-         CraftingRecipeData best = null;
-
-         for (ShapedRecipeData recipe : this.shaped) {
-            if (recipe.getWidth() == right - left + 1
-               && recipe.getHeight() == bottom - top + 1
-               && better(recipe, best)
-               && (this.fits(recipe, grid, size, top, left, false) || recipe.isAssumeSymetry() && this.fits(recipe, grid, size, top, left, true))) {
-               best = recipe;
-            }
-         }
-
-         for (ShapelessRecipeData recipex : this.shapeless) {
-            if (better(recipex, best) && this.fitsShapeless(recipex, items)) {
-               best = recipex;
-            }
-         }
-
-         return best == null ? null : new Crafting.Match(best.getNetId(), best.getResults());
       }
+
+      CraftingRecipeData best = null;
+
+      for (ShapedRecipeData recipe : this.shaped) {
+         if (recipe.getWidth() == right - left + 1
+            && recipe.getHeight() == bottom - top + 1
+            && better(recipe, best)
+            && (this.fits(recipe, grid, size, top, left, false) || recipe.isAssumeSymetry() && this.fits(recipe, grid, size, top, left, true))) {
+            best = recipe;
+         }
+      }
+
+      for (ShapelessRecipeData recipe : this.shapeless) {
+         if (better(recipe, best) && this.fitsShapeless(recipe, items)) {
+            best = recipe;
+         }
+      }
+
+      return best == null ? null : new Crafting.Match(best.getNetId(), best.getResults());
    }
 
    private static boolean better(CraftingRecipeData recipe, CraftingRecipeData best) {
@@ -273,20 +266,20 @@ public final class Crafting {
    private boolean assign(List<ItemDescriptor> needed, List<ItemData> items, int next, boolean[] used) {
       if (next == needed.size()) {
          return true;
-      } else {
-         for (int i = 0; i < items.size(); i++) {
-            if (!used[i] && this.matches(needed.get(next), items.get(i))) {
-               used[i] = true;
-               if (this.assign(needed, items, next + 1, used)) {
-                  return true;
-               }
-
-               used[i] = false;
-            }
-         }
-
-         return false;
       }
+
+      for (int i = 0; i < items.size(); i++) {
+         if (!used[i] && this.matches(needed.get(next), items.get(i))) {
+            used[i] = true;
+            if (this.assign(needed, items, next + 1, used)) {
+               return true;
+            }
+
+            used[i] = false;
+         }
+      }
+
+      return false;
    }
 
    public boolean matches(ItemDescriptor descriptor, ItemData item) {
@@ -309,22 +302,26 @@ public final class Crafting {
       CustomItem custom = ItemMappings.custom(item.getDefinition().getIdentifier());
       if (custom != null) {
          return custom.tags().contains(tag);
-      } else if (tag.equals("minecraft:trim_templates")) {
-         return item.getDefinition().getIdentifier().endsWith("_armor_trim_smithing_template");
-      } else if (tag.equals("minecraft:mushrooms_for_stew")) {
-         return STEW_MUSHROOM_ITEMS.contains(item.getDefinition().getIdentifier());
-      } else {
-         TagKey<Item> key = this.tags.computeIfAbsent(TAG_ALIASES.getOrDefault(tag, tag), name -> {
-            Identifier id = Identifier.tryParse(name);
-            return id == null ? null : TagKey.create(Registries.ITEM, id);
-         });
-         if (key == null) {
-            return false;
-         } else {
-            ItemStack java = ItemMappings.toJava(item);
-            return java.is(key);
-         }
       }
+
+      if (tag.equals("minecraft:trim_templates")) {
+         return item.getDefinition().getIdentifier().endsWith("_armor_trim_smithing_template");
+      }
+
+      if (tag.equals("minecraft:mushrooms_for_stew")) {
+         return STEW_MUSHROOM_ITEMS.contains(item.getDefinition().getIdentifier());
+      }
+
+      TagKey<Item> key = this.tags.computeIfAbsent(TAG_ALIASES.getOrDefault(tag, tag), name -> {
+         Identifier id = Identifier.tryParse(name);
+         return id == null ? null : TagKey.create(Registries.ITEM, id);
+      });
+      if (key == null) {
+         return false;
+      }
+
+      ItemStack java = ItemMappings.toJava(item);
+      return java.is(key);
    }
 
    public record Match(int netId, List<ItemData> results) {

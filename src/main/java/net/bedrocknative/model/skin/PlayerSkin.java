@@ -36,15 +36,13 @@ public final class PlayerSkin {
    private final String skinId;
    private final String fullSkinId;
    private final String playFabId;
-   @Nullable
-   private final TextureMesher.Pixels image;
+   private final TextureMesher.@Nullable Pixels image;
    private final String geometryData;
    private final String geometryEngineVersion;
    private final Map<String, String> geometryNames;
    private final boolean slim;
    private final Map<PlayerSkin.Animated, PlayerSkin.Animation> animations;
-   @Nullable
-   private final TextureMesher.Pixels cape;
+   private final TextureMesher.@Nullable Pixels cape;
    private final String capeId;
    private final boolean capeOnClassic;
    private final boolean premium;
@@ -53,20 +51,19 @@ public final class PlayerSkin {
    private final List<PlayerSkin.PersonaPiece> pieces;
    private final List<PlayerSkin.PieceTint> tints;
    private final int skinColor;
-   @Nullable
-   private final String fallback;
+   private final @Nullable String fallback;
 
    private PlayerSkin(
       String skinId,
       String fullSkinId,
       String playFabId,
-      @Nullable TextureMesher.Pixels image,
+      TextureMesher.@Nullable Pixels image,
       String geometryData,
       String geometryEngineVersion,
       Map<String, String> geometryNames,
       boolean slim,
       Map<PlayerSkin.Animated, PlayerSkin.Animation> animations,
-      @Nullable TextureMesher.Pixels cape,
+      TextureMesher.@Nullable Pixels cape,
       String capeId,
       boolean capeOnClassic,
       boolean premium,
@@ -128,110 +125,105 @@ public final class PlayerSkin {
    public static PlayerSkin of(@Nullable SerializedSkin skin) {
       if (skin == null) {
          return defaultSkin(false, "no skin");
-      } else {
-         boolean slim = "slim".equalsIgnoreCase(skin.getArmSize());
+      }
 
-         try {
-            ImageData data = skin.getSkinData();
-            TextureMesher.Pixels image = data != null ? image(data.getWidth(), data.getHeight(), data.getImage(), SKIN_SIZES) : null;
-            if (image == null) {
-               return defaultSkin(
-                  slim,
-                  data == null
-                     ? "no skin image"
-                     : "skin image "
-                        + data.getWidth()
-                        + "x"
-                        + data.getHeight()
-                        + " ("
-                        + (data.getImage() != null ? data.getImage().length : 0)
-                        + " bytes) is not a size Bedrock accepts"
-               );
-            } else {
-               Map<String, String> names = geometryNames(rawPatch(skin));
-               if (names.get("default") == null) {
-                  return defaultSkin(slim, "the resource patch names no default geometry");
-               } else {
-                  String geometry = skin.getGeometryData() != null ? skin.getGeometryData() : "";
-                  if (geometry.length() > 4194304) {
-                     return defaultSkin(slim, "geometry data of " + geometry.length() + " characters is oversized");
-                  } else {
-                     Map<PlayerSkin.Animated, PlayerSkin.Animation> animations = new EnumMap<>(PlayerSkin.Animated.class);
-                     if (skin.getAnimations() != null) {
-                        for (AnimationData animation : skin.getAnimations()) {
-                           PlayerSkin.Animated type = animation != null ? PlayerSkin.Animated.of(animation.getTextureType()) : null;
-                           ImageData frames = animation != null ? animation.getImage() : null;
-                           TextureMesher.Pixels pixels = type != null && frames != null
-                              ? image(frames.getWidth(), frames.getHeight(), frames.getImage(), null)
-                              : null;
-                           if (pixels != null && !animations.containsKey(type)) {
-                              animations.put(
-                                 type,
-                                 new PlayerSkin.Animation(
-                                    type,
-                                    pixels,
-                                    Math.max(1, Math.round(animation.getFrames())),
-                                    animation.getExpressionType() == AnimationExpressionType.BLINKING
-                                 )
-                              );
-                           }
-                        }
-                     }
+      boolean slim = "slim".equalsIgnoreCase(skin.getArmSize());
 
-                     ImageData capeData = skin.getCapeData();
-                     TextureMesher.Pixels cape = capeData != null && capeData.getImage() != null && capeData.getImage().length > 0
-                        ? image(capeData.getWidth(), capeData.getHeight(), capeData.getImage(), CAPE_SIZES)
-                        : null;
-                     List<PlayerSkin.PersonaPiece> pieces = new ArrayList<>();
-                     if (skin.getPersonaPieces() != null) {
-                        for (PersonaPieceData piece : skin.getPersonaPieces()) {
-                           pieces.add(
-                              new PlayerSkin.PersonaPiece(
-                                 String.valueOf(piece.getId()),
-                                 piece.getPieceType() != null ? piece.getType() : "unknown",
-                                 piece.getPackUuid() != null ? piece.getPackId() : "",
-                                 piece.isDefault(),
-                                 String.valueOf(piece.getProductId())
-                              )
-                           );
-                        }
-                     }
+      try {
+         ImageData data = skin.getSkinData();
+         TextureMesher.Pixels image = data != null ? image(data.getWidth(), data.getHeight(), data.getImage(), SKIN_SIZES) : null;
+         if (image == null) {
+            return defaultSkin(
+               slim,
+               data == null
+                  ? "no skin image"
+                  : "skin image "
+                     + data.getWidth()
+                     + "x"
+                     + data.getHeight()
+                     + " ("
+                     + (data.getImage() != null ? data.getImage().length : 0)
+                     + " bytes) is not a size Bedrock accepts"
+            );
+         }
 
-                     List<PlayerSkin.PieceTint> tints = new ArrayList<>();
-                     if (skin.getTintColors() != null) {
-                        for (PersonaPieceTintData tint : skin.getTintColors()) {
-                           tints.add(new PlayerSkin.PieceTint(tint.getPieceType() != null ? tint.getType() : "unknown", tintColors(tint)));
-                        }
-                     }
+         Map<String, String> names = geometryNames(rawPatch(skin));
+         if (names.get("default") == null) {
+            return defaultSkin(slim, "the resource patch names no default geometry");
+         }
 
-                     Color color = skin.getColor();
-                     return new PlayerSkin(
-                        nonNull(skin.getSkinId()),
-                        nonNull(skin.getFullSkinId()),
-                        nonNull(skin.getPlayFabId()),
-                        image,
-                        geometry,
-                        nonNull(skin.getGeometryDataEngineVersion()),
-                        names,
-                        slim,
-                        animations,
-                        cape,
-                        nonNull(skin.getCapeId()),
-                        skin.isCapeOnClassic(),
-                        skin.isPremium(),
-                        skin.isPersona(),
-                        skin.isTrusted(),
-                        pieces,
-                        tints,
-                        color != null ? color.getRGB() : 0,
-                        null
-                     );
-                  }
+         String geometry = skin.getGeometryData() != null ? skin.getGeometryData() : "";
+         if (geometry.length() > 4194304) {
+            return defaultSkin(slim, "geometry data of " + geometry.length() + " characters is oversized");
+         }
+
+         Map<PlayerSkin.Animated, PlayerSkin.Animation> animations = new EnumMap<>(PlayerSkin.Animated.class);
+         if (skin.getAnimations() != null) {
+            for (AnimationData animation : skin.getAnimations()) {
+               PlayerSkin.Animated type = animation != null ? PlayerSkin.Animated.of(animation.getTextureType()) : null;
+               ImageData frames = animation != null ? animation.getImage() : null;
+               TextureMesher.Pixels pixels = type != null && frames != null ? image(frames.getWidth(), frames.getHeight(), frames.getImage(), null) : null;
+               if (pixels != null && !animations.containsKey(type)) {
+                  animations.put(
+                     type,
+                     new PlayerSkin.Animation(
+                        type, pixels, Math.max(1, Math.round(animation.getFrames())), animation.getExpressionType() == AnimationExpressionType.BLINKING
+                     )
+                  );
                }
             }
-         } catch (RuntimeException var13) {
-            return defaultSkin(slim, "unreadable skin: " + var13);
          }
+
+         ImageData capeData = skin.getCapeData();
+         TextureMesher.Pixels cape = capeData != null && capeData.getImage() != null && capeData.getImage().length > 0
+            ? image(capeData.getWidth(), capeData.getHeight(), capeData.getImage(), CAPE_SIZES)
+            : null;
+         List<PlayerSkin.PersonaPiece> pieces = new ArrayList<>();
+         if (skin.getPersonaPieces() != null) {
+            for (PersonaPieceData piece : skin.getPersonaPieces()) {
+               pieces.add(
+                  new PlayerSkin.PersonaPiece(
+                     String.valueOf(piece.getId()),
+                     piece.getPieceType() != null ? piece.getType() : "unknown",
+                     piece.getPackUuid() != null ? piece.getPackId() : "",
+                     piece.isDefault(),
+                     String.valueOf(piece.getProductId())
+                  )
+               );
+            }
+         }
+
+         List<PlayerSkin.PieceTint> tints = new ArrayList<>();
+         if (skin.getTintColors() != null) {
+            for (PersonaPieceTintData tint : skin.getTintColors()) {
+               tints.add(new PlayerSkin.PieceTint(tint.getPieceType() != null ? tint.getType() : "unknown", tintColors(tint)));
+            }
+         }
+
+         Color color = skin.getColor();
+         return new PlayerSkin(
+            nonNull(skin.getSkinId()),
+            nonNull(skin.getFullSkinId()),
+            nonNull(skin.getPlayFabId()),
+            image,
+            geometry,
+            nonNull(skin.getGeometryDataEngineVersion()),
+            names,
+            slim,
+            animations,
+            cape,
+            nonNull(skin.getCapeId()),
+            skin.isCapeOnClassic(),
+            skin.isPremium(),
+            skin.isPersona(),
+            skin.isTrusted(),
+            pieces,
+            tints,
+            color != null ? color.getRGB() : 0,
+            null
+         );
+      } catch (RuntimeException e) {
+         return defaultSkin(slim, "unreadable skin: " + e);
       }
    }
 
@@ -258,11 +250,10 @@ public final class PlayerSkin {
       return List.copyOf(colors);
    }
 
-   @Nullable
-   private static String rawPatch(SerializedSkin skin) {
+   private static @Nullable String rawPatch(SerializedSkin skin) {
       try {
          return skin.getSkinResourcePatch();
-      } catch (RuntimeException var2) {
+      } catch (RuntimeException e) {
          return null;
       }
    }
@@ -288,8 +279,7 @@ public final class PlayerSkin {
       }
    }
 
-   @Nullable
-   static TextureMesher.Pixels image(int width, int height, @Nullable byte[] rgba, @Nullable int[][] allowed) {
+   static TextureMesher.@Nullable Pixels image(int width, int height, byte @Nullable [] rgba, int @Nullable [][] allowed) {
       if (rgba != null && width > 0 && height > 0 && width <= 1024 && height <= 1024 && (long)width * height * 4L == rgba.length) {
          if (allowed != null) {
             boolean ok = false;
@@ -359,7 +349,7 @@ public final class PlayerSkin {
       byte[] bytes = text.getBytes(StandardCharsets.UTF_8);
 
       for (byte b : bytes) {
-         hash ^= b & 255;
+         hash ^= b & 0xFF;
          hash *= 1099511628211L;
       }
 
@@ -390,13 +380,11 @@ public final class PlayerSkin {
       return this.image == null;
    }
 
-   @Nullable
-   public String fallback() {
+   public @Nullable String fallback() {
       return this.fallback;
    }
 
-   @Nullable
-   public TextureMesher.Pixels image() {
+   public TextureMesher.@Nullable Pixels image() {
       return this.image;
    }
 
@@ -424,8 +412,7 @@ public final class PlayerSkin {
       return this.animations;
    }
 
-   @Nullable
-   public TextureMesher.Pixels cape() {
+   public TextureMesher.@Nullable Pixels cape() {
       return this.cape;
    }
 
@@ -489,7 +476,7 @@ public final class PlayerSkin {
       return this.describe() + " [" + this.key + "]";
    }
 
-   public static enum Animated {
+   public enum Animated {
       FACE("animated_face", "animation_frames_face", "face"),
       BODY_32("animated_32x32", "animation_frames_32x32", "body32"),
       BODY_128("animated_128x128", "animation_frames_128x128", "body128");
@@ -498,7 +485,7 @@ public final class PlayerSkin {
       private final String framesVariable;
       private final String part;
 
-      private Animated(String geometry, String framesVariable, String part) {
+      Animated(String geometry, String framesVariable, String part) {
          this.geometry = geometry;
          this.framesVariable = framesVariable;
          this.part = part;
@@ -516,8 +503,7 @@ public final class PlayerSkin {
          return this.part;
       }
 
-      @Nullable
-      static PlayerSkin.Animated of(@Nullable AnimatedTextureType type) {
+      static PlayerSkin.@Nullable Animated of(@Nullable AnimatedTextureType type) {
          return switch (type) {
             case FACE -> FACE;
             case BODY_32X32 -> BODY_32;

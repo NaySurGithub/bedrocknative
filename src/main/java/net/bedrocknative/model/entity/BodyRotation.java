@@ -20,7 +20,7 @@ public final class BodyRotation {
       return Math.round(yaw / 90.0F) * 90.0F;
    }
 
-   public static enum Rule {
+   public enum Rule {
       FREE,
       BLOCKED,
       LOCKED_TO_AXIS,

@@ -31,16 +31,12 @@ public final class BedrockLobby {
    static final boolean ON_BY_DEFAULT = true;
    static final String LAYER = "assets/bedrocknative/lobby_ui";
    private static volatile boolean failed;
-   @Nullable
-   private static volatile CompletableFuture<UiDefinitionSet> definitions;
-   @Nullable
-   private static volatile List<PackSource> loadedFor;
-   @Nullable
-   private static String language;
+   private static volatile @Nullable CompletableFuture<UiDefinitionSet> definitions;
+   private static volatile @Nullable List<PackSource> loadedFor;
+   private static @Nullable String language;
    private static boolean startScreenTimed;
    private static int lastTab = 2;
-   @Nullable
-   private static volatile UiDefinitionSet lastLoaded;
+   private static volatile @Nullable UiDefinitionSet lastLoaded;
    private static volatile long sessionEndedAt;
 
    private BedrockLobby() {
@@ -53,9 +49,7 @@ public final class BedrockLobby {
    static boolean switched() {
       String value = System.getProperty("bedrocknative.bedrockLobby");
       if (value != null && !value.isBlank()) {
-         String var1 = value.trim().toLowerCase(Locale.ROOT);
-
-         return switch (var1) {
+         return switch (value.trim().toLowerCase(Locale.ROOT)) {
             case "on", "true", "yes", "1" -> true;
             case "off", "false", "no", "0" -> false;
             default -> true;
@@ -90,8 +84,7 @@ public final class BedrockLobby {
       }
    }
 
-   @Nullable
-   public static UiDefinitionSet definitions() {
+   public static @Nullable UiDefinitionSet definitions() {
       List<PackSource> base = new ArrayList<>();
 
       for (PackSource pack : PackStack.active().packs()) {
@@ -190,11 +183,11 @@ public final class BedrockLobby {
          if (ore != null) {
             return ore;
          }
-      } catch (RuntimeException var3) {
-         OreUi.fail("play screen", var3);
+      } catch (RuntimeException e) {
+         OreUi.fail("play screen", e);
       }
 
-      return (Screen)(tab == 0 ? new SelectWorldScreen(start) : new JoinMultiplayerScreen(start));
+      return tab == 0 ? new SelectWorldScreen(start) : new JoinMultiplayerScreen(start);
    }
 
    public static TitleScreen titleScreen(TitleScreen java) {
@@ -205,25 +198,25 @@ public final class BedrockLobby {
       UiDefinitionSet set = definitions();
       if (set == null) {
          return java;
-      } else {
-         try {
-            long started = System.nanoTime();
-            JsonUiStartScreen screen = JsonUiStartScreen.create(set);
-            if (screen == null) {
-               fail("start screen", new IllegalStateException("start_screen didn't resolve"));
-               return java;
-            } else {
-               if (!startScreenTimed) {
-                  startScreenTimed = true;
-                  BedrockNative.LOGGER.info("Bedrock lobby: the first start screen built in {} ms", (System.nanoTime() - started) / 1000000L);
-               }
+      }
 
-               return screen;
-            }
-         } catch (RuntimeException var5) {
-            fail("start screen", var5);
+      try {
+         long started = System.nanoTime();
+         JsonUiStartScreen screen = JsonUiStartScreen.create(set);
+         if (screen == null) {
+            fail("start screen", new IllegalStateException("start_screen didn't resolve"));
             return java;
          }
+
+         if (!startScreenTimed) {
+            startScreenTimed = true;
+            BedrockNative.LOGGER.info("Bedrock lobby: the first start screen built in {} ms", (System.nanoTime() - started) / 1000000L);
+         }
+
+         return screen;
+      } catch (RuntimeException e) {
+         fail("start screen", e);
+         return java;
       }
    }
 
@@ -250,11 +243,11 @@ public final class BedrockLobby {
       String code = minecraft.options.languageCode;
       if (!force && code.equals(language)) {
          return false;
-      } else {
-         language = code;
-         BedrockLanguage.baseTexts(code).ifPresent(BedrockText::useBedrockLanguage);
-         return true;
       }
+
+      language = code;
+      BedrockLanguage.baseTexts(code).ifPresent(BedrockText::useBedrockLanguage);
+      return true;
    }
 
    static void fail(String what, Throwable e) {

@@ -31,15 +31,15 @@ public final class ControllerParser {
       JsonObject root = ModelJson.object(file, "animation_controllers");
       if (root == null) {
          return controllers;
-      } else {
-         for (Entry<String, JsonElement> entry : root.entrySet()) {
-            if (entry.getValue() instanceof JsonObject json) {
-               controllers.put(entry.getKey(), this.controller(entry.getKey(), json, format));
-            }
-         }
-
-         return controllers;
       }
+
+      for (Entry<String, JsonElement> entry : root.entrySet()) {
+         if (entry.getValue() instanceof JsonObject json) {
+            controllers.put(entry.getKey(), this.controller(entry.getKey(), json, format));
+         }
+      }
+
+      return controllers;
    }
 
    public ControllerDef controller(String name, JsonObject json, int format) {
@@ -80,8 +80,8 @@ public final class ControllerParser {
       List<ControllerDef.Transition> transitions = new ArrayList<>();
       JsonArray transitionArray = ModelJson.array(json, "transitions");
       if (transitionArray != null) {
-         for (JsonElement elementx : transitionArray) {
-            if (elementx instanceof JsonObject object) {
+         for (JsonElement element : transitionArray) {
+            if (element instanceof JsonObject object) {
                for (Entry<String, JsonElement> entry : object.entrySet()) {
                   transitions.add(new ControllerDef.Transition(entry.getKey(), this.program(entry.getValue(), lowerCase)));
                }
@@ -139,26 +139,26 @@ public final class ControllerParser {
    private static float[] curve(@Nullable JsonObject json) {
       if (json == null) {
          return new float[0];
-      } else {
-         List<float[]> points = new ArrayList<>();
-
-         for (Entry<String, JsonElement> entry : json.entrySet()) {
-            float key = AnimationParser.time(entry.getKey());
-            if (!Float.isNaN(key)) {
-               points.add(new float[]{key, ModelJson.number(entry.getValue(), 0.0F)});
-            }
-         }
-
-         points.sort((a, b) -> Float.compare(a[0], b[0]));
-         float[] flat = new float[points.size() * 2];
-
-         for (int i = 0; i < points.size(); i++) {
-            flat[i * 2] = points.get(i)[0];
-            flat[i * 2 + 1] = points.get(i)[1];
-         }
-
-         return flat;
       }
+
+      List<float[]> points = new ArrayList<>();
+
+      for (Entry<String, JsonElement> entry : json.entrySet()) {
+         float key = AnimationParser.time(entry.getKey());
+         if (!Float.isNaN(key)) {
+            points.add(new float[]{key, ModelJson.number(entry.getValue(), 0.0F)});
+         }
+      }
+
+      points.sort((a, b) -> Float.compare(a[0], b[0]));
+      float[] flat = new float[points.size() * 2];
+
+      for (int i = 0; i < points.size(); i++) {
+         flat[i * 2] = points.get(i)[0];
+         flat[i * 2 + 1] = points.get(i)[1];
+      }
+
+      return flat;
    }
 
    private List<MolangProgram> scripts(@Nullable JsonElement json) {

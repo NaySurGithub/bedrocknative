@@ -26,8 +26,7 @@ public final class WorkstationData implements ContainerData.Station {
    static final String OPTION_SELECTED_TEXTURE = "textures/ui/recipe_book_touch_cell_selected";
    static final String CELL_TEXTURE = "textures/ui/cell_image";
    private final ContainerSlots.Kind kind;
-   @Nullable
-   private WorkstationData.Actions actions;
+   private WorkstationData.@Nullable Actions actions;
    private long version = 1L;
    private String name = "";
    private boolean nameEditable;
@@ -48,18 +47,15 @@ public final class WorkstationData implements ContainerData.Station {
    private String cartographyMode = "none";
    private String outputDescription = "";
    private int levels;
-   @Nullable
-   private String primary;
-   @Nullable
-   private String secondary;
+   private @Nullable String primary;
+   private @Nullable String secondary;
    private boolean payment;
 
    public WorkstationData(ContainerSlots.Kind kind) {
       this.kind = kind;
    }
 
-   @Nullable
-   public static WorkstationData of(ContainerSlots.Kind kind) {
+   public static @Nullable WorkstationData of(ContainerSlots.Kind kind) {
       return switch (kind) {
          case ANVIL, ENCHANTING, GRINDSTONE, STONECUTTER, LOOM, SMITHING, CARTOGRAPHY, BEACON -> new WorkstationData(kind);
          default -> null;
@@ -70,7 +66,7 @@ public final class WorkstationData implements ContainerData.Station {
       return this.kind;
    }
 
-   public void actions(@Nullable WorkstationData.Actions target) {
+   public void actions(WorkstationData.@Nullable Actions target) {
       this.actions = target;
    }
 
@@ -177,13 +173,11 @@ public final class WorkstationData implements ContainerData.Station {
       }
    }
 
-   @Nullable
-   public String primary() {
+   public @Nullable String primary() {
       return this.primary;
    }
 
-   @Nullable
-   public String secondary() {
+   public @Nullable String secondary() {
       return this.secondary;
    }
 
@@ -247,9 +241,8 @@ public final class WorkstationData implements ContainerData.Station {
          || collection.equals("patterns") && this.kind == ContainerSlots.Kind.LOOM;
    }
 
-   @Nullable
    @Override
-   public UiValue item(String collection, int index, String name) {
+   public @Nullable UiValue item(String collection, int index, String name) {
       if (this.kind == ContainerSlots.Kind.ENCHANTING && collection.equals("#enchant_buttons")) {
          if (index >= 0 && index < 3) {
             WorkstationData.Option option = this.options[index];
@@ -270,18 +263,18 @@ public final class WorkstationData implements ContainerData.Station {
          if (index >= 0) {
             if (index >= this.choices.size()) {
                return UiValue.NULL;
-            } else {
-               WorkstationData.Choice choice = this.choices.get(index);
-
-               return switch (name) {
-                  case "#hover_text" -> UiValue.of(choice.hoverText());
-                  case "#stone_cell_background_texture", "#pattern_cell_background_texture" -> UiValue.of(
-                     index == this.selected ? "textures/ui/recipe_book_touch_cell_selected" : "textures/ui/recipe_book_item_bg"
-                  );
-                  case "#item_stack_count" -> UiValue.of(choice.count() > 1 ? Integer.toString(choice.count()) : "");
-                  default -> UiValue.NULL;
-               };
             }
+
+            WorkstationData.Choice choice = this.choices.get(index);
+
+            return switch (name) {
+               case "#hover_text" -> UiValue.of(choice.hoverText());
+               case "#stone_cell_background_texture", "#pattern_cell_background_texture" -> UiValue.of(
+                  index == this.selected ? "textures/ui/recipe_book_touch_cell_selected" : "textures/ui/recipe_book_item_bg"
+               );
+               case "#item_stack_count" -> UiValue.of(choice.count() > 1 ? Integer.toString(choice.count()) : "");
+               default -> UiValue.NULL;
+            };
          } else {
             return !name.equals("#stone_selector_total_items") && !name.equals("#pattern_selector_total_items")
                ? UiValue.NULL
@@ -307,20 +300,22 @@ public final class WorkstationData implements ContainerData.Station {
       WorkstationData.Actions target = this.actions;
       if (target == null || collection == null) {
          return false;
-      } else if (this.kind == ContainerSlots.Kind.ENCHANTING
-         && buttonId.equals("button.menu_ok")
-         && collection.equals("#enchant_buttons")
-         && index >= 0
-         && index < 3) {
+      }
+
+      if (this.kind == ContainerSlots.Kind.ENCHANTING && buttonId.equals("button.menu_ok") && collection.equals("#enchant_buttons") && index >= 0 && index < 3) {
          target.enchant(index);
          return true;
-      } else if ((buttonId.equals("button.stone_select") || buttonId.equals("button.pattern_select"))
+      }
+
+      if ((buttonId.equals("button.stone_select") || buttonId.equals("button.pattern_select"))
          && this.owns(collection)
          && index >= 0
          && index < this.choices.size()) {
          target.select(index);
          return true;
-      } else if (this.kind == ContainerSlots.Kind.BEACON && buttonId.equals("button.menu_ok") && BEACON_BUTTONS.contains(collection)) {
+      }
+
+      if (this.kind == ContainerSlots.Kind.BEACON && buttonId.equals("button.menu_ok") && BEACON_BUTTONS.contains(collection)) {
          this.changed();
          if (this.beaconActive(collection)) {
             target.beacon(collection);
@@ -374,7 +369,7 @@ public final class WorkstationData implements ContainerData.Station {
       public static final WorkstationData.Option NONE = new WorkstationData.Option(0, false, "", "");
    }
 
-   public static enum Template {
+   public enum Template {
       NONE,
       UPGRADE,
       TRIM;

@@ -34,8 +34,7 @@ public final class BedrockActorRenderer extends LivingEntityRenderer<BedrockActo
       return MissingTextureAtlasSprite.getLocation();
    }
 
-   @Nullable
-   protected RenderType getRenderType(BedrockActorRenderState state, boolean isBodyVisible, boolean forceTransparent, boolean appearGlowing) {
+   protected @Nullable RenderType getRenderType(BedrockActorRenderState state, boolean isBodyVisible, boolean forceTransparent, boolean appearGlowing) {
       return null;
    }
 
@@ -68,41 +67,41 @@ public final class BedrockActorRenderer extends LivingEntityRenderer<BedrockActo
       float[] local = actor != null && actor.instance() != null ? actor.bounds() : null;
       if (local == null) {
          return super.shouldRender(entity, culler, camX, camY, camZ, partialTicks);
-      } else {
-         double x = Mth.lerp(partialTicks, entity.xOld, entity.getX());
-         double y = Mth.lerp(partialTicks, entity.yOld, entity.getY());
-         double z = Mth.lerp(partialTicks, entity.zOld, entity.getZ());
-         float yaw = Mth.rotLerp(partialTicks, entity.yBodyRotO, entity.yBodyRot);
-         ActorSnapshot last = actor.lastSnapshot();
-         float scale = actor.data().scale();
-         double[] box = actor.worldBounds();
-         ActorBounds.world(
-            local,
-            x,
-            y,
-            z,
-            yaw,
-            scale * (last != null ? last.draw().scale(0) : 1.0F),
-            scale * (last != null ? last.draw().scale(1) : 1.0F),
-            scale * (last != null ? last.draw().scale(2) : 1.0F),
-            box
-         );
-         double size = Math.max((box[3] - box[0] + box[4] - box[1] + box[5] - box[2]) / 3.0, entity.getBoundingBox().getSize());
-         if (Double.isNaN(size) || size <= 0.0) {
-            size = 1.0;
-         }
-
-         size *= 64.0 * Entity.getViewScale();
-         double dx = x - camX;
-         double dy = y - camY;
-         double dz = z - camZ;
-         if (dx * dx + dy * dy + dz * dz >= size * size) {
-            return false;
-         } else {
-            int visible = culler.cubeInFrustum(box[0] - 0.5, box[1] - 0.5, box[2] - 0.5, box[3] + 0.5, box[4] + 0.5, box[5] + 0.5);
-            return visible == -2 || visible == -1;
-         }
       }
+
+      double x = Mth.lerp(partialTicks, entity.xOld, entity.getX());
+      double y = Mth.lerp(partialTicks, entity.yOld, entity.getY());
+      double z = Mth.lerp(partialTicks, entity.zOld, entity.getZ());
+      float yaw = Mth.rotLerp(partialTicks, entity.yBodyRotO, entity.yBodyRot);
+      ActorSnapshot last = actor.lastSnapshot();
+      float scale = actor.data().scale();
+      double[] box = actor.worldBounds();
+      ActorBounds.world(
+         local,
+         x,
+         y,
+         z,
+         yaw,
+         scale * (last != null ? last.draw().scale(0) : 1.0F),
+         scale * (last != null ? last.draw().scale(1) : 1.0F),
+         scale * (last != null ? last.draw().scale(2) : 1.0F),
+         box
+      );
+      double size = Math.max((box[3] - box[0] + box[4] - box[1] + box[5] - box[2]) / 3.0, entity.getBoundingBox().getSize());
+      if (Double.isNaN(size) || size <= 0.0) {
+         size = 1.0;
+      }
+
+      size *= 64.0 * Entity.getViewScale();
+      double dx = x - camX;
+      double dy = y - camY;
+      double dz = z - camZ;
+      if (dx * dx + dy * dy + dz * dz >= size * size) {
+         return false;
+      }
+
+      int visible = culler.cubeInFrustum(box[0] - 0.5, box[1] - 0.5, box[2] - 0.5, box[3] + 0.5, box[4] + 0.5, box[5] + 0.5);
+      return visible == -2 || visible == -1;
    }
 
    public void submit(BedrockActorRenderState state, PoseStack poseStack, SubmitNodeCollector collector, CameraRenderState camera) {

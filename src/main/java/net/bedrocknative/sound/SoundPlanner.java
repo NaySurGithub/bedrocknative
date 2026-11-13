@@ -9,13 +9,13 @@ public final class SoundPlanner {
    private SoundPlanner() {
    }
 
-   @Nullable
-   public static SoundPlanner.Play definition(SoundDefinitions definitions, String name, float volume, float pitch, boolean serverEvent, RandomGenerator random) {
+   public static SoundPlanner.@Nullable Play definition(
+      SoundDefinitions definitions, String name, float volume, float pitch, boolean serverEvent, RandomGenerator random
+   ) {
       return definition(definitions, name, volume, pitch, serverEvent, random, 0);
    }
 
-   @Nullable
-   private static SoundPlanner.Play definition(
+   private static SoundPlanner.@Nullable Play definition(
       SoundDefinitions definitions, String name, float volume, float pitch, boolean serverEvent, RandomGenerator random, int depth
    ) {
       SoundDefinitions.Definition definition = definitions.get(name);
@@ -23,48 +23,46 @@ public final class SoundPlanner {
          SoundDefinitions.Variant variant = definition.pick(random);
          if (variant == null) {
             return null;
-         } else {
-            boolean server = serverEvent || definition.serverPack();
-            if (variant.event()) {
-               return definition(
-                  definitions,
-                  variant.path(),
-                  volume * definition.volume() * variant.volume(),
-                  pitch * definition.pitch() * variant.pitch(),
-                  server,
-                  random,
-                  depth + 1
-               );
-            } else {
-               float range = SoundRange.range(definition, volume);
-               return new SoundPlanner.Play(
-                  definition,
-                  variant,
-                  volume,
-                  SoundRange.gain(volume, definition, variant),
-                  pitch * definition.pitch() * variant.pitch(),
-                  range,
-                  SoundRange.start(definition, range),
-                  SoundRange.positional(definition, variant),
-                  variant.stream(),
-                  server
-               );
-            }
          }
+
+         boolean server = serverEvent || definition.serverPack();
+         if (variant.event()) {
+            return definition(
+               definitions,
+               variant.path(),
+               volume * definition.volume() * variant.volume(),
+               pitch * definition.pitch() * variant.pitch(),
+               server,
+               random,
+               depth + 1
+            );
+         }
+
+         float range = SoundRange.range(definition, volume);
+         return new SoundPlanner.Play(
+            definition,
+            variant,
+            volume,
+            SoundRange.gain(volume, definition, variant),
+            pitch * definition.pitch() * variant.pitch(),
+            range,
+            SoundRange.start(definition, range),
+            SoundRange.positional(definition, variant),
+            variant.stream(),
+            server
+         );
       } else {
          return null;
       }
    }
 
-   @Nullable
-   public static SoundEventTable.Resolved levelSound(
+   public static SoundEventTable.@Nullable Resolved levelSound(
       SoundCatalog catalog, String event, String identifier, @Nullable String blockName, boolean baby, SoundEventTable.VariantKeys keys, RandomGenerator random
    ) {
       return levelSoundOfType(catalog, event, identifier, blockName != null, blockName != null ? catalog.blockSound(blockName) : null, baby, keys, random);
    }
 
-   @Nullable
-   public static SoundEventTable.Resolved levelSoundOfType(
+   public static SoundEventTable.@Nullable Resolved levelSoundOfType(
       SoundCatalog catalog,
       String event,
       String identifier,

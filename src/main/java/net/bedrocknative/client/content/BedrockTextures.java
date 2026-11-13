@@ -103,34 +103,13 @@ public final class BedrockTextures {
    public static Optional<BitmapFontMetrics.Pixels> pixels(String path) {
       try {
          return PackStack.active().texture(path).flatMap(resource -> {
-            try {
-               NativeImage image = decode(resource.data());
-
-               Optional t$;
-               try {
-                  t$ = Optional.of(new BitmapFontMetrics.Pixels(image.getWidth(), image.getHeight(), image.getPixels()));
-               } catch (Throwable var5) {
-                  if (image != null) {
-                     try {
-                        image.close();
-                     } catch (Throwable var4) {
-                        var5.addSuppressed(var4);
-                     }
-                  }
-
-                  throw var5;
-               }
-
-               if (image != null) {
-                  image.close();
-               }
-
-               return t$;
-            } catch (IOException var6) {
+            try (NativeImage image = decode(resource.data())) {
+               return Optional.of(new BitmapFontMetrics.Pixels(image.getWidth(), image.getHeight(), image.getPixels()));
+            } catch (IOException e) {
                return Optional.empty();
             }
          });
-      } catch (RuntimeException var2) {
+      } catch (RuntimeException e) {
          return Optional.empty();
       }
    }
@@ -149,8 +128,8 @@ public final class BedrockTextures {
                } else if (size != null) {
                   Arrays.fill(sizes, size.getAsInt());
                }
-            } catch (RuntimeException var6) {
-               BedrockNative.LOGGER.debug("Bad nineslice definition for {}", key, var6);
+            } catch (RuntimeException e) {
+               BedrockNative.LOGGER.debug("Bad nineslice definition for {}", key, e);
             }
          });
          return new BedrockTextures.NineSlice(texture, sizes[0], sizes[1], sizes[2], sizes[3]);
@@ -179,8 +158,8 @@ public final class BedrockTextures {
                } else {
                   try {
                      image.texture = register("url/" + sha1(key), decoded, key);
-                  } catch (IOException var5) {
-                     BedrockNative.LOGGER.info("Form image {} not shown: {}", key, var5.getMessage());
+                  } catch (IOException e) {
+                     BedrockNative.LOGGER.info("Form image {} not shown: {}", key, e.getMessage());
                   }
                }
 
@@ -201,8 +180,8 @@ public final class BedrockTextures {
          try {
             NativeImage image = crop(decode(Files.readAllBytes(Path.of(key))), aspect);
             return Optional.of(register("file/" + sha1(key), image, key));
-         } catch (RuntimeException | IOException var3) {
-            BedrockNative.LOGGER.debug("Local picture {} not shown: {}", key, var3.getMessage());
+         } catch (IOException | RuntimeException e) {
+            BedrockNative.LOGGER.debug("Local picture {} not shown: {}", key, e.getMessage());
             return Optional.empty();
          }
       });
@@ -223,28 +202,28 @@ public final class BedrockTextures {
    private static NativeImage crop(NativeImage image, float aspect) {
       if (aspect <= 0.0F) {
          return image;
-      } else {
-         int width = image.getWidth();
-         int height = image.getHeight();
-         int keepWidth = Math.min(width, Math.max(1, Math.round(height * aspect)));
-         int keepHeight = Math.min(height, Math.max(1, Math.round(width / aspect)));
-         if (keepWidth == width && keepHeight == height) {
-            return image;
-         } else {
-            NativeImage cropped = new NativeImage(keepWidth, keepHeight, false);
-            int left = (width - keepWidth) / 2;
-            int top = (height - keepHeight) / 2;
+      }
 
-            for (int y = 0; y < keepHeight; y++) {
-               for (int x = 0; x < keepWidth; x++) {
-                  cropped.setPixel(x, y, image.getPixel(left + x, top + y));
-               }
-            }
+      int width = image.getWidth();
+      int height = image.getHeight();
+      int keepWidth = Math.min(width, Math.max(1, Math.round(height * aspect)));
+      int keepHeight = Math.min(height, Math.max(1, Math.round(width / aspect)));
+      if (keepWidth == width && keepHeight == height) {
+         return image;
+      }
 
-            image.close();
-            return cropped;
+      NativeImage cropped = new NativeImage(keepWidth, keepHeight, false);
+      int left = (width - keepWidth) / 2;
+      int top = (height - keepHeight) / 2;
+
+      for (int y = 0; y < keepHeight; y++) {
+         for (int x = 0; x < keepWidth; x++) {
+            cropped.setPixel(x, y, image.getPixel(left + x, top + y));
          }
       }
+
+      image.close();
+      return cropped;
    }
 
    public static void releaseAll() {
@@ -276,13 +255,13 @@ public final class BedrockTextures {
          return PackStack.active().texture(path).flatMap(resource -> {
             try {
                return Optional.of(register("pack/" + sanitize(resource.path()), decode(resource.data()), resource.path()));
-            } catch (IOException var2x) {
-               BedrockNative.LOGGER.warn("Couldn't decode Bedrock texture {}", resource.path(), var2x);
+            } catch (IOException e) {
+               BedrockNative.LOGGER.warn("Couldn't decode Bedrock texture {}", resource.path(), e);
                return Optional.empty();
             }
          });
-      } catch (RuntimeException var2) {
-         BedrockNative.LOGGER.warn("Couldn't load Bedrock texture {}", path, var2);
+      } catch (RuntimeException e) {
+         BedrockNative.LOGGER.warn("Couldn't load Bedrock texture {}", path, e);
          return Optional.empty();
       }
    }
@@ -299,40 +278,40 @@ public final class BedrockTextures {
                try {
                   if (received.statusCode() / 100 != 2) {
                      throw new IOException("HTTP " + received.statusCode());
-                  } else {
-                     byte[] data = received.body();
-                     if (!isPng(data) && !isJpeg(data)) {
-                        throw new IOException(
-                           "not a PNG or JPEG image (" + ImageSignature.describe(received.headers().firstValue("content-type").orElse(null), data) + ")"
-                        );
-                     } else {
-                        long pixels = BedrockImages.pixelCount(data);
-                        if (!URL_BUDGET.tryAddImage(pixels)) {
-                           throw new IOException("image of " + pixels + " pixels is over the limits for downloaded images");
-                        } else {
-                           try {
-                              return decode(data);
-                           } catch (IOException var5) {
-                              throw new IOException(
-                                 var5.getMessage()
-                                    + " ("
-                                    + data.length
-                                    + " bytes received, content-length "
-                                    + received.headers().firstValue("content-length").orElse("not declared")
-                                    + ")",
-                                 var5
-                              );
-                           }
-                        }
-                     }
                   }
-               } catch (IOException var6) {
-                  throw new UncheckedIOException(var6);
+
+                  byte[] data = received.body();
+                  if (!isPng(data) && !isJpeg(data)) {
+                     throw new IOException(
+                        "not a PNG or JPEG image (" + ImageSignature.describe(received.headers().firstValue("content-type").orElse(null), data) + ")"
+                     );
+                  }
+
+                  long pixels = BedrockImages.pixelCount(data);
+                  if (!URL_BUDGET.tryAddImage(pixels)) {
+                     throw new IOException("image of " + pixels + " pixels is over the limits for downloaded images");
+                  }
+
+                  try {
+                     return decode(data);
+                  } catch (IOException exx) {
+                     throw new IOException(
+                        exx.getMessage()
+                           + " ("
+                           + data.length
+                           + " bytes received, content-length "
+                           + received.headers().firstValue("content-length").orElse("not declared")
+                           + ")",
+                        exx
+                     );
+                  }
+               } catch (IOException ex) {
+                  throw new UncheckedIOException(ex);
                }
             }
          );
-      } catch (RuntimeException var3) {
-         return CompletableFuture.failedFuture(var3);
+      } catch (RuntimeException e) {
+         return CompletableFuture.failedFuture(e);
       }
    }
 
@@ -340,7 +319,7 @@ public final class BedrockTextures {
       long declared;
       try {
          declared = info.headers().firstValueAsLong("content-length").orElse(-1L);
-      } catch (NumberFormatException var6) {
+      } catch (NumberFormatException e) {
          declared = -1L;
       }
 
@@ -491,8 +470,8 @@ public final class BedrockTextures {
    private static String sha1(String text) {
       try {
          return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-1").digest(text.getBytes(StandardCharsets.UTF_8)));
-      } catch (NoSuchAlgorithmException var2) {
-         throw new IllegalStateException(var2);
+      } catch (NoSuchAlgorithmException e) {
+         throw new IllegalStateException(e);
       }
    }
 

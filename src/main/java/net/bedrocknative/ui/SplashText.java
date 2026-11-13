@@ -27,25 +27,25 @@ public final class SplashText {
       Optional<PackStack.Resource> file = stack.read("splashes.json");
       if (file.isEmpty()) {
          return List.of();
-      } else {
-         try {
-            if (JsonParser.parseString(new String(file.get().data(), StandardCharsets.UTF_8).replace("\ufeff", "")) instanceof JsonObject object
-               && object.get("splashes") instanceof JsonArray array) {
-               List<String> splashes = new ArrayList<>(array.size());
+      }
 
-               for (JsonElement element : array) {
-                  if (element.isJsonPrimitive() && !element.getAsString().isBlank()) {
-                     splashes.add(element.getAsString());
-                  }
+      try {
+         if (JsonParser.parseString(new String(file.get().data(), StandardCharsets.UTF_8).replace("\ufeff", "")) instanceof JsonObject object
+            && object.get("splashes") instanceof JsonArray array) {
+            List<String> splashes = new ArrayList<>(array.size());
+
+            for (JsonElement element : array) {
+               if (element.isJsonPrimitive() && !element.getAsString().isBlank()) {
+                  splashes.add(element.getAsString());
                }
-
-               return List.copyOf(splashes);
-            } else {
-               return List.of();
             }
-         } catch (RuntimeException var8) {
+
+            return List.copyOf(splashes);
+         } else {
             return List.of();
          }
+      } catch (RuntimeException e) {
+         return List.of();
       }
    }
 

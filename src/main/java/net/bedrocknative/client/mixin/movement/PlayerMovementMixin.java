@@ -17,7 +17,7 @@ import org.spongepowered.asm.mixin.injection.At.Shift;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin({Player.class})
+@Mixin(Player.class)
 public abstract class PlayerMovementMixin {
    @Unique
    private static final double EDGE_STEP = 0.05;
@@ -26,14 +26,10 @@ public abstract class PlayerMovementMixin {
    @Unique
    private boolean bedrocknative$restoreFlying;
 
-   @Inject(
-      method = {"maybeBackOffFromEdge"},
-      at = {@At("HEAD")},
-      cancellable = true
-   )
+   @Inject(method = "maybeBackOffFromEdge", at = @At("HEAD"), cancellable = true)
    private void bedrocknative$sneakEdge(Vec3 delta, MoverType moverType, CallbackInfoReturnable<Vec3> cir) {
       if (BedrockMovement.appliesTo(this)) {
-         Player self = (Player)this;
+         Player self = (Player)(Object)this;
          if (!self.getAbilities().flying
             && !(delta.y > 0.0)
             && (moverType == MoverType.SELF || moverType == MoverType.PLAYER)
@@ -70,12 +66,9 @@ public abstract class PlayerMovementMixin {
    @Shadow
    protected abstract boolean canGlide();
 
-   @Inject(
-      method = {"travel"},
-      at = {@At("HEAD")}
-   )
+   @Inject(method = "travel", at = @At("HEAD"))
    private void bedrocknative$flyBeforeMove(Vec3 input, CallbackInfo ci) {
-      Player self = (Player)this;
+      Player self = (Player)(Object)this;
       if (BedrockMovement.appliesTo(self)) {
          Abilities abilities = self.getAbilities();
          boolean toggled = BedrockMovement.takeFlightToggle();
@@ -129,12 +122,9 @@ public abstract class PlayerMovementMixin {
       }
    }
 
-   @Inject(
-      method = {"travel"},
-      at = {@At("RETURN")}
-   )
+   @Inject(method = "travel", at = @At("RETURN"))
    private void bedrocknative$flyAfterMove(Vec3 input, CallbackInfo ci) {
-      Player self = (Player)this;
+      Player self = (Player)(Object)this;
       Abilities abilities = self.getAbilities();
       boolean movedFlying = abilities.flying;
       if (this.bedrocknative$restoreFlying) {
@@ -153,29 +143,17 @@ public abstract class PlayerMovementMixin {
       }
    }
 
-   @Inject(
-      method = {"tick"},
-      at = {@At(
-         value = "FIELD",
-         target = "Lnet/minecraft/world/entity/player/Player;noPhysics:Z",
-         opcode = 181,
-         shift = Shift.AFTER
-      )}
-   )
+   @Inject(method = "tick", at = @At(value = "FIELD", target = "Lnet/minecraft/world/entity/player/Player;noPhysics:Z", opcode = 181, shift = Shift.AFTER))
    private void bedrocknative$noClip(CallbackInfo ci) {
-      Player self = (Player)this;
+      Player self = (Player)(Object)this;
       if (BedrockMovement.appliesTo(self)) {
          self.noPhysics = self.noPhysics || BedrockMovement.noClip() || !BedrockMovement.collision();
       }
    }
 
-   @Inject(
-      method = {"canPlayerFitWithinBlocksAndEntitiesWhen"},
-      at = {@At("HEAD")},
-      cancellable = true
-   )
+   @Inject(method = "canPlayerFitWithinBlocksAndEntitiesWhen", at = @At("HEAD"), cancellable = true)
    private void bedrocknative$fitsWithFloatBox(Pose pose, CallbackInfoReturnable<Boolean> cir) {
-      Player self = (Player)this;
+      Player self = (Player)(Object)this;
       if (BedrockMovement.appliesTo(self)) {
          AABB box = BedrockMovement.floatBox(self.getDimensions(pose).makeBoundingBox(self.position())).deflate(1.0E-7);
          cir.setReturnValue(self.level().noCollision(self, box));

@@ -29,7 +29,7 @@ public record ParticleEffect(
       float textureHeight,
       MolangProgram[] uv,
       MolangProgram[] uvSize,
-      @Nullable ParticleEffect.Flipbook flipbook
+      ParticleEffect.@Nullable Flipbook flipbook
    ) {
    }
 
@@ -53,7 +53,7 @@ public record ParticleEffect(
    public record CollisionEvent(String event, float minSpeed) {
    }
 
-   public static enum Direction {
+   public enum Direction {
       OUTWARDS,
       INWARDS,
       CUSTOM;
@@ -91,7 +91,7 @@ public record ParticleEffect(
    ) {
    }
 
-   public static enum Facing {
+   public enum Facing {
       ROTATE_XYZ,
       ROTATE_Y,
       LOOKAT_XYZ,
@@ -110,13 +110,13 @@ public record ParticleEffect(
    ) {
    }
 
-   public static enum Lifetime {
+   public enum Lifetime {
       EXPRESSION,
       ONCE,
       LOOPING;
    }
 
-   public static enum Material {
+   public enum Material {
       ALPHA,
       BLEND,
       ADD,
@@ -140,7 +140,7 @@ public record ParticleEffect(
 
    public record Particle(
       @Nullable MolangProgram speed,
-      @Nullable MolangProgram[] speedVector,
+      MolangProgram @Nullable [] speedVector,
       MolangProgram spinRotation,
       MolangProgram spinRate,
       @Nullable MolangProgram creation,
@@ -153,29 +153,29 @@ public record ParticleEffect(
       ParticleEffect.Timeline timeline,
       Set<String> expireInBlocks,
       Set<String> expireNotInBlocks,
-      @Nullable float[] killPlane,
+      float @Nullable [] killPlane,
       MolangProgram[] acceleration,
       MolangProgram drag,
       MolangProgram rotationAcceleration,
       MolangProgram rotationDrag,
-      @Nullable MolangProgram[] parametricPosition,
-      @Nullable MolangProgram[] parametricDirection,
+      MolangProgram @Nullable [] parametricPosition,
+      MolangProgram @Nullable [] parametricDirection,
       @Nullable MolangProgram parametricRotation,
-      @Nullable ParticleEffect.Collision collision,
-      @Nullable ParticleEffect.Billboard billboard,
-      @Nullable ParticleEffect.Tint tint,
+      ParticleEffect.@Nullable Collision collision,
+      ParticleEffect.@Nullable Billboard billboard,
+      ParticleEffect.@Nullable Tint tint,
       boolean lighting
    ) {
    }
 
-   public static enum Rate {
+   public enum Rate {
       NONE,
       INSTANT,
       STEADY,
       MANUAL;
    }
 
-   public static enum Shape {
+   public enum Shape {
       POINT,
       SPHERE,
       BOX,
@@ -188,6 +188,6 @@ public record ParticleEffect(
       public static final ParticleEffect.Timeline EMPTY = new ParticleEffect.Timeline(new float[0], new String[0][]);
    }
 
-   public record Tint(@Nullable MolangProgram[] color, float[] keys, MolangProgram[][] gradient, @Nullable MolangProgram interpolant) {
+   public record Tint(MolangProgram @Nullable [] color, float[] keys, MolangProgram[][] gradient, @Nullable MolangProgram interpolant) {
    }
 }

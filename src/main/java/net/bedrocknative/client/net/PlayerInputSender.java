@@ -79,16 +79,20 @@ final class PlayerInputSender {
          this.sprintFromRest = false;
          this.standingSprintTicks = 0;
          return false;
-      } else if (sprintKey) {
+      }
+
+      if (sprintKey) {
          if (!sprintKeyBefore) {
             this.sprintFromRest = true;
          }
 
          this.standingSprintTicks = this.sprintFromRest ? 35 : 0;
          return false;
-      } else if (this.standingSprintTicks > 0 && this.standingSprintTicks-- > 0) {
-         return true;
       } else {
+         if (this.standingSprintTicks > 0 && this.standingSprintTicks-- > 0) {
+            return true;
+         }
+
          this.sprintFromRest = false;
          return false;
       }
@@ -97,120 +101,120 @@ final class PlayerInputSender {
    PlayerAuthInputPacket build(LocalPlayer player, boolean jumped) {
       if (!this.cameraReady) {
          return this.joining(player);
-      } else {
-         Input keys = BedrockSleeping.asleep() ? Input.EMPTY : player.input.keyPresses;
-         PlayerAuthInputPacket packet = new PlayerAuthInputPacket();
-         Set<PlayerAuthInputData> flags = packet.getInputData();
-         boolean moving = keys.forward() || keys.backward() || keys.left() || keys.right();
-         flags.add(PlayerAuthInputData.BLOCK_BREAKING_DELAY_ENABLED);
-         if (!player.isPassenger()) {
-            this.groundBeforeRiding = player.onGround();
-            this.wallBeforeRiding = player.horizontalCollision;
-         }
-
-         if (player.isPassenger() ? this.groundBeforeRiding : player.onGround()) {
-            flags.add(PlayerAuthInputData.VERTICAL_COLLISION);
-         }
-
-         if (player.isPassenger() ? this.wallBeforeRiding : player.horizontalCollision) {
-            flags.add(PlayerAuthInputData.HORIZONTAL_COLLISION);
-         }
-
-         Vec2 turned = BedrockCamera.cameraRelativeControls() ? player.input.getMoveVector() : null;
-         if (turned != null ? turned.y > 0.1F : keys.forward()) {
-            flags.add(PlayerAuthInputData.UP);
-         }
-
-         if (turned != null ? turned.y < -0.1F : keys.backward()) {
-            flags.add(PlayerAuthInputData.DOWN);
-         }
-
-         if (turned != null ? turned.x > 0.1F : keys.left()) {
-            flags.add(PlayerAuthInputData.LEFT);
-         }
-
-         if (turned != null ? turned.x < -0.1F : keys.right()) {
-            flags.add(PlayerAuthInputData.RIGHT);
-         }
-
-         if (keys.jump()) {
-            flags.addAll(JUMP_FLAGS);
-         }
-
-         if (jumped) {
-            flags.add(PlayerAuthInputData.START_JUMPING);
-         }
-
-         if (keys.shift()) {
-            flags.addAll(SNEAK_FLAGS);
-         }
-
-         boolean sprintKey = keys.sprint();
-         if (sprintKey) {
-            flags.add(PlayerAuthInputData.SPRINT_DOWN);
-         }
-
-         boolean latched = this.standingSprint(sprintKey, this.previous.sprint(), moving);
-         if (sprintKey || latched) {
-            flags.add(PlayerAuthInputData.SPRINTING);
-         }
-
-         if (player.isSwimming() != this.previousSwimming) {
-            flags.add(player.isSwimming() ? PlayerAuthInputData.START_SWIMMING : PlayerAuthInputData.STOP_SWIMMING);
-         }
-
-         if (player.isVisuallyCrawling() != this.previousCrawling) {
-            flags.add(player.isVisuallyCrawling() ? PlayerAuthInputData.START_CRAWLING : PlayerAuthInputData.STOP_CRAWLING);
-         }
-
-         if (player.isFallFlying() != this.previousGliding) {
-            flags.add(player.isFallFlying() ? PlayerAuthInputData.START_GLIDING : PlayerAuthInputData.STOP_GLIDING);
-         }
-
-         if (player.isSprinting() != this.previousSprinting) {
-            flags.add(player.isSprinting() ? PlayerAuthInputData.START_SPRINTING : PlayerAuthInputData.STOP_SPRINTING);
-         }
-
-         if (keys.jump() != this.previous.jump()) {
-            flags.add(keys.jump() ? PlayerAuthInputData.JUMP_PRESSED_RAW : PlayerAuthInputData.JUMP_RELEASED_RAW);
-         }
-
-         if (keys.shift() != this.previous.shift()) {
-            flags.add(keys.shift() ? PlayerAuthInputData.SNEAK_PRESSED_RAW : PlayerAuthInputData.SNEAK_RELEASED_RAW);
-            flags.add(keys.shift() ? PlayerAuthInputData.START_SNEAKING : PlayerAuthInputData.STOP_SNEAKING);
-         }
-
-         if (this.flightToggle != null) {
-            flags.add(this.flightToggle ? PlayerAuthInputData.START_FLYING : PlayerAuthInputData.STOP_FLYING);
-            this.flightToggle = null;
-         }
-
-         if (this.teleportToAcknowledge) {
-            flags.add(PlayerAuthInputData.HANDLE_TELEPORT);
-            this.teleportToAcknowledge = false;
-         }
-
-         float pitch = Mth.clamp(player.getXRot(), -90.0F, 90.0F);
-         float yaw = Mth.wrapDegrees(player.getYRot());
-         float headYaw = Mth.wrapDegrees(player.getYHeadRot());
-         Vec3 position = player.position();
-         Vec3 velocity = player.getDeltaMovement();
-         packet.setRotation(Vector3f.from(pitch, yaw, headYaw));
-         packet.setPosition(Vector3f.from(position.x, position.y + 1.62001F, position.z));
-         packet.setMotion(moveVector(player, keys, keys.shift()));
-         packet.setRawMoveVector(moveVector(player, keys, false));
-         packet.setAnalogMoveVector(Vector2f.ZERO);
-         packet.setCameraOrientation(cameraOrientation(yaw, pitch));
-         packet.setInteractRotation(Vector2f.from(pitch, player.getYRot()));
-         packet.setDelta(Vector3f.from(velocity.x, velocity.y, velocity.z));
-         this.finish(packet);
-         this.previous = keys;
-         this.previousSprinting = player.isSprinting();
-         this.previousSwimming = player.isSwimming();
-         this.previousCrawling = player.isVisuallyCrawling();
-         this.previousGliding = player.isFallFlying();
-         return packet;
       }
+
+      Input keys = BedrockSleeping.asleep() ? Input.EMPTY : player.input.keyPresses;
+      PlayerAuthInputPacket packet = new PlayerAuthInputPacket();
+      Set<PlayerAuthInputData> flags = packet.getInputData();
+      boolean moving = keys.forward() || keys.backward() || keys.left() || keys.right();
+      flags.add(PlayerAuthInputData.BLOCK_BREAKING_DELAY_ENABLED);
+      if (!player.isPassenger()) {
+         this.groundBeforeRiding = player.onGround();
+         this.wallBeforeRiding = player.horizontalCollision;
+      }
+
+      if (player.isPassenger() ? this.groundBeforeRiding : player.onGround()) {
+         flags.add(PlayerAuthInputData.VERTICAL_COLLISION);
+      }
+
+      if (player.isPassenger() ? this.wallBeforeRiding : player.horizontalCollision) {
+         flags.add(PlayerAuthInputData.HORIZONTAL_COLLISION);
+      }
+
+      Vec2 turned = BedrockCamera.cameraRelativeControls() ? player.input.getMoveVector() : null;
+      if (turned != null ? turned.y > 0.1F : keys.forward()) {
+         flags.add(PlayerAuthInputData.UP);
+      }
+
+      if (turned != null ? turned.y < -0.1F : keys.backward()) {
+         flags.add(PlayerAuthInputData.DOWN);
+      }
+
+      if (turned != null ? turned.x > 0.1F : keys.left()) {
+         flags.add(PlayerAuthInputData.LEFT);
+      }
+
+      if (turned != null ? turned.x < -0.1F : keys.right()) {
+         flags.add(PlayerAuthInputData.RIGHT);
+      }
+
+      if (keys.jump()) {
+         flags.addAll(JUMP_FLAGS);
+      }
+
+      if (jumped) {
+         flags.add(PlayerAuthInputData.START_JUMPING);
+      }
+
+      if (keys.shift()) {
+         flags.addAll(SNEAK_FLAGS);
+      }
+
+      boolean sprintKey = keys.sprint();
+      if (sprintKey) {
+         flags.add(PlayerAuthInputData.SPRINT_DOWN);
+      }
+
+      boolean latched = this.standingSprint(sprintKey, this.previous.sprint(), moving);
+      if (sprintKey || latched) {
+         flags.add(PlayerAuthInputData.SPRINTING);
+      }
+
+      if (player.isSwimming() != this.previousSwimming) {
+         flags.add(player.isSwimming() ? PlayerAuthInputData.START_SWIMMING : PlayerAuthInputData.STOP_SWIMMING);
+      }
+
+      if (player.isVisuallyCrawling() != this.previousCrawling) {
+         flags.add(player.isVisuallyCrawling() ? PlayerAuthInputData.START_CRAWLING : PlayerAuthInputData.STOP_CRAWLING);
+      }
+
+      if (player.isFallFlying() != this.previousGliding) {
+         flags.add(player.isFallFlying() ? PlayerAuthInputData.START_GLIDING : PlayerAuthInputData.STOP_GLIDING);
+      }
+
+      if (player.isSprinting() != this.previousSprinting) {
+         flags.add(player.isSprinting() ? PlayerAuthInputData.START_SPRINTING : PlayerAuthInputData.STOP_SPRINTING);
+      }
+
+      if (keys.jump() != this.previous.jump()) {
+         flags.add(keys.jump() ? PlayerAuthInputData.JUMP_PRESSED_RAW : PlayerAuthInputData.JUMP_RELEASED_RAW);
+      }
+
+      if (keys.shift() != this.previous.shift()) {
+         flags.add(keys.shift() ? PlayerAuthInputData.SNEAK_PRESSED_RAW : PlayerAuthInputData.SNEAK_RELEASED_RAW);
+         flags.add(keys.shift() ? PlayerAuthInputData.START_SNEAKING : PlayerAuthInputData.STOP_SNEAKING);
+      }
+
+      if (this.flightToggle != null) {
+         flags.add(this.flightToggle ? PlayerAuthInputData.START_FLYING : PlayerAuthInputData.STOP_FLYING);
+         this.flightToggle = null;
+      }
+
+      if (this.teleportToAcknowledge) {
+         flags.add(PlayerAuthInputData.HANDLE_TELEPORT);
+         this.teleportToAcknowledge = false;
+      }
+
+      float pitch = Mth.clamp(player.getXRot(), -90.0F, 90.0F);
+      float yaw = Mth.wrapDegrees(player.getYRot());
+      float headYaw = Mth.wrapDegrees(player.getYHeadRot());
+      Vec3 position = player.position();
+      Vec3 velocity = player.getDeltaMovement();
+      packet.setRotation(Vector3f.from(pitch, yaw, headYaw));
+      packet.setPosition(Vector3f.from(position.x, position.y + 1.62001F, position.z));
+      packet.setMotion(moveVector(player, keys, keys.shift()));
+      packet.setRawMoveVector(moveVector(player, keys, false));
+      packet.setAnalogMoveVector(Vector2f.ZERO);
+      packet.setCameraOrientation(cameraOrientation(yaw, pitch));
+      packet.setInteractRotation(Vector2f.from(pitch, player.getYRot()));
+      packet.setDelta(Vector3f.from(velocity.x, velocity.y, velocity.z));
+      this.finish(packet);
+      this.previous = keys;
+      this.previousSprinting = player.isSprinting();
+      this.previousSwimming = player.isSwimming();
+      this.previousCrawling = player.isVisuallyCrawling();
+      this.previousGliding = player.isFallFlying();
+      return packet;
    }
 
    private PlayerAuthInputPacket joining(LocalPlayer player) {

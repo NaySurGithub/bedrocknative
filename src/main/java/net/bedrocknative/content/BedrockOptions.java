@@ -19,7 +19,7 @@ public record BedrockOptions(int guiScaleModifier, boolean accessibilityScaling,
       if (forced != null) {
          try {
             return new BedrockOptions(Integer.parseInt(forced.trim()), false, null);
-         } catch (NumberFormatException var7) {
+         } catch (NumberFormatException e) {
             BedrockNative.LOGGER.warn("Ignoring -D{}={}: not a whole number", "bedrocknative.uiScaleModifier", forced);
          }
       }
@@ -37,12 +37,12 @@ public record BedrockOptions(int guiScaleModifier, boolean accessibilityScaling,
 
       if (newest == null) {
          return DEFAULT;
-      } else {
-         try {
-            return parse(Files.readAllLines(newest, StandardCharsets.UTF_8), newest);
-         } catch (RuntimeException | IOException var5) {
-            return DEFAULT;
-         }
+      }
+
+      try {
+         return parse(Files.readAllLines(newest, StandardCharsets.UTF_8), newest);
+      } catch (IOException | RuntimeException e) {
+         return DEFAULT;
       }
    }
 

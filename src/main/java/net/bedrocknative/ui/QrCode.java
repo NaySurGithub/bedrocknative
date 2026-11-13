@@ -38,30 +38,30 @@ public final class QrCode {
 
       if (version > 10) {
          throw new IllegalArgumentException("Too long for a version 10 QR code at level " + level + ": " + data.length + " bytes");
-      } else {
-         int[] codewords = interleave(version, level, dataCodewordsOf(data, version, level));
-         boolean[][] function = functionPatterns(version);
-         boolean[][] base = new boolean[size(version)][size(version)];
-         drawFunctionPatterns(base, version);
-         placeData(base, function, codewords);
-         int bestMask = 0;
-         long bestPenalty = Long.MAX_VALUE;
-         boolean[][] best = null;
-
-         for (int candidate = 0; candidate < 8; candidate++) {
-            boolean[][] masked = copy(base);
-            applyMask(masked, function, candidate);
-            drawFormat(masked, level, candidate);
-            long penalty = penalty(masked);
-            if (penalty < bestPenalty) {
-               bestPenalty = penalty;
-               bestMask = candidate;
-               best = masked;
-            }
-         }
-
-         return new QrCode(version, level, bestMask, best);
       }
+
+      int[] codewords = interleave(version, level, dataCodewordsOf(data, version, level));
+      boolean[][] function = functionPatterns(version);
+      boolean[][] base = new boolean[size(version)][size(version)];
+      drawFunctionPatterns(base, version);
+      placeData(base, function, codewords);
+      int bestMask = 0;
+      long bestPenalty = Long.MAX_VALUE;
+      boolean[][] best = null;
+
+      for (int candidate = 0; candidate < 8; candidate++) {
+         boolean[][] masked = copy(base);
+         applyMask(masked, function, candidate);
+         drawFormat(masked, level, candidate);
+         long penalty = penalty(masked);
+         if (penalty < bestPenalty) {
+            bestPenalty = penalty;
+            bestMask = candidate;
+            best = masked;
+         }
+      }
+
+      return new QrCode(version, level, bestMask, best);
    }
 
    public int version() {
@@ -174,8 +174,8 @@ public final class QrCode {
       }
 
       for (int i = 0; i < eccLength; i++) {
-         for (int[] blockx : eccBlocks) {
-            result[at++] = blockx[i];
+         for (int[] block : eccBlocks) {
+            result[at++] = block[i];
          }
       }
 
@@ -269,20 +269,20 @@ public final class QrCode {
    static int[] alignmentPositions(int version) {
       if (version == 1) {
          return new int[0];
-      } else {
-         int count = version / 7 + 2;
-         int step = (version * 4 + count * 2 + 1) / (count * 2 - 2) * 2;
-         int[] positions = new int[count];
-         positions[0] = 6;
-         int i = count - 1;
-
-         for (int position = size(version) - 7; i >= 1; position -= step) {
-            positions[i] = position;
-            i--;
-         }
-
-         return positions;
       }
+
+      int count = version / 7 + 2;
+      int step = (version * 4 + count * 2 + 1) / (count * 2 - 2) * 2;
+      int[] positions = new int[count];
+      positions[0] = 6;
+      int i = count - 1;
+
+      for (int position = size(version) - 7; i >= 1; position -= step) {
+         positions[i] = position;
+         i--;
+      }
+
+      return positions;
    }
 
    private static List<int[]> alignmentCentres(int version) {
@@ -325,8 +325,8 @@ public final class QrCode {
 
       for (int[] centre : alignmentCentres(version)) {
          for (int dy = -2; dy <= 2; dy++) {
-            for (int dxx = -2; dxx <= 2; dxx++) {
-               modules[centre[1] + dy][centre[0] + dxx] = Math.max(Math.abs(dxx), Math.abs(dy)) != 1;
+            for (int dx = -2; dx <= 2; dx++) {
+               modules[centre[1] + dy][centre[0] + dx] = Math.max(Math.abs(dx), Math.abs(dy)) != 1;
             }
          }
       }
@@ -559,8 +559,8 @@ public final class QrCode {
          }
       }
 
-      for (int ix = 255; ix < EXP.length; ix++) {
-         EXP[ix] = EXP[ix - 255];
+      for (int i = 255; i < EXP.length; i++) {
+         EXP[i] = EXP[i - 255];
       }
 
       FINDER = new boolean[]{true, false, true, true, true, false, true};
@@ -590,7 +590,7 @@ public final class QrCode {
       }
    }
 
-   public static enum Level {
+   public enum Level {
       L(1, new int[]{7, 10, 15, 20, 26, 18, 20, 24, 30, 18}, new int[]{1, 1, 1, 1, 1, 2, 2, 2, 2, 4}),
       M(0, new int[]{10, 16, 26, 18, 24, 16, 18, 22, 22, 26}, new int[]{1, 1, 1, 2, 2, 4, 4, 4, 5, 5}),
       Q(3, new int[]{13, 22, 18, 26, 18, 24, 18, 22, 20, 24}, new int[]{1, 1, 2, 2, 4, 4, 6, 6, 8, 8}),
@@ -600,7 +600,7 @@ public final class QrCode {
       private final int[] eccPerBlock;
       private final int[] blocks;
 
-      private Level(int bits, int[] eccPerBlock, int[] blocks) {
+      Level(int bits, int[] eccPerBlock, int[] blocks) {
          this.bits = bits;
          this.eccPerBlock = eccPerBlock;
          this.blocks = blocks;

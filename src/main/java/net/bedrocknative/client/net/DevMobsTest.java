@@ -128,9 +128,9 @@ final class DevMobsTest {
 
       try {
          this.test();
-      } catch (RuntimeException var6) {
-         this.fail("exception: " + var6);
-         BedrockNative.LOGGER.error("Dev mobs test failed with an exception", var6);
+      } catch (RuntimeException e) {
+         this.fail("exception: " + e);
+         BedrockNative.LOGGER.error("Dev mobs test failed with an exception", e);
       } finally {
          this.run(() -> BedrockMobs.setEnabled(original));
          this.finish();
@@ -403,7 +403,7 @@ final class DevMobsTest {
    private void lookOf(String type, String what, Predicate<ActorSnapshot> test) {
       Boolean result = this.onClient(
          () -> {
-            for (ActorState state : BedrockActors.current() != null ? BedrockActors.current().states() : List.of()) {
+            for (ActorState state : BedrockActors.current() != null ? BedrockActors.current().states() : List.<ActorState>of()) {
                ActorSnapshot snapshot = state.data().identifier().equals(type) ? state.lastSnapshot() : null;
                if (snapshot != null && state.instance() != null && test.test(snapshot)) {
                   return true;
@@ -423,7 +423,7 @@ final class DevMobsTest {
    }
 
    private boolean overlayDraws(String type, String controller) {
-      for (ActorState state : BedrockActors.current() != null ? BedrockActors.current().states() : List.of()) {
+      for (ActorState state : BedrockActors.current() != null ? BedrockActors.current().states() : List.<ActorState>of()) {
          ActorInstance overlay = state.data().identifier().equals(type) ? state.overlay() : null;
          if (overlay != null && overlay.lastDrawList().calls().stream().anyMatch(call -> call.controller().equals(controller))) {
             return true;
@@ -577,7 +577,7 @@ final class DevMobsTest {
          double height = this.onClient(() -> (double)entity.getBbHeight());
          double distance = height > 2.2 ? 3.0 : 2.5;
          double[] at = this.onClient(() -> new double[]{entity.getX(), entity.getY(), entity.getZ()});
-         double feet = Math.max(at[1], (double)y);
+         double feet = Math.max(at[1], y);
          float pitch = (float)Math.toDegrees(Math.atan2(feet + 1.62 - (at[1] + height / 2.0), distance));
          this.run(
             () -> this.minecraft.getConnection().sendCommand(String.format(Locale.ROOT, "tp @s %.2f %.2f %.2f 0 %.1f", at[0], feet, at[2] - distance, pitch))
@@ -622,46 +622,46 @@ final class DevMobsTest {
       ActorSnapshot snapshot = state.lastSnapshot();
       if (snapshot == null) {
          return "not drawn by the runtime (Java's model)";
-      } else {
-         DrawSnapshot draw = snapshot.draw();
-         StringBuilder text = new StringBuilder();
-         text.append(
-            String.format(
-               Locale.ROOT,
-               "variant %d mark %d skin %d, SCALE %.2f x scripts %.3f, %d calls (%d own), drawn %s",
-               (int)state.data().number(EntityDataTypes.VARIANT),
-               (int)state.data().number(EntityDataTypes.MARK_VARIANT),
-               (int)state.data().number(EntityDataTypes.SKIN_ID),
-               snapshot.actorScale(),
-               draw.scale(1),
-               draw.calls(),
-               draw.ownCalls(),
-               height(draw, snapshot.actorScale())
-            )
-         );
+      }
 
-         for (int c = 0; c < draw.calls(); c++) {
-            DrawSnapshot.Call call = draw.call(c);
-            text.append(" | ").append(c).append(' ').append(call.controller()).append(" geo ").append(call.mesh().identifier()).append(" tex");
+      DrawSnapshot draw = snapshot.draw();
+      StringBuilder text = new StringBuilder();
+      text.append(
+         String.format(
+            Locale.ROOT,
+            "variant %d mark %d skin %d, SCALE %.2f x scripts %.3f, %d calls (%d own), drawn %s",
+            (int)state.data().number(EntityDataTypes.VARIANT),
+            (int)state.data().number(EntityDataTypes.MARK_VARIANT),
+            (int)state.data().number(EntityDataTypes.SKIN_ID),
+            snapshot.actorScale(),
+            draw.scale(1),
+            draw.calls(),
+            draw.ownCalls(),
+            height(draw, snapshot.actorScale())
+         )
+      );
 
-            for (int layer = 0; layer < call.layers(); layer++) {
-               String path = call.layer(layer);
-               text.append(layer == 0 ? " " : "+").append(path == null ? "-" : path.substring(path.lastIndexOf(47) + 1));
-            }
+      for (int c = 0; c < draw.calls(); c++) {
+         DrawSnapshot.Call call = draw.call(c);
+         text.append(" | ").append(c).append(' ').append(call.controller()).append(" geo ").append(call.mesh().identifier()).append(" tex");
 
-            for (int g = 0; g < call.groups(); g++) {
-               text.append(' ')
-                  .append(call.material(g).name())
-                  .append('/')
-                  .append(call.kind(g))
-                  .append('(')
-                  .append(call.groupStart(g + 1) - call.groupStart(g))
-                  .append(')');
-            }
+         for (int layer = 0; layer < call.layers(); layer++) {
+            String path = call.layer(layer);
+            text.append(layer == 0 ? " " : "+").append(path == null ? "-" : path.substring(path.lastIndexOf(47) + 1));
          }
 
-         return text.toString();
+         for (int g = 0; g < call.groups(); g++) {
+            text.append(' ')
+               .append(call.material(g).name())
+               .append('/')
+               .append(call.kind(g))
+               .append('(')
+               .append(call.groupStart(g + 1) - call.groupStart(g))
+               .append(')');
+         }
       }
+
+      return text.toString();
    }
 
    private static String height(DrawSnapshot draw, float actorScale) {
@@ -763,20 +763,20 @@ final class DevMobsTest {
                } else {
                   StringBuilder around = new StringBuilder();
 
-                  for (Entity entityx : this.minecraft.level.entitiesForRendering()) {
-                     ActorState state = BedrockActors.state(entityx);
-                     if (Math.abs(entityx.getX() - wantedX) < 6.0 && Math.abs(entityx.getZ() - wantedZ) < 6.0) {
+                  for (Entity entity : this.minecraft.level.entitiesForRendering()) {
+                     ActorState state = BedrockActors.state(entity);
+                     if (Math.abs(entity.getX() - wantedX) < 6.0 && Math.abs(entity.getZ() - wantedZ) < 6.0) {
                         around.append(
                            String.format(
                               Locale.ROOT,
                               " [%s %s mob=%b state=%s at %.2f %.2f %.2f]",
-                              entityx.getType().getDescriptionId(),
+                              entity.getType().getDescriptionId(),
                               state == null ? "-" : state.data().identifier(),
-                              entityx instanceof Mob,
+                              entity instanceof Mob,
                               state == null ? "none" : "yes",
-                              entityx.getX(),
-                              entityx.getY(),
-                              entityx.getZ()
+                              entity.getX(),
+                              entity.getY(),
+                              entity.getZ()
                            )
                         );
                      }
@@ -976,7 +976,7 @@ final class DevMobsTest {
    private static void sleep(long millis) {
       try {
          Thread.sleep(millis);
-      } catch (InterruptedException var3) {
+      } catch (InterruptedException e) {
          Thread.currentThread().interrupt();
       }
    }

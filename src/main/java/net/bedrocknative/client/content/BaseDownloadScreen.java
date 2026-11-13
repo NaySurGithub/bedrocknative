@@ -20,8 +20,7 @@ public final class BaseDownloadScreen extends Screen {
    private final String size;
    private final Consumer<BaseConsent.Answer> answer;
    private boolean answered;
-   @Nullable
-   private Button later;
+   private @Nullable Button later;
 
    BaseDownloadScreen(Screen parent, String size, Consumer<BaseConsent.Answer> answer) {
       super(Component.translatable("bedrocknative.base.title"));
@@ -30,6 +29,7 @@ public final class BaseDownloadScreen extends Screen {
       this.answer = answer;
    }
 
+   @Override
    protected void init() {
       int total = 312;
       int left = this.width / 2 - total / 2;
@@ -42,13 +42,14 @@ public final class BaseDownloadScreen extends Screen {
             .bounds(left + 100 + 6, y, 100, 20)
             .build()
       );
-      this.later = (Button)this.addRenderableWidget(
+      this.later = this.addRenderableWidget(
          Button.builder(Component.translatable("bedrocknative.base.later"), button -> this.choose(BaseConsent.Answer.LATER))
             .bounds(left + 212, y, 100, 20)
             .build()
       );
    }
 
+   @Override
    protected void setInitialFocus() {
       if (this.later != null) {
          this.setInitialFocus(this.later);
@@ -66,10 +67,12 @@ public final class BaseDownloadScreen extends Screen {
       }
    }
 
+   @Override
    public void onClose() {
       this.choose(BaseConsent.Answer.LATER);
    }
 
+   @Override
    public void removed() {
       super.removed();
       if (!this.answered) {
@@ -78,6 +81,7 @@ public final class BaseDownloadScreen extends Screen {
       }
    }
 
+   @Override
    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
       super.extractRenderState(graphics, mouseX, mouseY, a);
       int wrap = Math.max(1, Math.min(this.width - 40, 360));
@@ -86,7 +90,7 @@ public final class BaseDownloadScreen extends Screen {
       y += 16;
       y = this.paragraph(graphics, Component.translatable("bedrocknative.base.question"), wrap, y, -1) + 6;
       y = this.paragraph(graphics, Component.translatable("bedrocknative.base.why"), wrap, y, -5197648) + 4;
-      y = this.paragraph(graphics, Component.translatable("bedrocknative.base.what", new Object[]{this.size}), wrap, y, -5197648) + 4;
+      y = this.paragraph(graphics, Component.translatable("bedrocknative.base.what", this.size), wrap, y, -5197648) + 4;
       y = this.paragraph(graphics, Component.translatable("bedrocknative.base.without"), wrap, y, -5197648) + 4;
       this.paragraph(graphics, Component.translatable("bedrocknative.base.eula"), wrap, y, -5197648);
    }

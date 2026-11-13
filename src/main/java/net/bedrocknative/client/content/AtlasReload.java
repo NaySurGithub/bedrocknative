@@ -26,15 +26,13 @@ public final class AtlasReload {
    private static final Set<Identifier> ATLASES = Set.of(AtlasIds.BLOCKS, AtlasIds.ITEMS);
    public static final Preparations KEPT = new Preparations(0, 0, 0, null, Map.of(), CompletableFuture.completedFuture(null));
    private static boolean choosing;
-   @Nullable
-   private static TextureAtlas keptAtlas;
+   private static @Nullable TextureAtlas keptAtlas;
    private static final long FALLBACK_TIMEOUT_SECONDS = 180L;
    private static final ReloadChain CHAIN = new ReloadChain();
    private static volatile boolean running;
    private static boolean blockUploadPending;
    private static volatile int runs;
-   @Nullable
-   private static volatile AtlasReload.Timings lastTimings;
+   private static volatile AtlasReload.@Nullable Timings lastTimings;
 
    private AtlasReload() {
    }
@@ -68,8 +66,7 @@ public final class AtlasReload {
       ReloadPhases.mark(name);
    }
 
-   @Nullable
-   public static AtlasReload.Timings lastTimings() {
+   public static AtlasReload.@Nullable Timings lastTimings() {
       return lastTimings;
    }
 
@@ -84,10 +81,10 @@ public final class AtlasReload {
    public static boolean kept(TextureAtlas atlas, Preparations preparations) {
       if (preparations != KEPT) {
          return false;
-      } else {
-         keptAtlas = atlas;
-         return true;
       }
+
+      keptAtlas = atlas;
+      return true;
    }
 
    public static Map<Identifier, TextureAtlasSprite> regions(Preparations preparations) {
@@ -124,9 +121,9 @@ public final class AtlasReload {
                   CompletableFuture.completedFuture(Unit.INSTANCE)
                );
                break label40;
-            } catch (RuntimeException var13) {
+            } catch (RuntimeException e) {
                choosing = false;
-               fallback(minecraft, why, var13, result, client);
+               fallback(minecraft, why, e, result, client);
             } finally {
                choosing = false;
             }
@@ -179,8 +176,8 @@ public final class AtlasReload {
       } else {
          try {
             minecraft.reloadResourcePacks().orTimeout(180L, TimeUnit.SECONDS).whenCompleteAsync((ignored, fullError) -> result.complete(null), client);
-         } catch (RuntimeException var6) {
-            BedrockNative.LOGGER.warn("Atlas reload ({}): the full reload could not start either", why, var6);
+         } catch (RuntimeException e) {
+            BedrockNative.LOGGER.warn("Atlas reload ({}): the full reload could not start either", why, e);
             result.complete(null);
          }
       }

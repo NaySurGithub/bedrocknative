@@ -29,17 +29,17 @@ public final class ClassPreload {
                try {
                   Class.forName(name, false, loader);
                   loaded++;
-               } catch (ClassNotFoundException var12) {
+               } catch (ClassNotFoundException e) {
                   missing++;
-               } catch (VirtualMachineError var13) {
-                  throw var13;
-               } catch (Throwable var14) {
+               } catch (VirtualMachineError e) {
+                  throw e;
+               } catch (Throwable e) {
                   failed++;
                }
             }
          }
-      } catch (IOException var15) {
-         throw new UncheckedIOException(var15);
+      } catch (IOException e) {
+         throw new UncheckedIOException(e);
       }
 
       return new ClassPreload.Result(loaded, missing, failed, System.nanoTime() - started, stopped);

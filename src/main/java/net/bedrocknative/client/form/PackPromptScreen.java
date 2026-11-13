@@ -106,7 +106,7 @@ public final class PackPromptScreen extends FormScreen {
          FormButton button = new FormButton(this.font, width, 24, BedrockText.format(option.text()), null, () -> this.answer.choose(option.choice()));
          button.setPosition(x, y);
          y += 26;
-         created.add((AbstractButton)this.addRenderableWidget(button));
+         created.add(this.addRenderableWidget(button));
       }
 
       this.buttons = List.copyOf(created);

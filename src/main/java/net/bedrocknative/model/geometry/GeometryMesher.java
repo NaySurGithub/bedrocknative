@@ -30,7 +30,7 @@ public final class GeometryMesher {
       return false;
    }
 
-   public static MeshedGeometry mesh(GeometryDef geometry, Function<String, TextureMesher.Pixels> textures) {
+   public static MeshedGeometry mesh(GeometryDef geometry, Function<String, TextureMesher.@Nullable Pixels> textures) {
       List<BoneDef> definitions = geometry.bones();
       int[] order = order(definitions);
       int[] newIndex = new int[definitions.size()];
@@ -113,8 +113,7 @@ public final class GeometryMesher {
       return new MeshedGeometry(geometry.identifier(), geometry.textureWidth(), geometry.textureHeight(), bones, visible, bounds);
    }
 
-   @Nullable
-   static Matrix4f bindPose(BoneDef bone) {
+   static @Nullable Matrix4f bindPose(BoneDef bone) {
       float[] rotation = bone.bindPoseRotation();
       if (rotation != null && (rotation[0] != 0.0F || rotation[1] != 0.0F || rotation[2] != 0.0F)) {
          float[] pivot = j(bone.pivot());
@@ -167,10 +166,10 @@ public final class GeometryMesher {
          }
 
          if (!progress) {
-            for (int ix = 0; ix < count; ix++) {
-               if (!placed[ix]) {
-                  BedrockNative.LOGGER.debug("Bone parent cycle broken at {}", bones.get(ix).name());
-                  parents[ix] = -1;
+            for (int i = 0; i < count; i++) {
+               if (!placed[i]) {
+                  BedrockNative.LOGGER.debug("Bone parent cycle broken at {}", bones.get(i).name());
+                  parents[i] = -1;
                   break;
                }
             }
@@ -235,7 +234,7 @@ public final class GeometryMesher {
       };
    }
 
-   static float[] boxUv(Face face, @Nullable float[] uv, float[] size, boolean mirror) {
+   static float[] boxUv(Face face, float @Nullable [] uv, float[] size, boolean mirror) {
       float u = uv != null ? uv[0] : 0.0F;
       float v = uv != null ? uv[1] : 0.0F;
       float w = (float)Math.floor(size[0]);
@@ -256,42 +255,41 @@ public final class GeometryMesher {
       return new float[]{left, rect[1], right, rect[1], right, rect[3], left, rect[3]};
    }
 
-   @Nullable
-   static float[] perFaceUv(Face face, @Nullable FaceUv faceUv, float[] size) {
+   static float @Nullable [] perFaceUv(Face face, @Nullable FaceUv faceUv, float[] size) {
       if (faceUv == null) {
          return null;
-      } else {
-         float defaultU = switch (face) {
-            case EAST, WEST -> size[2];
-            default -> size[0];
-         };
-
-         float defaultV = switch (face) {
-            case UP, DOWN -> size[2];
-            default -> size[1];
-         };
-         float u = faceUv.u();
-         float v = faceUv.v();
-         float su = Float.isNaN(faceUv.uSize()) ? defaultU : faceUv.uSize();
-         float sv = Float.isNaN(faceUv.vSize()) ? defaultV : faceUv.vSize();
-         float[] corners = face != Face.UP && face != Face.DOWN
-            ? new float[]{u, v, u + su, v, u + su, v + sv, u, v + sv}
-            : new float[]{u + su, v + sv, u, v + sv, u, v, u + su, v};
-         int turns = Math.floorMod(Math.round(faceUv.rotation() / 90.0F), 4);
-         if (turns == 0) {
-            return corners;
-         } else {
-            float[] rotated = new float[8];
-
-            for (int corner = 0; corner < 4; corner++) {
-               int from = Math.floorMod(corner - turns, 4);
-               rotated[corner * 2] = corners[from * 2];
-               rotated[corner * 2 + 1] = corners[from * 2 + 1];
-            }
-
-            return rotated;
-         }
       }
+
+      float defaultU = switch (face) {
+         case EAST, WEST -> size[2];
+         default -> size[0];
+      };
+
+      float defaultV = switch (face) {
+         case UP, DOWN -> size[2];
+         default -> size[1];
+      };
+      float u = faceUv.u();
+      float v = faceUv.v();
+      float su = Float.isNaN(faceUv.uSize()) ? defaultU : faceUv.uSize();
+      float sv = Float.isNaN(faceUv.vSize()) ? defaultV : faceUv.vSize();
+      float[] corners = face != Face.UP && face != Face.DOWN
+         ? new float[]{u, v, u + su, v, u + su, v + sv, u, v + sv}
+         : new float[]{u + su, v + sv, u, v + sv, u, v, u + su, v};
+      int turns = Math.floorMod(Math.round(faceUv.rotation() / 90.0F), 4);
+      if (turns == 0) {
+         return corners;
+      }
+
+      float[] rotated = new float[8];
+
+      for (int corner = 0; corner < 4; corner++) {
+         int from = Math.floorMod(corner - turns, 4);
+         rotated[corner * 2] = corners[from * 2];
+         rotated[corner * 2 + 1] = corners[from * 2 + 1];
+      }
+
+      return rotated;
    }
 
    private static void polyMesh(GeometryMesher.QuadBuilder quads, PolyMeshDef mesh, float textureWidth, float textureHeight, float[] bounds) {
@@ -452,8 +450,7 @@ public final class GeometryMesher {
          return Arrays.copyOf(this.quads, this.size);
       }
 
-      @Nullable
-      int[] materials() {
+      int @Nullable [] materials() {
          return this.anyMaterial ? this.materials.stream().mapToInt(Integer::intValue).toArray() : null;
       }
 

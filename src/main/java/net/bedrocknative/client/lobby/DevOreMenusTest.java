@@ -45,9 +45,9 @@ public final class DevOreMenusTest {
       while ((instance = Minecraft.getInstance()) == null || instance.getWindow() == null) {
          try {
             Thread.sleep(200L);
-         } catch (InterruptedException var2) {
+         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new IllegalStateException(var2);
+            throw new IllegalStateException(e);
          }
       }
 
@@ -71,12 +71,12 @@ public final class DevOreMenusTest {
                      ),
                      180000L
                   );
-                  restore[0] = test.<Integer>onClient(window::getScreenWidth);
+                  restore[0] = test.onClient(window::getScreenWidth);
                   restore[1] = test.onClient(() -> window.getScreenHeight());
-                  restore[2] = test.onClient(() -> (Integer)test.minecraft.options.guiScale().get());
+                  restore[2] = test.onClient(() -> test.minecraft.options.guiScale().get());
                   test.run(window);
-               } catch (Throwable var7) {
-                  BedrockNative.LOGGER.error("Dev oremenus test: FAIL crashed", var7);
+               } catch (Throwable e) {
+                  BedrockNative.LOGGER.error("Dev oremenus test: FAIL crashed", e);
                   test.failed++;
                } finally {
                   test.restore(window, restore);
@@ -91,12 +91,12 @@ public final class DevOreMenusTest {
 
    private void run(Window window) {
       boolean sized = this.size(window);
-      this.run((Runnable)(() -> this.minecraft.options.guiScale().set(2)));
+      this.run(() -> this.minecraft.options.guiScale().set(2));
       this.sleep(1000L);
       int scale = this.onClient(JsonUi::uiScale);
       this.check("JSON UI scale " + scale + " (the references' 2)", scale == 2);
       JsonUiStartScreen.pinSplash("Enter the Render Dragon!");
-      this.run((Runnable)(() -> this.minecraft.gui.setScreen(new TitleScreen())));
+      this.run(() -> this.minecraft.gui.setScreen(new TitleScreen()));
       this.waitFor("Bedrock's start screen", () -> this.onClient(() -> this.minecraft.gui.screen() instanceof JsonUiStartScreen), 30000L);
       this.sleep(2500L);
       JsonUiStartScreen start = this.onClient(() -> this.minecraft.gui.screen() instanceof JsonUiStartScreen screen ? screen : null);
@@ -125,7 +125,7 @@ public final class DevOreMenusTest {
          this.check("joined 127.0.0.1 (" + name(this.screen()) + ")", joined);
          if (joined) {
             this.sleep(8000L);
-            this.run((Runnable)(() -> this.minecraft.pauseGame(false)));
+            this.run(() -> this.minecraft.pauseGame(false));
             this.waitFor("Bedrock's pause menu", () -> this.screen() instanceof JsonUiPauseScreen, 5000L);
             this.sleep(1500L);
             JsonUiPauseScreen pause = this.onClient(() -> this.minecraft.gui.screen() instanceof JsonUiPauseScreen screen ? screen : null);
@@ -152,7 +152,7 @@ public final class DevOreMenusTest {
                   "the camera closes the menu and saves a screenshot (" + count(folder) + " files, " + before + " before)",
                   this.onClient(() -> this.minecraft.gui.screen() == null) && count(folder) > before
                );
-               this.run((Runnable)(() -> this.minecraft.pauseGame(false)));
+               this.run(() -> this.minecraft.pauseGame(false));
                this.sleep(1000L);
                this.check("Esc opens it again", this.screen() instanceof JsonUiPauseScreen);
             }
@@ -161,17 +161,17 @@ public final class DevOreMenusTest {
    }
 
    private boolean size(Window window) {
-      this.run((Runnable)(() -> window.setWindowed(1920, 1080)));
+      this.run(() -> window.setWindowed(1920, 1080));
       this.sleep(2000L);
       this.waitFor("a 1920x1080 window", () -> this.onClient(() -> window.getWidth() == 1920 && window.getHeight() == 1080), 5000L);
       log("the framed window is {}x{}; trying it borderless at 0,0", this.onClient(window::getWidth), this.onClient(window::getHeight));
-      this.run((Runnable)(() -> {
+      this.run(() -> {
          this.borderless = true;
          SDLVideo.SDL_SetWindowBordered(window.handle(), false);
          SDLVideo.SDL_SetWindowPosition(window.handle(), 0, 0);
          SDLVideo.SDL_SetWindowSize(window.handle(), 1920, 1080);
          SDLVideo.SDL_SyncWindow(window.handle());
-      }));
+      });
       this.waitFor("a 1920x1080 borderless window", () -> this.onClient(() -> window.getWidth() == 1920 && window.getHeight() == 1080), 5000L);
       this.sleep(1000L);
       log(
@@ -183,8 +183,8 @@ public final class DevOreMenusTest {
          this.onClient(window::getGuiScaledWidth),
          this.onClient(window::getGuiScaledHeight)
       );
-      int width = this.<Integer>onClient(window::getWidth);
-      int height = this.<Integer>onClient(window::getHeight);
+      int width = this.onClient(window::getWidth);
+      int height = this.onClient(window::getHeight);
       boolean ok = width == 1920 && height == 1080;
       this.check("the window is 1920x1080 (" + width + "x" + height + (this.borderless ? ", borderless" : "") + ")", ok);
       return ok;
@@ -192,14 +192,14 @@ public final class DevOreMenusTest {
 
    private void restore(Window window, int[] restore) {
       if (restore[0] > 0) {
-         this.run((Runnable)(() -> {
+         this.run(() -> {
             this.minecraft.options.guiScale().set(restore[2]);
             if (this.borderless) {
                SDLVideo.SDL_SetWindowBordered(window.handle(), true);
             }
 
             window.setWindowed(restore[0], restore[1]);
-         }));
+         });
          this.sleep(500L);
       }
    }
@@ -217,12 +217,12 @@ public final class DevOreMenusTest {
    }
 
    private void join() {
-      this.run((Runnable)(() -> {
+      this.run(() -> {
          ServerData server = new ServerData("BDS", "127.0.0.1", Type.OTHER);
          server.setResourcePackStatus(ServerPackStatus.ENABLED);
-         Screen parent = (Screen)(this.minecraft.gui.screen() != null ? this.minecraft.gui.screen() : new TitleScreen());
+         Screen parent = this.minecraft.gui.screen() != null ? this.minecraft.gui.screen() : new TitleScreen();
          ConnectScreen.startConnecting(parent, this.minecraft, ServerAddress.parseString("127.0.0.1"), server, false, null);
-      }));
+      });
       this.waitFor(
          "the world after joining 127.0.0.1",
          () -> this.onClient(() -> this.minecraft.level != null && this.minecraft.player != null && this.minecraft.gui.screen() == null),
@@ -244,7 +244,7 @@ public final class DevOreMenusTest {
       if (control == null) {
          this.check("a control fires " + id, false);
       } else {
-         this.run((Runnable)(() -> {
+         this.run(() -> {
             float x = JsonUi.toGui(control.x() + control.width() / 2.0F);
             float y = JsonUi.toGui(control.y() + control.height() / 2.0F);
             Screen screen = (Screen)host;
@@ -252,7 +252,7 @@ public final class DevOreMenusTest {
             screen.mouseMoved(x, y);
             screen.mouseClicked(event, false);
             screen.mouseReleased(event);
-         }));
+         });
       }
    }
 
@@ -260,8 +260,7 @@ public final class DevOreMenusTest {
       return screen == null ? "nothing" : screen.getClass().getSimpleName();
    }
 
-   @Nullable
-   private Screen screen() {
+   private @Nullable Screen screen() {
       return this.onClient(() -> this.minecraft.gui.screen());
    }
 
@@ -276,7 +275,7 @@ public final class DevOreMenusTest {
    }
 
    private void screenshot(String name) {
-      this.run((Runnable)(() -> Screenshot.grab(this.minecraft.gameDirectory, name + ".png", this.minecraft.gameRenderer.mainRenderTarget(), 1, message -> {})));
+      this.run(() -> Screenshot.grab(this.minecraft.gameDirectory, name + ".png", this.minecraft.gameRenderer.mainRenderTarget(), 1, message -> {}));
       this.sleep(800L);
    }
 
@@ -307,7 +306,7 @@ public final class DevOreMenusTest {
    private void sleep(long millis) {
       try {
          Thread.sleep(millis);
-      } catch (InterruptedException var4) {
+      } catch (InterruptedException e) {
          Thread.currentThread().interrupt();
       }
    }

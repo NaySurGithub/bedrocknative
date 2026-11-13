@@ -46,50 +46,50 @@ public final class JsonUiActors {
       String kind = renderer.renderer();
       if (UiActorRenderers.drawsActor(kind) && !(renderer.w() <= 0.0F) && !(renderer.h() <= 0.0F)) {
          UiControl control = renderer.control();
-         Entity entity = (Entity)("live_horse_renderer".equals(kind) ? actor(control, renderer) : minecraft.player);
+         Entity entity = "live_horse_renderer".equals(kind) ? actor(control, renderer) : minecraft.player;
          if (entity == null) {
             return false;
-         } else {
-            JsonUiActors.Picture picture = switch (kind) {
-               case "live_horse_renderer" -> standing(entity, UiActorRenderers.stand(renderer.x(), renderer.y(), renderer.w(), renderer.h()));
-               case "paper_doll_renderer" -> pauseDoll(PaperDoll.stand(renderer.x(), renderer.y(), renderer.w(), renderer.h()));
-               default -> inventoryDoll(PaperDoll.of(renderer.x(), renderer.y(), renderer.w(), renderer.h()));
-            };
-            if (picture.scale() >= 1 && picture.x1() > picture.x0() && picture.y1() > picture.y0()) {
-               UiValue scissor = control.prop("enable_scissor_test");
-               boolean clip = scissor != null && scissor.truthy();
-               if (clip) {
-                  graphics.enableScissor(
-                     Math.round(renderer.x()), Math.round(renderer.y()), Math.round(renderer.x() + renderer.w()), Math.round(renderer.y() + renderer.h())
-                  );
-               }
+         }
 
-               try {
-                  if (entity instanceof LivingEntity living) {
-                     float gazeX = (picture.x0() + picture.x1()) / 2.0F;
-                     float gazeY = (picture.y0() + picture.y1()) / 2.0F;
-                     UiValue look = control.bag("#look_at_cursor");
-                     if (look != null && look.truthy()) {
-                        gazeX = (float)minecraft.mouseHandler.getScaledXPos(minecraft.getWindow());
-                        gazeY = (float)minecraft.mouseHandler.getScaledYPos(minecraft.getWindow());
-                     }
-
-                     InventoryScreen.extractEntityInInventoryFollowsMouse(
-                        graphics, picture.x0(), picture.y0(), picture.x1(), picture.y1(), picture.scale(), picture.yOffset(), gazeX, gazeY, living
-                     );
-                  } else {
-                     still(minecraft, graphics, entity, picture);
-                  }
-               } finally {
-                  if (clip) {
-                     graphics.disableScissor();
-                  }
-               }
-
-               return true;
-            } else {
-               return true;
+         JsonUiActors.Picture picture = switch (kind) {
+            case "live_horse_renderer" -> standing(entity, UiActorRenderers.stand(renderer.x(), renderer.y(), renderer.w(), renderer.h()));
+            case "paper_doll_renderer" -> pauseDoll(PaperDoll.stand(renderer.x(), renderer.y(), renderer.w(), renderer.h()));
+            default -> inventoryDoll(PaperDoll.of(renderer.x(), renderer.y(), renderer.w(), renderer.h()));
+         };
+         if (picture.scale() >= 1 && picture.x1() > picture.x0() && picture.y1() > picture.y0()) {
+            UiValue scissor = control.prop("enable_scissor_test");
+            boolean clip = scissor != null && scissor.truthy();
+            if (clip) {
+               graphics.enableScissor(
+                  Math.round(renderer.x()), Math.round(renderer.y()), Math.round(renderer.x() + renderer.w()), Math.round(renderer.y() + renderer.h())
+               );
             }
+
+            try {
+               if (entity instanceof LivingEntity living) {
+                  float gazeX = (picture.x0() + picture.x1()) / 2.0F;
+                  float gazeY = (picture.y0() + picture.y1()) / 2.0F;
+                  UiValue look = control.bag("#look_at_cursor");
+                  if (look != null && look.truthy()) {
+                     gazeX = (float)minecraft.mouseHandler.getScaledXPos(minecraft.getWindow());
+                     gazeY = (float)minecraft.mouseHandler.getScaledYPos(minecraft.getWindow());
+                  }
+
+                  InventoryScreen.extractEntityInInventoryFollowsMouse(
+                     graphics, picture.x0(), picture.y0(), picture.x1(), picture.y1(), picture.scale(), picture.yOffset(), gazeX, gazeY, living
+                  );
+               } else {
+                  still(minecraft, graphics, entity, picture);
+               }
+            } finally {
+               if (clip) {
+                  graphics.disableScissor();
+               }
+            }
+
+            return true;
+         } else {
+            return true;
          }
       } else {
          return false;
@@ -131,7 +131,7 @@ public final class JsonUiActors {
    }
 
    private static void still(Minecraft minecraft, GuiGraphicsExtractor graphics, Entity entity, JsonUiActors.Picture picture) {
-      EntityRenderer<Entity, ?> renderer = minecraft.getEntityRenderDispatcher().getRenderer(entity);
+      EntityRenderer<Entity, ?> renderer = (EntityRenderer<Entity, ?>) (EntityRenderer<?, ?>) minecraft.getEntityRenderDispatcher().getRenderer(entity);
       EntityRenderState state = renderer.createRenderState(entity, 1.0F);
       state.shadowPieces.clear();
       state.outlineColor = 0;
@@ -149,8 +149,7 @@ public final class JsonUiActors {
       );
    }
 
-   @Nullable
-   private static Entity actor(UiControl control, UiDrawCommand.Custom renderer) {
+   private static @Nullable Entity actor(UiControl control, UiDrawCommand.Custom renderer) {
       UiValue named = control.bag("#entity_id");
       Long id = UiActorRenderers.entityId(named);
       if (id == null) {

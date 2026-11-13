@@ -11,18 +11,15 @@ public enum SignalingScheme {
       return this.name().toLowerCase(Locale.ROOT);
    }
 
-   @Nullable
-   public static SignalingScheme byId(@Nullable String id) {
+   public static @Nullable SignalingScheme byId(@Nullable String id) {
       if (id == null) {
          return null;
-      } else {
-         String var1 = id.trim().toLowerCase(Locale.ROOT);
-
-         return switch (var1) {
-            case "https" -> HTTPS;
-            case "http" -> HTTP;
-            default -> null;
-         };
       }
+
+      return switch (id.trim().toLowerCase(Locale.ROOT)) {
+         case "https" -> HTTPS;
+         case "http" -> HTTP;
+         default -> null;
+      };
    }
 }

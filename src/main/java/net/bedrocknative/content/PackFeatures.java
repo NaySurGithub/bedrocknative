@@ -23,7 +23,7 @@ public final class PackFeatures {
       List<String> paths;
       try {
          paths = pack.list("");
-      } catch (RuntimeException var14) {
+      } catch (RuntimeException e) {
          return List.of();
       }
 
@@ -79,7 +79,7 @@ public final class PackFeatures {
       try {
          Optional<byte[]> data = pack.read(path);
          return !data.isEmpty() && ((byte[])data.get()).length <= 262144 ? new String(data.get(), StandardCharsets.UTF_8) : "";
-      } catch (RuntimeException | IOException var3) {
+      } catch (IOException | RuntimeException e) {
          return "";
       }
    }

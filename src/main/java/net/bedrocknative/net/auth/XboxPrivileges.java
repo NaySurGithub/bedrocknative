@@ -78,41 +78,41 @@ public final class XboxPrivileges {
       return this.start(accountId, null, source).await();
    }
 
-   public PrivilegeCheck start(String accountId, @Nullable XboxAccountStore.Entry account, XboxPrivileges.TokenSource source) {
+   public PrivilegeCheck start(String accountId, XboxAccountStore.@Nullable Entry account, XboxPrivileges.TokenSource source) {
       long now = this.clock.getAsLong();
       XboxPrivileges.Kept kept = this.allowed.get(accountId);
       boolean knownAllowed = kept != null && now < kept.result().validUntilMs();
       if (knownAllowed && now - kept.at() < 300000L) {
          return new PrivilegeCheck(CompletableFuture.completedFuture(kept.result()), now, false, this.clock, account);
-      } else {
-         Long silent = this.unanswered.get(accountId);
-         boolean waited = !knownAllowed && (silent == null || now - silent >= 300000L);
-         CompletableFuture<XboxPrivileges.Result> answer = new CompletableFuture<>();
-         Thread.ofVirtual().name("Xbox multiplayer check").start(() -> {
-            try {
-               if (DEV_DELAY_MS > 0L) {
-                  Thread.sleep(DEV_DELAY_MS);
-               }
-
-               answer.complete(this.record(accountId, this.ask(source)));
-            } catch (Throwable var5) {
-               answer.complete(XboxPrivileges.Result.unknown("unexpected " + var5.getClass().getSimpleName()));
-            }
-         });
-         return new PrivilegeCheck(answer, now, waited, this.clock, account);
       }
+
+      Long silent = this.unanswered.get(accountId);
+      boolean waited = !knownAllowed && (silent == null || now - silent >= 300000L);
+      CompletableFuture<XboxPrivileges.Result> answer = new CompletableFuture<>();
+      Thread.ofVirtual().name("Xbox multiplayer check").start(() -> {
+         try {
+            if (DEV_DELAY_MS > 0L) {
+               Thread.sleep(DEV_DELAY_MS);
+            }
+
+            answer.complete(this.record(accountId, this.ask(source)));
+         } catch (Throwable e) {
+            answer.complete(XboxPrivileges.Result.unknown("unexpected " + e.getClass().getSimpleName()));
+         }
+      });
+      return new PrivilegeCheck(answer, now, waited, this.clock, account);
    }
 
    private XboxPrivileges.Result ask(XboxPrivileges.TokenSource source) {
       try {
          return this.request(source.tokens(), this.clock.getAsLong());
-      } catch (IOException var3) {
-         return XboxPrivileges.Result.unknown("no tokens or no answer: " + var3.getClass().getSimpleName());
-      } catch (InterruptedException var4) {
+      } catch (IOException e) {
+         return XboxPrivileges.Result.unknown("no tokens or no answer: " + e.getClass().getSimpleName());
+      } catch (InterruptedException e) {
          Thread.currentThread().interrupt();
          return XboxPrivileges.Result.unknown("interrupted");
-      } catch (RuntimeException var5) {
-         return XboxPrivileges.Result.unknown("unexpected " + var5.getClass().getSimpleName());
+      } catch (RuntimeException e) {
+         return XboxPrivileges.Result.unknown("unexpected " + e.getClass().getSimpleName());
       }
    }
 
@@ -168,11 +168,8 @@ public final class XboxPrivileges {
       JsonObject json = object(body);
       if (status != 200) {
          Long code = XboxProblem.parseCode(xErrHeader);
-         if (code == null && json != null) {
-            JsonElement var18 = json.get("XErr");
-            if (var18 instanceof JsonElement && var18.isJsonPrimitive()) {
-               code = XboxProblem.parseCode(var18.getAsString());
-            }
+         if (code == null && json != null && json.get("XErr") instanceof JsonElement xErr && xErr.isJsonPrimitive()) {
+            code = XboxProblem.parseCode(xErr.getAsString());
          }
 
          if (code == null) {
@@ -187,53 +184,50 @@ public final class XboxPrivileges {
                   : new XboxPrivileges.Result(XboxPrivileges.Outcome.UNKNOWN, null, Set.of(), code, 0L, "refused");
             }
          }
-      } else if (json == null) {
-         return XboxPrivileges.Result.unknown("answer without JSON");
       } else {
-         JsonObject claims = firstUser(json);
-         if (claims != null) {
-            JsonElement privileges = claims.get("prv");
-            if (privileges instanceof JsonElement && privileges.isJsonPrimitive()) {
-               Set<Integer> privilegesx = new TreeSet<>();
-
-               for (String id : privileges.getAsString().trim().split("\\s+")) {
-                  if (!id.isEmpty()) {
-                     try {
-                        privilegesx.add(Integer.parseInt(id));
-                     } catch (NumberFormatException var14) {
-                        return XboxPrivileges.Result.unknown("unreadable privilege claims");
-                     }
-                  }
-               }
-
-               JsonElement var21 = claims.get("agg");
-               String ageGroup = var21 instanceof JsonElement && var21.isJsonPrimitive() ? var21.getAsString() : null;
-               long validUntil = notAfter(json, now);
-               Set<Integer> kept = Collections.unmodifiableSet(privilegesx);
-               return privilegesx.contains(254)
-                  ? new XboxPrivileges.Result(
-                     XboxPrivileges.Outcome.ALLOWED,
-                     ageGroup,
-                     kept,
-                     0L,
-                     validUntil,
-                     privilegesx.contains(247) ? "multiplayer allowed" : "multiplayer allowed, no user-created content"
-                  )
-                  : new XboxPrivileges.Result(XboxPrivileges.Outcome.BLOCKED, ageGroup, kept, 0L, validUntil, "no multiplayer privilege");
-            }
+         if (json == null) {
+            return XboxPrivileges.Result.unknown("answer without JSON");
          }
 
-         return XboxPrivileges.Result.unknown("no privilege claims");
+         JsonObject claims = firstUser(json);
+         if (claims != null && claims.get("prv") instanceof JsonElement prv && prv.isJsonPrimitive()) {
+            Set<Integer> privileges = new TreeSet<>();
+
+            for (String id : prv.getAsString().trim().split("\\s+")) {
+               if (!id.isEmpty()) {
+                  try {
+                     privileges.add(Integer.parseInt(id));
+                  } catch (NumberFormatException e) {
+                     return XboxPrivileges.Result.unknown("unreadable privilege claims");
+                  }
+               }
+            }
+
+            String ageGroup = claims.get("agg") instanceof JsonElement agg && agg.isJsonPrimitive() ? agg.getAsString() : null;
+            long validUntil = notAfter(json, now);
+            Set<Integer> kept = Collections.unmodifiableSet(privileges);
+            return privileges.contains(254)
+               ? new XboxPrivileges.Result(
+                  XboxPrivileges.Outcome.ALLOWED,
+                  ageGroup,
+                  kept,
+                  0L,
+                  validUntil,
+                  privileges.contains(247) ? "multiplayer allowed" : "multiplayer allowed, no user-created content"
+               )
+               : new XboxPrivileges.Result(XboxPrivileges.Outcome.BLOCKED, ageGroup, kept, 0L, validUntil, "no multiplayer privilege");
+         } else {
+            return XboxPrivileges.Result.unknown("no privilege claims");
+         }
       }
    }
 
-   @Nullable
-   private static JsonObject object(@Nullable String body) {
+   private static @Nullable JsonObject object(@Nullable String body) {
       if (body != null && !body.isBlank()) {
          try {
             JsonElement parsed = JsonParser.parseString(body);
             return parsed.isJsonObject() ? parsed.getAsJsonObject() : null;
-         } catch (RuntimeException var2) {
+         } catch (RuntimeException e) {
             return null;
          }
       } else {
@@ -241,8 +235,7 @@ public final class XboxPrivileges {
       }
    }
 
-   @Nullable
-   private static JsonObject firstUser(JsonObject json) {
+   private static @Nullable JsonObject firstUser(JsonObject json) {
       return json.get("DisplayClaims") instanceof JsonObject display
             && display.get("xui") instanceof JsonArray xui
             && !xui.isEmpty()
@@ -252,17 +245,13 @@ public final class XboxPrivileges {
    }
 
    private static long notAfter(JsonObject json, long now) {
-      JsonElement until = json.get("NotAfter");
-      if (until instanceof JsonElement) {
-         JsonElement value = until;
-         if (until.isJsonPrimitive()) {
-            try {
-               long untilx = Instant.parse(value.getAsString()).toEpochMilli() - 60000L;
-               if (untilx > now) {
-                  return untilx;
-               }
-            } catch (DateTimeParseException var6) {
+      if (json.get("NotAfter") instanceof JsonElement value && value.isJsonPrimitive()) {
+         try {
+            long until = Instant.parse(value.getAsString()).toEpochMilli() - 60000L;
+            if (until > now) {
+               return until;
             }
+         } catch (DateTimeParseException var6) {
          }
       }
 
@@ -272,7 +261,7 @@ public final class XboxPrivileges {
    private record Kept(XboxPrivileges.Result result, long at) {
    }
 
-   public static enum Outcome {
+   public enum Outcome {
       ALLOWED,
       BLOCKED,
       BANNED,
@@ -284,8 +273,7 @@ public final class XboxPrivileges {
          return this.outcome == XboxPrivileges.Outcome.BLOCKED || this.outcome == XboxPrivileges.Outcome.BANNED;
       }
 
-      @Nullable
-      public XboxProblem.Diagnosis diagnosis() {
+      public XboxProblem.@Nullable Diagnosis diagnosis() {
          return switch (this.outcome) {
             case BLOCKED -> new XboxProblem.Diagnosis(XboxProblem.MULTIPLAYER_BLOCKED, this.code);
             case BANNED -> new XboxProblem.Diagnosis(XboxProblem.MULTIPLAYER_BANNED, this.code);

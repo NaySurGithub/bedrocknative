@@ -105,37 +105,37 @@ public final class BlockStateUpgrader {
       Map<String, List<BlockStateUpgrader.ValueRemap>> remappedValues = schema.remappedValues().get(name);
       if (added == null && removed == null && renamedProperties == null && remappedValues == null) {
          return new BlockStateUpgrader.State(newName, result);
-      } else {
-         TreeMap<String, Object> changed = new TreeMap<>(result);
-         if (added != null) {
-            added.forEach(changed::putIfAbsent);
-         }
-
-         if (removed != null) {
-            removed.forEach(changed::remove);
-         }
-
-         if (renamedProperties != null) {
-            renamedProperties.forEach((oldProperty, newProperty) -> {
-               Object value = changed.remove(oldProperty);
-               if (value != null) {
-                  changed.put(newProperty, remapValue(remappedValues, oldProperty, value));
-               }
-            });
-         }
-
-         if (remappedValues != null) {
-            remappedValues.forEach((property, pairs) -> {
-               boolean renamedAway = renamedProperties != null && renamedProperties.containsKey(property);
-               Object value = changed.get(property);
-               if (value != null && !renamedAway) {
-                  changed.put(property, remapValue(remappedValues, property, value));
-               }
-            });
-         }
-
-         return new BlockStateUpgrader.State(newName, changed);
       }
+
+      TreeMap<String, Object> changed = new TreeMap<>(result);
+      if (added != null) {
+         added.forEach(changed::putIfAbsent);
+      }
+
+      if (removed != null) {
+         removed.forEach(changed::remove);
+      }
+
+      if (renamedProperties != null) {
+         renamedProperties.forEach((oldProperty, newProperty) -> {
+            Object value = changed.remove(oldProperty);
+            if (value != null) {
+               changed.put(newProperty, remapValue(remappedValues, oldProperty, value));
+            }
+         });
+      }
+
+      if (remappedValues != null) {
+         remappedValues.forEach((property, pairs) -> {
+            boolean renamedAway = renamedProperties != null && renamedProperties.containsKey(property);
+            Object value = changed.get(property);
+            if (value != null && !renamedAway) {
+               changed.put(property, remapValue(remappedValues, property, value));
+            }
+         });
+      }
+
+      return new BlockStateUpgrader.State(newName, changed);
    }
 
    private static Object remapValue(@Nullable Map<String, List<BlockStateUpgrader.ValueRemap>> remappedValues, String property, Object value) {
@@ -153,21 +153,20 @@ public final class BlockStateUpgrader {
 
    private static BlockStateUpgrader.State flatten(BlockStateUpgrader.Flatten flatten, String name, SortedMap<String, Object> states) {
       Object value = states.get(flatten.property());
-      String embedded = flatten.type();
 
-      boolean typed = switch (embedded) {
+      boolean typed = switch (flatten.type()) {
          case "byte" -> value instanceof Byte;
          case "int" -> value instanceof Integer;
          default -> value instanceof String;
       };
       if (!typed) {
          return new BlockStateUpgrader.State(name, states);
-      } else {
-         embedded = String.valueOf(value);
-         TreeMap<String, Object> rest = new TreeMap<>(states);
-         rest.remove(flatten.property());
-         return new BlockStateUpgrader.State(flatten.prefix() + flatten.valueRemaps().getOrDefault(embedded, embedded) + flatten.suffix(), rest);
       }
+
+      String embedded = String.valueOf(value);
+      TreeMap<String, Object> rest = new TreeMap<>(states);
+      rest.remove(flatten.property());
+      return new BlockStateUpgrader.State(flatten.prefix() + flatten.valueRemaps().getOrDefault(embedded, embedded) + flatten.suffix(), rest);
    }
 
    private static boolean matches(Map<String, Object> filter, SortedMap<String, Object> states) {
@@ -237,9 +236,9 @@ public final class BlockStateUpgrader {
             List<BlockStateUpgrader.ValueRemap> pairs = index.get(((JsonElement)entry.getValue()).getAsString());
             if (pairs == null) {
                throw new IllegalArgumentException("Schema " + json.get("id") + ": no value remap " + entry.getValue());
-            } else {
-               byProperty.put((String)entry.getKey(), pairs);
             }
+
+            byProperty.put((String)entry.getKey(), pairs);
          });
          remappedValues.put((String)block.getKey(), byProperty);
       });
@@ -341,7 +340,7 @@ public final class BlockStateUpgrader {
    private record Remap(
       Map<String, Object> filter,
       @Nullable String newName,
-      @Nullable BlockStateUpgrader.Flatten newFlattenedName,
+      BlockStateUpgrader.@Nullable Flatten newFlattenedName,
       Map<String, Object> newState,
       List<String> copied
    ) {

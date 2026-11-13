@@ -45,11 +45,11 @@ public final class BlockProblems {
       Map<BlockProblems.Reason, Integer> counts = this.counts();
       if (counts.isEmpty()) {
          return "none";
-      } else {
-         List<String> parts = new ArrayList<>();
-         counts.forEach((reason, count) -> parts.add(reason.label() + ": " + count + (count == 1 ? " block" : " blocks")));
-         return "{" + String.join(", ", parts) + "}";
       }
+
+      List<String> parts = new ArrayList<>();
+      counts.forEach((reason, count) -> parts.add(reason.label() + ": " + count + (count == 1 ? " block" : " blocks")));
+      return "{" + String.join(", ", parts) + "}";
    }
 
    public void log(Set<String> logged, Consumer<String> out) {
@@ -89,7 +89,7 @@ public final class BlockProblems {
       }
    }
 
-   public static enum Reason {
+   public enum Reason {
       GEOMETRY_MISSING("geometry not in any pack"),
       NO_TEXTURE_NAMED("no texture named"),
       TEXTURE_KEY_MISSING("missing texture key"),
@@ -103,7 +103,7 @@ public final class BlockProblems {
 
       private final String label;
 
-      private Reason(String label) {
+      Reason(String label) {
          this.label = label;
       }
 

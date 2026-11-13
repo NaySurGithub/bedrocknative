@@ -29,10 +29,8 @@ final class BedrockArgument implements ArgumentType<String> {
    private static final List<String> COMPARE_OPERATORS = List.of("<", "<=", "=", ">", ">=");
    private final BedrockArgument.Kind kind;
    private final String typeName;
-   @Nullable
-   private final CommandEnumData enumData;
-   @Nullable
-   private final String postfix;
+   private final @Nullable CommandEnumData enumData;
+   private final @Nullable String postfix;
    private final CommandValues values;
 
    BedrockArgument(BedrockArgument.Kind kind, String typeName, @Nullable CommandEnumData enumData, @Nullable String postfix, CommandValues values) {
@@ -221,7 +219,7 @@ final class BedrockArgument implements ArgumentType<String> {
          case WILDCARD_TARGET:
             Selectors.suggest(
                builder,
-               (Collection<String>)(context.getSource() instanceof SharedSuggestionProvider source ? source.getOnlinePlayerNames() : List.of()),
+               context.getSource() instanceof SharedSuggestionProvider source ? source.getOnlinePlayerNames() : List.of(),
                this.kind == BedrockArgument.Kind.WILDCARD_TARGET,
                this.values
             );
@@ -248,7 +246,7 @@ final class BedrockArgument implements ArgumentType<String> {
             break;
          case ENUM:
          case SOFT_ENUM:
-            suggestValues(builder, (Collection<String>)(this.enumData == null ? List.of() : this.values.values(this.enumData)));
+            suggestValues(builder, this.enumData == null ? List.of() : this.values.values(this.enumData));
       }
 
       return builder.buildFuture();
@@ -283,7 +281,7 @@ final class BedrockArgument implements ArgumentType<String> {
       return List.of();
    }
 
-   static enum Kind {
+   enum Kind {
       INT,
       FLOAT,
       VALUE,

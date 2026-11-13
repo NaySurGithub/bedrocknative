@@ -17,8 +17,7 @@ public final class LauncherDetection {
    public static LauncherDetection.Result detect(UnaryOperator<String> properties, Predicate<String> modLoaded, Predicate<String> classPresent) {
       String forced = properties.apply("bedrocknative.lunarCompat");
       if (forced != null) {
-         String var4 = forced.trim().toLowerCase(Locale.ROOT);
-         switch (var4) {
+         switch (forced.trim().toLowerCase(Locale.ROOT)) {
             case "on":
             case "true":
             case "yes":

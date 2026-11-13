@@ -36,7 +36,7 @@ public record BlockMaterial(
       );
    }
 
-   public static enum RenderMethod {
+   public enum RenderMethod {
       OPAQUE(false, false, false),
       DOUBLE_SIDED(false, false, true),
       ALPHA_TEST(true, false, true),
@@ -47,7 +47,7 @@ public record BlockMaterial(
       private final boolean translucent;
       private final boolean twoSided;
 
-      private RenderMethod(boolean cutout, boolean translucent, boolean twoSided) {
+      RenderMethod(boolean cutout, boolean translucent, boolean twoSided) {
          this.cutout = cutout;
          this.translucent = translucent;
          this.twoSided = twoSided;
@@ -74,8 +74,7 @@ public record BlockMaterial(
          return method != null ? method : OPAQUE;
       }
 
-      @Nullable
-      static BlockMaterial.RenderMethod lookup(String name) {
+      static BlockMaterial.@Nullable RenderMethod lookup(String name) {
          String lower = name.trim().toLowerCase(Locale.ROOT);
          String base = lower.endsWith("_to_opaque") ? lower.substring(0, lower.length() - "_to_opaque".length()) : lower;
 
@@ -90,7 +89,7 @@ public record BlockMaterial(
       }
    }
 
-   public static enum TintMethod {
+   public enum TintMethod {
       NONE,
       GRASS,
       DEFAULT_FOLIAGE,
@@ -106,7 +105,7 @@ public record BlockMaterial(
       static BlockMaterial.TintMethod parse(String name) {
          try {
             return valueOf(name.toUpperCase(Locale.ROOT));
-         } catch (IllegalArgumentException var2) {
+         } catch (IllegalArgumentException e) {
             return NONE;
          }
       }

@@ -24,7 +24,6 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.core.Holder;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ServerboundContainerButtonClickPacket;
 import net.minecraft.network.protocol.game.ServerboundContainerClickPacket;
@@ -32,7 +31,6 @@ import net.minecraft.network.protocol.game.ServerboundPlaceRecipePacket;
 import net.minecraft.network.protocol.game.ServerboundRenameItemPacket;
 import net.minecraft.network.protocol.game.ServerboundSelectTradePacket;
 import net.minecraft.network.protocol.game.ServerboundSetBeaconPacket;
-import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.BeaconMenu;
 import net.minecraft.world.inventory.ContainerInput;
@@ -260,13 +258,11 @@ public final class StackRequests {
    public boolean onJavaPacket(Packet<?> packet) {
       LocalPlayer player = this.minecraft.player;
       AbstractContainerMenu menu = player == null ? null : player.containerMenu;
-      Objects.requireNonNull(packet);
       Packet var4 = packet;
       byte var5 = 0;
 
       while (true) {
-         switch (SwitchBootstraps.typeSwitch<"typeSwitch",ServerboundRenameItemPacket,ServerboundContainerButtonClickPacket,ServerboundSetBeaconPacket,ServerboundContainerButtonClickPacket,ServerboundSelectTradePacket,ServerboundPlaceRecipePacket>(
-            var4, var5
+         switch (net.bedrocknative.TypeSwitchHelper.index(new Class<?>[]{ServerboundRenameItemPacket.class, ServerboundContainerButtonClickPacket.class, ServerboundSetBeaconPacket.class, ServerboundContainerButtonClickPacket.class, ServerboundSelectTradePacket.class, ServerboundPlaceRecipePacket.class}, var4, var5
          )) {
             case 0:
                ServerboundRenameItemPacket rename = (ServerboundRenameItemPacket)var4;
@@ -323,8 +319,8 @@ public final class StackRequests {
    }
 
    private void beaconPayment(ServerboundSetBeaconPacket packet, BeaconMenu menu) {
-      int primary = BedrockEffects.idOf((Holder<MobEffect>)packet.primary().orElse(null));
-      int secondary = BedrockEffects.idOf((Holder<MobEffect>)packet.secondary().orElse(null));
+      int primary = BedrockEffects.idOf(packet.primary().orElse(null));
+      int secondary = BedrockEffects.idOf(packet.secondary().orElse(null));
       ItemData payment = this.inventory.get(ContainerLayout.BEACON_PAYMENT);
       if (!payment.isNull() && BeaconRules.valid(primary, secondary, menu.getLevels())) {
          StackRequests.Request request = new StackRequests.Request();
@@ -476,30 +472,30 @@ public final class StackRequests {
       Crafting.Match match = this.crafting.match(grid.stream().map(this.inventory::get).toList(), size);
       if (match == null) {
          return false;
-      } else {
-         ItemStack result = ItemMappings.toJava(match.result());
-         List<StackRequests.Change> outputs = changes.stream()
-            .filter(
-               change -> change.slot().type() != ContainerSlotType.CRAFTING_INPUT
-                  && !change.slot().equals(BedrockSlot.CREATED_OUTPUT)
-                  && change.delta() > 0
-                  && ItemStack.isSameItemSameComponents(change.after(), result)
-                  && (change.before().isNull() || change.holds(result))
-            )
-            .toList();
-         int made = outputs.stream().mapToInt(StackRequests.Change::delta).sum();
-         int perCraft = match.result().getCount();
-         if (made != 0 && made % perCraft == 0) {
-            request.craft(match, made / perCraft, grid);
+      }
 
-            for (StackRequests.Change output : outputs) {
-               request.move(output.delta(), BedrockSlot.CREATED_OUTPUT, output.slot());
-            }
+      ItemStack result = ItemMappings.toJava(match.result());
+      List<StackRequests.Change> outputs = changes.stream()
+         .filter(
+            change -> change.slot().type() != ContainerSlotType.CRAFTING_INPUT
+               && !change.slot().equals(BedrockSlot.CREATED_OUTPUT)
+               && change.delta() > 0
+               && ItemStack.isSameItemSameComponents(change.after(), result)
+               && (change.before().isNull() || change.holds(result))
+         )
+         .toList();
+      int made = outputs.stream().mapToInt(StackRequests.Change::delta).sum();
+      int perCraft = match.result().getCount();
+      if (made != 0 && made % perCraft == 0) {
+         request.craft(match, made / perCraft, grid);
 
-            return true;
-         } else {
-            return false;
+         for (StackRequests.Change output : outputs) {
+            request.move(output.delta(), BedrockSlot.CREATED_OUTPUT, output.slot());
          }
+
+         return true;
+      } else {
+         return false;
       }
    }
 
@@ -537,13 +533,13 @@ public final class StackRequests {
             }
          }
 
-         for (int ix = 0; ix < changes.size(); ix++) {
-            if (left[ix] > 0) {
+         for (int i = 0; i < changes.size(); i++) {
+            if (left[i] > 0) {
                if (!thrown) {
                   return false;
                }
 
-               request.drop(left[ix], changes.get(ix).slot());
+               request.drop(left[i], changes.get(i).slot());
             }
          }
 
@@ -612,7 +608,7 @@ public final class StackRequests {
 
    private boolean offhandTakes(ItemData fromCursor, ItemStack stack) {
       ItemData item = fromCursor;
-      if (fromCursor == null) {
+      if (item == null) {
          CreativeItemData entry = this.creative.entryFor(stack);
          item = entry == null ? null : entry.getItem();
       }
@@ -784,26 +780,15 @@ public final class StackRequests {
    }
 
    final class Request {
-      final int id;
-      final List<ItemStackRequestAction> actions;
-      final Map<BedrockSlot, ItemData> before;
-      final Map<BedrockSlot, ItemData> after;
-      final Set<BedrockSlot> consumed;
-      final List<String> filters;
+      final int id = StackRequests.nextRequestId;
+      final List<ItemStackRequestAction> actions = new ArrayList<>();
+      final Map<BedrockSlot, ItemData> before = new LinkedHashMap<>();
+      final Map<BedrockSlot, ItemData> after = new LinkedHashMap<>();
+      final Set<BedrockSlot> consumed = new HashSet<>();
+      final List<String> filters = new ArrayList<>();
       TextProcessingEventOrigin origin;
       boolean autoPlace;
       boolean shiftPlaced;
-
-      Request() {
-         Objects.requireNonNull(StackRequests.this);
-         super();
-         this.id = StackRequests.nextRequestId;
-         this.actions = new ArrayList<>();
-         this.before = new LinkedHashMap<>();
-         this.after = new LinkedHashMap<>();
-         this.consumed = new HashSet<>();
-         this.filters = new ArrayList<>();
-      }
 
       ItemData get(BedrockSlot slot) {
          ItemData item = this.after.get(slot);
@@ -818,19 +803,19 @@ public final class StackRequests {
       ItemStackRequestSlotData ref(BedrockSlot slot) {
          if (this.get(slot).isNull()) {
             return slot.request(this.consumed.contains(slot) ? this.id : 0);
-         } else {
-            ItemData start = this.before.containsKey(slot) ? this.before.get(slot) : StackRequests.this.inventory.get(slot);
-            return slot.request(!start.isNull() ? start.getNetId() : this.id);
          }
+
+         ItemData start = this.before.containsKey(slot) ? this.before.get(slot) : StackRequests.this.inventory.get(slot);
+         return slot.request(!start.isNull() ? start.getNetId() : this.id);
       }
 
       private BedrockSlot named(BedrockSlot slot, BedrockSlot other, boolean destination) {
          if (!slot.isPlayer()) {
             return slot;
-         } else {
-            boolean placedByBedrock = this.shiftPlaced && destination && StackRequests.placesItems(other);
-            return !this.autoPlace && !placedByBedrock ? slot : slot.named(ContainerSlotType.HOTBAR_AND_INVENTORY);
          }
+
+         boolean placedByBedrock = this.shiftPlaced && destination && StackRequests.placesItems(other);
+         return !this.autoPlace && !placedByBedrock ? slot : slot.named(ContainerSlotType.HOTBAR_AND_INVENTORY);
       }
 
       void move(int count, BedrockSlot from, BedrockSlot to) {
@@ -838,8 +823,7 @@ public final class StackRequests {
          ItemData target = this.get(to);
          ItemStackRequestSlotData fromRef = this.named(from, to, false).request(this.ref(from).getStackNetworkId());
          ItemStackRequestSlotData toRef = this.named(to, from, true).request(this.ref(to).getStackNetworkId());
-         this.actions
-            .add((ItemStackRequestAction)(to.equals(BedrockSlot.CURSOR) ? new TakeAction(count, fromRef, toRef) : new PlaceAction(count, fromRef, toRef)));
+         this.actions.add(to.equals(BedrockSlot.CURSOR) ? new TakeAction(count, fromRef, toRef) : new PlaceAction(count, fromRef, toRef));
          this.put(to, StackRequests.withCount(target.isNull() ? source : target, target.getCount() + count, this.id));
          this.put(from, StackRequests.withCount(source, source.getCount() - count, this.id));
       }
@@ -900,9 +884,9 @@ public final class StackRequests {
          for (ItemStackRequestAction action : craft.header()) {
             this.actions
                .add(
-                  (ItemStackRequestAction)(action instanceof CraftGrindstoneAction grindstone && grindstone.getRecipeNetworkId() == Integer.MIN_VALUE
+                  action instanceof CraftGrindstoneAction grindstone && grindstone.getRecipeNetworkId() == Integer.MIN_VALUE
                      ? new CraftGrindstoneAction(this.id, grindstone.getNumberOfRequestedCrafts(), grindstone.getRepairCost())
-                     : action)
+                     : action
                );
          }
 

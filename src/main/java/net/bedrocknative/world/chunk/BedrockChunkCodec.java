@@ -15,13 +15,12 @@ public final class BedrockChunkCodec {
    public static final int SECTION_VOLUME = 4096;
    private static final int COPY_PREVIOUS_BITS = 127;
    private static final int MAX_BIOME_STORAGES = 64;
-   @Nullable
-   private static volatile BedrockChunkCodec.BlockStateResolver sessionBlockStates;
+   private static volatile BedrockChunkCodec.@Nullable BlockStateResolver sessionBlockStates;
 
    private BedrockChunkCodec() {
    }
 
-   public static void useBlockStates(@Nullable BedrockChunkCodec.BlockStateResolver resolver) {
+   public static void useBlockStates(BedrockChunkCodec.@Nullable BlockStateResolver resolver) {
       sessionBlockStates = resolver;
    }
 
@@ -29,12 +28,12 @@ public final class BedrockChunkCodec {
       return readSubChunk(buf, null);
    }
 
-   public static BedrockChunkCodec.SubChunk readSubChunk(ByteBuf buf, @Nullable BedrockChunkCodec.UniformStorages uniform) {
+   public static BedrockChunkCodec.SubChunk readSubChunk(ByteBuf buf, BedrockChunkCodec.@Nullable UniformStorages uniform) {
       return readSubChunk(buf, uniform, sessionBlockStates);
    }
 
    public static BedrockChunkCodec.SubChunk readSubChunk(
-      ByteBuf buf, @Nullable BedrockChunkCodec.UniformStorages uniform, @Nullable BedrockChunkCodec.BlockStateResolver blockStates
+      ByteBuf buf, BedrockChunkCodec.@Nullable UniformStorages uniform, BedrockChunkCodec.@Nullable BlockStateResolver blockStates
    ) {
       int start = buf.readerIndex();
       int version = buf.readUnsignedByte();
@@ -63,8 +62,8 @@ public final class BedrockChunkCodec {
 
          try {
             layers.add(readStorage(buf, null, uniform, blockStates, true));
-         } catch (RuntimeException var11) {
-            throw BedrockChunkCodec.FormatException.of(var11, -1, i, -1, version, storageStart, buf.readerIndex());
+         } catch (RuntimeException e) {
+            throw BedrockChunkCodec.FormatException.of(e, -1, i, -1, version, storageStart, buf.readerIndex());
          }
       }
 
@@ -78,8 +77,8 @@ public final class BedrockChunkCodec {
    private static int[] readStorage(
       ByteBuf buf,
       int[] previous,
-      @Nullable BedrockChunkCodec.UniformStorages uniform,
-      @Nullable BedrockChunkCodec.BlockStateResolver blockStates,
+      BedrockChunkCodec.@Nullable UniformStorages uniform,
+      BedrockChunkCodec.@Nullable BlockStateResolver blockStates,
       boolean blocks
    ) {
       int header = buf.readUnsignedByte();
@@ -98,18 +97,22 @@ public final class BedrockChunkCodec {
 
          if (persistent && blockStates == null) {
             throw new IllegalArgumentException("Persistent (NBT) palette and no block state resolver");
-         } else if (bits == 0) {
+         }
+
+         if (bits == 0) {
             int value = persistent ? persistentPalette(buf, 1, blockStates)[0] : readZigZagVarInt(buf);
             if (uniform != null) {
                return uniform.of(value);
-            } else {
-               int[] result = new int[4096];
-               Arrays.fill(result, value);
-               return result;
             }
-         } else if (!validBits(bits)) {
-            throw new IllegalArgumentException("Invalid bits per entry " + bits);
+
+            int[] result = new int[4096];
+            Arrays.fill(result, value);
+            return result;
          } else {
+            if (!validBits(bits)) {
+               throw new IllegalArgumentException("Invalid bits per entry " + bits);
+            }
+
             int perWord = 32 / bits;
             int wordCount = (4096 + perWord - 1) / perWord;
             int wordsStart = buf.readerIndex();
@@ -132,11 +135,11 @@ public final class BedrockChunkCodec {
                if (paletteSize == 1 && allZero(buf, wordsStart, wordCount, perWord, bits)) {
                   if (uniform != null) {
                      return uniform.of(palette[0]);
-                  } else {
-                     int[] result = new int[4096];
-                     Arrays.fill(result, palette[0]);
-                     return result;
                   }
+
+                  int[] result = new int[4096];
+                  Arrays.fill(result, palette[0]);
+                  return result;
                } else {
                   int[] result = new int[4096];
                   int word = buf.getIntLE(wordsStart);
@@ -209,17 +212,17 @@ public final class BedrockChunkCodec {
          }
 
          while (count + extra < 4096 && buf.readableBytes() > 2 && buf.getUnsignedByte(buf.readerIndex()) == 10) {
-            int atx = buf.readerIndex();
+            int at = buf.readerIndex();
 
-            Object tagx;
+            Object tag;
             try {
-               tagx = NbtUtils.createNetworkReader(stream, limit).readTag();
-            } catch (RuntimeException | IOException var16) {
-               tagx = null;
+               tag = NbtUtils.createNetworkReader(stream, limit).readTag();
+            } catch (IOException | RuntimeException e) {
+               tag = null;
             }
 
-            if (!(tagx instanceof NbtMap state) || !(state.get("name") instanceof String)) {
-               buf.readerIndex(atx);
+            if (!(tag instanceof NbtMap state) || !(state.get("name") instanceof String)) {
+               buf.readerIndex(at);
                break;
             }
 
@@ -231,8 +234,8 @@ public final class BedrockChunkCodec {
 
             palette[count + extra++] = blockStates.networkId(state);
          }
-      } catch (IOException var17) {
-         throw new IllegalArgumentException("Malformed persistent palette NBT", var17);
+      } catch (IOException e) {
+         throw new IllegalArgumentException("Malformed persistent palette NBT", e);
       }
 
       ChunkFormatStats.SESSION.persistentEntries(count, littleEndian, extra);
@@ -257,7 +260,7 @@ public final class BedrockChunkCodec {
    }
 
    public static BedrockChunkCodec.LevelChunkData readLevelChunk(
-      ByteBuf buf, int subChunkCount, int sectionCount, @Nullable BedrockChunkCodec.BlockStateResolver blockStates
+      ByteBuf buf, int subChunkCount, int sectionCount, BedrockChunkCodec.@Nullable BlockStateResolver blockStates
    ) {
       BedrockChunkCodec.UniformStorages uniform = new BedrockChunkCodec.UniformStorages();
       List<BedrockChunkCodec.SubChunk> subChunks = new ArrayList<>(subChunkCount);
@@ -267,8 +270,8 @@ public final class BedrockChunkCodec {
 
          try {
             subChunks.add(readSubChunk(buf, uniform, blockStates));
-         } catch (RuntimeException var11) {
-            throw BedrockChunkCodec.FormatException.of(var11, i, -1, -1, start < buf.writerIndex() ? buf.getUnsignedByte(start) : -1, start, buf.readerIndex());
+         } catch (RuntimeException e) {
+            throw BedrockChunkCodec.FormatException.of(e, i, -1, -1, start < buf.writerIndex() ? buf.getUnsignedByte(start) : -1, start, buf.readerIndex());
          }
       }
 
@@ -295,8 +298,8 @@ public final class BedrockChunkCodec {
 
       try {
          return new BedrockChunkCodec.LevelChunkData(subChunks, biomes, readBlockEntities(buf), null);
-      } catch (RuntimeException var10) {
-         return new BedrockChunkCodec.LevelChunkData(subChunks, biomes, List.of(), String.valueOf(var10.getCause() != null ? var10.getCause() : var10));
+      } catch (RuntimeException e) {
+         return new BedrockChunkCodec.LevelChunkData(subChunks, biomes, List.of(), String.valueOf(e.getCause() != null ? e.getCause() : e));
       }
    }
 
@@ -335,8 +338,9 @@ public final class BedrockChunkCodec {
 
    private static int readFlagged(ByteBuf buf, int upTo, BedrockChunkCodec.UniformStorages uniform, List<int[]> read, int[] ends) {
       buf.readerIndex(ends[read.size()]);
+      int[] previous = read.isEmpty() ? null : read.getLast();
 
-      for (int[] previous = read.isEmpty() ? null : read.getLast(); read.size() < upTo && buf.isReadable(); ends[read.size()] = buf.readerIndex()) {
+      while (read.size() < upTo && buf.isReadable()) {
          int start = buf.readerIndex();
          int bits = buf.getUnsignedByte(start) >> 1;
          if (!validBits(bits) && (bits != 127 || previous == null)) {
@@ -345,11 +349,12 @@ public final class BedrockChunkCodec {
 
          try {
             previous = readStorage(buf, previous, uniform, null, false);
-         } catch (RuntimeException var9) {
+         } catch (RuntimeException e) {
             break;
          }
 
          read.add(previous);
+         ends[read.size()] = buf.readerIndex();
       }
 
       return read.size();
@@ -359,20 +364,20 @@ public final class BedrockChunkCodec {
       ByteBuf tail = buf.slice(at, buf.writerIndex() - at);
       if (!tail.isReadable()) {
          return true;
-      } else {
-         int border = tail.readUnsignedByte();
-         if (border > tail.readableBytes()) {
-            return false;
-         } else {
-            tail.skipBytes(border);
+      }
 
-            try {
-               readBlockEntities(tail);
-               return true;
-            } catch (RuntimeException var5) {
-               return false;
-            }
-         }
+      int border = tail.readUnsignedByte();
+      if (border > tail.readableBytes()) {
+         return false;
+      }
+
+      tail.skipBytes(border);
+
+      try {
+         readBlockEntities(tail);
+         return true;
+      } catch (RuntimeException e) {
+         return false;
       }
    }
 
@@ -382,8 +387,8 @@ public final class BedrockChunkCodec {
 
       try {
          return readStorage(buf, previous, uniform, null, false);
-      } catch (RuntimeException var6) {
-         throw BedrockChunkCodec.FormatException.of(var6, -1, -1, index, -1, start, buf.readerIndex());
+      } catch (RuntimeException e) {
+         throw BedrockChunkCodec.FormatException.of(e, -1, -1, index, -1, start, buf.readerIndex());
       }
    }
 
@@ -394,20 +399,18 @@ public final class BedrockChunkCodec {
    public static List<NbtMap> readBlockEntities(ByteBuf buf) {
       List<NbtMap> blockEntities = new ArrayList<>();
 
-      try {
-         try (NBTInputStream in = NbtUtils.createNetworkReader(new ByteBufInputStream(buf), nbtReadLimit(buf.readableBytes()))) {
-            while (buf.isReadable()) {
-               if (buf.getUnsignedByte(buf.readerIndex()) == 0) {
-                  buf.skipBytes(1);
-               } else {
-                  blockEntities.add((NbtMap)in.readTag());
-               }
+      try (NBTInputStream in = NbtUtils.createNetworkReader(new ByteBufInputStream(buf), nbtReadLimit(buf.readableBytes()))) {
+         while (buf.isReadable()) {
+            if (buf.getUnsignedByte(buf.readerIndex()) == 0) {
+               buf.skipBytes(1);
+            } else {
+               blockEntities.add((NbtMap)in.readTag());
             }
          }
 
          return blockEntities;
-      } catch (IOException var7) {
-         throw new IllegalArgumentException("Malformed block entity NBT", var7);
+      } catch (IOException e) {
+         throw new IllegalArgumentException("Malformed block entity NBT", e);
       }
    }
 

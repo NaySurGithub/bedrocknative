@@ -32,14 +32,12 @@ public final class ComposedAtlasUpload {
    private static final int PARTS = Math.max(1, Math.min(4, Runtime.getRuntime().availableProcessors() - 1));
    private static final Map<Map<Identifier, TextureAtlasSprite>, ComposedAtlasUpload.Composition> READY = Collections.synchronizedMap(new IdentityHashMap<>());
    private static int discards;
-   @Nullable
-   private static Preparations uploading;
+   private static @Nullable Preparations uploading;
    private static long uploadStarted;
    private static long staticStarted;
    private static long staticNanos;
    private static boolean composedNow;
-   @Nullable
-   private static ComposedAtlasUpload.Composition lastComposition;
+   private static ComposedAtlasUpload.@Nullable Composition lastComposition;
 
    private ComposedAtlasUpload() {
    }
@@ -77,72 +75,72 @@ public final class ComposedAtlasUpload {
                new Object[]{atlas, width, height, levelCount, bytes >> 20}
             );
          return CompletableFuture.completedFuture(null);
-      } else {
-         ByteBuffer[] levels = new ByteBuffer[levelCount];
+      }
 
-         try {
-            for (int level = 0; level < levelCount; level++) {
-               levels[level] = MemoryUtil.memCalloc(Math.max(1, width >> level) * Math.max(1, height >> level) * 4);
-            }
-         } catch (OutOfMemoryError | RuntimeException var20) {
-            BedrockNative.LOGGER.warn("Atlas upload ({}): no memory for the composed atlas ({}); Java's own upload", atlas, var20.toString());
-            free(levels);
-            return CompletableFuture.completedFuture(null);
+      ByteBuffer[] levels = new ByteBuffer[levelCount];
+
+      try {
+         for (int level = 0; level < levelCount; level++) {
+            levels[level] = MemoryUtil.memCalloc(Math.max(1, width >> level) * Math.max(1, height >> level) * 4);
          }
+      } catch (RuntimeException | OutOfMemoryError e) {
+         BedrockNative.LOGGER.warn("Atlas upload ({}): no memory for the composed atlas ({}); Java's own upload", atlas, e.toString());
+         free(levels);
+         return CompletableFuture.completedFuture(null);
+      }
 
-         List<TextureAtlasSprite> statics = new ArrayList<>();
-         int animated = 0;
+      List<TextureAtlasSprite> statics = new ArrayList<>();
+      int animated = 0;
 
-         for (TextureAtlasSprite sprite : preparations.regions().values()) {
-            if (sprite.isAnimated()) {
-               animated++;
-            } else {
-               statics.add(sprite);
-            }
+      for (TextureAtlasSprite sprite : preparations.regions().values()) {
+         if (sprite.isAnimated()) {
+            animated++;
+         } else {
+            statics.add(sprite);
          }
+      }
 
-         int parts = Math.max(1, Math.min(PARTS, statics.size() / 64));
-         CompletableFuture<?>[] work = new CompletableFuture[parts];
+      int parts = Math.max(1, Math.min(PARTS, statics.size() / 64));
+      CompletableFuture<?>[] work = new CompletableFuture[parts];
 
-         for (int part = 0; part < parts; part++) {
-            List<TextureAtlasSprite> share = statics.subList(statics.size() * part / parts, statics.size() * (part + 1) / parts);
-            work[part] = CompletableFuture.runAsync(() -> share.forEach(spritex -> place(spritex, levels, width, height)), executor);
-         }
+      for (int part = 0; part < parts; part++) {
+         List<TextureAtlasSprite> share = statics.subList(statics.size() * part / parts, statics.size() * (part + 1) / parts);
+         work[part] = CompletableFuture.runAsync(() -> share.forEach(sprite -> place(sprite, levels, width, height)), executor);
+      }
 
-         int animatedCount = animated;
-         int generation;
-         synchronized (READY) {
-            generation = discards;
-         }
+      int animatedCount = animated;
+      int generation;
+      synchronized (READY) {
+         generation = discards;
+      }
 
-         return CompletableFuture.allOf(work)
-            .handle(
-               (ignored, error) -> {
-                  if (error != null) {
-                     BedrockNative.LOGGER
-                        .warn("Atlas upload ({}): couldn't compose the atlas off the client thread ({}); Java's own upload", atlas, error.toString());
-                     free(levels);
-                  } else {
-                     ComposedAtlasUpload.Composition composition = new ComposedAtlasUpload.Composition(
-                        atlas, width, height, levels, statics.size(), animatedCount, System.nanoTime() - started
-                     );
-                     boolean late;
-                     synchronized (READY) {
-                        late = generation != discards || !AtlasReload.running();
-                        if (!late) {
-                           READY.put(preparations.regions(), composition);
-                        }
-                     }
-
-                     if (late) {
-                        composition.free();
+      return CompletableFuture.allOf(work)
+         .handle(
+            (ignored, error) -> {
+               if (error != null) {
+                  BedrockNative.LOGGER
+                     .warn("Atlas upload ({}): couldn't compose the atlas off the client thread ({}); Java's own upload", atlas, error.toString());
+                  free(levels);
+               } else {
+                  ComposedAtlasUpload.Composition composition = new ComposedAtlasUpload.Composition(
+                     atlas, width, height, levels, statics.size(), animatedCount, System.nanoTime() - started
+                  );
+                  boolean late;
+                  synchronized (READY) {
+                     late = generation != discards || !AtlasReload.running();
+                     if (!late) {
+                        READY.put(preparations.regions(), composition);
                      }
                   }
 
-                  return null;
+                  if (late) {
+                     composition.free();
+                  }
                }
-            );
-      }
+
+               return null;
+            }
+         );
    }
 
    private static void free(ByteBuffer[] levels) {
@@ -160,38 +158,36 @@ public final class ComposedAtlasUpload {
       int spriteHeight = sprite.contents().height();
       if (images.length < levels.length) {
          throw new IllegalStateException(sprite.contents().name() + " has " + images.length + " mip levels, the atlas " + levels.length);
-      } else {
-         for (int level = 0; level < levels.length; level++) {
-            NativeImage image = images[level];
-            int levelWidth = spriteWidth >> level;
-            int levelHeight = spriteHeight >> level;
-            if (image.format() != Format.RGBA || image.getWidth() != levelWidth || image.getHeight() != levelHeight) {
-               throw new IllegalStateException(
-                  sprite.contents().name()
-                     + " level "
-                     + level
-                     + " is "
-                     + image.getWidth()
-                     + "x"
-                     + image.getHeight()
-                     + " "
-                     + image.format()
-                     + ", expected "
-                     + levelWidth
-                     + "x"
-                     + levelHeight
-                     + " RGBA"
-               );
-            }
+      }
 
-            int atlasWidth = Math.max(1, width >> level);
-            int atlasHeight = Math.max(1, height >> level);
-            IntBuffer target = MemoryUtil.memIntBuffer(MemoryUtil.memAddress(levels[level]), atlasWidth * atlasHeight);
-            IntBuffer source = MemoryUtil.memIntBuffer(image.getPointer(), levelWidth * levelHeight);
-            AtlasComposer.place(
-               target, atlasWidth, atlasHeight, source, levelWidth, levelHeight, sprite.getX() >> level, sprite.getY() >> level, padding >> level
+      for (int level = 0; level < levels.length; level++) {
+         NativeImage image = images[level];
+         int levelWidth = spriteWidth >> level;
+         int levelHeight = spriteHeight >> level;
+         if (image.format() != Format.RGBA || image.getWidth() != levelWidth || image.getHeight() != levelHeight) {
+            throw new IllegalStateException(
+               sprite.contents().name()
+                  + " level "
+                  + level
+                  + " is "
+                  + image.getWidth()
+                  + "x"
+                  + image.getHeight()
+                  + " "
+                  + image.format()
+                  + ", expected "
+                  + levelWidth
+                  + "x"
+                  + levelHeight
+                  + " RGBA"
             );
          }
+
+         int atlasWidth = Math.max(1, width >> level);
+         int atlasHeight = Math.max(1, height >> level);
+         IntBuffer target = MemoryUtil.memIntBuffer(MemoryUtil.memAddress(levels[level]), atlasWidth * atlasHeight);
+         IntBuffer source = MemoryUtil.memIntBuffer(image.getPointer(), levelWidth * levelHeight);
+         AtlasComposer.place(target, atlasWidth, atlasHeight, source, levelWidth, levelHeight, sprite.getX() >> level, sprite.getY() >> level, padding >> level);
       }
    }
 
@@ -209,18 +205,14 @@ public final class ComposedAtlasUpload {
       ComposedAtlasUpload.Composition composition = preparations == null ? null : READY.remove(preparations.regions());
       if (composition == null) {
          return false;
-      } else {
-         boolean var11;
-         try {
-            GpuTexture texture = atlas.getTexture();
-            if (texture.getWidth(0) != composition.width
-               || texture.getHeight(0) != composition.height
-               || texture.getMipLevels() != composition.levels.length
-               || maxMipLevel + 1 != composition.levels.length) {
-               BedrockNative.LOGGER.warn("Atlas upload ({}): the composed atlas no longer matches the texture; Java's own upload", composition.atlas);
-               return false;
-            }
+      }
 
+      try {
+         GpuTexture texture = atlas.getTexture();
+         if (texture.getWidth(0) == composition.width
+            && texture.getHeight(0) == composition.height
+            && texture.getMipLevels() == composition.levels.length
+            && maxMipLevel + 1 == composition.levels.length) {
             CommandEncoder encoder = RenderSystem.getDevice().createCommandEncoder();
 
             for (int level = 0; level < composition.levels.length; level++) {
@@ -231,12 +223,13 @@ public final class ComposedAtlasUpload {
 
             composedNow = true;
             lastComposition = composition;
-            var11 = true;
-         } finally {
-            composition.free();
+            return true;
+         } else {
+            BedrockNative.LOGGER.warn("Atlas upload ({}): the composed atlas no longer matches the texture; Java's own upload", composition.atlas);
+            return false;
          }
-
-         return var11;
+      } finally {
+         composition.free();
       }
    }
 

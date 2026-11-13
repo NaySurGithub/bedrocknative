@@ -24,26 +24,21 @@ import org.jspecify.annotations.Nullable;
 public final class JavaBlockSounds {
    private static final String PLAYER = "minecraft:player";
    private static final Map<String, String> RENAMED = Map.of("wool", "cloth", "slime_block", "slime", "nether_bricks", "nether_brick", "coral_block", "coral");
-   @Nullable
-   private static volatile Map<Identifier, JavaBlockSounds.BlockSound> index;
-   @Nullable
-   private static volatile Map<String, SoundType> javaTypes;
+   private static volatile @Nullable Map<Identifier, JavaBlockSounds.BlockSound> index;
+   private static volatile @Nullable Map<String, SoundType> javaTypes;
 
    private JavaBlockSounds() {
    }
 
-   @Nullable
-   public static JavaBlockSounds.BlockSound of(Identifier sound) {
+   public static JavaBlockSounds.@Nullable BlockSound of(Identifier sound) {
       return index().get(sound);
    }
 
-   @Nullable
-   public static SoundEventTable.Resolved resolve(SoundCatalog catalog, JavaBlockSounds.Action action, String bedrockBlock, RandomGenerator random) {
+   public static SoundEventTable.@Nullable Resolved resolve(SoundCatalog catalog, JavaBlockSounds.Action action, String bedrockBlock, RandomGenerator random) {
       return resolve(catalog, action, bedrockBlock, null, random);
    }
 
-   @Nullable
-   public static SoundEventTable.Resolved resolve(
+   public static SoundEventTable.@Nullable Resolved resolve(
       SoundCatalog catalog, JavaBlockSounds.Action action, String bedrockBlock, @Nullable CustomBlockState custom, RandomGenerator random
    ) {
       String type = custom != null ? customType(catalog, custom) : bedrockType(catalog, bedrockBlock);
@@ -52,30 +47,26 @@ public final class JavaBlockSounds {
       );
    }
 
-   @Nullable
-   public static String customType(SoundCatalog catalog, CustomBlockState custom) {
+   public static @Nullable String customType(SoundCatalog catalog, CustomBlockState custom) {
       return custom.soundType() != null ? custom.soundType() : catalog.blockSound(custom.state().name());
    }
 
-   @Nullable
-   public static String bedrockType(SoundCatalog catalog, String bedrockBlock) {
+   public static @Nullable String bedrockType(SoundCatalog catalog, String bedrockBlock) {
       String type = catalog.blockSound(bedrockBlock);
       if (type != null) {
          return type;
-      } else {
-         BlockState state = BlockMappings.get().byName(bedrockBlock);
-         return state == null ? null : typeOf(catalog, state.getSoundType());
       }
+
+      BlockState state = BlockMappings.get().byName(bedrockBlock);
+      return state == null ? null : typeOf(catalog, state.getSoundType());
    }
 
-   @Nullable
-   private static String typeOf(SoundCatalog catalog, SoundType sound) {
+   private static @Nullable String typeOf(SoundCatalog catalog, SoundType sound) {
       String type = bedrockName(sound);
       return type != null && catalog.events().hasBlockType(type) ? type : null;
    }
 
-   @Nullable
-   static String bedrockName(SoundType sound) {
+   static @Nullable String bedrockName(SoundType sound) {
       String step = sound.getStepSound().location().getPath();
       if (step.startsWith("block.") && step.endsWith(".step")) {
          String java = step.substring("block.".length(), step.length() - ".step".length());
@@ -106,7 +97,7 @@ public final class JavaBlockSounds {
                   if (name != null && java != null && RENAMED.getOrDefault(java, java).equals(name)) {
                      built.putIfAbsent(name, type);
                   }
-               } catch (RuntimeException | IllegalAccessException var11) {
+               } catch (IllegalAccessException | RuntimeException var11) {
                }
             }
          }
@@ -144,7 +135,7 @@ public final class JavaBlockSounds {
       return map;
    }
 
-   public static enum Action {
+   public enum Action {
       STEP("step", true),
       PLACE("place", false),
       BREAK("break", false),
@@ -154,7 +145,7 @@ public final class JavaBlockSounds {
       private final String event;
       private final boolean underfoot;
 
-      private Action(String event, boolean underfoot) {
+      Action(String event, boolean underfoot) {
          this.event = event;
          this.underfoot = underfoot;
       }

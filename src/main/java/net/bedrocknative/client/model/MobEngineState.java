@@ -81,10 +81,8 @@ final class MobEngineState {
    private final boolean tropical;
    private final boolean glowing;
    private final SplittableRandom random = new SplittableRandom();
-   @Nullable
-   private final MolangStruct struct;
-   @Nullable
-   private final MolangStruct[] history;
+   private final @Nullable MolangStruct struct;
+   private final MolangStruct @Nullable [] history;
    private long lastTick = Long.MIN_VALUE;
    private long ticks;
    private int swell;
@@ -221,7 +219,7 @@ final class MobEngineState {
          case CREEPER:
             this.swellOld = this.swell;
             this.ignited = data.flag(EntityFlag.IGNITED);
-            this.swell = Math.clamp((long)(this.swell + (this.ignited ? 1 : -1)), 0, 30);
+            this.swell = Math.clamp(this.swell + (this.ignited ? 1 : -1), 0, 30);
             break;
          case WOLF:
             this.interestedOld = this.interested;
@@ -310,7 +308,7 @@ final class MobEngineState {
             break;
          case POLAR_BEAR:
             this.standTicksOld = this.standTicks;
-            this.standTicks = Math.clamp((long)(this.standTicks + (data.flag(EntityFlag.STANDING) ? 1 : -1)), 0, 6);
+            this.standTicks = Math.clamp(this.standTicks + (data.flag(EntityFlag.STANDING) ? 1 : -1), 0, 6);
             break;
          case ARROW:
             if (this.shakeTicks > 0) {
@@ -398,9 +396,9 @@ final class MobEngineState {
             variables.set(ANIMATION_AMOUNT, this.animationAmount, null);
             variables.set(ANIMATION_AMOUNT_PREV, this.animationAmount - 1, null);
             if (this.tropical && this.struct != null) {
-               int base = Math.clamp((long)((int)data.number(EntityDataTypes.VARIANT)), 0, 1);
+               int base = Math.clamp((int)data.number(EntityDataTypes.VARIANT), 0, 1);
                this.struct.members().set(BASE, base, null);
-               this.struct.members().set(PATTERN, base * 6 + Math.clamp((long)((int)data.number(EntityDataTypes.MARK_VARIANT)), 0, 5), null);
+               this.struct.members().set(PATTERN, base * 6 + Math.clamp((int)data.number(EntityDataTypes.MARK_VARIANT), 0, 5), null);
                variables.set(TROPICAL_FISH, 0.0F, this.struct);
             }
             break;
@@ -575,7 +573,7 @@ final class MobEngineState {
       return this.shakeTicks;
    }
 
-   static enum Kind {
+   enum Kind {
       OTHER(List.of()),
       CREEPER(List.of("minecraft:creeper")),
       WOLF(List.of("minecraft:wolf")),
@@ -600,7 +598,7 @@ final class MobEngineState {
 
       final List<String> identifiers;
 
-      private Kind(List<String> identifiers) {
+      Kind(List<String> identifiers) {
          this.identifiers = identifiers;
       }
 

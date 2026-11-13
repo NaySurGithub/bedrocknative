@@ -51,10 +51,10 @@ public final class ColumnHolds {
    public synchronized boolean parkIfHeld(long column, Runnable task) {
       if (!this.holds.containsKey(column)) {
          return false;
-      } else {
-         this.parked.add(new ColumnHolds.Parked(column, task));
-         return true;
       }
+
+      this.parked.add(new ColumnHolds.Parked(column, task));
+      return true;
    }
 
    public synchronized boolean isHeld(long column) {

@@ -11,14 +11,12 @@ public final class ContainerNames {
    private ContainerNames() {
    }
 
-   @Nullable
-   public static String customName(NbtMap blockEntity) {
+   public static @Nullable String customName(NbtMap blockEntity) {
       String name = blockEntity.getString("CustomName", "");
       return name.isEmpty() ? null : name;
    }
 
-   @Nullable
-   public static String pick(@Nullable String opened, @Nullable String partner) {
+   public static @Nullable String pick(@Nullable String opened, @Nullable String partner) {
       return opened != null ? opened : partner;
    }
 
@@ -26,8 +24,7 @@ public final class ContainerNames {
       return actorUniqueId != -1L && actorUniqueId != 0L;
    }
 
-   @Nullable
-   public static String opened(long actorUniqueId, @Nullable String actorName, @Nullable String blockEntityName) {
+   public static @Nullable String opened(long actorUniqueId, @Nullable String actorName, @Nullable String blockEntityName) {
       if (actorOwned(actorUniqueId)) {
          return actorName != null && !actorName.isEmpty() ? actorName : null;
       } else {

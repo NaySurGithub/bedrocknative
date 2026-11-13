@@ -12,14 +12,11 @@ import net.minecraft.world.level.Level;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 
-@Mixin({Item.class})
+@Mixin(Item.class)
 public abstract class ShieldMixin {
    @WrapOperation(
-      method = {"use"},
-      at = {@At(
-         value = "INVOKE",
-         target = "Lnet/minecraft/world/item/ItemStack;has(Lnet/minecraft/core/component/DataComponentType;)Z"
-      )}
+      method = "use",
+      at = @At(value = "INVOKE", target = "Lnet/minecraft/world/item/ItemStack;has(Lnet/minecraft/core/component/DataComponentType;)Z")
    )
    private boolean bedrocknative$noUseBlocking(ItemStack stack, DataComponentType<?> type, Operation<Boolean> original, @Local(argsOnly = true) Level level) {
       return type == DataComponents.BLOCKS_ATTACKS && level.isClientSide() && BedrockMovement.active()

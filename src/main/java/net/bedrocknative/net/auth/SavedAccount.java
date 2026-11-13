@@ -53,12 +53,12 @@ public interface SavedAccount {
             Optional<XboxAccountStore.Entry> active = store.active();
             if (active.isEmpty()) {
                throw new NoSuchFileException("No saved Xbox account in " + configFolder.toAbsolutePath());
-            } else {
-               try {
-                  return store.load(active.get().id());
-               } catch (XboxAccountStore.AccountException var3) {
-                  throw new IOException(var3.getMessage(), var3);
-               }
+            }
+
+            try {
+               return store.load(active.get().id());
+            } catch (XboxAccountStore.AccountException e) {
+               throw new IOException(e.getMessage(), e);
             }
          }
 

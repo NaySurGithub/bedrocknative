@@ -53,9 +53,8 @@ final class OreGuiPainter implements OrePainter, AutoCloseable {
       }
    }
 
-   @Nullable
    @Override
-   public int[] spriteSize(String sprite) {
+   public int @Nullable [] spriteSize(String sprite) {
       return this.install.sprite(sprite).map(found -> new int[]{found.width(), found.height()}).orElse(null);
    }
 

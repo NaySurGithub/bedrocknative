@@ -57,8 +57,8 @@ public final class DevConnectTest {
 
          try {
             test.run();
-         } catch (Throwable var6) {
-            BedrockNative.LOGGER.error("Dev connect test: FAIL crashed", var6);
+         } catch (Throwable e) {
+            BedrockNative.LOGGER.error("Dev connect test: FAIL crashed", e);
             test.failed++;
          } finally {
             BedrockNative.LOGGER.info("Dev connect test: SUMMARY {} passed, {} failed", test.passed, test.failed);
@@ -114,8 +114,8 @@ public final class DevConnectTest {
          this.check("the session kind is Java now (a Transfer would try Java first)", BedrockConnector.lastTransport() == TransportKind.JAVA);
          this.check("one status probe for the join (" + stand.statusPings.get() + ")", stand.statusPings.get() == 1);
          this.javaPrefix(stand, port);
-      } catch (IOException var10) {
-         this.check("a stand-in Java server on this computer (" + var10 + ")", false);
+      } catch (IOException e) {
+         this.check("a stand-in Java server on this computer (" + e + ")", false);
       }
 
       this.onClient(() -> {
@@ -223,7 +223,7 @@ public final class DevConnectTest {
       int port;
       try (DatagramSocket probe = new DatagramSocket(0)) {
          port = probe.getLocalPort();
-      } catch (SocketException var14) {
+      } catch (SocketException e) {
          this.check("a free port for the empty address", false);
          return;
       }
@@ -311,14 +311,14 @@ public final class DevConnectTest {
       BedrockNative.LOGGER.info("Dev connect test: " + message, args);
    }
 
-   private <T> T onClient(Supplier<T> task) {
+   private <T> T onClient(Supplier<@Nullable T> task) {
       return this.minecraft.isSameThread() ? task.get() : CompletableFuture.supplyAsync(task, this.minecraft::execute).join();
    }
 
    private static void sleep(long millis) {
       try {
          Thread.sleep(millis);
-      } catch (InterruptedException var3) {
+      } catch (InterruptedException e) {
          Thread.currentThread().interrupt();
       }
    }
@@ -326,8 +326,7 @@ public final class DevConnectTest {
    private static final class StandInJavaServer {
       private final ServerSocket socket;
       private final AtomicInteger statusPings = new AtomicInteger();
-      @Nullable
-      private volatile String loginName;
+      private volatile @Nullable String loginName;
 
       StandInJavaServer(ServerSocket socket) {
          this.socket = socket;
@@ -369,7 +368,7 @@ public final class DevConnectTest {
                   out.flush();
                   DevConnectTest.sleep(500L);
                }
-            } catch (RuntimeException | IOException var11) {
+            } catch (IOException | RuntimeException var11) {
             }
          }
       }

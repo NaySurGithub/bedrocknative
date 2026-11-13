@@ -8,7 +8,7 @@ import net.minecraft.client.renderer.state.level.CameraRenderState;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Invoker;
 
-@Mixin({EntityRenderer.class})
+@Mixin(EntityRenderer.class)
 public interface EntityRendererInvoker {
    @Invoker("submitNameDisplay")
    void bedrocknative$submitNameDisplay(EntityRenderState var1, PoseStack var2, SubmitNodeCollector var3, CameraRenderState var4);

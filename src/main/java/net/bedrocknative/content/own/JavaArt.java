@@ -59,7 +59,7 @@ final class JavaArt {
    private JavaArt() {
    }
 
-   static void register(Map<String, Supplier<OwnArt.Texture>> into) {
+   static void register(Map<String, Supplier<OwnArt.@Nullable Texture>> into) {
       into.put("textures/ui/title", () -> {
          ArgbImage logo = read("assets/minecraft/textures/gui/title/minecraft.png");
          return logo == null ? null : OwnArt.Texture.plain(cropToContent(logo));
@@ -72,27 +72,16 @@ final class JavaArt {
       EFFECT_ALIASES.forEach((bedrock, java) -> into.put("textures/ui/" + bedrock + "_effect", () -> effectIcon(java)));
    }
 
-   @Nullable
-   private static OwnArt.Texture effectIcon(String javaName) {
+   private static OwnArt.@Nullable Texture effectIcon(String javaName) {
       ArgbImage icon = read("assets/minecraft/textures/mob_effect/" + javaName + ".png");
       return icon == null ? null : OwnArt.Texture.plain(icon);
    }
 
-   @Nullable
-   static ArgbImage read(String resource) {
-      try {
-         ArgbImage var2;
-         try (InputStream in = JavaArt.class.getClassLoader().getResourceAsStream(resource)) {
-            if (in == null) {
-               return null;
-            }
-
-            var2 = BedrockImages.decode(BedrockImages.readChecked(in, 67108864));
-         }
-
-         return var2;
-      } catch (RuntimeException | IOException var6) {
-         BedrockNative.LOGGER.debug("Own menus: Java's {} couldn't be read", resource, var6);
+   static @Nullable ArgbImage read(String resource) {
+      try (InputStream in = JavaArt.class.getClassLoader().getResourceAsStream(resource)) {
+         return in == null ? null : BedrockImages.decode(BedrockImages.readChecked(in, 67108864));
+      } catch (IOException | RuntimeException e) {
+         BedrockNative.LOGGER.debug("Own menus: Java's {} couldn't be read", resource, e);
          return null;
       }
    }

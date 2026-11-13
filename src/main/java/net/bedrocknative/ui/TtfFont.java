@@ -51,49 +51,49 @@ public final class TtfFont implements UiVectorFont {
          int version = int32(data, 0);
          if (version != 65536 && version != 1953658213 && version != 1330926671) {
             return false;
-         } else {
-            int count = uint16(data, 4);
-            if (count >= 1 && count <= 64 && 12 + 16 * count <= data.length) {
-               Map<String, int[]> tables = new HashMap<>();
+         }
 
-               for (int i = 0; i < count; i++) {
-                  int entry = 12 + 16 * i;
+         int count = uint16(data, 4);
+         if (count >= 1 && count <= 64 && 12 + 16 * count <= data.length) {
+            Map<String, int[]> tables = new HashMap<>();
 
-                  for (int c = 0; c < 4; c++) {
-                     if (data[entry + c] < 32 || data[entry + c] > 126) {
-                        return false;
-                     }
-                  }
+            for (int i = 0; i < count; i++) {
+               int entry = 12 + 16 * i;
 
-                  long offset = int32(data, entry + 8) & 4294967295L;
-                  long length = int32(data, entry + 12) & 4294967295L;
-                  if (offset < 12L + 16L * count || offset + length > data.length) {
-                     return false;
-                  }
-
-                  if (tables.put(new String(data, entry, 4, StandardCharsets.ISO_8859_1), new int[]{(int)offset, (int)length}) != null) {
+               for (int c = 0; c < 4; c++) {
+                  if (data[entry + c] < 32 || data[entry + c] > 126) {
                      return false;
                   }
                }
 
-               int[] head = tables.get("head");
-               int[] hhea = tables.get("hhea");
-               int[] maxp = tables.get("maxp");
-               return head != null
-                     && head[1] >= 54
-                     && int32(data, head[0] + 12) == 1594834165
-                     && hhea != null
-                     && hhea[1] >= 36
-                     && maxp != null
-                     && maxp[1] >= 6
-                     && uint16(data, maxp[0] + 4) != 0
-                     && tables.containsKey("hmtx")
-                     && tables.containsKey("cmap")
-                  ? tables.containsKey("glyf") && tables.containsKey("loca") || tables.containsKey("CFF ") || tables.containsKey("CFF2")
-                  : false;
-            } else {
-               return false;
+               long offset = int32(data, entry + 8) & 4294967295L;
+               long length = int32(data, entry + 12) & 4294967295L;
+               if (offset < 12L + 16L * count || offset + length > data.length) {
+                  return false;
+               }
+
+               if (tables.put(new String(data, entry, 4, StandardCharsets.ISO_8859_1), new int[]{(int)offset, (int)length}) != null) {
+                  return false;
+               }
             }
+
+            int[] head = tables.get("head");
+            int[] hhea = tables.get("hhea");
+            int[] maxp = tables.get("maxp");
+            return head != null
+                  && head[1] >= 54
+                  && int32(data, head[0] + 12) == 1594834165
+                  && hhea != null
+                  && hhea[1] >= 36
+                  && maxp != null
+                  && maxp[1] >= 6
+                  && uint16(data, maxp[0] + 4) != 0
+                  && tables.containsKey("hmtx")
+                  && tables.containsKey("cmap")
+               ? tables.containsKey("glyf") && tables.containsKey("loca") || tables.containsKey("CFF ") || tables.containsKey("CFF2")
+               : false;
+         } else {
+            return false;
          }
       } else {
          return false;
@@ -108,16 +108,15 @@ public final class TtfFont implements UiVectorFont {
       return (data[at] & 0xFF) << 24 | (data[at + 1] & 0xFF) << 16 | (data[at + 2] & 0xFF) << 8 | data[at + 3] & 0xFF;
    }
 
-   @Nullable
-   public static TtfFont load(String name, byte[] data) {
+   public static @Nullable TtfFont load(String name, byte[] data) {
       if (!plausible(data)) {
          return null;
-      } else {
-         try {
-            return new TtfFont(name, Font.createFont(0, new ByteArrayInputStream(data)));
-         } catch (IOException | RuntimeException | FontFormatException var3) {
-            return null;
-         }
+      }
+
+      try {
+         return new TtfFont(name, Font.createFont(0, new ByteArrayInputStream(data)));
+      } catch (FontFormatException | IOException | RuntimeException e) {
+         return null;
       }
    }
 
@@ -158,21 +157,21 @@ public final class TtfFont implements UiVectorFont {
       Float cached = this.advances.get(codePoint);
       if (cached != null) {
          return cached;
-      } else {
-         float advance;
-         try {
-            GlyphVector vector = this.reference.createGlyphVector(CONTEXT, Character.toString(codePoint));
-            advance = vector.getNumGlyphs() == 0 ? 0.0F : vector.getGlyphMetrics(0).getAdvance() / 1000.0F;
-         } catch (RuntimeException var5) {
-            advance = 0.0F;
-         }
-
-         if (this.advances.size() < 65536) {
-            this.advances.put(codePoint, advance);
-         }
-
-         return advance;
       }
+
+      float advance;
+      try {
+         GlyphVector vector = this.reference.createGlyphVector(CONTEXT, Character.toString(codePoint));
+         advance = vector.getNumGlyphs() == 0 ? 0.0F : vector.getGlyphMetrics(0).getAdvance() / 1000.0F;
+      } catch (RuntimeException e) {
+         advance = 0.0F;
+      }
+
+      if (this.advances.size() < 65536) {
+         this.advances.put(codePoint, advance);
+      }
+
+      return advance;
    }
 
    @Override
@@ -216,7 +215,7 @@ public final class TtfFont implements UiVectorFont {
                   return UiVectorFont.Glyph.EMPTY;
                }
             }
-         } catch (RuntimeException var7) {
+         } catch (RuntimeException e) {
             return UiVectorFont.Glyph.EMPTY;
          }
       } else {
@@ -230,10 +229,8 @@ public final class TtfFont implements UiVectorFont {
    }
 
    private static final class Scratch {
-      @Nullable
-      private BufferedImage image;
-      @Nullable
-      private Graphics2D graphics;
+      private @Nullable BufferedImage image;
+      private @Nullable Graphics2D graphics;
 
       Graphics2D box(int width, int height) {
          BufferedImage current = this.image;

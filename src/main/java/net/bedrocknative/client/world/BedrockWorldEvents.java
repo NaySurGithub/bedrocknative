@@ -78,6 +78,7 @@ public final class BedrockWorldEvents {
          super(BedrockText.ui("globalPauseScreen.message"));
       }
 
+      @Override
       protected void init() {
          this.addRenderableWidget(
             Button.builder(BedrockText.ui("globalPauseScreen.quit"), button -> this.minecraft.disconnectFromWorld(ClientLevel.DEFAULT_QUIT_MESSAGE))
@@ -86,11 +87,13 @@ public final class BedrockWorldEvents {
          );
       }
 
+      @Override
       public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
          super.extractRenderState(graphics, mouseX, mouseY, a);
          graphics.text(this.minecraft.font, this.getTitle(), (this.width - this.minecraft.font.width(this.getTitle())) / 2, this.height / 2 - 20, -1, true);
       }
 
+      @Override
       public boolean shouldCloseOnEsc() {
          return false;
       }

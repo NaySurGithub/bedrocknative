@@ -64,7 +64,7 @@ public final class CallbackJar {
 
                   try {
                      Files.move(temporary, jar, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-                  } catch (AtomicMoveNotSupportedException var13) {
+                  } catch (AtomicMoveNotSupportedException e) {
                      Files.move(temporary, jar, StandardCopyOption.REPLACE_EXISTING);
                   }
                } finally {
@@ -77,16 +77,15 @@ public final class CallbackJar {
             }
 
             problems.append(jar).append(" does not match; ");
-         } catch (RuntimeException | IOException var15) {
-            problems.append("can't write ").append(root).append(" (").append(var15.getClass().getSimpleName()).append("); ");
+         } catch (IOException | RuntimeException e) {
+            problems.append("can't write ").append(root).append(" (").append(e.getClass().getSimpleName()).append("); ");
          }
       }
 
       throw new IOException("no place for the sign-in callback: " + problems);
    }
 
-   @Nullable
-   static String command(Path java, Path jar, Path folder) {
+   static @Nullable String command(Path java, Path jar, Path folder) {
       for (Path path : List.of(java, jar, folder)) {
          String text = path.toString();
          if (text.indexOf(34) >= 0 || text.indexOf(37) >= 0 || !path.isAbsolute()) {
@@ -97,8 +96,7 @@ public final class CallbackJar {
       return "\"" + java + "\" -cp \"" + jar + "\" " + SignInCallback.class.getName() + " \"" + folder + "\" \"%1\"";
    }
 
-   @Nullable
-   static Path java() {
+   static @Nullable Path java() {
       Optional<String> command = ProcessHandle.current().info().command();
       if (command.isEmpty()) {
          return null;
@@ -113,11 +111,10 @@ public final class CallbackJar {
       }
    }
 
-   @Nullable
-   private static String hash(Path file) {
+   private static @Nullable String hash(Path file) {
       try {
          return Files.isRegularFile(file, LinkOption.NOFOLLOW_LINKS) ? HelperInstall.sha256(Files.readAllBytes(file)) : null;
-      } catch (RuntimeException | IOException var2) {
+      } catch (IOException | RuntimeException e) {
          return null;
       }
    }

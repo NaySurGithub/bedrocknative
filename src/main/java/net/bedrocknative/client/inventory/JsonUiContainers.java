@@ -53,8 +53,7 @@ import net.minecraft.world.inventory.StonecutterMenu;
 import org.jspecify.annotations.Nullable;
 
 public final class JsonUiContainers {
-   @Nullable
-   private static JsonUiContainers.Offer offer;
+   private static JsonUiContainers.@Nullable Offer offer;
    private static boolean failed;
    private static boolean creativeFailed;
 
@@ -66,17 +65,17 @@ public final class JsonUiContainers {
       creativeFailed = false;
    }
 
-   static void opening(int containerId, @Nullable ContainerScreens.Choice choice, @Nullable String customName, @Nullable Long owner, Runnable open) {
+   static void opening(int containerId, ContainerScreens.@Nullable Choice choice, @Nullable String customName, @Nullable Long owner, Runnable open) {
       opening(containerId, choice, customName, null, owner, open);
    }
 
-   static void opening(int containerId, @Nullable ContainerScreens.Choice choice, @Nullable String customName, @Nullable Workstations trades, Runnable open) {
+   static void opening(int containerId, ContainerScreens.@Nullable Choice choice, @Nullable String customName, @Nullable Workstations trades, Runnable open) {
       opening(containerId, choice, customName, trades, null, open);
    }
 
    private static void opening(
       int containerId,
-      @Nullable ContainerScreens.Choice choice,
+      ContainerScreens.@Nullable Choice choice,
       @Nullable String customName,
       @Nullable Workstations trades,
       @Nullable Long owner,
@@ -102,19 +101,19 @@ public final class JsonUiContainers {
             screen = JsonUiContainerScreen.create(
                type, minecraft, containerId, title, current.choice(), current.customName(), current.trades(), current.owner()
             );
-         } catch (RuntimeException var7) {
-            BedrockNative.LOGGER.warn("JSON UI couldn't build container screen {}; the Java screen shows it", current.choice().screen(), var7);
+         } catch (RuntimeException e) {
+            BedrockNative.LOGGER.warn("JSON UI couldn't build container screen {}; the Java screen shows it", current.choice().screen(), e);
             return false;
          }
 
          if (screen == null) {
             return false;
-         } else {
-            screen.fallback(() -> fallBack(minecraft, screen));
-            minecraft.player.containerMenu = screen.getMenu();
-            minecraft.gui.setScreen(screen);
-            return true;
          }
+
+         screen.fallback(() -> fallBack(minecraft, screen));
+         minecraft.player.containerMenu = screen.getMenu();
+         minecraft.gui.setScreen(screen);
+         return true;
       } else {
          return false;
       }
@@ -125,7 +124,9 @@ public final class JsonUiContainers {
       LocalPlayer player = minecraft.player;
       if (screen.getClass() == CreativeModeInventoryScreen.class) {
          return creative(minecraft, screen);
-      } else if (screen.getClass() == InventoryScreen.class
+      }
+
+      if (screen.getClass() == InventoryScreen.class
          && !failed
          && JsonUi.offered("inventory")
          && BedrockMovement.active()
@@ -134,17 +135,17 @@ public final class JsonUiContainers {
          JsonUiContainerScreen json;
          try {
             json = JsonUiContainerScreen.inventory(minecraft);
-         } catch (RuntimeException var5) {
-            BedrockNative.LOGGER.warn("JSON UI couldn't build the inventory screen; the Java screen shows it", var5);
+         } catch (RuntimeException e) {
+            BedrockNative.LOGGER.warn("JSON UI couldn't build the inventory screen; the Java screen shows it", e);
             return screen;
          }
 
          if (json == null) {
             return screen;
-         } else {
-            json.fallback(() -> fallBack(minecraft, json));
-            return json;
          }
+
+         json.fallback(() -> fallBack(minecraft, json));
+         return json;
       } else {
          return screen;
       }
@@ -155,9 +156,9 @@ public final class JsonUiContainers {
       if (!creativeFailed && JsonUi.offered("creative") && BedrockMovement.active() && player != null && player.hasInfiniteMaterials()) {
          JsonUiCreativeScreen json;
          try {
-            json = JsonUiCreativeScreen.create(minecraft, player, player.connection.enabledFeatures(), (Boolean)minecraft.options.operatorItemsTab().get());
-         } catch (RuntimeException var5) {
-            BedrockNative.LOGGER.warn("JSON UI couldn't build the creative inventory; the Java screen shows it", var5);
+            json = JsonUiCreativeScreen.create(minecraft, player, player.connection.enabledFeatures(), minecraft.options.operatorItemsTab().get());
+         } catch (RuntimeException e) {
+            BedrockNative.LOGGER.warn("JSON UI couldn't build the creative inventory; the Java screen shows it", e);
             json = null;
          }
 
@@ -173,7 +174,7 @@ public final class JsonUiContainers {
                      minecraft.gui
                         .setScreen(
                            new CreativeModeInventoryScreen(
-                              minecraft.player, minecraft.player.connection.enabledFeatures(), (Boolean)minecraft.options.operatorItemsTab().get()
+                              minecraft.player, minecraft.player.connection.enabledFeatures(), minecraft.options.operatorItemsTab().get()
                            )
                         );
                   }
@@ -198,9 +199,8 @@ public final class JsonUiContainers {
       }
    }
 
-   @Nullable
-   private static Screen javaScreen(AbstractContainerMenu menu, Inventory inventory, Component title) {
-      return (Screen)(switch (menu) {
+   private static @Nullable Screen javaScreen(AbstractContainerMenu menu, Inventory inventory, Component title) {
+      return switch (menu) {
          case ChestMenu chest -> new ContainerScreen(chest, inventory, title);
          case ShulkerBoxMenu shulker -> new ShulkerBoxScreen(shulker, inventory, title);
          case HopperMenu hopper -> new HopperScreen(hopper, inventory, title);
@@ -221,7 +221,7 @@ public final class JsonUiContainers {
          case BeaconMenu beacon -> new BeaconScreen(beacon, inventory, title);
          case MerchantMenu merchant -> new MerchantScreen(merchant, inventory, title);
          default -> null;
-      });
+      };
    }
 
    private record Offer(int containerId, ContainerScreens.Choice choice, @Nullable String customName, @Nullable Workstations trades, @Nullable Long owner) {

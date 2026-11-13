@@ -55,8 +55,8 @@ public final class DevNetherNetTest {
 
          try {
             test.run();
-         } catch (Throwable var6) {
-            BedrockNative.LOGGER.error("Dev nethernet test: FAIL crashed", var6);
+         } catch (Throwable e) {
+            BedrockNative.LOGGER.error("Dev nethernet test: FAIL crashed", e);
             test.failed++;
          } finally {
             BedrockNative.LOGGER.info("Dev nethernet test: SUMMARY {} passed, {} failed", test.passed, test.failed);
@@ -105,48 +105,46 @@ public final class DevNetherNetTest {
       this.check("the first join stops at Bedrock's trust question", question != null);
       if (question == null) {
          return false;
-      } else {
-         this.screenshot("nethernet-trust");
-         String title = this.onClient(() -> question.getTitle().getString());
-         log(
-            "1 question: \"{}\", focus on {}",
-            title,
-            this.onClient(() -> question.getFocused() == null ? "nothing" : question.getFocused().getClass().getSimpleName())
-         );
-         this.check(
-            "it is a first-contact question, not the changed-key warning (\"" + title + "\")", !title.isBlank() && !title.toLowerCase().contains("changed")
-         );
-         this.check(
-            "the refusing button has the focus (Enter never trusts by accident)", this.onClient(() -> question.getFocused() == question.doNotTrustButton())
-         );
-         this.run(() -> question.doNotTrustButton().onPress(new KeyEvent(257, 0, 0)));
-         boolean back = this.waitFor("the screen the join started from", () -> this.onClient(() -> this.minecraft.gui.screen() instanceof TitleScreen), 10000L);
-         sleep(1500L);
-         BedrockConnector.JoinReport join = BedrockConnector.lastJoin();
-         log("1 first join: {}", join == null ? "no report" : join.choice());
-         this.check(
-            "found NetherNet by itself: no pong, the probe answered (" + (join == null ? null : join.ping() + ", " + join.netherNetProbe()) + ")",
-            join != null
-               && join.transport() == TransportKind.NETHERNET
-               && join.ping() != PingOutcome.PONG
-               && join.netherNetProbe() != null
-               && join.netherNetProbe().supported()
-         );
-         this.check("Don't Trust ends the join on the screen it started from", back && this.onClient(() -> this.minecraft.gui.screen() instanceof TitleScreen));
-         this.check(
-            "no session and no disconnect screen after Don't Trust",
-            this.onClient(
-               () -> this.minecraft.level == null
-                  && this.minecraft.getConnection() == null
-                  && !BedrockDisconnects.isDisconnectScreen(this.minecraft.gui.screen())
-            )
-         );
-         this.check(
-            "the refused key is not kept",
-            ((NetherNetTransport)TransportRegistry.transport(TransportKind.NETHERNET)).trustStore().trustedAt(this.target()) == null
-         );
-         return true;
       }
+
+      this.screenshot("nethernet-trust");
+      String title = this.onClient(() -> question.getTitle().getString());
+      log(
+         "1 question: \"{}\", focus on {}",
+         title,
+         this.onClient(() -> question.getFocused() == null ? "nothing" : question.getFocused().getClass().getSimpleName())
+      );
+      this.check(
+         "it is a first-contact question, not the changed-key warning (\"" + title + "\")", !title.isBlank() && !title.toLowerCase().contains("changed")
+      );
+      this.check(
+         "the refusing button has the focus (Enter never trusts by accident)", this.onClient(() -> question.getFocused() == question.doNotTrustButton())
+      );
+      this.run(() -> question.doNotTrustButton().onPress(new KeyEvent(257, 0, 0)));
+      boolean back = this.waitFor("the screen the join started from", () -> this.onClient(() -> this.minecraft.gui.screen() instanceof TitleScreen), 10000L);
+      sleep(1500L);
+      BedrockConnector.JoinReport join = BedrockConnector.lastJoin();
+      log("1 first join: {}", join == null ? "no report" : join.choice());
+      this.check(
+         "found NetherNet by itself: no pong, the probe answered (" + (join == null ? null : join.ping() + ", " + join.netherNetProbe()) + ")",
+         join != null
+            && join.transport() == TransportKind.NETHERNET
+            && join.ping() != PingOutcome.PONG
+            && join.netherNetProbe() != null
+            && join.netherNetProbe().supported()
+      );
+      this.check("Don't Trust ends the join on the screen it started from", back && this.onClient(() -> this.minecraft.gui.screen() instanceof TitleScreen));
+      this.check(
+         "no session and no disconnect screen after Don't Trust",
+         this.onClient(
+            () -> this.minecraft.level == null && this.minecraft.getConnection() == null && !BedrockDisconnects.isDisconnectScreen(this.minecraft.gui.screen())
+         )
+      );
+      this.check(
+         "the refused key is not kept",
+         ((NetherNetTransport)TransportRegistry.transport(TransportKind.NETHERNET)).trustStore().trustedAt(this.target()) == null
+      );
+      return true;
    }
 
    private boolean trustAndPlay() {
@@ -165,62 +163,63 @@ public final class DevNetherNetTest {
 
       if (!this.waitForWorld("2 after Trust and Join", false)) {
          return false;
-      } else {
-         BedrockConnector.JoinReport join = BedrockConnector.lastJoin();
-         log("2 joined: {}", join == null ? "no report" : join.choice());
-         this.check(
-            "joined over NetherNet after the trust (" + (join == null ? null : join.transport()) + ")",
-            join != null && join.transport() == TransportKind.NETHERNET && join.connected()
-         );
-         this.check(
-            "the key is kept for the address",
-            ((NetherNetTransport)TransportRegistry.transport(TransportKind.NETHERNET)).trustStore().trustedAt(this.target()) != null
-         );
-         TransportMemory.Entry remembered = BedrockConnector.memory().get(this.address.host(), this.address.port());
-         this.check(
-            "remembered as NetherNet with its scheme at LOGIN_SUCCESS (" + remembered + ")",
-            remembered != null && remembered.kind() == TransportKind.NETHERNET && remembered.scheme() != null
-         );
-         this.screenshot("nethernet-world");
-         Vec3 before = this.onClient(() -> this.minecraft.player.position());
-         Vec3 after = before;
-
-         for (int turn = 0; turn < 4 && after.distanceTo(before) <= 1.0; turn++) {
-            int quarter = turn;
-            this.run(() -> this.minecraft.player.setYRot(this.minecraft.player.getYRot() + 90.0F * Math.min(1, quarter)));
-            this.run(() -> this.minecraft.options.keyUp.setDown(true));
-            sleep(1500L);
-            this.run(() -> this.minecraft.options.keyUp.setDown(false));
-            sleep(800L);
-            after = this.onClient(() -> this.minecraft.player == null ? before : this.minecraft.player.position());
-         }
-
-         log("2 walked from {} to {}", before, after);
-         this.check("walks (" + String.format("%.2f", after.distanceTo(before)) + " blocks)", after.distanceTo(before) > 1.0);
-         String marker = "BN NetherNet chat " + Integer.toHexString((int)(Math.random() * 1.6777215E7));
-         JsonUiHud.forgetLastChat();
-         this.run(() -> this.minecraft.getConnection().sendChat(marker));
-         boolean echoed = this.waitFor("the chat line back from the server", () -> JsonUiHud.lastChat().contains(marker), 10000L);
-         log("2 last chat line: {}", JsonUiHud.lastChat());
-         this.check("a chat line comes back from the server", echoed);
-         this.screenshot("nethernet-chat");
-         long stay = Long.getLong("bedrocknative.nethernetStayMs", 0L);
-         if (stay <= 0L) {
-            return true;
-         } else {
-            long until = System.currentTimeMillis() + stay;
-
-            while (System.currentTimeMillis() < until && this.onClient(() -> this.minecraft.level != null)) {
-               sleep(250L);
-            }
-
-            boolean stayed = this.onClient(() -> this.minecraft.level != null && this.minecraft.getConnection() != null);
-            BedrockDisconnects.Ended last = BedrockDisconnects.last();
-            log("2 stayed {} ms more: still connected {}{}", stay, stayed, !stayed && last != null ? ", ended " + last.end().logText() : "");
-            this.check("the session stays " + stay + " ms more", stayed);
-            return stayed;
-         }
       }
+
+      BedrockConnector.JoinReport join = BedrockConnector.lastJoin();
+      log("2 joined: {}", join == null ? "no report" : join.choice());
+      this.check(
+         "joined over NetherNet after the trust (" + (join == null ? null : join.transport()) + ")",
+         join != null && join.transport() == TransportKind.NETHERNET && join.connected()
+      );
+      this.check(
+         "the key is kept for the address",
+         ((NetherNetTransport)TransportRegistry.transport(TransportKind.NETHERNET)).trustStore().trustedAt(this.target()) != null
+      );
+      TransportMemory.Entry remembered = BedrockConnector.memory().get(this.address.host(), this.address.port());
+      this.check(
+         "remembered as NetherNet with its scheme at LOGIN_SUCCESS (" + remembered + ")",
+         remembered != null && remembered.kind() == TransportKind.NETHERNET && remembered.scheme() != null
+      );
+      this.screenshot("nethernet-world");
+      Vec3 before = this.onClient(() -> this.minecraft.player.position());
+      Vec3 after = before;
+
+      for (int turn = 0; turn < 4 && after.distanceTo(before) <= 1.0; turn++) {
+         int quarter = turn;
+         this.run(() -> this.minecraft.player.setYRot(this.minecraft.player.getYRot() + 90.0F * Math.min(1, quarter)));
+         this.run(() -> this.minecraft.options.keyUp.setDown(true));
+         sleep(1500L);
+         this.run(() -> this.minecraft.options.keyUp.setDown(false));
+         sleep(800L);
+         after = this.onClient(() -> this.minecraft.player == null ? before : this.minecraft.player.position());
+      }
+
+      Vec3 walkedTo = after;
+      log("2 walked from {} to {}", before, walkedTo);
+      this.check("walks (" + String.format("%.2f", walkedTo.distanceTo(before)) + " blocks)", walkedTo.distanceTo(before) > 1.0);
+      String marker = "BN NetherNet chat " + Integer.toHexString((int)(Math.random() * 1.6777215E7));
+      JsonUiHud.forgetLastChat();
+      this.run(() -> this.minecraft.getConnection().sendChat(marker));
+      boolean echoed = this.waitFor("the chat line back from the server", () -> JsonUiHud.lastChat().contains(marker), 10000L);
+      log("2 last chat line: {}", JsonUiHud.lastChat());
+      this.check("a chat line comes back from the server", echoed);
+      this.screenshot("nethernet-chat");
+      long stay = Long.getLong("bedrocknative.nethernetStayMs", 0L);
+      if (stay <= 0L) {
+         return true;
+      }
+
+      long until = System.currentTimeMillis() + stay;
+
+      while (System.currentTimeMillis() < until && this.onClient(() -> this.minecraft.level != null)) {
+         sleep(250L);
+      }
+
+      boolean stayed = this.onClient(() -> this.minecraft.level != null && this.minecraft.getConnection() != null);
+      BedrockDisconnects.Ended last = BedrockDisconnects.last();
+      log("2 stayed {} ms more: still connected {}{}", stay, stayed, !stayed && last != null ? ", ended " + last.end().logText() : "");
+      this.check("the session stays " + stay + " ms more", stayed);
+      return stayed;
    }
 
    private void rejoin() {
@@ -322,23 +321,22 @@ public final class DevNetherNetTest {
          BedrockDisconnects.Ended last = BedrockDisconnects.last();
          log("{}: no world; last end {}", what, last == null ? "none" : last.end().logText());
          return false;
-      } else {
-         boolean loaded = this.waitFor(
-            "the loading screen to end (" + what + ")", () -> this.onClient(() -> this.minecraft.gui.screen() == null || this.minecraft.level == null), 60000L
-         );
-         sleep(1000L);
-         boolean inWorld = this.onClient(() -> this.minecraft.level != null && this.minecraft.player != null);
-         if (!inWorld) {
-            BedrockDisconnects.Ended last = BedrockDisconnects.last();
-            this.check("the session lasts past the loading screen (" + what + "; ended " + (last == null ? "?" : last.end().logText()) + ")", false);
-         }
-
-         return loaded && inWorld;
       }
+
+      boolean loaded = this.waitFor(
+         "the loading screen to end (" + what + ")", () -> this.onClient(() -> this.minecraft.gui.screen() == null || this.minecraft.level == null), 60000L
+      );
+      sleep(1000L);
+      boolean inWorld = this.onClient(() -> this.minecraft.level != null && this.minecraft.player != null);
+      if (!inWorld) {
+         BedrockDisconnects.Ended last = BedrockDisconnects.last();
+         this.check("the session lasts past the loading screen (" + what + "; ended " + (last == null ? "?" : last.end().logText()) + ")", false);
+      }
+
+      return loaded && inWorld;
    }
 
-   @Nullable
-   private ServerTrustScreen waitForQuestion(long millis) {
+   private @Nullable ServerTrustScreen waitForQuestion(long millis) {
       ServerTrustScreen[] found = new ServerTrustScreen[1];
       this.waitFor("Bedrock's trust question", () -> {
          Screen screen = this.onClient(() -> this.minecraft.gui.screen());
@@ -413,14 +411,14 @@ public final class DevNetherNetTest {
       });
    }
 
-   private <T> T onClient(Supplier<T> task) {
+   private <T> T onClient(Supplier<@Nullable T> task) {
       return this.minecraft.isSameThread() ? task.get() : CompletableFuture.supplyAsync(task, this.minecraft::execute).join();
    }
 
    private static void sleep(long millis) {
       try {
          Thread.sleep(millis);
-      } catch (InterruptedException var3) {
+      } catch (InterruptedException e) {
          Thread.currentThread().interrupt();
       }
    }

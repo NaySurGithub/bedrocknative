@@ -3,6 +3,7 @@ package net.bedrocknative.content.own;
 import java.util.Map;
 import java.util.function.Supplier;
 import net.bedrocknative.content.ArgbImage;
+import org.jspecify.annotations.Nullable;
 
 final class OwnMenuArt {
    static final String UI = "textures/ui/";
@@ -29,7 +30,7 @@ final class OwnMenuArt {
    private OwnMenuArt() {
    }
 
-   static void register(Map<String, Supplier<OwnArt.Texture>> into) {
+   static void register(Map<String, Supplier<OwnArt.@Nullable Texture>> into) {
       into.put("textures/ui/White", () -> OwnArt.Texture.sliced(PixelArt.solid(2, 2, PixelArt.rgb(16777215)), 1));
       into.put("textures/ui/Black", () -> OwnArt.Texture.sliced(PixelArt.solid(2, 2, PixelArt.rgb(0)), 1));
       into.put("textures/ui/white_background", () -> OwnArt.Texture.plain(PixelArt.solid(1, 1, PixelArt.rgb(16777215))));

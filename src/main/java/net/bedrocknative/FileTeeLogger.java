@@ -55,7 +55,9 @@ final class FileTeeLogger extends LegacyAbstractLogger {
       return null;
    }
 
-   protected void handleNormalizedLoggingCall(Level level, @Nullable Marker marker, String pattern, @Nullable Object[] arguments, @Nullable Throwable throwable) {
+   protected void handleNormalizedLoggingCall(
+      Level level, @Nullable Marker marker, String pattern, Object @Nullable [] arguments, @Nullable Throwable throwable
+   ) {
       String message = MessageFormatter.basicArrayFormat(pattern, arguments);
       Consumer<String> observer = BedrockNative.logObserver;
       if (observer != null) {

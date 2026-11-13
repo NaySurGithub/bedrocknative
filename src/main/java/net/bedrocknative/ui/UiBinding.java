@@ -5,19 +5,13 @@ import org.jspecify.annotations.Nullable;
 public final class UiBinding {
    final UiBinding.Type type;
    final UiBinding.Condition condition;
-   @Nullable
-   final String name;
-   @Nullable
-   final UiExpression expression;
-   @Nullable
-   final String target;
-   @Nullable
-   final String collection;
-   @Nullable
-   final String sourceControl;
+   final @Nullable String name;
+   final @Nullable UiExpression expression;
+   final @Nullable String target;
+   final @Nullable String collection;
+   final @Nullable String sourceControl;
    final boolean siblingScope;
-   @Nullable
-   UiControl resolvedSource;
+   @Nullable UiControl resolvedSource;
    long resolvedTreeVersion = -1L;
    int reads;
 
@@ -49,18 +43,15 @@ public final class UiBinding {
       return this.condition;
    }
 
-   @Nullable
-   public String name() {
+   public @Nullable String name() {
       return this.name;
    }
 
-   @Nullable
-   public String target() {
+   public @Nullable String target() {
       return this.target;
    }
 
-   @Nullable
-   public String collection() {
+   public @Nullable String collection() {
       return this.collection;
    }
 
@@ -73,7 +64,7 @@ public final class UiBinding {
       return this.type + " " + (this.expression != null ? this.expression.source() : this.name) + " -> " + this.target;
    }
 
-   public static enum Condition {
+   public enum Condition {
       ALWAYS,
       ALWAYS_WHEN_VISIBLE,
       VISIBLE,
@@ -84,20 +75,20 @@ public final class UiBinding {
       static UiBinding.Condition of(@Nullable String name) {
          if (name == null) {
             return ALWAYS;
-         } else {
-            return switch (name) {
-               case "always_when_visible" -> ALWAYS_WHEN_VISIBLE;
-               case "visible" -> VISIBLE;
-               case "once" -> ONCE;
-               case "none" -> NONE;
-               case "visibility_changed" -> VISIBILITY_CHANGED;
-               default -> ALWAYS;
-            };
          }
+
+         return switch (name) {
+            case "always_when_visible" -> ALWAYS_WHEN_VISIBLE;
+            case "visible" -> VISIBLE;
+            case "once" -> ONCE;
+            case "none" -> NONE;
+            case "visibility_changed" -> VISIBILITY_CHANGED;
+            default -> ALWAYS;
+         };
       }
    }
 
-   public static enum Type {
+   public enum Type {
       GLOBAL,
       COLLECTION,
       COLLECTION_DETAILS,

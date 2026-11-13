@@ -43,8 +43,7 @@ public final class VolumeEntities {
       this.volumes.remove(key(packet.getDimension(), packet.getId()));
    }
 
-   @Nullable
-   public VolumeEntities.Volume get(int dimension, int id) {
+   public VolumeEntities.@Nullable Volume get(int dimension, int id) {
       return this.volumes.get(key(dimension, id));
    }
 

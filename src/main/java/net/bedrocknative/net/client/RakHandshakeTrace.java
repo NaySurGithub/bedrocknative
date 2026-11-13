@@ -43,18 +43,13 @@ public final class RakHandshakeTrace extends ChannelDuplexHandler {
    private volatile int datagramsOut;
    private volatile int datagramsIn;
    private volatile int pongs;
-   @Nullable
-   private volatile String refusal;
+   private volatile @Nullable String refusal;
    private volatile int otherIn;
    private volatile int lastOtherId = -1;
-   @Nullable
-   private volatile InetSocketAddress remote;
-   @Nullable
-   private volatile ChannelHandlerContext context;
-   @Nullable
-   private volatile Throwable socketError;
-   @Nullable
-   private volatile Consumer<Throwable> socketFailure;
+   private volatile @Nullable InetSocketAddress remote;
+   private volatile @Nullable ChannelHandlerContext context;
+   private volatile @Nullable Throwable socketError;
+   private volatile @Nullable Consumer<Throwable> socketFailure;
 
    public void onSocketConnectFailure(Consumer<Throwable> action) {
       this.socketFailure = action;
@@ -229,57 +224,55 @@ public final class RakHandshakeTrace extends ChannelDuplexHandler {
       Throwable failed = this.socketError;
       if (failed != null && this.request1 == 0) {
          return text.append(": the socket could not connect (").append(failed).append(')').toString();
-      } else {
-         text.append(String.format(Locale.ROOT, " over %.1f s: OpenConnectionRequest1 x%d", this.millis() / 1000.0, this.request1));
-         synchronized (this.request1ByMtu) {
-            if (!this.request1ByMtu.isEmpty()) {
-               text.append(" (MTU");
-               boolean first = true;
-
-               for (Entry<Integer, Integer> probe : this.request1ByMtu.entrySet()) {
-                  text.append(first ? " " : ", ").append(probe.getKey()).append(" x").append(probe.getValue());
-                  first = false;
-               }
-
-               text.append(')');
-            }
-         }
-
-         if (this.reply1 == 0) {
-            text.append(", no OpenConnectionReply1");
-         } else {
-            text.append(", OpenConnectionReply1 x")
-               .append(this.reply1)
-               .append(" first after ")
-               .append(this.reply1Millis)
-               .append(" ms (MTU ")
-               .append(this.reply1Mtu)
-               .append(this.reply1Security ? ", with a cookie" : "")
-               .append(')');
-            text.append(", OpenConnectionRequest2 x").append(this.request2);
-            text.append(
-               this.reply2 == 0 ? ", no OpenConnectionReply2" : ", OpenConnectionReply2 after " + this.reply2Millis + " ms (MTU " + this.reply2Mtu + ")"
-            );
-         }
-
-         if (this.datagramsOut > 0 || this.datagramsIn > 0) {
-            text.append(", session datagrams sent ").append(this.datagramsOut).append(" received ").append(this.datagramsIn);
-         }
-
-         if (this.refusal != null) {
-            text.append(", refused: ").append(this.refusal);
-         }
-
-         if (this.pongs > 0) {
-            text.append(", pongs ").append(this.pongs);
-         }
-
-         if (this.otherIn > 0) {
-            text.append(", ").append(this.otherIn).append(" other packets (last id 0x").append(Integer.toHexString(this.lastOtherId)).append(')');
-         }
-
-         return text.toString();
       }
+
+      text.append(String.format(Locale.ROOT, " over %.1f s: OpenConnectionRequest1 x%d", this.millis() / 1000.0, this.request1));
+      synchronized (this.request1ByMtu) {
+         if (!this.request1ByMtu.isEmpty()) {
+            text.append(" (MTU");
+            boolean first = true;
+
+            for (Entry<Integer, Integer> probe : this.request1ByMtu.entrySet()) {
+               text.append(first ? " " : ", ").append(probe.getKey()).append(" x").append(probe.getValue());
+               first = false;
+            }
+
+            text.append(')');
+         }
+      }
+
+      if (this.reply1 == 0) {
+         text.append(", no OpenConnectionReply1");
+      } else {
+         text.append(", OpenConnectionReply1 x")
+            .append(this.reply1)
+            .append(" first after ")
+            .append(this.reply1Millis)
+            .append(" ms (MTU ")
+            .append(this.reply1Mtu)
+            .append(this.reply1Security ? ", with a cookie" : "")
+            .append(')');
+         text.append(", OpenConnectionRequest2 x").append(this.request2);
+         text.append(this.reply2 == 0 ? ", no OpenConnectionReply2" : ", OpenConnectionReply2 after " + this.reply2Millis + " ms (MTU " + this.reply2Mtu + ")");
+      }
+
+      if (this.datagramsOut > 0 || this.datagramsIn > 0) {
+         text.append(", session datagrams sent ").append(this.datagramsOut).append(" received ").append(this.datagramsIn);
+      }
+
+      if (this.refusal != null) {
+         text.append(", refused: ").append(this.refusal);
+      }
+
+      if (this.pongs > 0) {
+         text.append(", pongs ").append(this.pongs);
+      }
+
+      if (this.otherIn > 0) {
+         text.append(", ").append(this.otherIn).append(" other packets (last id 0x").append(Integer.toHexString(this.lastOtherId)).append(')');
+      }
+
+      return text.toString();
    }
 
    private long millis() {

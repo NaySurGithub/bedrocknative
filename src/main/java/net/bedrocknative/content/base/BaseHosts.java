@@ -17,11 +17,13 @@ public record BaseHosts(Set<String> hosts, boolean httpsOnly, UrlGuard guard) {
          String host = uri.getHost() == null ? "" : uri.getHost().toLowerCase(Locale.ROOT);
          if (!this.hosts.contains(host) || uri.getUserInfo() != null) {
             throw new IOException("Base download refuses host " + host);
-         } else if (this.httpsOnly && uri.getPort() != -1 && uri.getPort() != 443) {
-            throw new IOException("Base download refuses port " + uri.getPort());
-         } else {
-            this.guard.check(uri);
          }
+
+         if (this.httpsOnly && uri.getPort() != -1 && uri.getPort() != 443) {
+            throw new IOException("Base download refuses port " + uri.getPort());
+         }
+
+         this.guard.check(uri);
       } else {
          throw new IOException("Base download refuses " + scheme + " URLs");
       }

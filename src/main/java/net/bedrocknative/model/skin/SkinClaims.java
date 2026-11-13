@@ -33,9 +33,9 @@ public final class SkinClaims {
                animations.add(
                   new AnimationData(
                      ImageData.of(integer(animation, "ImageWidth", 0), integer(animation, "ImageHeight", 0), bytes(animation, "Image")),
-                     AnimatedTextureType.from(Math.clamp((long)type, 0, AnimatedTextureType.values().length - 1)),
+                     AnimatedTextureType.from(Math.clamp(type, 0, AnimatedTextureType.values().length - 1)),
                      (float)number(animation, "Frames", 1.0),
-                     AnimationExpressionType.from(Math.clamp((long)expression, 0, 1))
+                     AnimationExpressionType.from(Math.clamp(expression, 0, 1))
                   )
                );
             }
@@ -44,8 +44,8 @@ public final class SkinClaims {
 
       List<PersonaPieceData> pieces = new ArrayList<>();
       if (claims.get("PersonaPieces") instanceof JsonArray list) {
-         for (JsonElement elementx : list) {
-            if (elementx instanceof JsonObject piece) {
+         for (JsonElement element : list) {
+            if (element instanceof JsonObject piece) {
                try {
                   pieces.add(
                      new PersonaPieceData(
@@ -64,8 +64,8 @@ public final class SkinClaims {
 
       List<PersonaPieceTintData> tintsx = new ArrayList<>();
       if (claims.get("PieceTintColors") instanceof JsonArray list) {
-         for (JsonElement elementxx : list) {
-            if (elementxx instanceof JsonObject tint && tint.get("Colors") instanceof JsonArray colors) {
+         for (JsonElement element : list) {
+            if (element instanceof JsonObject tint && tint.get("Colors") instanceof JsonArray colors) {
                List<Color> values = new ArrayList<>();
 
                for (int i = 0; i < 4; i++) {
@@ -111,7 +111,7 @@ public final class SkinClaims {
       if (!text.isEmpty() && !text.equals("#0")) {
          try {
             return new Color((int)Long.parseLong(text.startsWith("#") ? text.substring(1) : text, 16), true);
-         } catch (NumberFormatException var2) {
+         } catch (NumberFormatException e) {
             return new Color(0, true);
          }
       } else {
@@ -133,12 +133,12 @@ public final class SkinClaims {
       String value = string(json, key);
       if (value.isEmpty()) {
          return new byte[0];
-      } else {
-         try {
-            return Base64.getDecoder().decode(value);
-         } catch (IllegalArgumentException var4) {
-            return new byte[0];
-         }
+      }
+
+      try {
+         return Base64.getDecoder().decode(value);
+      } catch (IllegalArgumentException e) {
+         return new byte[0];
       }
    }
 
@@ -151,7 +151,7 @@ public final class SkinClaims {
 
       try {
          return value != null && value.isJsonPrimitive() ? value.getAsDouble() : fallback;
-      } catch (NumberFormatException var6) {
+      } catch (NumberFormatException e) {
          return fallback;
       }
    }

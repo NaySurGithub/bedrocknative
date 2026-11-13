@@ -24,8 +24,7 @@ import org.cloudburstmc.protocol.bedrock.packet.ToggleCrafterSlotRequestPacket;
 import org.jspecify.annotations.Nullable;
 
 final class BedrockCompletion {
-   @Nullable
-   private static volatile BedrockCompletion active;
+   private static volatile @Nullable BedrockCompletion active;
    private final Minecraft minecraft;
    private final Consumer<BedrockPacket> send;
    private final BedrockJukeboxes jukeboxes;
@@ -49,8 +48,7 @@ final class BedrockCompletion {
       this.dataDrivenUi = new DataDrivenUi(send);
    }
 
-   @Nullable
-   static BedrockCompletion active() {
+   static @Nullable BedrockCompletion active() {
       return active;
    }
 

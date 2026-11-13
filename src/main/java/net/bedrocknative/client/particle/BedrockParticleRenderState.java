@@ -32,12 +32,9 @@ final class BedrockParticleRenderState extends QuadParticleRenderState implement
    private final Map<String, Layer> layersByKey = new HashMap<>();
    private final Set<Layer> active = new LinkedHashSet<>();
    private final MutableBlockPos cursor = new MutableBlockPos();
-   @Nullable
-   private BedrockParticleRenderState.Batch current;
-   @Nullable
-   private Frustum frustum;
-   @Nullable
-   private ClientLevel level;
+   private BedrockParticleRenderState.@Nullable Batch current;
+   private @Nullable Frustum frustum;
+   private @Nullable ClientLevel level;
    private int total;
 
    void begin(Frustum frustum, ClientLevel level) {
@@ -65,35 +62,34 @@ final class BedrockParticleRenderState extends QuadParticleRenderState implement
       return this.current != null;
    }
 
-   @Nullable
-   private Layer layer(ParticleEffect effect) {
+   private @Nullable Layer layer(ParticleEffect effect) {
       String texture = effect.texture();
       String key = texture + "|" + effect.material();
       Layer known = this.layersByKey.get(key);
       if (known != null) {
          return known;
-      } else {
-         Identifier location;
-         if (texture.equalsIgnoreCase("atlas.terrain")) {
-            location = TextureAtlas.LOCATION_BLOCKS;
-         } else if (texture.equalsIgnoreCase("atlas.items")) {
-            location = TextureAtlas.LOCATION_ITEMS;
-         } else {
-            Optional<BedrockTextures.Texture> loaded = texture.isEmpty() ? Optional.empty() : BedrockTextures.pack(texture);
-            if (loaded.isEmpty()) {
-               return null;
-            }
+      }
 
-            location = loaded.get().id();
+      Identifier location;
+      if (texture.equalsIgnoreCase("atlas.terrain")) {
+         location = TextureAtlas.LOCATION_BLOCKS;
+      } else if (texture.equalsIgnoreCase("atlas.items")) {
+         location = TextureAtlas.LOCATION_ITEMS;
+      } else {
+         Optional<BedrockTextures.Texture> loaded = texture.isEmpty() ? Optional.empty() : BedrockTextures.pack(texture);
+         if (loaded.isEmpty()) {
+            return null;
          }
 
-         boolean blended = effect.material() == ParticleEffect.Material.BLEND || effect.material() == ParticleEffect.Material.ADD;
-         Layer layer = blended
-            ? new Layer(true, location, RenderPipelines.TRANSLUCENT_PARTICLE, RenderPipelines.OIT_PARTICLE)
-            : new Layer(false, location, RenderPipelines.OPAQUE_PARTICLE);
-         this.layersByKey.put(key, layer);
-         return layer;
+         location = loaded.get().id();
       }
+
+      boolean blended = effect.material() == ParticleEffect.Material.BLEND || effect.material() == ParticleEffect.Material.ADD;
+      Layer layer = blended
+         ? new Layer(true, location, RenderPipelines.TRANSLUCENT_PARTICLE, RenderPipelines.OIT_PARTICLE)
+         : new Layer(false, location, RenderPipelines.OPAQUE_PARTICLE);
+      this.layersByKey.put(key, layer);
+      return layer;
    }
 
    @Override
@@ -172,20 +168,23 @@ final class BedrockParticleRenderState extends QuadParticleRenderState implement
       ClientLevel current = this.level;
       if (current == null) {
          return 15728880;
-      } else {
-         this.cursor.set(x, y, z);
-         return current.hasChunkAt(this.cursor) ? LightCoordsUtil.getLightCoords(current, this.cursor) : 15728640;
       }
+
+      this.cursor.set(x, y, z);
+      return current.hasChunkAt(this.cursor) ? LightCoordsUtil.getLightCoords(current, this.cursor) : 15728640;
    }
 
+   @Override
    public boolean isEmpty() {
       return this.total == 0;
    }
 
+   @Override
    public Set<Layer> layers() {
       return this.active;
    }
 
+   @Override
    public void buildLayer(Layer layer, VertexConsumer builder) {
       BedrockParticleRenderState.Batch batch = this.batches.get(layer);
       if (batch != null) {
@@ -216,6 +215,7 @@ final class BedrockParticleRenderState extends QuadParticleRenderState implement
       }
    }
 
+   @Override
    public void clear() {
       for (Layer layer : this.active) {
          BedrockParticleRenderState.Batch batch = this.batches.get(layer);
@@ -229,6 +229,7 @@ final class BedrockParticleRenderState extends QuadParticleRenderState implement
       this.current = null;
    }
 
+   @Override
    public void submit(SubmitNodeCollector submitNodeCollector, CameraRenderState camera) {
       if (this.total > 0) {
          submitNodeCollector.submitQuadParticleGroup(this);

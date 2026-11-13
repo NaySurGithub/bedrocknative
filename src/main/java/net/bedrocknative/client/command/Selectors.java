@@ -104,10 +104,10 @@ final class Selectors {
 
             builder.add(here);
          } else {
-            String keyx = argument.substring(0, equals).strip().toLowerCase(Locale.ROOT);
+            String key = argument.substring(0, equals).strip().toLowerCase(Locale.ROOT);
             int valueStart = equals + 1 + (argument.startsWith("!", equals + 1) ? 1 : 0);
             SuggestionsBuilder value = builder.createOffset(builder.getStart() + current + valueStart);
-            switch (keyx) {
+            switch (key) {
                case "type":
                   BedrockArgument.suggestValues(value, values.values("EntityType"));
                   break;

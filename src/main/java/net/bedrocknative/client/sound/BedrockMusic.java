@@ -19,10 +19,8 @@ public final class BedrockMusic {
    private static final int STARTUP_TICKS = 40;
    private static final int MAX_QUEUED = 64;
    private final Minecraft minecraft;
-   @Nullable
-   private BedrockSoundInstance current;
-   @Nullable
-   private BedrockMusic.Track currentTrack;
+   private @Nullable BedrockSoundInstance current;
+   private BedrockMusic.@Nullable Track currentTrack;
    private int startedTicks;
    private final Deque<BedrockMusic.Track> queue = new ArrayDeque<>();
    private final List<BedrockMusic.Fading> fading = new ArrayList<>();
@@ -39,8 +37,7 @@ public final class BedrockMusic {
          || packet.getType() == LevelEvent.SET_MUSIC_VOLUME;
    }
 
-   @Nullable
-   static BedrockMusic.Track parse(NbtMap tag) {
+   static BedrockMusic.@Nullable Track parse(NbtMap tag) {
       String name = tag.getString("trackName", "");
       return name.isEmpty()
          ? null
@@ -143,8 +140,7 @@ public final class BedrockMusic {
       }
    }
 
-   @Nullable
-   public String playing() {
+   public @Nullable String playing() {
       return this.currentTrack != null ? this.currentTrack.name() : null;
    }
 

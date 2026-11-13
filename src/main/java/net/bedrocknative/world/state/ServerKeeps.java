@@ -23,17 +23,14 @@ import org.jspecify.annotations.Nullable;
 
 public final class ServerKeeps {
    private final Map<FurnaceType, FurnaceOptions> furnaces = new EnumMap<>(FurnaceType.class);
-   @Nullable
-   private volatile PresenceConfiguration presence;
+   private volatile @Nullable PresenceConfiguration presence;
    private volatile List<SerializableVoxelShape> shapes = List.of();
    private volatile Map<String, Integer> shapeNames = Map.of();
    private volatile int customShapes;
-   @Nullable
-   private volatile NbtMap jigsaw;
+   private volatile @Nullable NbtMap jigsaw;
    private volatile List<FeatureDefinition> features = List.of();
    private volatile String structureFeature = "";
-   @Nullable
-   private volatile ServerKeeps.PartyCookie partyCookie;
+   private volatile ServerKeeps.@Nullable PartyCookie partyCookie;
    private volatile int textureShifts;
 
    public static boolean handles(BedrockPacket packet) {
@@ -101,15 +98,13 @@ public final class ServerKeeps {
       this.textureShifts = 0;
    }
 
-   @Nullable
-   public FurnaceOptions furnace(FurnaceType type) {
+   public @Nullable FurnaceOptions furnace(FurnaceType type) {
       synchronized (this.furnaces) {
          return this.furnaces.get(type);
       }
    }
 
-   @Nullable
-   public SetPlayerFurnaceOptionsPacket changeFurnace(FurnaceType type, FurnaceOptions options) {
+   public @Nullable SetPlayerFurnaceOptionsPacket changeFurnace(FurnaceType type, FurnaceOptions options) {
       synchronized (this.furnaces) {
          if (options.equals(this.furnaces.get(type))) {
             return null;
@@ -124,8 +119,7 @@ public final class ServerKeeps {
       return packet;
    }
 
-   @Nullable
-   public PresenceConfiguration presence() {
+   public @Nullable PresenceConfiguration presence() {
       return this.presence;
    }
 
@@ -141,8 +135,7 @@ public final class ServerKeeps {
       return this.customShapes;
    }
 
-   @Nullable
-   public NbtMap jigsaw() {
+   public @Nullable NbtMap jigsaw() {
       return this.jigsaw;
    }
 
@@ -154,8 +147,7 @@ public final class ServerKeeps {
       return this.structureFeature;
    }
 
-   @Nullable
-   public ServerKeeps.PartyCookie partyCookie() {
+   public ServerKeeps.@Nullable PartyCookie partyCookie() {
       return this.partyCookie;
    }
 

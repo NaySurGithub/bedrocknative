@@ -47,8 +47,7 @@ public final class ParticleEffectParser {
       this.version = version;
    }
 
-   @Nullable
-   public ParticleEffect parse(JsonObject root, int pack, boolean serverPack) {
+   public @Nullable ParticleEffect parse(JsonObject root, int pack, boolean serverPack) {
       JsonObject effect = ModelJson.object(root, "particle_effect");
       JsonObject description = ModelJson.object(effect, "description");
       String identifier = ModelJson.string(description, "identifier");
@@ -297,11 +296,8 @@ public final class ParticleEffectParser {
          }
 
          for (JsonElement element : list) {
-            if (element instanceof JsonObject event) {
-               String var24 = ModelJson.string(event, "event");
-               if (var24 instanceof String) {
-                  collisionEvents.add(new ParticleEffect.CollisionEvent(var24, ModelJson.number(event, "min_speed", 2.0F)));
-               }
+            if (element instanceof JsonObject event && ModelJson.string(event, "event") instanceof String name) {
+               collisionEvents.add(new ParticleEffect.CollisionEvent(name, ModelJson.number(event, "min_speed", 2.0F)));
             }
          }
 
@@ -345,57 +341,55 @@ public final class ParticleEffectParser {
       );
    }
 
-   @Nullable
-   private ParticleEffect.Billboard billboard(@Nullable JsonObject json) {
+   private ParticleEffect.@Nullable Billboard billboard(@Nullable JsonObject json) {
       if (json == null) {
          return null;
-      } else {
-         ParticleEffect.Facing facing;
-         try {
-            facing = ParticleEffect.Facing.valueOf(String.valueOf(ModelJson.string(json, "facing_camera_mode")).toUpperCase(Locale.ROOT));
-         } catch (IllegalArgumentException var10) {
-            facing = ParticleEffect.Facing.LOOKAT_XYZ;
-         }
+      }
 
-         JsonObject direction = ModelJson.object(json, "direction");
-         boolean custom = "custom_direction".equalsIgnoreCase(ModelJson.string(direction, "mode"))
-            || "custom".equalsIgnoreCase(ModelJson.string(direction, "mode"));
-         JsonObject uv = ModelJson.object(json, "uv");
-         float width = number(uv, 1.0F, "texture_width", "texturewidth");
-         float height = number(uv, 1.0F, "texture_height", "textureheight");
-         JsonObject flipbookJson = ModelJson.object(uv, "flipbook");
-         ParticleEffect.Flipbook flipbook = null;
-         if (flipbookJson != null) {
-            flipbook = new ParticleEffect.Flipbook(
-               this.programs(member(flipbookJson, "base_UV", "base_uv"), 2, 0.0F),
-               constants(member(flipbookJson, "size_UV", "size_uv"), 2),
-               constants(member(flipbookJson, "step_UV", "step_uv"), 2),
-               this.program(flipbookJson.get("frames_per_second"), 8.0F),
-               this.program(flipbookJson.get("max_frame"), 1.0F),
-               ModelJson.bool(flipbookJson, "stretch_to_lifetime", false),
-               ModelJson.bool(flipbookJson, "loop", false)
-            );
-         }
+      ParticleEffect.Facing facing;
+      try {
+         facing = ParticleEffect.Facing.valueOf(String.valueOf(ModelJson.string(json, "facing_camera_mode")).toUpperCase(Locale.ROOT));
+      } catch (IllegalArgumentException e) {
+         facing = ParticleEffect.Facing.LOOKAT_XYZ;
+      }
 
-         return new ParticleEffect.Billboard(
-            this.programs(json.get("size"), 2, 0.0F),
-            facing,
-            custom,
-            ModelJson.number(direction, "min_speed_threshold", 0.01F),
-            this.programs(direction != null ? direction.get("custom_direction") : null, 3, 0.0F),
-            width <= 0.0F ? 1.0F : width,
-            height <= 0.0F ? 1.0F : height,
-            this.programs(uv != null ? uv.get("uv") : null, 2, 0.0F),
-            uv != null && uv.has("uv_size")
-               ? this.programs(uv.get("uv_size"), 2, 0.0F)
-               : new MolangProgram[]{constant(width <= 0.0F ? 1.0F : width), constant(height <= 0.0F ? 1.0F : height)},
-            flipbook
+      JsonObject direction = ModelJson.object(json, "direction");
+      boolean custom = "custom_direction".equalsIgnoreCase(ModelJson.string(direction, "mode"))
+         || "custom".equalsIgnoreCase(ModelJson.string(direction, "mode"));
+      JsonObject uv = ModelJson.object(json, "uv");
+      float width = number(uv, 1.0F, "texture_width", "texturewidth");
+      float height = number(uv, 1.0F, "texture_height", "textureheight");
+      JsonObject flipbookJson = ModelJson.object(uv, "flipbook");
+      ParticleEffect.Flipbook flipbook = null;
+      if (flipbookJson != null) {
+         flipbook = new ParticleEffect.Flipbook(
+            this.programs(member(flipbookJson, "base_UV", "base_uv"), 2, 0.0F),
+            constants(member(flipbookJson, "size_UV", "size_uv"), 2),
+            constants(member(flipbookJson, "step_UV", "step_uv"), 2),
+            this.program(flipbookJson.get("frames_per_second"), 8.0F),
+            this.program(flipbookJson.get("max_frame"), 1.0F),
+            ModelJson.bool(flipbookJson, "stretch_to_lifetime", false),
+            ModelJson.bool(flipbookJson, "loop", false)
          );
       }
+
+      return new ParticleEffect.Billboard(
+         this.programs(json.get("size"), 2, 0.0F),
+         facing,
+         custom,
+         ModelJson.number(direction, "min_speed_threshold", 0.01F),
+         this.programs(direction != null ? direction.get("custom_direction") : null, 3, 0.0F),
+         width <= 0.0F ? 1.0F : width,
+         height <= 0.0F ? 1.0F : height,
+         this.programs(uv != null ? uv.get("uv") : null, 2, 0.0F),
+         uv != null && uv.has("uv_size")
+            ? this.programs(uv.get("uv_size"), 2, 0.0F)
+            : new MolangProgram[]{constant(width <= 0.0F ? 1.0F : width), constant(height <= 0.0F ? 1.0F : height)},
+         flipbook
+      );
    }
 
-   @Nullable
-   private ParticleEffect.Tint tint(@Nullable JsonObject json) {
+   private ParticleEffect.@Nullable Tint tint(@Nullable JsonObject json) {
       if (json == null) {
          return null;
       } else {
@@ -445,7 +439,7 @@ public final class ParticleEffectParser {
                constant((float)(value & 255L) / 255.0F),
                constant(a)
             };
-         } catch (NumberFormatException var7) {
+         } catch (NumberFormatException e) {
             return new MolangProgram[]{constant(1.0F), constant(1.0F), constant(1.0F), constant(1.0F)};
          }
       } else if (!(element instanceof JsonArray array)) {
@@ -465,68 +459,67 @@ public final class ParticleEffectParser {
       List<ParticleCurve> curves = new ArrayList<>();
       if (json == null) {
          return curves;
-      } else {
-         for (Entry<String, JsonElement> entry : json.entrySet()) {
-            if (entry.getValue() instanceof JsonObject curve) {
-               String name = entry.getKey().toLowerCase(Locale.ROOT);
-               String variable = name.startsWith("variable.") ? name.substring(9) : (name.startsWith("v.") ? name.substring(2) : name);
-               String nodes = String.valueOf(ModelJson.string(curve, "type")).toLowerCase(Locale.ROOT);
+      }
 
-               ParticleCurve.Type type = switch (nodes) {
-                  case "bezier" -> ParticleCurve.Type.BEZIER;
-                  case "catmull_rom" -> ParticleCurve.Type.CATMULL_ROM;
-                  case "bezier_chain" -> ParticleCurve.Type.BEZIER_CHAIN;
-                  default -> ParticleCurve.Type.LINEAR;
-               };
-               MolangProgram[] nodes = new MolangProgram[0];
-               List<ParticleCurve.ChainNode> chain = new ArrayList<>();
-               JsonElement nodesJson = curve.get("nodes");
-               if (nodesJson instanceof JsonArray array) {
-                  nodes = new MolangProgram[array.size()];
+      for (Entry<String, JsonElement> entry : json.entrySet()) {
+         if (entry.getValue() instanceof JsonObject curve) {
+            String name = entry.getKey().toLowerCase(Locale.ROOT);
+            String variable = name.startsWith("variable.") ? name.substring(9) : (name.startsWith("v.") ? name.substring(2) : name);
 
-                  for (int i = 0; i < array.size(); i++) {
-                     nodes[i] = this.program(array.get(i), 0.0F);
-                  }
-               } else if (nodesJson instanceof JsonObject keyed) {
-                  for (Entry<String, JsonElement> node : keyed.entrySet()) {
-                     float key = parseFloat(node.getKey(), Float.NaN);
-                     if (!Float.isNaN(key) && node.getValue() instanceof JsonObject point) {
-                        MolangProgram value = this.program(point.get("value"), 0.0F);
-                        MolangProgram slope = this.program(point.get("slope"), 0.0F);
-                        chain.add(
-                           new ParticleCurve.ChainNode(
-                              key,
-                              point.has("left_value") ? this.program(point.get("left_value"), 0.0F) : value,
-                              point.has("right_value") ? this.program(point.get("right_value"), 0.0F) : value,
-                              point.has("left_slope") ? this.program(point.get("left_slope"), 0.0F) : slope,
-                              point.has("right_slope") ? this.program(point.get("right_slope"), 0.0F) : slope
-                           )
-                        );
-                     }
-                  }
+            ParticleCurve.Type type = switch (String.valueOf(ModelJson.string(curve, "type")).toLowerCase(Locale.ROOT)) {
+               case "bezier" -> ParticleCurve.Type.BEZIER;
+               case "catmull_rom" -> ParticleCurve.Type.CATMULL_ROM;
+               case "bezier_chain" -> ParticleCurve.Type.BEZIER_CHAIN;
+               default -> ParticleCurve.Type.LINEAR;
+            };
+            MolangProgram[] nodes = new MolangProgram[0];
+            List<ParticleCurve.ChainNode> chain = new ArrayList<>();
+            JsonElement nodesJson = curve.get("nodes");
+            if (nodesJson instanceof JsonArray array) {
+               nodes = new MolangProgram[array.size()];
 
-                  chain.sort((a, b) -> Float.compare(a.key(), b.key()));
-                  if (type != ParticleCurve.Type.BEZIER_CHAIN) {
-                     nodes = chain.stream().map(ParticleCurve.ChainNode::rightValue).toArray(MolangProgram[]::new);
+               for (int i = 0; i < array.size(); i++) {
+                  nodes[i] = this.program(array.get(i), 0.0F);
+               }
+            } else if (nodesJson instanceof JsonObject keyed) {
+               for (Entry<String, JsonElement> node : keyed.entrySet()) {
+                  float key = parseFloat(node.getKey(), Float.NaN);
+                  if (!Float.isNaN(key) && node.getValue() instanceof JsonObject point) {
+                     MolangProgram value = this.program(point.get("value"), 0.0F);
+                     MolangProgram slope = this.program(point.get("slope"), 0.0F);
+                     chain.add(
+                        new ParticleCurve.ChainNode(
+                           key,
+                           point.has("left_value") ? this.program(point.get("left_value"), 0.0F) : value,
+                           point.has("right_value") ? this.program(point.get("right_value"), 0.0F) : value,
+                           point.has("left_slope") ? this.program(point.get("left_slope"), 0.0F) : slope,
+                           point.has("right_slope") ? this.program(point.get("right_slope"), 0.0F) : slope
+                        )
+                     );
                   }
                }
 
-               curves.add(
-                  new ParticleCurve(
-                     variable,
-                     MolangNames.id(variable),
-                     type,
-                     this.program(curve.get("input"), 0.0F),
-                     this.program(curve.get("horizontal_range"), 1.0F),
-                     nodes,
-                     chain.toArray(new ParticleCurve.ChainNode[0])
-                  )
-               );
+               chain.sort((a, b) -> Float.compare(a.key(), b.key()));
+               if (type != ParticleCurve.Type.BEZIER_CHAIN) {
+                  nodes = chain.stream().map(ParticleCurve.ChainNode::rightValue).toArray(MolangProgram[]::new);
+               }
             }
-         }
 
-         return curves;
+            curves.add(
+               new ParticleCurve(
+                  variable,
+                  MolangNames.id(variable),
+                  type,
+                  this.program(curve.get("input"), 0.0F),
+                  this.program(curve.get("horizontal_range"), 1.0F),
+                  nodes,
+                  chain.toArray(new ParticleCurve.ChainNode[0])
+               )
+            );
+         }
       }
+
+      return curves;
    }
 
    private Map<String, ParticleEvent> events(@Nullable JsonObject json) {
@@ -545,55 +538,50 @@ public final class ParticleEffectParser {
    private ParticleEvent event(JsonObject json, int depth) {
       if (depth > 16) {
          return ParticleEvent.EMPTY;
-      } else {
-         List<ParticleEvent> sequence = new ArrayList<>();
-         JsonElement effect = json.get("sequence");
-         if (effect instanceof JsonArray) {
-            for (JsonElement element : (JsonArray)effect) {
-               if (element instanceof JsonObject child) {
-                  sequence.add(this.event(child, depth + 1));
-               }
-            }
-         }
-
-         List<ParticleEvent.Weighted> randomize = new ArrayList<>();
-         JsonElement var15 = json.get("randomize");
-         if (var15 instanceof JsonArray) {
-            for (JsonElement elementx : (JsonArray)var15) {
-               if (elementx instanceof JsonObject child) {
-                  randomize.add(new ParticleEvent.Weighted(ModelJson.number(child, "weight", 1.0F), this.event(child, depth + 1)));
-               }
-            }
-         }
-
-         ParticleEvent.Effect effectx = null;
-         JsonObject particle = ModelJson.object(json, "particle_effect");
-         if (particle != null) {
-            String var21 = ModelJson.string(particle, "effect");
-            if (var21 instanceof String) {
-               String var9 = String.valueOf(ModelJson.string(particle, "type")).toLowerCase(Locale.ROOT);
-
-               ParticleEvent.EffectType type = switch (var9) {
-                  case "emitter_bound" -> ParticleEvent.EffectType.EMITTER_BOUND;
-                  case "particle" -> ParticleEvent.EffectType.PARTICLE;
-                  case "particle_with_velocity" -> ParticleEvent.EffectType.PARTICLE_WITH_VELOCITY;
-                  default -> ParticleEvent.EffectType.EMITTER;
-               };
-               effectx = new ParticleEvent.Effect(var21.toLowerCase(Locale.ROOT), type, this.optional(particle, "pre_effect_expression"));
-            }
-         }
-
-         JsonObject sound = ModelJson.object(json, "sound_effect");
-         String soundName = ModelJson.string(sound, "event_name");
-         return new ParticleEvent(
-            List.copyOf(sequence),
-            List.copyOf(randomize),
-            effectx,
-            soundName != null ? soundName.toLowerCase(Locale.ROOT) : null,
-            this.optional(json, "expression"),
-            ModelJson.string(json, "log")
-         );
       }
+
+      List<ParticleEvent> sequence = new ArrayList<>();
+      JsonElement effect = json.get("sequence");
+      if (effect instanceof JsonArray) {
+         for (JsonElement element : (JsonArray)effect) {
+            if (element instanceof JsonObject child) {
+               sequence.add(this.event(child, depth + 1));
+            }
+         }
+      }
+
+      List<ParticleEvent.Weighted> randomize = new ArrayList<>();
+      JsonElement var15 = json.get("randomize");
+      if (var15 instanceof JsonArray) {
+         for (JsonElement element : (JsonArray)var15) {
+            if (element instanceof JsonObject child) {
+               randomize.add(new ParticleEvent.Weighted(ModelJson.number(child, "weight", 1.0F), this.event(child, depth + 1)));
+            }
+         }
+      }
+
+      ParticleEvent.Effect effectx = null;
+      JsonObject particle = ModelJson.object(json, "particle_effect");
+      if (particle != null && ModelJson.string(particle, "effect") instanceof String identifier) {
+         ParticleEvent.EffectType type = switch (String.valueOf(ModelJson.string(particle, "type")).toLowerCase(Locale.ROOT)) {
+            case "emitter_bound" -> ParticleEvent.EffectType.EMITTER_BOUND;
+            case "particle" -> ParticleEvent.EffectType.PARTICLE;
+            case "particle_with_velocity" -> ParticleEvent.EffectType.PARTICLE_WITH_VELOCITY;
+            default -> ParticleEvent.EffectType.EMITTER;
+         };
+         effectx = new ParticleEvent.Effect(identifier.toLowerCase(Locale.ROOT), type, this.optional(particle, "pre_effect_expression"));
+      }
+
+      JsonObject sound = ModelJson.object(json, "sound_effect");
+      String soundName = ModelJson.string(sound, "event_name");
+      return new ParticleEvent(
+         List.copyOf(sequence),
+         List.copyOf(randomize),
+         effectx,
+         soundName != null ? soundName.toLowerCase(Locale.ROOT) : null,
+         this.optional(json, "expression"),
+         ModelJson.string(json, "log")
+      );
    }
 
    private static ParticleEffect.Timeline timeline(@Nullable JsonObject json) {
@@ -615,9 +603,9 @@ public final class ParticleEffectParser {
          String[][] names = new String[entries.size()][];
          int index = 0;
 
-         for (Entry<Float, String[]> entryx : entries.entrySet()) {
-            times[index] = entryx.getKey();
-            names[index++] = entryx.getValue();
+         for (Entry<Float, String[]> entry : entries.entrySet()) {
+            times[index] = entry.getKey();
+            names[index++] = entry.getValue();
          }
 
          return new ParticleEffect.Timeline(times, names);
@@ -655,19 +643,16 @@ public final class ParticleEffectParser {
       return Set.copyOf(blocks);
    }
 
-   @Nullable
-   private static JsonObject component(JsonObject components, String name) {
+   private static @Nullable JsonObject component(JsonObject components, String name) {
       return componentElement(components, name) instanceof JsonObject object ? object : null;
    }
 
-   @Nullable
-   private static JsonElement componentElement(JsonObject components, String name) {
+   private static @Nullable JsonElement componentElement(JsonObject components, String name) {
       JsonElement element = components.get("minecraft:" + name);
       return element != null ? element : components.get(name);
    }
 
-   @Nullable
-   private static JsonElement member(JsonObject json, String... names) {
+   private static @Nullable JsonElement member(JsonObject json, String... names) {
       for (String name : names) {
          if (json.has(name)) {
             return json.get(name);
@@ -675,8 +660,8 @@ public final class ParticleEffectParser {
       }
 
       for (Entry<String, JsonElement> entry : json.entrySet()) {
-         for (String namex : names) {
-            if (entry.getKey().equalsIgnoreCase(namex)) {
+         for (String name : names) {
+            if (entry.getKey().equalsIgnoreCase(name)) {
                return entry.getValue();
             }
          }
@@ -688,10 +673,10 @@ public final class ParticleEffectParser {
    private static float number(@Nullable JsonObject json, float fallback, String... names) {
       if (json == null) {
          return fallback;
-      } else {
-         JsonElement element = member(json, names);
-         return element != null ? ModelJson.number(element, fallback) : fallback;
       }
+
+      JsonElement element = member(json, names);
+      return element != null ? ModelJson.number(element, fallback) : fallback;
    }
 
    private static float[] constants(@Nullable JsonElement element, int count) {
@@ -707,8 +692,7 @@ public final class ParticleEffectParser {
       return values;
    }
 
-   @Nullable
-   private MolangProgram optional(@Nullable JsonObject json, String key) {
+   private @Nullable MolangProgram optional(@Nullable JsonObject json, String key) {
       return json != null && json.has(key) && !json.get(key).isJsonNull() ? this.program(json.get(key), 0.0F) : null;
    }
 
@@ -716,23 +700,25 @@ public final class ParticleEffectParser {
       if (element instanceof JsonPrimitive primitive) {
          if (primitive.isNumber()) {
             return constant(primitive.getAsFloat());
-         } else if (primitive.isBoolean()) {
-            return constant(primitive.getAsBoolean() ? 1.0F : 0.0F);
-         } else {
-            String source = primitive.getAsString().trim();
-            if (source.isEmpty()) {
-               return constant(fallback);
-            } else {
-               float number = parseFloat(source, Float.NaN);
-               if (!Float.isNaN(number)) {
-                  return constant(number);
-               } else {
-                  MolangProgram program = this.molang.compile(source, this.version);
-                  this.collecting.add(program);
-                  return program;
-               }
-            }
          }
+
+         if (primitive.isBoolean()) {
+            return constant(primitive.getAsBoolean() ? 1.0F : 0.0F);
+         }
+
+         String source = primitive.getAsString().trim();
+         if (source.isEmpty()) {
+            return constant(fallback);
+         }
+
+         float number = parseFloat(source, Float.NaN);
+         if (!Float.isNaN(number)) {
+            return constant(number);
+         }
+
+         MolangProgram program = this.molang.compile(source, this.version);
+         this.collecting.add(program);
+         return program;
       } else {
          return element instanceof JsonArray array && array.size() == 1 ? this.program(array.get(0), fallback) : constant(fallback);
       }
@@ -761,7 +747,7 @@ public final class ParticleEffectParser {
    private static float parseFloat(String text, float fallback) {
       try {
          return Float.parseFloat(text.trim());
-      } catch (NumberFormatException var3) {
+      } catch (NumberFormatException e) {
          return fallback;
       }
    }

@@ -12,18 +12,14 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin({ConnectScreen.class})
+@Mixin(ConnectScreen.class)
 public abstract class ConnectScreenMixin {
-   @Inject(
-      method = {"connect"},
-      at = {@At("HEAD")},
-      cancellable = true
-   )
+   @Inject(method = "connect", at = @At("HEAD"), cancellable = true)
    private void bedrocknative$chooseTheWay(
       Minecraft minecraft, ServerAddress hostAndPort, ServerData server, @Nullable TransferState transferState, CallbackInfo ci
    ) {
       if (!BedrockConnector.handingToJava()) {
-         BedrockConnector.connect((ConnectScreen)this, minecraft, hostAndPort, server, transferState);
+         BedrockConnector.connect((ConnectScreen)(Object)this, minecraft, hostAndPort, server, transferState);
          ci.cancel();
       }
    }

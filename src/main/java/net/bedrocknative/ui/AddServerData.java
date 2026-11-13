@@ -21,8 +21,7 @@ public final class AddServerData implements UiDataSource {
    static final int ADDRESS_LENGTH = 256;
    static final int PORT_LENGTH = 6;
    private final boolean editMode;
-   @Nullable
-   private AddServerData.Actions actions;
+   private AddServerData.@Nullable Actions actions;
    private String name;
    private String host;
    private String port;
@@ -49,7 +48,7 @@ public final class AddServerData implements UiDataSource {
       return text.length() <= length ? text : text.substring(0, length);
    }
 
-   public void actions(@Nullable AddServerData.Actions target) {
+   public void actions(AddServerData.@Nullable Actions target) {
       this.actions = target;
    }
 
@@ -73,8 +72,7 @@ public final class AddServerData implements UiDataSource {
       return this.confirming;
    }
 
-   @Nullable
-   public BedrockAddress address() {
+   public @Nullable BedrockAddress address() {
       String trimmed = BedrockAddress.withoutPrefix(this.host);
       if (trimmed.length() > 2 && trimmed.startsWith("[") && trimmed.endsWith("]")) {
          trimmed = trimmed.substring(1, trimmed.length() - 1);
@@ -147,9 +145,8 @@ public final class AddServerData implements UiDataSource {
       return UiValue.NULL;
    }
 
-   @Nullable
    @Override
-   public String kind(String collection, int index) {
+   public @Nullable String kind(String collection, int index) {
       return null;
    }
 

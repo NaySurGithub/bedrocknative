@@ -18,31 +18,30 @@ public final class CraftPlanner {
       return new CraftPlanner.Snapshot(sources, matcher);
    }
 
-   @Nullable
-   public static int[][] cells(BookRecipe recipe, int gridSize) {
+   public static int @Nullable [][] cells(BookRecipe recipe, int gridSize) {
       if (!recipe.fits(gridSize)) {
          return null;
-      } else {
-         List<BookRecipe.Unit> units = recipe.units();
-         int[][] cells = new int[units.size()][];
-         int next = 0;
+      }
 
-         for (int u = 0; u < units.size(); u++) {
-            BookRecipe.Unit unit = units.get(u);
-            if (recipe.shaped()) {
-               int width = Math.max(1, recipe.width());
-               cells[u] = new int[]{unit.index() / width * gridSize + unit.index() % width};
-            } else {
-               cells[u] = new int[unit.perCraft()];
+      List<BookRecipe.Unit> units = recipe.units();
+      int[][] cells = new int[units.size()][];
+      int next = 0;
 
-               for (int i = 0; i < unit.perCraft(); i++) {
-                  cells[u][i] = next++;
-               }
+      for (int u = 0; u < units.size(); u++) {
+         BookRecipe.Unit unit = units.get(u);
+         if (recipe.shaped()) {
+            int width = Math.max(1, recipe.width());
+            cells[u] = new int[]{unit.index() / width * gridSize + unit.index() % width};
+         } else {
+            cells[u] = new int[unit.perCraft()];
+
+            for (int i = 0; i < unit.perCraft(); i++) {
+               cells[u][i] = next++;
             }
          }
-
-         return cells;
       }
+
+      return cells;
    }
 
    public record Move(int source, int cell, int count) {
@@ -103,7 +102,7 @@ public final class CraftPlanner {
                   total += this.sources.get(i).getCount();
                }
 
-               bound = (int)Math.min((long)bound, total / unit.perCraft());
+               bound = (int)Math.min(bound, total / unit.perCraft());
                if (bound == 0) {
                   return 0;
                }
@@ -127,13 +126,11 @@ public final class CraftPlanner {
          }
       }
 
-      @Nullable
-      public List<List<CraftPlanner.Take>> consume(BookRecipe recipe, int times) {
+      public @Nullable List<List<CraftPlanner.Take>> consume(BookRecipe recipe, int times) {
          return times <= 0 ? null : this.allocate(recipe.units(), times);
       }
 
-      @Nullable
-      public List<CraftPlanner.Move> fill(BookRecipe recipe, int times, int gridSize) {
+      public @Nullable List<CraftPlanner.Move> fill(BookRecipe recipe, int times, int gridSize) {
          int[][] cells = CraftPlanner.cells(recipe, gridSize);
          List<List<CraftPlanner.Take>> takes = this.consume(recipe, times);
          if (cells != null && takes != null) {
@@ -167,8 +164,7 @@ public final class CraftPlanner {
          }
       }
 
-      @Nullable
-      private List<List<CraftPlanner.Take>> allocate(List<BookRecipe.Unit> units, int times) {
+      private @Nullable List<List<CraftPlanner.Take>> allocate(List<BookRecipe.Unit> units, int times) {
          int[] left = new int[this.sources.size()];
 
          for (int i = 0; i < left.length; i++) {
@@ -196,7 +192,7 @@ public final class CraftPlanner {
             BitSet found = this.matching(unit.ingredient().getDescriptor());
 
             for (int i = found.nextSetBit(0); i >= 0 && needed > 0L; i = found.nextSetBit(i + 1)) {
-               int count = (int)Math.min(needed, (long)left[i]);
+               int count = (int)Math.min(needed, left[i]);
                if (count > 0) {
                   taken.add(new CraftPlanner.Take(i, count));
                   left[i] -= count;

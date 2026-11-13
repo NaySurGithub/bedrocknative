@@ -55,19 +55,21 @@ public final class BlockUseRules {
    public static BlockUseRules.Rule rule(String bedrockName) {
       if (ITEM_TAKES.contains(bedrockName)) {
          return BlockUseRules.Rule.ITEM;
-      } else if (BLOCK_TAKES.contains(bedrockName)) {
+      }
+
+      if (BLOCK_TAKES.contains(bedrockName)) {
          return BlockUseRules.Rule.BLOCK;
-      } else {
-         if (bedrockName.startsWith("minecraft:") && !NOT_BY_HAND.contains(bedrockName)) {
-            for (String suffix : BLOCK_TAKES_SUFFIXES) {
-               if (bedrockName.endsWith(suffix)) {
-                  return BlockUseRules.Rule.BLOCK;
-               }
+      }
+
+      if (bedrockName.startsWith("minecraft:") && !NOT_BY_HAND.contains(bedrockName)) {
+         for (String suffix : BLOCK_TAKES_SUFFIXES) {
+            if (bedrockName.endsWith(suffix)) {
+               return BlockUseRules.Rule.BLOCK;
             }
          }
-
-         return BlockUseRules.Rule.JAVA;
       }
+
+      return BlockUseRules.Rule.JAVA;
    }
 
    public static boolean blockTakes(BlockUseRules.Rule rule, boolean javaTook, boolean customInteract) {
@@ -82,7 +84,7 @@ public final class BlockUseRules {
       return swung && !repeat && !blockTook && holdsSomething;
    }
 
-   public static enum Rule {
+   public enum Rule {
       JAVA,
       BLOCK,
       ITEM;

@@ -105,8 +105,7 @@ public final class BlockUpdateLog {
    public interface Names {
       String state(int var1);
 
-      @Nullable
-      String otherState(int var1);
+      @Nullable String otherState(int var1);
 
       boolean airOrLiquid(int var1);
 

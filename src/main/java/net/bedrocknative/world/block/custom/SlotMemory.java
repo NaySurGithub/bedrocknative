@@ -73,14 +73,13 @@ public final class SlotMemory {
          }
 
          this.trim();
-      } catch (JsonParseException | IllegalStateException | IOException var6) {
-         BedrockNative.LOGGER.warn("Couldn't read {}, starting empty: {}", "block-slots.json", var6.toString());
+      } catch (IOException | JsonParseException | IllegalStateException e) {
+         BedrockNative.LOGGER.warn("Couldn't read {}, starting empty: {}", "block-slots.json", e.toString());
          this.entries.clear();
       }
    }
 
-   @Nullable
-   private static SlotMemory.Entry entry(JsonElement value) {
+   private static SlotMemory.@Nullable Entry entry(JsonElement value) {
       if (value instanceof JsonObject object && object.get("slots") instanceof JsonArray array && array.size() == SlotPlan.SIZES.length) {
          int[] counts = new int[SlotPlan.SIZES.length];
          int i = 0;
@@ -107,8 +106,7 @@ public final class SlotMemory {
       }
    }
 
-   @Nullable
-   public synchronized int[] get(String key) {
+   public synchronized int @Nullable [] get(String key) {
       SlotMemory.Entry entry = this.entries.get(key);
       return entry == null ? null : (int[])entry.counts().clone();
    }
@@ -127,10 +125,10 @@ public final class SlotMemory {
          this.trim();
          if (before != null && Arrays.equals(before.counts(), kept)) {
             return false;
-         } else {
-            this.write();
-            return true;
          }
+
+         this.write();
+         return true;
       }
    }
 
@@ -165,8 +163,8 @@ public final class SlotMemory {
          Path temp = this.file.resolveSibling(this.file.getFileName() + ".tmp");
          Files.writeString(temp, new GsonBuilder().setPrettyPrinting().create().toJson(root) + "\n", StandardCharsets.UTF_8);
          Files.move(temp, this.file, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-      } catch (IOException var10) {
-         BedrockNative.LOGGER.warn("Couldn't write {}: {}", "block-slots.json", var10.toString());
+      } catch (IOException e) {
+         BedrockNative.LOGGER.warn("Couldn't write {}: {}", "block-slots.json", e.toString());
       }
    }
 

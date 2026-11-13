@@ -10,8 +10,7 @@ public final class JavaProbeGate {
    private final long armedAt;
    private boolean launched;
    private boolean withdrawn;
-   @Nullable
-   private CompletableFuture<JavaStatus> running;
+   private @Nullable CompletableFuture<JavaStatus> running;
 
    public JavaProbeGate(Supplier<CompletableFuture<JavaStatus>> launcher, long graceMillis) {
       this.launcher = launcher;
@@ -19,13 +18,11 @@ public final class JavaProbeGate {
       this.armedAt = System.nanoTime();
    }
 
-   @Nullable
-   public synchronized CompletableFuture<JavaStatus> tick() {
+   public synchronized @Nullable CompletableFuture<JavaStatus> tick() {
       return !this.launched && !this.withdrawn && System.nanoTime() - this.armedAt >= this.graceNanos ? this.launch() : null;
    }
 
-   @Nullable
-   public synchronized CompletableFuture<JavaStatus> launchNow() {
+   public synchronized @Nullable CompletableFuture<JavaStatus> launchNow() {
       return !this.launched && !this.withdrawn ? this.launch() : null;
    }
 

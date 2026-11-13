@@ -12,29 +12,23 @@ public final class OrePlayUi {
    private final OreThemeVars vars;
    private final OrePlayModel model;
    private final OrePlayUi.Actions actions;
-   @Nullable
-   private final Path defaultWorldPicture;
+   private final @Nullable Path defaultWorldPicture;
    private final OreInteraction interaction = new OreInteraction();
    private int tab;
-   @Nullable
-   private String selected;
+   private @Nullable String selected;
    private float worldScroll;
    private float menuScroll;
    private float detailsScroll;
    private boolean addressShown;
    private boolean listLayout;
    private int worldPage = 1;
-   @Nullable
-   private OreModal modal;
-   @Nullable
-   private OreModal.Layout modalLayout;
+   private @Nullable OreModal modal;
+   private OreModal.@Nullable Layout modalLayout;
    private List<Runnable> modalChoices = List.of();
-   @Nullable
-   private OrePlayLayout.Frame frame;
+   private OrePlayLayout.@Nullable Frame frame;
    private float width;
    private float height;
-   @Nullable
-   private String dragging;
+   private @Nullable String dragging;
    private float dragStart;
    private float dragOffset;
 
@@ -54,7 +48,7 @@ public final class OrePlayUi {
       this.theme = theme;
       this.vars = vars;
       this.model = model;
-      this.tab = Math.clamp((long)tab, 0, 2);
+      this.tab = Math.clamp(tab, 0, 2);
       this.selected = selected;
       this.defaultWorldPicture = defaultWorldPicture;
       this.actions = actions;
@@ -73,8 +67,7 @@ public final class OrePlayUi {
       }
    }
 
-   @Nullable
-   public String selected() {
+   public @Nullable String selected() {
       return this.selected;
    }
 
@@ -86,13 +79,11 @@ public final class OrePlayUi {
       return this.modal != null;
    }
 
-   @Nullable
-   public OreModal modal() {
+   public @Nullable OreModal modal() {
       return this.modal;
    }
 
-   @Nullable
-   public OreModal.Layout modalLayout() {
+   public OreModal.@Nullable Layout modalLayout() {
       return this.modalLayout;
    }
 
@@ -100,8 +91,7 @@ public final class OrePlayUi {
       return this.interaction;
    }
 
-   @Nullable
-   public OrePlayLayout.Frame frame() {
+   public OrePlayLayout.@Nullable Frame frame() {
       return this.frame;
    }
 
@@ -220,17 +210,16 @@ public final class OrePlayUi {
       }
    }
 
-   @Nullable
-   private OrePlayLayout.Scroll scroll(String id) {
+   private OrePlayLayout.@Nullable Scroll scroll(String id) {
       if (this.frame == null) {
          return null;
-      } else {
-         return switch (id) {
-            case "worlds" -> this.frame.worldScroll();
-            case "menu" -> this.frame.menuScroll();
-            default -> this.frame.detailsScroll();
-         };
       }
+
+      return switch (id) {
+         case "worlds" -> this.frame.worldScroll();
+         case "menu" -> this.frame.menuScroll();
+         default -> this.frame.detailsScroll();
+      };
    }
 
    private static float offsetFor(OrePlayLayout.Scroll scroll, float thumbY) {
@@ -325,9 +314,11 @@ public final class OrePlayUi {
          } else {
             return false;
          }
-      } else if (key != OreKey.TAB && key != OreKey.LEFT && key != OreKey.RIGHT && key != OreKey.UP && key != OreKey.DOWN) {
-         return false;
       } else {
+         if (key != OreKey.TAB && key != OreKey.LEFT && key != OreKey.RIGHT && key != OreKey.UP && key != OreKey.DOWN) {
+            return false;
+         }
+
          OreWidget next = this.interaction.navigate(this.widgets(), key, shift);
          if (next != null) {
             this.reveal(next);
@@ -349,8 +340,7 @@ public final class OrePlayUi {
          }
 
          if (delta != 0.0F) {
-            String var5 = scroll.id();
-            switch (var5) {
+            switch (scroll.id()) {
                case "worlds":
                   this.worldScroll += delta;
                   break;
@@ -366,25 +356,22 @@ public final class OrePlayUi {
       }
    }
 
-   @Nullable
-   private OrePlayLayout.Scroll scrollOf(String id) {
+   private OrePlayLayout.@Nullable Scroll scrollOf(String id) {
       if (this.frame == null) {
          return null;
-      } else {
-         String var2 = id.contains(":") ? id.substring(0, id.indexOf(58)) : id;
-
-         return switch (var2) {
-            case "world", "world-image", "world-edit", "toggle-layout", "create-world", "import-world", "page", "page-prev", "page-next" -> this.frame
-               .worldScroll();
-            case "add-server", "server", "featured" -> this.frame.menuScroll();
-            case "play", "toggle-address", "edit-server" -> this.frame.detailsScroll();
-            default -> null;
-         };
       }
+
+      return switch (id.contains(":") ? id.substring(0, id.indexOf(58)) : id) {
+         case "world", "world-image", "world-edit", "toggle-layout", "create-world", "import-world", "page", "page-prev", "page-next" -> this.frame
+            .worldScroll();
+         case "add-server", "server", "featured" -> this.frame.menuScroll();
+         case "play", "toggle-address", "edit-server" -> this.frame.detailsScroll();
+         default -> null;
+      };
    }
 
    private void switchTab(int newTab) {
-      int clamped = Math.clamp((long)newTab, 0, 2);
+      int clamped = Math.clamp(newTab, 0, 2);
       if (clamped != this.tab) {
          this.actions.click();
          this.openTab(clamped);
@@ -392,7 +379,7 @@ public final class OrePlayUi {
    }
 
    public void openTab(int newTab) {
-      int clamped = Math.clamp((long)newTab, 0, 2);
+      int clamped = Math.clamp(newTab, 0, 2);
       if (clamped != this.tab) {
          this.tab = clamped;
          this.worldScroll = 0.0F;
@@ -419,7 +406,7 @@ public final class OrePlayUi {
 
    public void page(int newPage) {
       int pages = this.frame == null ? 1 : this.frame.worldPages();
-      int clamped = Math.clamp((long)newPage, 1, Math.max(1, pages));
+      int clamped = Math.clamp(newPage, 1, Math.max(1, pages));
       if (clamped != this.worldPage) {
          this.worldPage = clamped;
          this.worldScroll = 0.0F;
@@ -449,8 +436,7 @@ public final class OrePlayUi {
          }
       } else {
          int index = OrePlayLayout.index(id);
-         String choices = id.contains(":") ? id.substring(0, id.indexOf(58)) : id;
-         switch (choices) {
+         switch (id.contains(":") ? id.substring(0, id.indexOf(58)) : id) {
             case "back":
                this.actions.back();
                break;

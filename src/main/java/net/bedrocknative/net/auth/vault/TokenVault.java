@@ -53,30 +53,32 @@ public final class TokenVault {
       String override = System.getProperty("bedrocknative.vault");
       if (override != null && !override.isBlank()) {
          return Path.of(override);
-      } else {
-         String home = System.getProperty("user.home", ".");
-         String os = System.getProperty("os.name", "").toLowerCase(Locale.ROOT);
-         if (os.contains("win")) {
-            String local = System.getenv("LOCALAPPDATA");
-            Path base = local != null && !local.isBlank() ? Path.of(local) : Path.of(home, "AppData", "Local");
-            return base.resolve("BedrockNative").resolve("accounts");
-         } else if (os.contains("mac")) {
-            return Path.of(home, "Library", "Application Support", "BedrockNative", "accounts");
-         } else {
-            String data = System.getenv("XDG_DATA_HOME");
-            return (data != null && !data.isBlank() ? Path.of(data) : Path.of(home, ".local", "share")).resolve("bedrocknative").resolve("accounts");
-         }
       }
+
+      String home = System.getProperty("user.home", ".");
+      String os = System.getProperty("os.name", "").toLowerCase(Locale.ROOT);
+      if (os.contains("win")) {
+         String local = System.getenv("LOCALAPPDATA");
+         Path base = local != null && !local.isBlank() ? Path.of(local) : Path.of(home, "AppData", "Local");
+         return base.resolve("BedrockNative").resolve("accounts");
+      }
+
+      if (os.contains("mac")) {
+         return Path.of(home, "Library", "Application Support", "BedrockNative", "accounts");
+      }
+
+      String data = System.getenv("XDG_DATA_HOME");
+      return (data != null && !data.isBlank() ? Path.of(data) : Path.of(home, ".local", "share")).resolve("bedrocknative").resolve("accounts");
    }
 
    public static String nameFor(@Nullable String xuid, String title, String fallbackId) {
       String suffix = "ANDROID".equals(title) ? "" : "-" + title.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]", "");
       if (xuid != null && XUID.matcher(xuid).matches()) {
          return "xuid-" + xuid + suffix;
-      } else {
-         String id = fallbackId.replaceAll("[^A-Za-z0-9]", "");
-         return "local-" + (id.isEmpty() ? "account" : id.substring(0, Math.min(16, id.length()))) + "-" + HexFormat.of().formatHex(bytes(4));
       }
+
+      String id = fallbackId.replaceAll("[^A-Za-z0-9]", "");
+      return "local-" + (id.isEmpty() ? "account" : id.substring(0, Math.min(16, id.length()))) + "-" + HexFormat.of().formatHex(bytes(4));
    }
 
    public static boolean validName(String name) {
@@ -108,7 +110,7 @@ public final class TokenVault {
 
             try {
                existing = this.readUnlocked(file).orElse(null);
-            } catch (VaultUnreadableException var5) {
+            } catch (VaultUnreadableException e) {
                this.moveAside(file);
             }
 
@@ -168,29 +170,29 @@ public final class TokenVault {
    private Optional<byte[]> readUnlocked(Path file) throws IOException {
       if (!Files.isRegularFile(file)) {
          return Optional.empty();
-      } else {
-         byte[] stored;
-         try (InputStream in = Files.newInputStream(file)) {
-            stored = in.readNBytes(1048577);
+      }
+
+      byte[] stored;
+      try (InputStream in = Files.newInputStream(file)) {
+         stored = in.readNBytes(1048577);
+      }
+
+      if (stored.length <= 1048576 && stored.length >= MAGIC.length + 2) {
+         for (int i = 0; i < MAGIC.length; i++) {
+            if (stored[i] != MAGIC[i]) {
+               throw new VaultUnreadableException("The saved sign-in file is not one of the vault's");
+            }
          }
 
-         if (stored.length <= 1048576 && stored.length >= MAGIC.length + 2) {
-            for (int i = 0; i < MAGIC.length; i++) {
-               if (stored[i] != MAGIC[i]) {
-                  throw new VaultUnreadableException("The saved sign-in file is not one of the vault's");
-               }
-            }
-
-            if (stored[MAGIC.length] == 1 && stored[MAGIC.length + 1] == this.protection.kind()) {
-               byte[] sealed = new byte[stored.length - MAGIC.length - 2];
-               System.arraycopy(stored, MAGIC.length + 2, sealed, 0, sealed.length);
-               return Optional.of(this.protection.open(sealed));
-            } else {
-               throw new VaultUnreadableException("The saved sign-in file has another format or protection");
-            }
+         if (stored[MAGIC.length] == 1 && stored[MAGIC.length + 1] == this.protection.kind()) {
+            byte[] sealed = new byte[stored.length - MAGIC.length - 2];
+            System.arraycopy(stored, MAGIC.length + 2, sealed, 0, sealed.length);
+            return Optional.of(this.protection.open(sealed));
          } else {
-            throw new VaultUnreadableException("The saved sign-in file is not one of the vault's");
+            throw new VaultUnreadableException("The saved sign-in file has another format or protection");
          }
+      } else {
+         throw new VaultUnreadableException("The saved sign-in file is not one of the vault's");
       }
    }
 
@@ -229,21 +231,21 @@ public final class TokenVault {
          try {
             try {
                Files.move(from, to, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-            } catch (AtomicMoveNotSupportedException var5) {
+            } catch (AtomicMoveNotSupportedException e) {
                Files.move(from, to, StandardCopyOption.REPLACE_EXISTING);
             }
 
             return;
-         } catch (FileSystemException var7) {
-            if (attempt >= 9 || !(var7 instanceof AccessDeniedException) && var7.getClass() != FileSystemException.class) {
-               throw var7;
+         } catch (FileSystemException e) {
+            if (attempt >= 9 || !(e instanceof AccessDeniedException) && e.getClass() != FileSystemException.class) {
+               throw e;
             }
 
             try {
                Thread.sleep(25L * (attempt + 1));
-            } catch (InterruptedException var6) {
+            } catch (InterruptedException interrupted) {
                Thread.currentThread().interrupt();
-               throw var7;
+               throw e;
             }
 
             attempt++;
@@ -258,17 +260,14 @@ public final class TokenVault {
       ReentrantLock local = LOCKS.computeIfAbsent(lockFile, key -> new ReentrantLock());
       local.lock();
 
-      Object var7;
       try (
          FileChannel channel = FileChannel.open(lockFile, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
          FileLock ignored = channel.lock();
       ) {
-         var7 = action.run();
+         return action.run();
       } finally {
          local.unlock();
       }
-
-      return (T)var7;
    }
 
    private static byte[] bytes(int count) {

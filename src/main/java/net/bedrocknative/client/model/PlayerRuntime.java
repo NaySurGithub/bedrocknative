@@ -53,10 +53,8 @@ final class PlayerRuntime {
    private final ArrayDeque<PlayerRuntime.PendingAnimate> pendingAnimates = new ArrayDeque<>();
    private float capeFlap;
    private boolean firstPerson;
-   @Nullable
-   private SkinModel model;
-   @Nullable
-   private String pendingEmote;
+   private @Nullable SkinModel model;
+   private @Nullable String pendingEmote;
    private long emoteEnds = Long.MAX_VALUE;
    private long evaluations;
 
@@ -118,8 +116,7 @@ final class PlayerRuntime {
       }
    }
 
-   @Nullable
-   ActorSnapshot evaluate(
+   @Nullable ActorSnapshot evaluate(
       ModelRegistry registry, SkinModel skin, Player entity, AvatarRenderState render, float partialTick, boolean inventory, boolean firstPersonCamera
    ) {
       PlayerRuntime.View view = inventory ? this.paperdoll : this.world;
@@ -134,57 +131,57 @@ final class PlayerRuntime {
          boolean first = !inventory && firstPersonCamera;
          if (frame == view.lastFrame && view.last != null && now - view.lastNanos < 100000000L && view.firstPerson == first) {
             return view.last;
-         } else {
-            float deltaTime = view.lastNanos == 0L ? 0.0F : Math.min((float)(now - view.lastNanos) / 1.0E9F, 1.0F);
-            view.lastNanos = now;
-            view.lastFrame = frame;
-            view.firstPerson = first;
+         }
 
-            try {
-               this.model = skin;
-               this.firstPerson = first;
-               this.capeFlap = PlayerEngine.capeFlapAmount(render.capeFlap, render.capeLean);
-               ClientActorView actorView = this.state.view();
-               actorView.prepare(entity, render, partialTick, this.state.lifeTime(), null);
-               actorView.player(this);
-               this.engineValues(entity, render, partialTick, first, inventory);
-               this.engine.apply(instance, skin);
-               if (!inventory) {
-                  this.emotes(instance, registry, now);
-                  this.pendingAnimate(instance, now);
-               }
+         float deltaTime = view.lastNanos == 0L ? 0.0F : Math.min((float)(now - view.lastNanos) / 1.0E9F, 1.0F);
+         view.lastNanos = now;
+         view.lastFrame = frame;
+         view.firstPerson = first;
 
-               boolean[] attached = this.equipment(view, entity, actorView);
-               MolangEnv env = this.state.env();
-               env.effects = inventory ? null : this.state.playerEffects(instance.definition(), entity);
-
-               DrawList list;
-               try {
-                  list = instance.frame(env, actorView, deltaTime, partialTick);
-               } finally {
-                  env.effects = null;
-               }
-
-               ActorSnapshot snapshot = view.snapshots[view.next];
-               view.next ^= 1;
-               snapshot.identifier("minecraft:player");
-               snapshot.fill(list, this.state.data().scale(), true);
-               snapshot.draw().setUvAnimation(true);
-               snapshot.hands(instance.drawnSkeleton(), attached);
-               snapshot.glide(this.glide);
-               if (!inventory && PlayerAnimProbe.watching(entity.getId())) {
-                  PlayerAnimProbe.record(entity, instance, actorView, this.engine, partialTick, this.glide);
-               }
-
-               view.last = snapshot;
-               this.evaluations++;
-               return snapshot;
-            } catch (RuntimeException var24) {
-               view.failed = true;
-               view.last = null;
-               BedrockNative.LOGGER.error("The Bedrock model of player {} failed and is no longer drawn", entity.getName().getString(), var24);
-               return null;
+         try {
+            this.model = skin;
+            this.firstPerson = first;
+            this.capeFlap = PlayerEngine.capeFlapAmount(render.capeFlap, render.capeLean);
+            ClientActorView actorView = this.state.view();
+            actorView.prepare(entity, render, partialTick, this.state.lifeTime(), null);
+            actorView.player(this);
+            this.engineValues(entity, render, partialTick, first, inventory);
+            this.engine.apply(instance, skin);
+            if (!inventory) {
+               this.emotes(instance, registry, now);
+               this.pendingAnimate(instance, now);
             }
+
+            boolean[] attached = this.equipment(view, entity, actorView);
+            MolangEnv env = this.state.env();
+            env.effects = inventory ? null : this.state.playerEffects(instance.definition(), entity);
+
+            DrawList list;
+            try {
+               list = instance.frame(env, actorView, deltaTime, partialTick);
+            } finally {
+               env.effects = null;
+            }
+
+            ActorSnapshot snapshot = view.snapshots[view.next];
+            view.next ^= 1;
+            snapshot.identifier("minecraft:player");
+            snapshot.fill(list, this.state.data().scale(), true);
+            snapshot.draw().setUvAnimation(true);
+            snapshot.hands(instance.drawnSkeleton(), attached);
+            snapshot.glide(this.glide);
+            if (!inventory && PlayerAnimProbe.watching(entity.getId())) {
+               PlayerAnimProbe.record(entity, instance, actorView, this.engine, partialTick, this.glide);
+            }
+
+            view.last = snapshot;
+            this.evaluations++;
+            return snapshot;
+         } catch (RuntimeException e) {
+            view.failed = true;
+            view.last = null;
+            BedrockNative.LOGGER.error("The Bedrock model of player {} failed and is no longer drawn", entity.getName().getString(), e);
+            return null;
          }
       } else {
          return null;
@@ -214,9 +211,9 @@ final class PlayerRuntime {
 
          view.instance = created;
          view.equipment = new RuntimeEquipment(registry, created);
-      } catch (RuntimeException var6) {
+      } catch (RuntimeException e) {
          view.failed = true;
-         BedrockNative.LOGGER.warn("Couldn't set up the Bedrock model of skin {}", skin.drawn().key(), var6);
+         BedrockNative.LOGGER.warn("Couldn't set up the Bedrock model of skin {}", skin.drawn().key(), e);
       }
    }
 
@@ -270,34 +267,34 @@ final class PlayerRuntime {
       RuntimeEquipment running = view.equipment;
       if (running == null) {
          return hands;
-      } else {
-         boolean local = entity == Minecraft.getInstance().player;
+      }
 
-         for (int slot = 0; slot < EQUIPMENT_SLOTS.length; slot++) {
-            ItemStack stack = entity.getItemBySlot(JAVA_SLOTS[slot]);
-            String item = local ? WearerView.itemIdentifier(stack) : this.state.data().item(EQUIPMENT_SLOTS[slot]);
-            Equippable worn = (Equippable)stack.get(DataComponents.EQUIPPABLE);
-            if (slot <= 1 && worn != null && worn.slot().isArmor()) {
-               item = "";
-            }
+      boolean local = entity == Minecraft.getInstance().player;
 
-            DyedItemColor dyed = (DyedItemColor)stack.get(DataComponents.DYED_COLOR);
-
-            boolean drawn;
-            try {
-               drawn = running.update(slot, item, stack.hasFoil(), dyed != null ? 0xFF000000 | dyed.rgb() : -6265536, actorView, this.state.env());
-            } catch (RuntimeException var14) {
-               BedrockNative.LOGGER.warn("Couldn't set up the attachable of {} on a player", item, var14);
-               drawn = false;
-            }
-
-            if (slot <= 1) {
-               hands[slot] = drawn;
-            }
+      for (int slot = 0; slot < EQUIPMENT_SLOTS.length; slot++) {
+         ItemStack stack = entity.getItemBySlot(JAVA_SLOTS[slot]);
+         String item = local ? WearerView.itemIdentifier(stack) : this.state.data().item(EQUIPMENT_SLOTS[slot]);
+         Equippable worn = stack.get(DataComponents.EQUIPPABLE);
+         if (slot <= 1 && worn != null && worn.slot().isArmor()) {
+            item = "";
          }
 
-         return hands;
+         DyedItemColor dyed = stack.get(DataComponents.DYED_COLOR);
+
+         boolean drawn;
+         try {
+            drawn = running.update(slot, item, stack.hasFoil(), dyed != null ? 0xFF000000 | dyed.rgb() : -6265536, actorView, this.state.env());
+         } catch (RuntimeException e) {
+            BedrockNative.LOGGER.warn("Couldn't set up the attachable of {} on a player", item, e);
+            drawn = false;
+         }
+
+         if (slot <= 1) {
+            hands[slot] = drawn;
+         }
       }
+
+      return hands;
    }
 
    void emote(String pieceId, int durationTicks) {
@@ -329,23 +326,19 @@ final class PlayerRuntime {
       return instance != null && instance.playing("bedrocknative:emote");
    }
 
-   @Nullable
-   ActorInstance instance() {
+   @Nullable ActorInstance instance() {
       return this.world.instance;
    }
 
-   @Nullable
-   SkinModel boundModel() {
+   @Nullable SkinModel boundModel() {
       return this.world.model;
    }
 
-   @Nullable
-   SkinModel modelFor(ModelRegistry registry) {
+   @Nullable SkinModel modelFor(ModelRegistry registry) {
       return this.world.registry == registry && !this.world.failed ? this.world.model : null;
    }
 
-   @Nullable
-   ActorSnapshot lastSnapshot() {
+   @Nullable ActorSnapshot lastSnapshot() {
       return this.world.last;
    }
 
@@ -380,16 +373,11 @@ final class PlayerRuntime {
 
    private static final class View {
       final ActorSnapshot[] snapshots = new ActorSnapshot[]{new ActorSnapshot(), new ActorSnapshot()};
-      @Nullable
-      ActorInstance instance;
-      @Nullable
-      RuntimeEquipment equipment;
-      @Nullable
-      ModelRegistry registry;
-      @Nullable
-      SkinModel model;
-      @Nullable
-      ActorSnapshot last;
+      @Nullable ActorInstance instance;
+      @Nullable RuntimeEquipment equipment;
+      @Nullable ModelRegistry registry;
+      @Nullable SkinModel model;
+      @Nullable ActorSnapshot last;
       int next;
       long lastFrame = -1L;
       long lastNanos;

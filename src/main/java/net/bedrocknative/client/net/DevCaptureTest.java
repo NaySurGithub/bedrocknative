@@ -10,7 +10,6 @@ import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen;
-import net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen.ItemPickerMenu;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.commands.arguments.EntityAnchorArgument.Anchor;
 import net.minecraft.core.BlockPos;
@@ -223,9 +222,9 @@ final class DevCaptureTest {
             try {
                Method slotClicked = CreativeModeInventoryScreen.class.getDeclaredMethod("slotClicked", Slot.class, int.class, int.class, ContainerInput.class);
                slotClicked.setAccessible(true);
-               slotClicked.invoke(creative, ((ItemPickerMenu)creative.getMenu()).slots.get(index), index, 0, ContainerInput.PICKUP);
-            } catch (ReflectiveOperationException var6) {
-               throw new IllegalStateException(var6);
+               slotClicked.invoke(creative, creative.getMenu().slots.get(index), index, 0, ContainerInput.PICKUP);
+            } catch (ReflectiveOperationException e) {
+               throw new IllegalStateException(e);
             }
          } else {
             BedrockNative.LOGGER.warn("Dev capture test: no creative screen ({})", screen);
@@ -283,7 +282,7 @@ final class DevCaptureTest {
    private static void sleep(long millis) {
       try {
          Thread.sleep(millis);
-      } catch (InterruptedException var3) {
+      } catch (InterruptedException e) {
          Thread.currentThread().interrupt();
       }
    }

@@ -14,7 +14,6 @@ import net.bedrocknative.ui.HudValues;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.Holder;
-import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.util.Mth;
@@ -36,7 +35,7 @@ final class HudValuesReader {
    }
 
    static Player cameraPlayer(Minecraft minecraft) {
-      return (Player)(minecraft.getCameraEntity() instanceof Player player ? player : minecraft.player);
+      return minecraft.getCameraEntity() instanceof Player player ? player : minecraft.player;
    }
 
    static HudValues read(Minecraft minecraft, HeartTracker hearts, float partialTick, boolean screenShowsEffects) {
@@ -46,7 +45,7 @@ final class HudValuesReader {
       int health = Mth.ceil(player.getHealth());
       hearts.update(tick, Util.getMillis(), health, player.damageCooldownTime > 0);
       int display = hearts.displayHealth();
-      float maxHealth = Math.max((float)player.getAttributeValue(Attributes.MAX_HEALTH), (float)Math.max(display, health));
+      float maxHealth = Math.max((float)player.getAttributeValue(Attributes.MAX_HEALTH), Math.max(display, health));
       HudValues.HeartType heartType = player.hasEffect(MobEffects.POISON)
          ? HudValues.HeartType.POISONED
          : (
@@ -89,7 +88,7 @@ final class HudValuesReader {
          player.getFoodData().getFoodLevel(),
          player.getFoodData().getSaturationLevel(),
          player.hasEffect(MobEffects.HUNGER),
-         Math.clamp((long)player.getAirSupply(), 0, player.getMaxAirSupply()),
+         Math.clamp(player.getAirSupply(), 0, player.getMaxAirSupply()),
          player.getMaxAirSupply(),
          player.isEyeInFluid(FluidTags.WATER),
          mountHealth,
@@ -120,9 +119,8 @@ final class HudValuesReader {
 
    private static HudValues.Bar bar(Minecraft minecraft) {
       Object state = ((HudStateAccessor)minecraft.gui.hud).bedrocknative$contextualInfoBar().getFirst();
-      String var2 = String.valueOf(state);
 
-      return switch (var2) {
+      return switch (String.valueOf(state)) {
          case "EXPERIENCE" -> HudValues.Bar.EXPERIENCE;
          case "LOCATOR" -> HudValues.Bar.LOCATOR;
          case "JUMPABLE_VEHICLE" -> HudValues.Bar.JUMP;
@@ -134,27 +132,27 @@ final class HudValuesReader {
       List<MobEffectInstance> active = new ArrayList<>(player.getActiveEffects());
       if (active.isEmpty()) {
          return List.of();
-      } else {
-         active.sort(Comparator.reverseOrder());
-         List<HudValues.Effect> effects = new ArrayList<>(active.size());
-
-         for (MobEffectInstance instance : active) {
-            Holder<MobEffect> effect = instance.getEffect();
-            String id = effect.unwrapKey().<Identifier>map(ResourceKey::identifier).map(Object::toString).orElse("unknown");
-            effects.add(
-               new HudValues.Effect(
-                  id,
-                  instance.isAmbient(),
-                  ((MobEffect)effect.value()).getCategory() == MobEffectCategory.BENEFICIAL,
-                  instance.isInfiniteDuration() ? -1 : instance.getDuration(),
-                  instance.getAmplifier(),
-                  instance.showIcon()
-               )
-            );
-         }
-
-         return effects;
       }
+
+      active.sort(Comparator.reverseOrder());
+      List<HudValues.Effect> effects = new ArrayList<>(active.size());
+
+      for (MobEffectInstance instance : active) {
+         Holder<MobEffect> effect = instance.getEffect();
+         String id = effect.unwrapKey().map(ResourceKey::identifier).map(Object::toString).orElse("unknown");
+         effects.add(
+            new HudValues.Effect(
+               id,
+               instance.isAmbient(),
+               effect.value().getCategory() == MobEffectCategory.BENEFICIAL,
+               instance.isInfiniteDuration() ? -1 : instance.getDuration(),
+               instance.getAmplifier(),
+               instance.showIcon()
+            )
+         );
+      }
+
+      return effects;
    }
 
    private static Set<HudValues.Part> hidden(boolean screenShowsEffects) {

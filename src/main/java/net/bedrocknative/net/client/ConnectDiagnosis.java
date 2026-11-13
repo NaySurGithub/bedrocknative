@@ -12,7 +12,7 @@ public final class ConnectDiagnosis {
    private ConnectDiagnosis() {
    }
 
-   public static boolean worthAnotherTry(@Nullable Throwable failure, @Nullable BedrockPing.Pong pong, RakHandshakeTrace trace) {
+   public static boolean worthAnotherTry(@Nullable Throwable failure, BedrockPing.@Nullable Pong pong, RakHandshakeTrace trace) {
       return failure != null && (pong != null || trace.pongs() > 0) && timedOut(failure) && !trace.answered();
    }
 
@@ -27,7 +27,7 @@ public final class ConnectDiagnosis {
    }
 
    public static ConnectDiagnosis.Explanation explain(
-      Throwable failure, String host, InetSocketAddress address, boolean pinged, @Nullable BedrockPing.Pong pong, RakHandshakeTrace trace
+      Throwable failure, String host, InetSocketAddress address, boolean pinged, BedrockPing.@Nullable Pong pong, RakHandshakeTrace trace
    ) {
       String where = host
          + " ("

@@ -16,7 +16,7 @@ public enum UiAnchor {
    public final float x;
    public final float y;
 
-   private UiAnchor(float x, float y) {
+   UiAnchor(float x, float y) {
       this.x = x;
       this.y = y;
    }
@@ -24,20 +24,18 @@ public enum UiAnchor {
    public static UiAnchor of(@Nullable String name) {
       if (name == null) {
          return CENTER;
-      } else {
-         String var1 = name.trim();
-
-         return switch (var1) {
-            case "top_left" -> TOP_LEFT;
-            case "top_middle" -> TOP_MIDDLE;
-            case "top_right" -> TOP_RIGHT;
-            case "left_middle" -> LEFT_MIDDLE;
-            case "right_middle" -> RIGHT_MIDDLE;
-            case "bottom_left" -> BOTTOM_LEFT;
-            case "bottom_middle" -> BOTTOM_MIDDLE;
-            case "bottom_right" -> BOTTOM_RIGHT;
-            default -> CENTER;
-         };
       }
+
+      return switch (name.trim()) {
+         case "top_left" -> TOP_LEFT;
+         case "top_middle" -> TOP_MIDDLE;
+         case "top_right" -> TOP_RIGHT;
+         case "left_middle" -> LEFT_MIDDLE;
+         case "right_middle" -> RIGHT_MIDDLE;
+         case "bottom_left" -> BOTTOM_LEFT;
+         case "bottom_middle" -> BOTTOM_MIDDLE;
+         case "bottom_right" -> BOTTOM_RIGHT;
+         default -> CENTER;
+      };
    }
 }

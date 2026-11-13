@@ -10,12 +10,9 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin({KeyboardInput.class})
+@Mixin(KeyboardInput.class)
 public abstract class KeyboardInputLockMixin extends ClientInput {
-   @Inject(
-      method = {"tick"},
-      at = {@At("TAIL")}
-   )
+   @Inject(method = "tick", at = @At("TAIL"))
    private void bedrocknative$locks(CallbackInfo ci) {
       if (BedrockInputLocks.any()) {
          Input keys = BedrockInputLocks.filter(this.keyPresses);

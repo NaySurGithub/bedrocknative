@@ -21,10 +21,8 @@ public final class BedrockVehicles {
    private static final float BOAT_HEIGHT = 0.455F;
    private static final float HORSE_STEP = 0.5625F;
    private static final float CAMEL_STEP = 1.5625F;
-   @Nullable
-   private static volatile VehiclePrediction current;
-   @Nullable
-   public static volatile BiConsumer<Float, Float> rowTimeListener;
+   private static volatile @Nullable VehiclePrediction current;
+   public static volatile @Nullable BiConsumer<Float, Float> rowTimeListener;
 
    private BedrockVehicles() {
    }
@@ -56,8 +54,7 @@ public final class BedrockVehicles {
       return predicts(entity) && entity instanceof AbstractHorse ? (entity instanceof Camel ? 1.5625F : 0.5625F) : Float.NaN;
    }
 
-   @Nullable
-   public static Entity vehicle() {
+   public static @Nullable Entity vehicle() {
       VehiclePrediction prediction = current;
       return prediction == null ? null : prediction.vehicle();
    }
@@ -78,7 +75,7 @@ public final class BedrockVehicles {
    }
 
    private static VehiclePrediction start(Entity vehicle) {
-      return (VehiclePrediction)(vehicle instanceof AbstractBoat boat ? new BoatPrediction(boat) : new HorsePrediction((AbstractHorse)vehicle));
+      return vehicle instanceof AbstractBoat boat ? new BoatPrediction(boat) : new HorsePrediction((AbstractHorse)vehicle);
    }
 
    static void stopInterpolating(Entity vehicle) {
@@ -101,22 +98,21 @@ public final class BedrockVehicles {
       }
    }
 
-   @Nullable
-   public static BedrockVehicles.Correction correct(
+   public static BedrockVehicles.@Nullable Correction correct(
       LocalPlayer player, long tick, Vec3 networkPosition, Vec3 delta, float pitch, float yaw, @Nullable Float angularVelocity, boolean onGround
    ) {
       Entity riding = player.getVehicle();
       if (!predictable(riding)) {
          return null;
-      } else {
-         VehiclePrediction prediction = current;
-         if (prediction == null || prediction.vehicle() != riding) {
-            prediction = start(riding);
-            current = prediction;
-         }
-
-         return prediction.correct(player, tick, networkPosition, delta, pitch, yaw, angularVelocity, onGround);
       }
+
+      VehiclePrediction prediction = current;
+      if (prediction == null || prediction.vehicle() != riding) {
+         prediction = start(riding);
+         current = prediction;
+      }
+
+      return prediction.correct(player, tick, networkPosition, delta, pitch, yaw, angularVelocity, onGround);
    }
 
    public static AABB boatBox(AABB java) {

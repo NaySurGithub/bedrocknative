@@ -28,15 +28,15 @@ final class BoatSurroundings {
       double surfaceAbove = surfaceAbove(level, box);
       if (!Double.isNaN(surfaceAbove)) {
          return BoatPhysics.Surroundings.water(BoatPhysics.Medium.UNDER_WATER, (float)(surfaceAbove - box.minY));
-      } else {
-         double waterLevel = waterLevel(level, box);
-         if (waterLevel - box.minY >= 0.25) {
-            return BoatPhysics.Surroundings.water(BoatPhysics.Medium.WATER, (float)(waterLevel - box.minY));
-         } else {
-            float friction = groundFriction(level, box);
-            return friction > 0.0F ? BoatPhysics.Surroundings.land(friction) : BoatPhysics.Surroundings.air();
-         }
       }
+
+      double waterLevel = waterLevel(level, box);
+      if (waterLevel - box.minY >= 0.25) {
+         return BoatPhysics.Surroundings.water(BoatPhysics.Medium.WATER, (float)(waterLevel - box.minY));
+      }
+
+      float friction = groundFriction(level, box);
+      return friction > 0.0F ? BoatPhysics.Surroundings.land(friction) : BoatPhysics.Surroundings.air();
    }
 
    private static double surfaceAbove(Level level, AABB box) {
@@ -62,26 +62,26 @@ final class BoatSurroundings {
 
       if (!under) {
          return Double.NaN;
-      } else {
-         for (int y = Mth.floor(box.maxY); y < Mth.floor(box.maxY) + 32; y++) {
-            float height = 0.0F;
+      }
 
-            for (int x = x0; x < x1; x++) {
-               for (int zx = z0; zx < z1; zx++) {
-                  FluidState fluid = level.getFluidState(pos.set(x, y, zx));
-                  if (fluid.is(FluidTags.WATER)) {
-                     height = Math.max(height, fluid.getHeight(level, pos));
-                  }
+      for (int y = Mth.floor(box.maxY); y < Mth.floor(box.maxY) + 32; y++) {
+         float height = 0.0F;
+
+         for (int x = x0; x < x1; x++) {
+            for (int z = z0; z < z1; z++) {
+               FluidState fluid = level.getFluidState(pos.set(x, y, z));
+               if (fluid.is(FluidTags.WATER)) {
+                  height = Math.max(height, fluid.getHeight(level, pos));
                }
-            }
-
-            if (height < 1.0F) {
-               return y + height;
             }
          }
 
-         return Mth.floor(box.maxY) + 32;
+         if (height < 1.0F) {
+            return y + height;
+         }
       }
+
+      return Mth.floor(box.maxY) + 32;
    }
 
    private static double waterLevel(Level level, AABB box) {
@@ -99,7 +99,7 @@ final class BoatSurroundings {
             for (int z = z0; z < z1; z++) {
                FluidState fluid = level.getFluidState(pos.set(x, y, z));
                if (fluid.is(FluidTags.WATER)) {
-                  surface = Math.max(surface, (double)(y + Math.min(1.0F, fluid.getHeight(level, pos) + 0.11111111F)));
+                  surface = Math.max(surface, y + Math.min(1.0F, fluid.getHeight(level, pos) + 0.11111111F));
                }
             }
          }

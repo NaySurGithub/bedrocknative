@@ -33,8 +33,8 @@ public final class StateCondition {
          } else {
             return node;
          }
-      } catch (RuntimeException var3) {
-         BedrockNative.LOGGER.warn("Unsupported block condition '{}': {}", expression, var3.getMessage());
+      } catch (RuntimeException e) {
+         BedrockNative.LOGGER.warn("Unsupported block condition '{}': {}", expression, e.getMessage());
          return ZERO;
       }
    }
@@ -59,9 +59,9 @@ public final class StateCondition {
    }
 
    private static boolean equal(Object left, Object right) {
-      return left instanceof String ax && right instanceof String bx
-         ? ax.equals(bx)
-         : left instanceof Double a && right instanceof Double b && Math.abs(a - b) < 1.0E-6;
+      return left instanceof String a && right instanceof String b
+         ? a.equals(b)
+         : left instanceof Double da && right instanceof Double db && Math.abs(da - db) < 1.0E-6;
    }
 
    @FunctionalInterface
@@ -255,44 +255,50 @@ public final class StateCondition {
          this.skipSpace();
          if (this.pos >= this.text.length()) {
             throw new IllegalArgumentException("unexpected end");
-         } else {
-            char c = this.text.charAt(this.pos);
-            if (c == '(') {
+         }
+
+         char c = this.text.charAt(this.pos);
+         if (c == '(') {
+            this.pos++;
+            StateCondition.Node inner = this.ternary();
+            this.expect(")");
+            return inner;
+         }
+
+         if (c == '\'' || c == '"') {
+            String value = this.string();
+            return states -> value;
+         }
+
+         if (Character.isDigit(c) || c == '.') {
+            int start = this.pos;
+
+            while (this.pos < this.text.length() && (Character.isDigit(this.text.charAt(this.pos)) || this.text.charAt(this.pos) == '.')) {
                this.pos++;
-               StateCondition.Node inner = this.ternary();
-               this.expect(")");
-               return inner;
-            } else if (c == '\'' || c == '"') {
-               String value = this.string();
-               return states -> value;
-            } else if (Character.isDigit(c) || c == '.') {
-               int start = this.pos;
-
-               while (this.pos < this.text.length() && (Character.isDigit(this.text.charAt(this.pos)) || this.text.charAt(this.pos) == '.')) {
-                  this.pos++;
-               }
-
-               double value = Double.parseDouble(this.text.substring(start, this.pos));
-               if (this.pos < this.text.length() && (this.text.charAt(this.pos) == 'f' || this.text.charAt(this.pos) == 'F')) {
-                  this.pos++;
-               }
-
-               return states -> value;
-            } else if (!Character.isLetter(c) && c != '_') {
-               throw new IllegalArgumentException("unexpected '" + c + "'");
-            } else {
-               String name = this.identifier().toLowerCase(Locale.ROOT);
-               List<StateCondition.Node> arguments = new ArrayList<>();
-               if (this.eat("(") && !this.eat(")")) {
-                  do {
-                     arguments.add(this.ternary());
-                  } while (this.eat(","));
-
-                  this.expect(")");
-               }
-
-               return this.call(name, arguments);
             }
+
+            double value = Double.parseDouble(this.text.substring(start, this.pos));
+            if (this.pos < this.text.length() && (this.text.charAt(this.pos) == 'f' || this.text.charAt(this.pos) == 'F')) {
+               this.pos++;
+            }
+
+            return states -> value;
+         } else {
+            if (!Character.isLetter(c) && c != '_') {
+               throw new IllegalArgumentException("unexpected '" + c + "'");
+            }
+
+            String name = this.identifier().toLowerCase(Locale.ROOT);
+            List<StateCondition.Node> arguments = new ArrayList<>();
+            if (this.eat("(") && !this.eat(")")) {
+               do {
+                  arguments.add(this.ternary());
+               } while (this.eat(","));
+
+               this.expect(")");
+            }
+
+            return this.call(name, arguments);
          }
       }
 
@@ -349,11 +355,11 @@ public final class StateCondition {
          int end = this.text.indexOf(quote, this.pos);
          if (end < 0) {
             throw new IllegalArgumentException("unterminated string");
-         } else {
-            String value = this.text.substring(this.pos, end);
-            this.pos = end + 1;
-            return value;
          }
+
+         String value = this.text.substring(this.pos, end);
+         this.pos = end + 1;
+         return value;
       }
 
       private boolean keyword(String word) {
@@ -361,10 +367,10 @@ public final class StateCondition {
          if (!this.text.regionMatches(true, this.pos, word, 0, word.length())
             || this.pos + word.length() < this.text.length() && Character.isLetterOrDigit(this.text.charAt(this.pos + word.length()))) {
             return false;
-         } else {
-            this.pos = this.pos + word.length();
-            return true;
          }
+
+         this.pos = this.pos + word.length();
+         return true;
       }
 
       private boolean peekMinus() {
@@ -376,22 +382,22 @@ public final class StateCondition {
          this.skipSpace();
          if (!this.text.startsWith(token, this.pos)) {
             return false;
-         } else {
-            int after = this.pos + token.length();
-            if (token.length() == 1 && after < this.text.length()) {
-               char next = this.text.charAt(after);
-               if ((token.equals("<") || token.equals(">") || token.equals("!")) && next == '=') {
-                  return false;
-               }
+         }
 
-               if (token.equals("?") && next == '?') {
-                  return false;
-               }
+         int after = this.pos + token.length();
+         if (token.length() == 1 && after < this.text.length()) {
+            char next = this.text.charAt(after);
+            if ((token.equals("<") || token.equals(">") || token.equals("!")) && next == '=') {
+               return false;
             }
 
-            this.pos = after;
-            return true;
+            if (token.equals("?") && next == '?') {
+               return false;
+            }
          }
+
+         this.pos = after;
+         return true;
       }
 
       private void expect(String token) {

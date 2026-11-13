@@ -40,8 +40,7 @@ public final class ContainerScreens {
    private ContainerScreens() {
    }
 
-   @Nullable
-   public static ContainerScreens.Choice of(ContainerType type, int size, ContainerScreens.Block block) {
+   public static ContainerScreens.@Nullable Choice of(ContainerType type, int size, ContainerScreens.Block block) {
       return switch (type) {
          case CONTAINER -> {
             switch (block) {
@@ -90,13 +89,11 @@ public final class ContainerScreens {
       return new ContainerScreens.Choice("crafting.inventory_screen", "inventory", "container.crafting", ContainerSlots.inventory());
    }
 
-   @Nullable
-   public static ContainerScreens.Choice trade(boolean newTradingUi) {
+   public static ContainerScreens.@Nullable Choice trade(boolean newTradingUi) {
       return newTradingUi ? new ContainerScreens.Choice("trade2.trade_screen", "trading", "entity.villager.name", ContainerSlots.merchant()) : null;
    }
 
-   @Nullable
-   private static ContainerScreens.Choice chest(int size) {
+   private static ContainerScreens.@Nullable Choice chest(int size) {
       return switch (size) {
          case 27 -> chest("chest.small_chest_screen", "container.chest", 27);
          case 54 -> chest("chest.large_chest_screen", "container.chestDouble", 54);
@@ -113,7 +110,7 @@ public final class ContainerScreens {
       return new ContainerScreens.Choice(screen, "chest", titleKey, ContainerSlots.chest(size));
    }
 
-   public static enum Block {
+   public enum Block {
       CHEST,
       ENDER_CHEST,
       BARREL,

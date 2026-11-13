@@ -143,22 +143,22 @@ public final class BedrockTimeWeather {
    private Optional<Holder<WorldClock>> javaClock(ClientLevel level, String bedrockName) {
       if (bedrockName == null) {
          return Optional.empty();
-      } else {
-         String path = bedrockName.toLowerCase(Locale.ROOT);
-         path = path.substring(path.indexOf(58) + 1);
-         Identifier id = Identifier.tryParse(path);
-         Optional<Holder<WorldClock>> clock = id == null
-            ? Optional.empty()
-            : level.registryAccess()
-               .lookupOrThrow(Registries.WORLD_CLOCK)
-               .get(ResourceKey.create(Registries.WORLD_CLOCK, id))
-               .map(holder -> (Holder<WorldClock>)holder);
-         if (clock.isEmpty() && this.unknownClocks.add(bedrockName)) {
-            BedrockNative.LOGGER.warn("Bedrock world clock {} has no Java counterpart", bedrockName);
-         }
-
-         return clock;
       }
+
+      String path = bedrockName.toLowerCase(Locale.ROOT);
+      path = path.substring(path.indexOf(58) + 1);
+      Identifier id = Identifier.tryParse(path);
+      Optional<Holder<WorldClock>> clock = id == null
+         ? Optional.empty()
+         : level.registryAccess()
+            .lookupOrThrow(Registries.WORLD_CLOCK)
+            .get(ResourceKey.create(Registries.WORLD_CLOCK, id))
+            .map(holder -> (Holder<WorldClock>)holder);
+      if (clock.isEmpty() && this.unknownClocks.add(bedrockName)) {
+         BedrockNative.LOGGER.warn("Bedrock world clock {} has no Java counterpart", bedrockName);
+      }
+
+      return clock;
    }
 
    private void applyGameRules(List<GameRuleData<?>> gameRules) {
@@ -170,7 +170,9 @@ public final class BedrockTimeWeather {
             this.daylightCycle = cycle;
             ClientLevel level = this.minecraft.level;
             if (level != null) {
-               level.dimensionType().defaultClock().ifPresent(clock -> this.setDayTime(level.clockManager().getInstance(clock).totalTicks()));
+               level.dimensionType()
+                  .defaultClock()
+                  .ifPresent(clock -> this.setDayTime(level.clockManager().getInstance((Holder<WorldClock>)clock).totalTicks()));
             }
          }
       }

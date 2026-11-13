@@ -23,8 +23,7 @@ import org.jspecify.annotations.Nullable;
 public final class BedrockEmotes {
    static final int PAGE_SIZE = 8;
    public static final KeyMapping KEY = new KeyMapping("key.bedrocknative.emotes", 5, Category.MISC);
-   @Nullable
-   private static volatile BedrockEmotes.Session session;
+   private static volatile BedrockEmotes.@Nullable Session session;
 
    private BedrockEmotes() {
    }
@@ -81,13 +80,13 @@ public final class BedrockEmotes {
       BedrockEmotes.Session current = session;
       if (current == null) {
          return false;
-      } else {
-         int ticks = ticksOf(emote);
-         current.send().accept(packet(current.runtimeId(), emote.pieceId(), ticks));
-         current.actors().emoteLocal(emote.pieceId(), ticks);
-         BedrockNative.LOGGER.debug("Emote {} ({}) sent for {} ticks", new Object[]{emote.name(), emote.pieceId(), ticks});
-         return true;
       }
+
+      int ticks = ticksOf(emote);
+      current.send().accept(packet(current.runtimeId(), emote.pieceId(), ticks));
+      current.actors().emoteLocal(emote.pieceId(), ticks);
+      BedrockNative.LOGGER.debug("Emote {} ({}) sent for {} ticks", new Object[]{emote.name(), emote.pieceId(), ticks});
+      return true;
    }
 
    static final class EmoteScreen extends Screen {
@@ -97,6 +96,7 @@ public final class BedrockEmotes {
          super(Component.translatable("bedrocknative.emotes.title"));
       }
 
+      @Override
       protected void init() {
          List<EmoteLibrary.Emote> all = PlayerSkins.emotes().all();
          int pages = Math.max(1, (all.size() + 8 - 1) / 8);
@@ -127,6 +127,7 @@ public final class BedrockEmotes {
          this.addRenderableWidget(Button.builder(CommonComponents.GUI_DONE, button -> this.onClose()).bounds(left + 40, bottom, 120, 20).build());
       }
 
+      @Override
       public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
          super.extractRenderState(graphics, mouseX, mouseY, a);
          graphics.text(this.font, this.getTitle(), (this.width - this.font.width(this.getTitle())) / 2, this.height / 2 - 88 - 28, -1, true);
@@ -136,6 +137,7 @@ public final class BedrockEmotes {
          }
       }
 
+      @Override
       public boolean keyPressed(KeyEvent event) {
          if (BedrockEmotes.KEY.matches(event)) {
             this.onClose();

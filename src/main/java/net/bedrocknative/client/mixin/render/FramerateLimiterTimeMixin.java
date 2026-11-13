@@ -9,25 +9,17 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin({FramerateLimiter.class})
+@Mixin(FramerateLimiter.class)
 public abstract class FramerateLimiterTimeMixin {
    @Unique
    private static long bedrocknative$sleepStarted;
 
-   @Inject(
-      method = {"limitDisplayFPS"},
-      at = {@At("HEAD")},
-      require = 0
-   )
+   @Inject(method = "limitDisplayFPS", at = @At("HEAD"), require = 0)
    private static void bedrocknative$sleepStart(int framerateLimit, CallbackInfo ci) {
       bedrocknative$sleepStarted = System.nanoTime();
    }
 
-   @Inject(
-      method = {"limitDisplayFPS"},
-      at = {@At("RETURN")},
-      require = 0
-   )
+   @Inject(method = "limitDisplayFPS", at = @At("RETURN"), require = 0)
    private static void bedrocknative$sleepEnd(int framerateLimit, CallbackInfo ci) {
       if (bedrocknative$sleepStarted != 0L) {
          FrameTimes.watch().add(FrameWatch.Bucket.PRESENT, System.nanoTime() - bedrocknative$sleepStarted);

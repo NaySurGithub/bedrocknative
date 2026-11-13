@@ -5,7 +5,6 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
 import org.jspecify.annotations.Nullable;
@@ -77,8 +76,7 @@ public final class UiGaps {
       return Set.copyOf(this.fired);
    }
 
-   @Nullable
-   public String line(Predicate<String> baseGameName) {
+   public @Nullable String line(Predicate<String> baseGameName) {
       List<String> parts = new ArrayList<>();
       if (!this.renderers.isEmpty()) {
          parts.add("renderers drawn as nothing " + this.renderers);
@@ -111,8 +109,7 @@ public final class UiGaps {
       return parts.isEmpty() ? null : String.join("; ", parts);
    }
 
-   @Nullable
-   public String baseGameLine(Predicate<String> baseGameName) {
+   public @Nullable String baseGameLine(Predicate<String> baseGameName) {
       List<String> base = new ArrayList<>();
 
       for (String name : this.unprovided()) {
@@ -125,13 +122,11 @@ public final class UiGaps {
       return base.isEmpty() ? null : "names the base game reads too and no source here gives " + base;
    }
 
-   @Nullable
-   public String firedLine() {
+   public @Nullable String firedLine() {
       return this.fired.isEmpty() ? null : "fired " + this.fired;
    }
 
-   @Nullable
-   public String readLine() {
+   public @Nullable String readLine() {
       List<String> given = new ArrayList<>();
       this.names.forEach((name, wasGiven) -> {
          if (wasGiven) {
@@ -143,10 +138,6 @@ public final class UiGaps {
 
    UiDataSource observing(final UiDataSource source) {
       return new UiDataSource() {
-         {
-            Objects.requireNonNull(UiGaps.this);
-         }
-
          @Override
          public UiValue global(String name) {
             return UiGaps.this.observe(name, source.global(name));
@@ -162,9 +153,8 @@ public final class UiGaps {
             return UiGaps.this.observe(collection + "/" + name, source.item(collection, index, name));
          }
 
-         @Nullable
          @Override
-         public String kind(String collection, int index) {
+         public @Nullable String kind(String collection, int index) {
             return source.kind(collection, index);
          }
 

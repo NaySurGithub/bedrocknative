@@ -10,13 +10,9 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin({ExperienceBar.class})
+@Mixin(ExperienceBar.class)
 public abstract class ExperienceBarMixin {
-   @Inject(
-      method = {"extractBackground"},
-      at = {@At("HEAD")},
-      cancellable = true
-   )
+   @Inject(method = "extractBackground", at = @At("HEAD"), cancellable = true)
    private void bedrocknative$progressBar(GuiGraphicsExtractor graphics, DeltaTracker deltaTracker, CallbackInfo ci) {
       if (BedrockHud.hides(HudElement.PROGRESS_BAR)) {
          ci.cancel();

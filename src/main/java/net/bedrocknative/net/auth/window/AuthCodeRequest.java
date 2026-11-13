@@ -46,8 +46,8 @@ public final class AuthCodeRequest {
       try {
          byte[] digest = MessageDigest.getInstance("SHA-256").digest(verifier.getBytes(StandardCharsets.US_ASCII));
          return Base64.getUrlEncoder().withoutPadding().encodeToString(digest);
-      } catch (NoSuchAlgorithmException var2) {
-         throw new IllegalStateException(var2);
+      } catch (NoSuchAlgorithmException e) {
+         throw new IllegalStateException(e);
       }
    }
 
@@ -91,57 +91,58 @@ public final class AuthCodeRequest {
          Map<String, String> query = query(redirect);
          if (query == null) {
             throw new SignInFailure(SignInFailure.Reason.INCOMPLETE, "the redirect is not the registered address or is malformed");
-         } else if (!this.ours(redirect)) {
+         }
+
+         if (!this.ours(redirect)) {
             throw new SignInFailure(SignInFailure.Reason.INCOMPLETE, "the redirect belongs to another sign-in (state)");
-         } else {
-            String error = query.get("error");
-            if (error == null) {
-               String code = query.get("code");
-               if (code != null && !code.isEmpty() && code.length() <= 2048 && printable(code)) {
-                  return new AuthCodeRequest.Redirect(code);
-               } else {
-                  throw new SignInFailure(SignInFailure.Reason.INCOMPLETE, "the redirect has no usable code");
-               }
-            } else if (error.equals("access_denied")) {
-               throw new SignInFailure(SignInFailure.Reason.DECLINED, "the player declined on Microsoft's page");
+         }
+
+         String error = query.get("error");
+         if (error == null) {
+            String code = query.get("code");
+            if (code != null && !code.isEmpty() && code.length() <= 2048 && printable(code)) {
+               return new AuthCodeRequest.Redirect(code);
             } else {
-               throw new SignInFailure(SignInFailure.Reason.INCOMPLETE, "Microsoft answered with an error", SignInFailure.oauthError(error));
+               throw new SignInFailure(SignInFailure.Reason.INCOMPLETE, "the redirect has no usable code");
             }
+         } else if (error.equals("access_denied")) {
+            throw new SignInFailure(SignInFailure.Reason.DECLINED, "the player declined on Microsoft's page");
+         } else {
+            throw new SignInFailure(SignInFailure.Reason.INCOMPLETE, "Microsoft answered with an error", SignInFailure.oauthError(error));
          }
       } else {
          throw new SignInFailure(SignInFailure.Reason.INCOMPLETE, "the redirect is missing or too long");
       }
    }
 
-   @Nullable
-   static Map<String, String> query(@Nullable String redirect) {
+   static @Nullable Map<String, String> query(@Nullable String redirect) {
       if (redirect != null && redirect.length() <= 8192 && printable(redirect)) {
          int mark = redirect.indexOf(63);
          if (mark >= 0 && redirect.indexOf(35) < 0) {
             String target = redirect.substring(0, mark).toLowerCase(Locale.ROOT);
             if (!target.equals("ms-xal-0000000048183522://auth") && !target.equals("ms-xal-0000000048183522://auth/")) {
                return null;
-            } else {
-               Map<String, String> fields = new HashMap<>();
+            }
 
-               for (String pair : redirect.substring(mark + 1).split("&")) {
-                  if (!pair.isEmpty()) {
-                     int equals = pair.indexOf(61);
+            Map<String, String> fields = new HashMap<>();
 
-                     try {
-                        String name = URLDecoder.decode(equals < 0 ? pair : pair.substring(0, equals), StandardCharsets.UTF_8);
-                        String value = equals < 0 ? "" : URLDecoder.decode(pair.substring(equals + 1), StandardCharsets.UTF_8);
-                        if (fields.put(name, value) != null) {
-                           return null;
-                        }
-                     } catch (IllegalArgumentException var11) {
+            for (String pair : redirect.substring(mark + 1).split("&")) {
+               if (!pair.isEmpty()) {
+                  int equals = pair.indexOf(61);
+
+                  try {
+                     String name = URLDecoder.decode(equals < 0 ? pair : pair.substring(0, equals), StandardCharsets.UTF_8);
+                     String value = equals < 0 ? "" : URLDecoder.decode(pair.substring(equals + 1), StandardCharsets.UTF_8);
+                     if (fields.put(name, value) != null) {
                         return null;
                      }
+                  } catch (IllegalArgumentException e) {
+                     return null;
                   }
                }
-
-               return fields;
             }
+
+            return fields;
          } else {
             return null;
          }

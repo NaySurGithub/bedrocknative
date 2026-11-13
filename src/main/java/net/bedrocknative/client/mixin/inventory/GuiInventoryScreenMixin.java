@@ -8,15 +8,10 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
 
-@Mixin({Gui.class})
+@Mixin(Gui.class)
 public abstract class GuiInventoryScreenMixin {
-   @ModifyVariable(
-      method = {"setScreen"},
-      at = {@At("HEAD")},
-      argsOnly = true
-   )
-   @Nullable
-   private Screen bedrocknative$jsonUiInventory(@Nullable Screen screen) {
+   @ModifyVariable(method = "setScreen", at = @At("HEAD"), argsOnly = true)
+   private @Nullable Screen bedrocknative$jsonUiInventory(@Nullable Screen screen) {
       return screen == null ? null : JsonUiScreens.swap(screen);
    }
 }

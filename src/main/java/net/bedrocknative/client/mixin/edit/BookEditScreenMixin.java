@@ -22,7 +22,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin({BookEditScreen.class})
+@Mixin(BookEditScreen.class)
 public abstract class BookEditScreenMixin extends Screen {
    private static final int BUTTON_WIDTH = 78;
    private static final int BOOK_WIDTH = 192;
@@ -47,31 +47,21 @@ public abstract class BookEditScreenMixin extends Screen {
    @Shadow
    protected abstract void saveChanges();
 
-   @Inject(
-      method = {"<init>"},
-      at = {@At("TAIL")}
-   )
+   @Inject(method = "<init>", at = @At("TAIL"))
    private void bedrocknative$begin(Player owner, ItemStack book, InteractionHand hand, WritableBookContent content, CallbackInfo ci) {
       if (BedrockMovement.active()) {
          BedrockBooks.begin(content.getPages(false).toList());
       }
    }
 
-   @Inject(
-      method = {"appendPageToBook"},
-      at = {@At("HEAD")},
-      cancellable = true
-   )
+   @Inject(method = "appendPageToBook", at = @At("HEAD"), cancellable = true)
    private void bedrocknative$pageLimit(CallbackInfo ci) {
       if (BedrockMovement.active() && this.pages.size() >= 50) {
          ci.cancel();
       }
    }
 
-   @Inject(
-      method = {"init"},
-      at = {@At("TAIL")}
-   )
+   @Inject(method = "init", at = @At("TAIL"))
    private void bedrocknative$pageButtons(CallbackInfo ci) {
       if (BedrockMovement.active()) {
          this.page.setCharacterLimit(256);
@@ -97,6 +87,7 @@ public abstract class BookEditScreenMixin extends Screen {
       }
    }
 
+   @Override
    public void onClose() {
       if (BedrockMovement.active()) {
          this.saveChanges();

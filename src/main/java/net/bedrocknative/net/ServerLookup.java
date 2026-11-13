@@ -25,8 +25,8 @@ public final class ServerLookup {
       Thread.ofVirtual().name("Server lookup " + host).start(() -> {
          try {
             result.complete(lookUp(host, port, resolver, log));
-         } catch (Throwable var6) {
-            result.completeExceptionally(var6);
+         } catch (Throwable e) {
+            result.completeExceptionally(e);
          }
       });
       return new ServerLookup(host, result);
@@ -69,8 +69,8 @@ public final class ServerLookup {
    public InetSocketAddress await() throws UnknownHostException {
       try {
          return this.result.join();
-      } catch (CompletionException var4) {
-         Throwable cause = var4.getCause();
+      } catch (CompletionException e) {
+         Throwable cause = e.getCause();
          if (cause instanceof UnknownHostException unknown) {
             throw unknown;
          } else if (cause instanceof RuntimeException runtime) {
@@ -85,11 +85,10 @@ public final class ServerLookup {
       }
    }
 
-   @Nullable
-   public InetSocketAddress addressOrNull() {
+   public @Nullable InetSocketAddress addressOrNull() {
       try {
          return this.await();
-      } catch (UnknownHostException var2) {
+      } catch (UnknownHostException e) {
          return null;
       }
    }

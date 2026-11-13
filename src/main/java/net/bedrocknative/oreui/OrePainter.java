@@ -18,6 +18,5 @@ public interface OrePainter {
 
    void popClip();
 
-   @Nullable
-   int[] spriteSize(String var1);
+   int @Nullable [] spriteSize(String var1);
 }

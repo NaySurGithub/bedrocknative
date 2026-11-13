@@ -18,8 +18,7 @@ public final class UiExpression {
    private static final Pattern WORD_OPERATOR = Pattern.compile("(?:^|[\\s(])(and|or|not)(?:[\\s(]|$)");
    private final String source;
    private final UiExpression.Node root;
-   @Nullable
-   private final String error;
+   private final @Nullable String error;
    private final int repairs;
    private boolean reported;
 
@@ -42,8 +41,7 @@ public final class UiExpression {
       return this.error == null;
    }
 
-   @Nullable
-   public String error() {
+   public @Nullable String error() {
       return this.error;
    }
 
@@ -54,31 +52,31 @@ public final class UiExpression {
    public static UiExpression parse(String source) {
       if (source.length() > 65536) {
          return new UiExpression(source, new UiExpression.Literal(UiValue.NULL), "expression longer than 65536");
-      } else {
-         try {
-            UiExpression.Parser parser = new UiExpression.Parser(tokenize(source));
-            UiExpression.Node node = parser.expression();
+      }
 
-            while (parser.position < parser.tokens.size()) {
-               UiExpression.Token token = parser.tokens.get(parser.position);
-               if (token.type != UiExpression.TokenType.CLOSE) {
-                  throw new IllegalArgumentException("unexpected " + token.text);
-               }
+      try {
+         UiExpression.Parser parser = new UiExpression.Parser(tokenize(source));
+         UiExpression.Node node = parser.expression();
 
-               parser.position++;
-               parser.repairs++;
-               if (parser.position < parser.tokens.size()) {
-                  parser.pending = node;
-                  node = parser.expression();
-               }
+         while (parser.position < parser.tokens.size()) {
+            UiExpression.Token token = parser.tokens.get(parser.position);
+            if (token.type != UiExpression.TokenType.CLOSE) {
+               throw new IllegalArgumentException("unexpected " + token.text);
             }
 
-            return new UiExpression(source, node, null, parser.repairs);
-         } catch (IllegalArgumentException var4) {
-            return new UiExpression(source, new UiExpression.Literal(UiValue.NULL), var4.getMessage());
-         } catch (StackOverflowError var5) {
-            return new UiExpression(source, new UiExpression.Literal(UiValue.NULL), "expression nested too deeply");
+            parser.position++;
+            parser.repairs++;
+            if (parser.position < parser.tokens.size()) {
+               parser.pending = node;
+               node = parser.expression();
+            }
          }
+
+         return new UiExpression(source, node, null, parser.repairs);
+      } catch (IllegalArgumentException e) {
+         return new UiExpression(source, new UiExpression.Literal(UiValue.NULL), e.getMessage());
+      } catch (StackOverflowError e) {
+         return new UiExpression(source, new UiExpression.Literal(UiValue.NULL), "expression nested too deeply");
       }
    }
 
@@ -90,22 +88,26 @@ public final class UiExpression {
       String trimmed = text.trim();
       if (trimmed.startsWith("(")) {
          return true;
-      } else if (trimmed.indexOf(35) < 0 && trimmed.indexOf(36) < 0) {
-         return false;
-      } else if (!WORD_OPERATOR.matcher(stripQuoted(trimmed)).find()) {
-         return false;
-      } else {
-         try {
-            for (UiExpression.Token token : tokenize(trimmed)) {
-               if (token.type == UiExpression.TokenType.WORD) {
-                  return false;
-               }
-            }
+      }
 
-            return true;
-         } catch (IllegalArgumentException var4) {
-            return false;
+      if (trimmed.indexOf(35) < 0 && trimmed.indexOf(36) < 0) {
+         return false;
+      }
+
+      if (!WORD_OPERATOR.matcher(stripQuoted(trimmed)).find()) {
+         return false;
+      }
+
+      try {
+         for (UiExpression.Token token : tokenize(trimmed)) {
+            if (token.type == UiExpression.TokenType.WORD) {
+               return false;
+            }
          }
+
+         return true;
+      } catch (IllegalArgumentException e) {
+         return false;
       }
    }
 
@@ -144,8 +146,8 @@ public final class UiExpression {
          case UiExpression.Not n:
             collect(n.operand, names, hash);
             break;
-         case UiExpression.Negate nx:
-            collect(nx.operand, names, hash);
+         case UiExpression.Negate n:
+            collect(n.operand, names, hash);
             break;
          case UiExpression.Binary b:
             collect(b.left, names, hash);
@@ -158,11 +160,11 @@ public final class UiExpression {
       }
    }
 
-   public UiExpression bind(Function<String, UiValue> variables) {
+   public UiExpression bind(Function<String, @Nullable UiValue> variables) {
       return this.error == null && !this.dollarNames().isEmpty() ? new UiExpression(this.source, fold(this.root, variables), null, this.repairs) : this;
    }
 
-   private static UiExpression.Node fold(UiExpression.Node node, Function<String, UiValue> variables) {
+   private static UiExpression.Node fold(UiExpression.Node node, Function<String, @Nullable UiValue> variables) {
       return (UiExpression.Node)(switch (node) {
          case UiExpression.Dollar d -> {
             UiValue value = variables.apply(d.name);
@@ -172,13 +174,13 @@ public final class UiExpression {
                : new UiExpression.Literal(value == null ? UiValue.NULL : value);
          }
          case UiExpression.Not n -> new UiExpression.Not(fold(n.operand, variables));
-         case UiExpression.Negate nx -> new UiExpression.Negate(fold(nx.operand, variables));
+         case UiExpression.Negate n -> new UiExpression.Negate(fold(n.operand, variables));
          case UiExpression.Binary b -> new UiExpression.Binary(b.op, fold(b.left, variables), fold(b.right, variables));
          default -> node;
       });
    }
 
-   public UiValue eval(Function<String, UiValue> hash, Function<String, UiValue> dollar, @Nullable UiProblems problems) {
+   public UiValue eval(Function<String, @Nullable UiValue> hash, Function<String, @Nullable UiValue> dollar, @Nullable UiProblems problems) {
       if (this.error != null) {
          this.report(problems, this.error);
          return UiValue.NULL;
@@ -194,7 +196,7 @@ public final class UiExpression {
       }
    }
 
-   public UiValue eval(Function<String, UiValue> hash, @Nullable UiProblems problems) {
+   public UiValue eval(Function<String, @Nullable UiValue> hash, @Nullable UiProblems problems) {
       return this.eval(hash, name -> null, problems);
    }
 
@@ -214,12 +216,14 @@ public final class UiExpression {
       int bytes = text.getBytes(StandardCharsets.UTF_8).length;
       if (width < 0 || bytes >= width) {
          return text;
-      } else if (zero) {
-         return "0";
-      } else {
-         String padding = " ".repeat(Math.min(width - bytes, 65536));
-         return leftAlign ? text + padding : padding + text;
       }
+
+      if (zero) {
+         return "0";
+      }
+
+      String padding = " ".repeat(Math.min(width - bytes, 65536));
+      return leftAlign ? text + padding : padding + text;
    }
 
    static String firstBytes(String value, int limit) {
@@ -342,12 +346,11 @@ public final class UiExpression {
    }
 
    private static final class Evaluation {
-      private final Function<String, UiValue> hash;
-      private final Function<String, UiValue> dollar;
-      @Nullable
-      private String problem;
+      private final Function<String, @Nullable UiValue> hash;
+      private final Function<String, @Nullable UiValue> dollar;
+      private @Nullable String problem;
 
-      Evaluation(Function<String, UiValue> hash, Function<String, UiValue> dollar) {
+      Evaluation(Function<String, @Nullable UiValue> hash, Function<String, @Nullable UiValue> dollar) {
          this.hash = hash;
          this.dollar = dollar;
       }
@@ -364,8 +367,8 @@ public final class UiExpression {
                yield value == null ? UiValue.NULL : value;
             }
             case UiExpression.Not n -> UiValue.of(!this.eval(n.operand).truthy());
-            case UiExpression.Negate nx -> {
-               UiValue value = this.eval(nx.operand);
+            case UiExpression.Negate n -> {
+               UiValue value = this.eval(n.operand);
                yield numeric(value) ? UiValue.of(-value.asNumber()) : this.mismatch("-", value);
             }
             case UiExpression.Binary b -> this.binary(b);
@@ -376,7 +379,9 @@ public final class UiExpression {
       private UiValue binary(UiExpression.Binary b) {
          if (b.op == UiExpression.Op.OR) {
             return UiValue.of(this.eval(b.left).truthy() || this.eval(b.right).truthy());
-         } else if (b.op != UiExpression.Op.AND) {
+         }
+
+         if (b.op != UiExpression.Op.AND) {
             UiValue left = this.eval(b.left);
             UiValue right = this.eval(b.right);
 
@@ -419,24 +424,28 @@ public final class UiExpression {
       private static boolean equal(UiValue left, UiValue right) {
          if (!left.isString() && !right.isString()) {
             return !left.isArray() && !left.isObject() && !right.isArray() && !right.isObject() ? left.asNumber() == right.asNumber() : left.equals(right);
-         } else if (left.isNull() || right.isNull()) {
-            return left.asString().equals(right.asString());
-         } else if (left.isString() && right.isString()) {
-            return left.asString().equals(right.asString());
-         } else {
-            UiValue number = left.isString() ? right : left;
-            UiValue text = left.isString() ? left : right;
-            return !number.isNumber() && !number.isBool()
-               ? left.asString().equals(right.asString())
-               : UiValue.format(number.asNumber()).equals(text.asString()) || isNumber(text.asString()) && number.asNumber() == text.asNumber();
          }
+
+         if (left.isNull() || right.isNull()) {
+            return left.asString().equals(right.asString());
+         }
+
+         if (left.isString() && right.isString()) {
+            return left.asString().equals(right.asString());
+         }
+
+         UiValue number = left.isString() ? right : left;
+         UiValue text = left.isString() ? left : right;
+         return !number.isNumber() && !number.isBool()
+            ? left.asString().equals(right.asString())
+            : UiValue.format(number.asNumber()).equals(text.asString()) || isNumber(text.asString()) && number.asNumber() == text.asNumber();
       }
 
       private static boolean isNumber(String text) {
          try {
             Double.parseDouble(text.trim());
             return true;
-         } catch (NumberFormatException var2) {
+         } catch (NumberFormatException e) {
             return false;
          }
       }
@@ -524,7 +533,7 @@ public final class UiExpression {
    record Not(UiExpression.Node operand) implements UiExpression.Node {
    }
 
-   static enum Op {
+   enum Op {
       OR,
       AND,
       EQ,
@@ -546,8 +555,7 @@ public final class UiExpression {
       private static final int MAX_NESTING = 1024;
       private int depth;
       private int repairs;
-      @Nullable
-      private UiExpression.Node pending;
+      private UiExpression.@Nullable Node pending;
 
       Parser(List<UiExpression.Token> tokens) {
          this.tokens = tokens;
@@ -556,11 +564,11 @@ public final class UiExpression {
       UiExpression.Node expression() {
          if (++this.depth > 1024) {
             throw new IllegalArgumentException("expression nested too deeply");
-         } else {
-            UiExpression.Node node = this.or();
-            this.depth--;
-            return node;
          }
+
+         UiExpression.Node node = this.or();
+         this.depth--;
+         return node;
       }
 
       private UiExpression.Node or() {
@@ -587,11 +595,11 @@ public final class UiExpression {
          if (this.pending == null && this.keyword("not")) {
             if (++this.depth > 1024) {
                throw new IllegalArgumentException("expression nested too deeply");
-            } else {
-               UiExpression.Node operand = this.not();
-               this.depth--;
-               return new UiExpression.Not(operand);
             }
+
+            UiExpression.Node operand = this.not();
+            this.depth--;
+            return new UiExpression.Not(operand);
          } else {
             return this.comparison();
          }
@@ -648,13 +656,15 @@ public final class UiExpression {
       private UiExpression.Node unary() {
          if (this.pending != null || this.operator("-") == null) {
             return this.atom();
-         } else if (++this.depth > 1024) {
-            throw new IllegalArgumentException("expression nested too deeply");
-         } else {
-            UiExpression.Node operand = this.unary();
-            this.depth--;
-            return new UiExpression.Negate(operand);
          }
+
+         if (++this.depth > 1024) {
+            throw new IllegalArgumentException("expression nested too deeply");
+         }
+
+         UiExpression.Node operand = this.unary();
+         this.depth--;
+         return new UiExpression.Negate(operand);
       }
 
       private UiExpression.Node atom() {
@@ -662,65 +672,67 @@ public final class UiExpression {
             UiExpression.Node operand = this.pending;
             this.pending = null;
             return operand;
-         } else if (this.position >= this.tokens.size()) {
-            throw new IllegalArgumentException("unexpected end");
-         } else {
-            UiExpression.Token token = this.tokens.get(this.position++);
+         }
 
-            return (UiExpression.Node)(switch (token.type) {
-               case NUMBER -> {
-                  UiExpression.Literal var11;
-                  try {
-                     var11 = new UiExpression.Literal(UiValue.of(Double.parseDouble(token.text)));
-                  } catch (NumberFormatException var5) {
-                     throw new IllegalArgumentException("bad number " + token.text);
+         if (this.position >= this.tokens.size()) {
+            throw new IllegalArgumentException("unexpected end");
+         }
+
+         UiExpression.Token token = this.tokens.get(this.position++);
+
+         return (UiExpression.Node)(switch (token.type) {
+            case NUMBER -> {
+               UiExpression.Literal var13;
+               try {
+                  var13 = new UiExpression.Literal(UiValue.of(Double.parseDouble(token.text)));
+               } catch (NumberFormatException e) {
+                  throw new IllegalArgumentException("bad number " + token.text);
+               }
+
+               yield var13;
+            }
+            case STRING -> {
+               UiExpression.Literal var12 = new UiExpression.Literal(UiValue.of(token.text));
+               yield var12;
+            }
+            case HASH -> {
+               UiExpression.Hash var11 = new UiExpression.Hash(token.text);
+               yield var11;
+            }
+            case DOLLAR -> {
+               UiExpression.Dollar var10 = new UiExpression.Dollar(token.text);
+               yield var10;
+            }
+            case WORD -> {
+               UiExpression.Literal var9 = new UiExpression.Literal(UiValue.of(token.text));
+               yield var9;
+            }
+            case KEYWORD -> {
+               UiExpression.Literal var8 = switch (token.text) {
+                  case "true" -> new UiExpression.Literal(UiValue.TRUE);
+                  case "false" -> new UiExpression.Literal(UiValue.FALSE);
+                  default -> throw new IllegalArgumentException("unexpected " + token.text);
+               };
+               yield var8;
+            }
+            default -> throw new IllegalArgumentException("unexpected " + token.text);
+            case OPEN -> {
+               UiExpression.Node inner = this.expression();
+               if (this.position >= this.tokens.size()) {
+                  this.repairs++;
+                  UiExpression.Node var2 = inner;
+                  yield var2;
+               } else {
+                  if (this.tokens.get(this.position).type != UiExpression.TokenType.CLOSE) {
+                     throw new IllegalArgumentException("missing ) before " + this.tokens.get(this.position).text);
                   }
 
-                  yield var11;
-               }
-               case STRING -> {
-                  UiExpression.Literal var10 = new UiExpression.Literal(UiValue.of(token.text));
-                  yield var10;
-               }
-               case HASH -> {
-                  UiExpression.Hash var9 = new UiExpression.Hash(token.text);
-                  yield var9;
-               }
-               case DOLLAR -> {
-                  UiExpression.Dollar var8 = new UiExpression.Dollar(token.text);
-                  yield var8;
-               }
-               case WORD -> {
-                  UiExpression.Literal var7 = new UiExpression.Literal(UiValue.of(token.text));
+                  this.position++;
+                  UiExpression.Node var7 = inner;
                   yield var7;
                }
-               case KEYWORD -> {
-                  String var12 = token.text;
-
-                  UiExpression.Literal var2 = switch (var12) {
-                     case "true" -> new UiExpression.Literal(UiValue.TRUE);
-                     case "false" -> new UiExpression.Literal(UiValue.FALSE);
-                     default -> throw new IllegalArgumentException("unexpected " + token.text);
-                  };
-                  yield var2;
-               }
-               default -> throw new IllegalArgumentException("unexpected " + token.text);
-               case OPEN -> {
-                  UiExpression.Node inner = this.expression();
-                  if (this.position >= this.tokens.size()) {
-                     this.repairs++;
-                     yield inner;
-                  } else {
-                     if (this.tokens.get(this.position).type != UiExpression.TokenType.CLOSE) {
-                        throw new IllegalArgumentException("missing ) before " + this.tokens.get(this.position).text);
-                     }
-
-                     this.position++;
-                     yield inner;
-                  }
-               }
-            });
-         }
+            }
+         });
       }
 
       private boolean keyword(String word) {
@@ -734,8 +746,7 @@ public final class UiExpression {
          }
       }
 
-      @Nullable
-      private String operator(String... options) {
+      private @Nullable String operator(String... options) {
          if (this.position < this.tokens.size() && this.tokens.get(this.position).type == UiExpression.TokenType.OPERATOR) {
             String text = this.tokens.get(this.position).text;
 
@@ -756,7 +767,7 @@ public final class UiExpression {
    private record Token(UiExpression.TokenType type, String text) {
    }
 
-   private static enum TokenType {
+   private enum TokenType {
       NUMBER,
       STRING,
       HASH,

@@ -9,8 +9,7 @@ import org.jspecify.annotations.Nullable;
 
 final class MeshDraw implements CustomGeometryRenderer, DrawSnapshot.VertexSink {
    private static volatile boolean failed;
-   @Nullable
-   private DrawSnapshot snapshot;
+   private @Nullable DrawSnapshot snapshot;
    private int call;
    private int group;
    private int root = -1;
@@ -18,8 +17,7 @@ final class MeshDraw implements CustomGeometryRenderer, DrawSnapshot.VertexSink 
    private int color;
    private int overlay;
    private int light;
-   @Nullable
-   private VertexConsumer buffer;
+   private @Nullable VertexConsumer buffer;
 
    static boolean anyFailed() {
       return failed;
@@ -47,6 +45,7 @@ final class MeshDraw implements CustomGeometryRenderer, DrawSnapshot.VertexSink 
       return this;
    }
 
+   @Override
    public void render(Pose pose, VertexConsumer buffer) {
       DrawSnapshot draw = this.snapshot;
       if (draw != null) {
@@ -58,10 +57,10 @@ final class MeshDraw implements CustomGeometryRenderer, DrawSnapshot.VertexSink 
             } else {
                draw.emit(this.call, this.group, this.root, pose.pose(), pose.normal(), this);
             }
-         } catch (RuntimeException var8) {
+         } catch (RuntimeException e) {
             if (!failed) {
                failed = true;
-               BedrockNative.LOGGER.error("Couldn't draw a Bedrock model group", var8);
+               BedrockNative.LOGGER.error("Couldn't draw a Bedrock model group", e);
             }
          } finally {
             this.buffer = null;

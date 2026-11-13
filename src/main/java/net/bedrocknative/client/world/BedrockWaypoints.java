@@ -28,11 +28,11 @@ public final class BedrockWaypoints {
    private final Minecraft minecraft;
    private final Map<Long, UUID> tracked = new HashMap<>();
    private final Map<UUID, BedrockWaypoints.Server> serverWaypoints = new HashMap<>();
-   private LongFunction<Entity> entityLookup = id -> null;
+   private LongFunction<@Nullable Entity> entityLookup = id -> null;
    private long localUniqueId = Long.MIN_VALUE;
    private int ticks;
 
-   public void follow(LongFunction<Entity> lookup) {
+   public void follow(LongFunction<@Nullable Entity> lookup) {
       this.entityLookup = lookup;
    }
 
@@ -79,7 +79,7 @@ public final class BedrockWaypoints {
       BedrockWaypoints.Server waypoint = this.serverWaypoints.get(id);
       if (waypoint != null) {
          Entity followed = waypoint.authority() && waypoint.entity() != null ? this.entityLookup.apply(waypoint.entity()) : null;
-         Vec3i at = (Vec3i)(followed != null ? followed.blockPosition() : waypoint.at());
+         Vec3i at = followed != null ? followed.blockPosition() : waypoint.at();
          if (waypoint.visible() && at != null) {
             Icon icon = new Icon();
             if (waypoint.color() != null) {

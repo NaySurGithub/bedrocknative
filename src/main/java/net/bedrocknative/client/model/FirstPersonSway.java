@@ -12,6 +12,6 @@ public final class FirstPersonSway {
    }
 
    public static float current(float javaAngle) {
-      return angle(javaAngle, (Boolean)Minecraft.getInstance().options.bobView().get(), BedrockMovement.active());
+      return angle(javaAngle, Minecraft.getInstance().options.bobView().get(), BedrockMovement.active());
    }
 }

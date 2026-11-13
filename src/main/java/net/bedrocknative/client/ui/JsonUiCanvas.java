@@ -55,26 +55,18 @@ final class JsonUiCanvas implements UiCanvas {
    private final Minecraft minecraft;
    private final float scale;
    private final BedrockFont font;
-   @Nullable
-   private final ItemSource items;
-   @Nullable
-   private final HudValues hud;
+   private final @Nullable ItemSource items;
+   private final @Nullable HudValues hud;
    private final UiTextures textures;
    private final Predicate<UiControl> skip;
-   @Nullable
-   private final JsonUiCanvas.Locator locator;
+   private final JsonUiCanvas.@Nullable Locator locator;
    private final Consumer<String> undrawn;
    private static final Set<String> NOTHING_ON_PURPOSE = Set.of("hover_text_renderer", "flying_item_renderer");
-   @Nullable
-   private final GuiRenderState state;
-   @Nullable
-   private ScreenRectangle scissor;
-   @Nullable
-   private final ScreenRectangle outerScissor;
-   @Nullable
-   private Identifier lastTexture;
-   @Nullable
-   private TextureSetup lastSetup;
+   private final @Nullable GuiRenderState state;
+   private @Nullable ScreenRectangle scissor;
+   private final @Nullable ScreenRectangle outerScissor;
+   private @Nullable Identifier lastTexture;
+   private @Nullable TextureSetup lastSetup;
 
    private static float width(UiTextMetrics metrics, UiFont font, String line) {
       if (WIDTHS.size() > 8192) {
@@ -93,7 +85,7 @@ final class JsonUiCanvas implements UiCanvas {
       @Nullable HudValues hud,
       UiTextures textures,
       Predicate<UiControl> skip,
-      @Nullable JsonUiCanvas.Locator locator,
+      JsonUiCanvas.@Nullable Locator locator,
       Consumer<String> undrawn
    ) {
       this.graphics = graphics;
@@ -144,7 +136,7 @@ final class JsonUiCanvas implements UiCanvas {
       @Nullable HudValues hud,
       UiTextures textures,
       Predicate<UiControl> skip,
-      @Nullable JsonUiCanvas.Locator locator
+      JsonUiCanvas.@Nullable Locator locator
    ) {
       draw(graphics, list, font, items, hud, textures, skip, locator, renderer -> {});
    }
@@ -157,7 +149,7 @@ final class JsonUiCanvas implements UiCanvas {
       @Nullable HudValues hud,
       UiTextures textures,
       Predicate<UiControl> skip,
-      @Nullable JsonUiCanvas.Locator locator,
+      JsonUiCanvas.@Nullable Locator locator,
       Consumer<String> undrawn
    ) {
       Minecraft minecraft = Minecraft.getInstance();
@@ -184,7 +176,7 @@ final class JsonUiCanvas implements UiCanvas {
       }
    }
 
-   static void fill(GuiGraphicsExtractor graphics, float x, float y, float w, float h, int argb, @Nullable float[] clip) {
+   static void fill(GuiGraphicsExtractor graphics, float x, float y, float w, float h, int argb, float @Nullable [] clip) {
       float guiScale = Minecraft.getInstance().getWindow().getGuiScale();
       float scale = JsonUi.uiScale();
       graphics.pose().pushMatrix();
@@ -285,8 +277,7 @@ final class JsonUiCanvas implements UiCanvas {
                this.graphics.pose().popMatrix();
             }
          } else {
-            String var2 = custom.renderer();
-            switch (var2) {
+            switch (custom.renderer()) {
                case "progress_bar_renderer":
                   for (UiProgressBar.Fill fill : UiProgressBar.fills(custom)) {
                      int x0 = this.px(fill.x());
@@ -402,12 +393,12 @@ final class JsonUiCanvas implements UiCanvas {
          float du = u1 - u0;
          float dv = v1 - v0;
          if (Math.abs(du) * 16.0F < 1.0F) {
-            u = Math.max(0.0F, u0 - 0.25F);
+            u = Math.max(0.0F, u - 0.25F);
             du = 0.5F;
          }
 
          if (Math.abs(dv) * 16.0F < 1.0F) {
-            v = Math.max(0.0F, v0 - 0.25F);
+            v = Math.max(0.0F, v - 0.25F);
             dv = 0.5F;
          }
 

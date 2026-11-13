@@ -30,14 +30,11 @@ public final class StartupClock {
    public static <T> T step(String name, Supplier<T> work) {
       long started = System.nanoTime();
 
-      Object var4;
       try {
-         var4 = work.get();
+         return work.get();
       } finally {
          record(name, System.nanoTime() - started);
       }
-
-      return (T)var4;
    }
 
    private static void record(String name, long nanos) {
@@ -67,10 +64,10 @@ public final class StartupClock {
    public static boolean titleShown() {
       if (titleMillis >= 0L) {
          return false;
-      } else {
-         titleMillis = sinceJvmStart();
-         return true;
       }
+
+      titleMillis = sinceJvmStart();
+      return true;
    }
 
    public static long titleMillis() {

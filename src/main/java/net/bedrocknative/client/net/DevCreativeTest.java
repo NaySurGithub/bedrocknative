@@ -103,7 +103,7 @@ final class DevCreativeTest {
             .gui
             .setScreen(
                new CreativeModeInventoryScreen(
-                  this.minecraft.player, this.minecraft.player.connection.enabledFeatures(), (Boolean)this.minecraft.options.operatorItemsTab().get()
+                  this.minecraft.player, this.minecraft.player.connection.enabledFeatures(), this.minecraft.options.operatorItemsTab().get()
                )
             )
       );
@@ -119,7 +119,7 @@ final class DevCreativeTest {
                log(
                   "JSON UI: creative screen {}, problems {}: {}",
                   screen == null ? "nothing" : screen.getClass().getSimpleName(),
-                  screen instanceof JsonUiCreativeScreen jsonx ? jsonx.ui().instance().problems() : "-",
+                  screen instanceof JsonUiCreativeScreen json ? json.ui().instance().problems() : "-",
                   pass ? "PASS" : "FAIL"
                );
             }
@@ -190,7 +190,7 @@ final class DevCreativeTest {
 
                List<CreativeItemData> expected = new ArrayList<>(inContentOrder);
                expected.sort(
-                  Comparator.comparingInt(entryx -> entryx.getGroupId() >= 0 && entryx.getGroupId() < groups.size() ? entryx.getGroupId() : Integer.MAX_VALUE)
+                  Comparator.comparingInt(entry -> entry.getGroupId() >= 0 && entry.getGroupId() < groups.size() ? entry.getGroupId() : Integer.MAX_VALUE)
                );
                if (!expected.equals(inContentOrder)) {
                   log(
@@ -210,11 +210,11 @@ final class DevCreativeTest {
                   if (group != null) {
                      headers++;
                      if (!BedrockCreativeTabs.isOpen(group)) {
-                        group.entries().forEach(entryx -> listed.add(BedrockCreativeTabs.entry(entryx)));
+                        group.entries().forEach(entry -> listed.add(BedrockCreativeTabs.entry(entry)));
                      }
                   } else {
-                     CreativeItemData entryx = BedrockCreativeTabs.entry(stack);
-                     listed.add(entryx);
+                     CreativeItemData entry = BedrockCreativeTabs.entry(stack);
+                     listed.add(entry);
                      loose++;
                   }
                }
@@ -228,7 +228,7 @@ final class DevCreativeTest {
                   }
                }
 
-               long custom = listed.stream().filter(entryx -> !identifier(entryx).startsWith("minecraft:")).count();
+               long custom = listed.stream().filter(entry -> !identifier(entry).startsWith("minecraft:")).count();
                log(
                   "category {} ('{}'): {} slots ({} group headers, {} loose), {} entries listed, {} in CreativeContent, {} server-defined; order {}",
                   category,
@@ -414,7 +414,7 @@ final class DevCreativeTest {
                .gui
                .setScreen(
                   new CreativeModeInventoryScreen(
-                     this.minecraft.player, this.minecraft.player.connection.enabledFeatures(), (Boolean)this.minecraft.options.operatorItemsTab().get()
+                     this.minecraft.player, this.minecraft.player.connection.enabledFeatures(), this.minecraft.options.operatorItemsTab().get()
                   )
                )
          );
@@ -442,7 +442,7 @@ final class DevCreativeTest {
             Slot under = at == null ? null : json.slotAt(at[0], at[1]);
             if (under != null && this.minecraft.player.inventoryMenu.getSlot(under.index) == under) {
                press(json, at, 1, input == ContainerInput.QUICK_MOVE ? 1 : 0);
-               log("creative click: {} through the JSON UI: cursor {}", what, ((ItemPickerMenu)json.getMenu()).getCarried());
+               log("creative click: {} through the JSON UI: cursor {}", what, json.getMenu().getCarried());
             } else {
                this.jsonUiMisses++;
                log("JSON UI: FAIL, {} cell {} is not under the mouse for '{}'", collection, index, what);
@@ -452,8 +452,7 @@ final class DevCreativeTest {
       sleep(700L);
    }
 
-   @Nullable
-   private String verifyAt(DevCreativeTest.Taken taken, String location, int slot, Supplier<ItemStack> java) {
+   private @Nullable String verifyAt(DevCreativeTest.Taken taken, String location, int slot, Supplier<ItemStack> java) {
       return this.onClient(
          () -> {
             ItemStack shown = java.get();
@@ -493,8 +492,7 @@ final class DevCreativeTest {
       sleep(700L);
    }
 
-   @Nullable
-   private static UiControl first(UiControl from, UiType type) {
+   private static @Nullable UiControl first(UiControl from, UiType type) {
       ArrayDeque<UiControl> queue = new ArrayDeque<>();
       queue.add(from);
 
@@ -564,7 +562,7 @@ final class DevCreativeTest {
                      what,
                      input,
                      button,
-                     ((ItemPickerMenu)json.getMenu()).getCarried(),
+                     json.getMenu().getCarried(),
                      describe(this.requests.creative().lastCreated())
                   );
                   return true;
@@ -592,7 +590,7 @@ final class DevCreativeTest {
                   log(
                      "creative click: {} through the JSON UI: cursor {}, last CRAFT_CREATIVE {}",
                      what,
-                     ((ItemPickerMenu)json.getMenu()).getCarried(),
+                     json.getMenu().getCarried(),
                      describe(this.requests.creative().lastCreated())
                   );
                   return true;
@@ -729,7 +727,7 @@ final class DevCreativeTest {
                   .gui
                   .setScreen(
                      new CreativeModeInventoryScreen(
-                        this.minecraft.player, this.minecraft.player.connection.enabledFeatures(), (Boolean)this.minecraft.options.operatorItemsTab().get()
+                        this.minecraft.player, this.minecraft.player.connection.enabledFeatures(), this.minecraft.options.operatorItemsTab().get()
                      )
                   )
             );
@@ -745,7 +743,7 @@ final class DevCreativeTest {
                   .gui
                   .setScreen(
                      new CreativeModeInventoryScreen(
-                        this.minecraft.player, this.minecraft.player.connection.enabledFeatures(), (Boolean)this.minecraft.options.operatorItemsTab().get()
+                        this.minecraft.player, this.minecraft.player.connection.enabledFeatures(), this.minecraft.options.operatorItemsTab().get()
                      )
                   )
             );
@@ -791,8 +789,8 @@ final class DevCreativeTest {
                EditBox box = (EditBox)field("searchBox").get(this.screen());
                box.setValue(typed);
                method("refreshSearchResults").invoke(this.screen());
-            } catch (ReflectiveOperationException var3) {
-               throw new IllegalStateException(var3);
+            } catch (ReflectiveOperationException e) {
+               throw new IllegalStateException(e);
             }
          });
       }
@@ -1088,8 +1086,7 @@ final class DevCreativeTest {
       }
    }
 
-   @Nullable
-   private static String item(ItemDescriptorWithCount ingredient) {
+   private static @Nullable String item(ItemDescriptorWithCount ingredient) {
       return ingredient.getDescriptor() instanceof DefaultDescriptor exact && exact.getItemId() != null && exact.getItemId().getRuntimeId() != 0
          ? exact.getItemId().getIdentifier()
          : null;
@@ -1137,8 +1134,8 @@ final class DevCreativeTest {
 
             try {
                method("slotClicked", Slot.class, int.class, int.class, ContainerInput.class).invoke(this.screen(), menu.slots.get(index), index, button, input);
-            } catch (ReflectiveOperationException var8) {
-               throw new IllegalStateException(var8);
+            } catch (ReflectiveOperationException e) {
+               throw new IllegalStateException(e);
             }
 
             log(
@@ -1163,8 +1160,8 @@ final class DevCreativeTest {
 
       try {
          field("scrollOffs").setFloat(this.screen(), scroll);
-      } catch (ReflectiveOperationException var7) {
-         throw new IllegalStateException(var7);
+      } catch (ReflectiveOperationException e) {
+         throw new IllegalStateException(e);
       }
 
       int top = rows <= 0 ? 0 : Math.max((int)(scroll * rows + 0.5F), 0);
@@ -1177,8 +1174,7 @@ final class DevCreativeTest {
       this.run(() -> log("group '{}' open {}, tab now shows {} slots", group.name(), BedrockCreativeTabs.isOpen(group), this.picker().items.size()));
    }
 
-   @Nullable
-   private DevCreativeTest.Taken find(CreativeItemCategory category, Predicate<CreativeItemData> test, String what) {
+   private DevCreativeTest.@Nullable Taken find(CreativeItemCategory category, Predicate<CreativeItemData> test, String what) {
       DevCreativeTest.Taken found = this.onClient(() -> {
          List<ItemStack> items = this.picker().items;
 
@@ -1195,8 +1191,7 @@ final class DevCreativeTest {
       return found;
    }
 
-   @Nullable
-   private DevCreativeTest.Taken findAnywhere(String identifier) {
+   private DevCreativeTest.@Nullable Taken findAnywhere(String identifier) {
       for (CreativeItemCategory category : BedrockCreativeTabs.categories()) {
          DevCreativeTest.Taken entry = this.onClient(() -> findIn(BedrockCreativeTabs.entries(category), each -> identifier(each).equals(identifier)));
          if (entry != null) {
@@ -1247,8 +1242,7 @@ final class DevCreativeTest {
       return chosen;
    }
 
-   @Nullable
-   private static DevCreativeTest.Taken findIn(List<ItemStack> stacks, Predicate<CreativeItemData> test) {
+   private static DevCreativeTest.@Nullable Taken findIn(List<ItemStack> stacks, Predicate<CreativeItemData> test) {
       for (int i = 0; i < stacks.size(); i++) {
          CreativeItemData entry = BedrockCreativeTabs.entry(stacks.get(i));
          if (entry != null && test.test(entry)) {
@@ -1260,12 +1254,11 @@ final class DevCreativeTest {
    }
 
    private DevCreativeTest.Taken taken(int index) {
-      ItemStack stack = (ItemStack)this.picker().items.get(index);
+      ItemStack stack = this.picker().items.get(index);
       return new DevCreativeTest.Taken(index, stack, BedrockCreativeTabs.entry(stack));
    }
 
-   @Nullable
-   private String verify(DevCreativeTest.Taken taken, int hotbar) {
+   private @Nullable String verify(DevCreativeTest.Taken taken, int hotbar) {
       return this.onClient(
          () -> {
             CreativeItemData last = this.requests.creative().lastCreated();
@@ -1309,16 +1302,16 @@ final class DevCreativeTest {
    private void selectTab(CreativeModeTab tab) {
       try {
          method("selectTab", CreativeModeTab.class).invoke(this.screen(), tab);
-      } catch (ReflectiveOperationException var3) {
-         throw new IllegalStateException(var3);
+      } catch (ReflectiveOperationException e) {
+         throw new IllegalStateException(e);
       }
    }
 
    private CreativeModeTab selectedTab() {
       try {
          return (CreativeModeTab)field("selectedTab").get(null);
-      } catch (ReflectiveOperationException var2) {
-         throw new IllegalStateException(var2);
+      } catch (ReflectiveOperationException e) {
+         throw new IllegalStateException(e);
       }
    }
 
@@ -1332,7 +1325,7 @@ final class DevCreativeTest {
    }
 
    private ItemPickerMenu picker() {
-      return (ItemPickerMenu)this.screen().getMenu();
+      return this.screen().getMenu();
    }
 
    private static Method method(String name, Class<?>... parameters) throws NoSuchMethodException {
@@ -1382,10 +1375,10 @@ final class DevCreativeTest {
    private static boolean is(ItemStack stack, String identifier) {
       if (stack.isEmpty()) {
          return false;
-      } else {
-         CustomItem custom = ItemMappings.custom(stack);
-         return custom != null ? custom.identifier().equals(identifier) : BuiltInRegistries.ITEM.getKey(stack.getItem()).toString().equals(identifier);
       }
+
+      CustomItem custom = ItemMappings.custom(stack);
+      return custom != null ? custom.identifier().equals(identifier) : BuiltInRegistries.ITEM.getKey(stack.getItem()).toString().equals(identifier);
    }
 
    private void clickFirstEmpty(int from, String what) {
@@ -1496,7 +1489,7 @@ final class DevCreativeTest {
    private static void sleep(long millis) {
       try {
          Thread.sleep(millis);
-      } catch (InterruptedException var3) {
+      } catch (InterruptedException e) {
          Thread.currentThread().interrupt();
       }
    }

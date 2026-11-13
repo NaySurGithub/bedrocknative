@@ -28,19 +28,14 @@ public final class BedrockTextureMap {
    }
 
    public static BedrockTextureMap load(BedrockTextureMap.Atlas atlas) {
-      try {
-         BedrockTextureMap var2;
-         try (InputStream input = BedrockTextureMap.class.getResourceAsStream("/assets/bedrocknative/mappings/bedrock-textures/" + atlas.id() + ".json")) {
-            if (input == null) {
-               throw new IllegalStateException("missing /assets/bedrocknative/mappings/bedrock-textures/" + atlas.id() + ".json");
-            }
-
-            var2 = parse(atlas, new InputStreamReader(input, StandardCharsets.UTF_8));
+      try (InputStream input = BedrockTextureMap.class.getResourceAsStream("/assets/bedrocknative/mappings/bedrock-textures/" + atlas.id() + ".json")) {
+         if (input == null) {
+            throw new IllegalStateException("missing /assets/bedrocknative/mappings/bedrock-textures/" + atlas.id() + ".json");
+         } else {
+            return parse(atlas, new InputStreamReader(input, StandardCharsets.UTF_8));
          }
-
-         return var2;
-      } catch (IOException var6) {
-         throw new UncheckedIOException(var6);
+      } catch (IOException e) {
+         throw new UncheckedIOException(e);
       }
    }
 
@@ -91,8 +86,7 @@ public final class BedrockTextureMap {
       return this.entries;
    }
 
-   @Nullable
-   private static String string(JsonObject entry, String key) {
+   private static @Nullable String string(JsonObject entry, String key) {
       JsonElement value = entry.get(key);
       return value != null && value.isJsonPrimitive() ? value.getAsString() : null;
    }
@@ -102,7 +96,7 @@ public final class BedrockTextureMap {
       return value != null && value.isJsonPrimitive() && value.getAsBoolean();
    }
 
-   public static enum Atlas {
+   public enum Atlas {
       BLOCKS("blocks", "textures/terrain_texture.json", "terrain"),
       ITEMS("items", "textures/item_texture.json", "item_texture");
 
@@ -110,7 +104,7 @@ public final class BedrockTextureMap {
       private final String table;
       private final String shortKey;
 
-      private Atlas(String id, String table, String shortKey) {
+      Atlas(String id, String table, String shortKey) {
          this.id = id;
          this.table = table;
          this.shortKey = shortKey;

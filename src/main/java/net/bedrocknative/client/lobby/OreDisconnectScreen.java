@@ -36,8 +36,7 @@ public final class OreDisconnectScreen extends Screen implements LobbyScreen, Or
       this.ui = new OreDisconnectUi(session.text(), session.lang(), session.theme(), data, this);
    }
 
-   @Nullable
-   static OreDisconnectScreen create(BedrockDisconnects.Ended end) {
+   static @Nullable OreDisconnectScreen create(BedrockDisconnects.Ended end) {
       OreSession session = OreUi.session();
       if (session == null) {
          return null;
@@ -61,32 +60,37 @@ public final class OreDisconnectScreen extends Screen implements LobbyScreen, Or
       return this.end.parent();
    }
 
+   @Override
    protected void init() {
       this.ui.size(OreSession.windowWidth(), OreSession.windowHeight());
    }
 
+   @Override
    public boolean isPauseScreen() {
       return false;
    }
 
+   @Override
    public void removed() {
       this.session.release();
       super.removed();
    }
 
+   @Override
    public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
       BedrockPanorama.prepare(this.minecraft);
       this.extractPanorama(graphics, a);
    }
 
+   @Override
    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
       this.ui.text(this.session.text());
       this.ui.size(OreSession.windowWidth(), OreSession.windowHeight());
 
       try (OreSession.Painter painter = this.session.paint(graphics)) {
          this.ui.render(painter.painter(), System.currentTimeMillis());
-      } catch (RuntimeException var10) {
-         OreUi.fail("disconnect screen", var10);
+      } catch (RuntimeException e) {
+         OreUi.fail("disconnect screen", e);
          OreDisconnect data = this.ui.data();
          String words = data.variant() == OreDisconnect.Variant.SERVER ? data.serverMessage() : data.message();
          this.minecraft.execute(() -> {
@@ -100,41 +104,48 @@ public final class OreDisconnectScreen extends Screen implements LobbyScreen, Or
       return gui * OreSession.guiScale();
    }
 
+   @Override
    public void mouseMoved(double x, double y) {
       this.ui.mouseMoved(window(x), window(y));
    }
 
+   @Override
    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
       if (event.button() != 1) {
          return false;
-      } else {
-         this.ui.mousePressed(window(event.x()), window(event.y()));
-         return true;
       }
+
+      this.ui.mousePressed(window(event.x()), window(event.y()));
+      return true;
    }
 
+   @Override
    public boolean mouseReleased(MouseButtonEvent event) {
       if (event.button() != 1) {
          return false;
-      } else {
-         this.ui.mouseReleased(window(event.x()), window(event.y()));
-         return true;
       }
+
+      this.ui.mouseReleased(window(event.x()), window(event.y()));
+      return true;
    }
 
+   @Override
    public boolean mouseScrolled(double x, double y, double scrollX, double scrollY) {
       return this.ui.scrolled(window(x), window(y), scrollY);
    }
 
+   @Override
    public boolean keyPressed(KeyEvent event) {
       OreKey key = OreKeys.of(event);
       return key != null && this.ui.key(key, event.hasShiftDown());
    }
 
+   @Override
    public boolean charTyped(CharacterEvent event) {
       return false;
    }
 
+   @Override
    public void onClose() {
       this.back();
    }

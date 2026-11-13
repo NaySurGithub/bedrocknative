@@ -15,13 +15,11 @@ public final class SignInData implements UiDataSource {
    static final String CONFIRM = "button.confirm";
    static final String CANCEL = "button.cancel";
    private final SignInData.View view;
-   @Nullable
-   private SignInData.Actions actions;
+   private SignInData.@Nullable Actions actions;
    private String link = "";
    private String url = "";
    private String code = "";
-   @Nullable
-   private QrCode qr;
+   private @Nullable QrCode qr;
    private String welcome = "";
    private String gamertag = "";
    private String gamerscore = "";
@@ -39,7 +37,7 @@ public final class SignInData implements UiDataSource {
       return this.view;
    }
 
-   public void actions(@Nullable SignInData.Actions target) {
+   public void actions(SignInData.@Nullable Actions target) {
       this.actions = target;
    }
 
@@ -50,7 +48,7 @@ public final class SignInData implements UiDataSource {
          QrCode encoded;
          try {
             encoded = link.isEmpty() ? null : QrCode.encode(link, QR_LEVEL);
-         } catch (IllegalArgumentException var6) {
+         } catch (IllegalArgumentException e) {
             encoded = null;
          }
 
@@ -62,8 +60,7 @@ public final class SignInData implements UiDataSource {
       this.version++;
    }
 
-   @Nullable
-   public QrCode qr() {
+   public @Nullable QrCode qr() {
       return this.qr;
    }
 
@@ -120,9 +117,8 @@ public final class SignInData implements UiDataSource {
       return UiValue.NULL;
    }
 
-   @Nullable
    @Override
-   public String kind(String collection, int index) {
+   public @Nullable String kind(String collection, int index) {
       return null;
    }
 
@@ -179,7 +175,7 @@ public final class SignInData implements UiDataSource {
       void play();
    }
 
-   public static enum View {
+   public enum View {
       CODE("xbl_console_qr_signin.xbl_console_qr_signin", "xbox_signin_qr"),
       WELCOME("xbl_console_signin_succeeded.xbl_console_signin_succeeded", "xbox_signin_welcome"),
       PROBLEM("authentication_modals.ad_modal_dialog", "xbox_signin_problem"),
@@ -188,7 +184,7 @@ public final class SignInData implements UiDataSource {
       public final String screen;
       public final String gateKey;
 
-      private View(String screen, String gateKey) {
+      View(String screen, String gateKey) {
          this.screen = screen;
          this.gateKey = gateKey;
       }

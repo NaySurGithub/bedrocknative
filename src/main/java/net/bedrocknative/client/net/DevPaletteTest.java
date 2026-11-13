@@ -42,9 +42,9 @@ final class DevPaletteTest {
    void run() {
       try {
          this.test();
-      } catch (RuntimeException var2) {
-         this.failures.add("exception: " + var2);
-         BedrockNative.LOGGER.error("Dev palette test failed with an exception", var2);
+      } catch (RuntimeException e) {
+         this.failures.add("exception: " + e);
+         BedrockNative.LOGGER.error("Dev palette test failed with an exception", e);
       }
 
       BedrockNative.LOGGER
@@ -138,7 +138,7 @@ final class DevPaletteTest {
    private static void sleep(long millis) {
       try {
          Thread.sleep(millis);
-      } catch (InterruptedException var3) {
+      } catch (InterruptedException e) {
          Thread.currentThread().interrupt();
       }
    }

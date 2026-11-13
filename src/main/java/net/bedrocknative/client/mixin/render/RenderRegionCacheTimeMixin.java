@@ -10,25 +10,17 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin({RenderRegionCache.class})
+@Mixin(RenderRegionCache.class)
 public abstract class RenderRegionCacheTimeMixin {
    @Unique
    private long bedrocknative$started;
 
-   @Inject(
-      method = {"createRegion"},
-      at = {@At("HEAD")},
-      require = 0
-   )
+   @Inject(method = "createRegion", at = @At("HEAD"), require = 0)
    private void bedrocknative$start(CallbackInfoReturnable<RenderSectionRegion> cir) {
       this.bedrocknative$started = System.nanoTime();
    }
 
-   @Inject(
-      method = {"createRegion"},
-      at = {@At("RETURN")},
-      require = 0
-   )
+   @Inject(method = "createRegion", at = @At("RETURN"), require = 0)
    private void bedrocknative$end(CallbackInfoReturnable<RenderSectionRegion> cir) {
       if (this.bedrocknative$started != 0L) {
          FrameTimes.watch().add(FrameWatch.Bucket.SECTION_COPIES, System.nanoTime() - this.bedrocknative$started);

@@ -64,15 +64,15 @@ final class DevChunkBurstTest {
    }
 
    void run() {
-      int initialDistance = this.onClient(() -> (Integer)this.minecraft.options.renderDistance().get());
+      int initialDistance = this.onClient(() -> this.minecraft.options.renderDistance().get());
       GameType initialMode = this.onClient(() -> this.minecraft.gameMode.getPlayerMode());
       List<Runnable> unhook = this.watchGc();
 
       try {
          this.test();
-      } catch (RuntimeException var8) {
-         this.failures.add("exception: " + var8);
-         BedrockNative.LOGGER.error("Dev chunk-burst test failed with an exception", var8);
+      } catch (RuntimeException e) {
+         this.failures.add("exception: " + e);
+         BedrockNative.LOGGER.error("Dev chunk-burst test failed with an exception", e);
       } finally {
          this.minecraft.execute(() -> this.minecraft.options.renderDistance().set(initialDistance));
          this.command("gamemode " + initialMode.getName());
@@ -504,8 +504,8 @@ final class DevChunkBurstTest {
                }
             }
          }
-      } catch (IOException var17) {
-         BedrockNative.LOGGER.warn("Dev chunk-burst test: cannot write the digests", var17);
+      } catch (IOException e) {
+         BedrockNative.LOGGER.warn("Dev chunk-burst test: cannot write the digests", e);
       }
    }
 
@@ -592,22 +592,22 @@ final class DevChunkBurstTest {
       this.minecraft.execute(() -> {
          try {
             future.complete(supplier.get());
-         } catch (RuntimeException var3) {
-            future.completeExceptionally(var3);
+         } catch (RuntimeException e) {
+            future.completeExceptionally(e);
          }
       });
 
       try {
          return future.get(30L, TimeUnit.SECONDS);
-      } catch (Exception var4) {
-         throw new IllegalStateException(var4);
+      } catch (Exception e) {
+         throw new IllegalStateException(e);
       }
    }
 
    private static void sleep(long millis) {
       try {
          Thread.sleep(millis);
-      } catch (InterruptedException var3) {
+      } catch (InterruptedException e) {
          Thread.currentThread().interrupt();
       }
    }

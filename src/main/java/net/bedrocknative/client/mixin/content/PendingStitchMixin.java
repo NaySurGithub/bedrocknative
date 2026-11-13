@@ -10,16 +10,14 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
-@Mixin(
-   targets = {"net.minecraft.client.resources.model.sprite.AtlasManager$PendingStitch"}
-)
+@Mixin(targets = "net.minecraft.client.resources.model.sprite.AtlasManager$PendingStitch")
 public abstract class PendingStitchMixin {
    @Redirect(
-      method = {"joinAndUpload"},
-      at = {@At(
+      method = "joinAndUpload",
+      at = @At(
          value = "INVOKE",
          target = "Lnet/minecraft/client/renderer/texture/TextureAtlas;upload(Lnet/minecraft/client/renderer/texture/SpriteLoader$Preparations;)V"
-      )}
+      )
    )
    private void bedrocknative$uploadUnlessKept(TextureAtlas atlas, Preparations preparations) {
       if (!AtlasReload.kept(atlas, preparations)) {
@@ -28,11 +26,8 @@ public abstract class PendingStitchMixin {
    }
 
    @Redirect(
-      method = {"joinAndUpload"},
-      at = {@At(
-         value = "INVOKE",
-         target = "Lnet/minecraft/client/renderer/texture/SpriteLoader$Preparations;regions()Ljava/util/Map;"
-      )}
+      method = "joinAndUpload",
+      at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/texture/SpriteLoader$Preparations;regions()Ljava/util/Map;")
    )
    private Map<Identifier, TextureAtlasSprite> bedrocknative$currentSpritesWhenKept(Preparations preparations) {
       return AtlasReload.regions(preparations);

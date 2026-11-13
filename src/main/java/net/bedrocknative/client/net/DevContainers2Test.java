@@ -88,9 +88,9 @@ final class DevContainers2Test {
       if (only.isEmpty() || only.equals(name)) {
          try {
             part.run();
-         } catch (RuntimeException var5) {
-            this.fail(name, "exception " + var5);
-            BedrockNative.LOGGER.error("Dev containers2 test: {} part failed", name, var5);
+         } catch (RuntimeException e) {
+            this.fail(name, "exception " + e);
+            BedrockNative.LOGGER.error("Dev containers2 test: {} part failed", name, e);
          }
 
          this.run(() -> this.minecraft.gui.setScreen(null));
@@ -110,7 +110,7 @@ final class DevContainers2Test {
          this.check("lectern: the book put on it arrives in the block entity data", placed, "has book " + BedrockLecterns.hasBook(pos));
          this.check(
             "lectern: the block shows the book",
-            this.onClient(() -> (Boolean)this.minecraft.level.getBlockState(pos).getValue(BlockStateProperties.HAS_BOOK)),
+            this.onClient(() -> this.minecraft.level.getBlockState(pos).getValue(BlockStateProperties.HAS_BOOK)),
             this.onClient(() -> String.valueOf(this.minecraft.level.getBlockState(pos)))
          );
          this.check(
@@ -124,28 +124,28 @@ final class DevContainers2Test {
             this.check("lectern: using it opens the reader", screen != null, "screen " + this.onClient(() -> String.valueOf(this.minecraft.gui.screen())));
             if (screen != null) {
                LecternMenu menu = this.onClient(screen::getMenu);
-               WrittenBookContent content = this.onClient(() -> (WrittenBookContent)menu.getBook().get(DataComponents.WRITTEN_BOOK_CONTENT));
+               WrittenBookContent content = this.onClient(() -> menu.getBook().get(DataComponents.WRITTEN_BOOK_CONTENT));
                this.check(
                   "lectern: the reader holds the written book with its four pages",
                   content != null && content.pages().size() == 4 && "Dev Lectern".equals(content.title().raw()),
                   content == null
                      ? "book " + this.onClient(() -> String.valueOf(menu.getBook()))
-                     : (String)content.title().raw() + ", " + content.pages().size() + " pages"
+                     : content.title().raw() + ", " + content.pages().size() + " pages"
                );
-               this.check("lectern: it starts on the first page", this.<Integer>onClient(menu::getPage) == 0, "page " + this.onClient(menu::getPage));
+               this.check("lectern: it starts on the first page", this.onClient(menu::getPage) == 0, "page " + this.onClient(menu::getPage));
                sleep(500L);
                this.screenshot("containers2-lectern-page-1");
                int sent = BedrockLecterns.updatesSent();
                this.turn(menu, 2);
                this.check(
                   "lectern: forward moves one Java page and sends nothing inside a spread",
-                  this.<Integer>onClient(menu::getPage) == 1 && BedrockLecterns.updatesSent() == sent,
+                  this.onClient(menu::getPage) == 1 && BedrockLecterns.updatesSent() == sent,
                   "page " + this.onClient(menu::getPage) + ", updates " + (BedrockLecterns.updatesSent() - sent)
                );
                this.turn(menu, 2);
                this.check(
                   "lectern: the next spread sends one LecternUpdate",
-                  this.<Integer>onClient(menu::getPage) == 2 && BedrockLecterns.updatesSent() == sent + 1,
+                  this.onClient(menu::getPage) == 2 && BedrockLecterns.updatesSent() == sent + 1,
                   "page " + this.onClient(menu::getPage) + ", updates " + (BedrockLecterns.updatesSent() - sent)
                );
                boolean echoed = this.await(() -> BedrockLecterns.serverSpread(pos) == 1, 4000L);
@@ -155,13 +155,13 @@ final class DevContainers2Test {
                this.turn(menu, 2);
                this.turn(menu, 2);
                this.turn(menu, 2);
-               this.check("lectern: forward stops on the last page", this.<Integer>onClient(menu::getPage) == 3, "page " + this.onClient(menu::getPage));
+               this.check("lectern: forward stops on the last page", this.onClient(menu::getPage) == 3, "page " + this.onClient(menu::getPage));
                this.turn(menu, 1);
                this.turn(menu, 1);
                this.turn(menu, 1);
                this.check(
                   "lectern: back returns to the first spread (a second LecternUpdate)",
-                  this.<Integer>onClient(menu::getPage) == 0 && BedrockLecterns.updatesSent() >= sent + 2,
+                  this.onClient(menu::getPage) == 0 && BedrockLecterns.updatesSent() >= sent + 2,
                   "page " + this.onClient(menu::getPage) + ", updates " + (BedrockLecterns.updatesSent() - sent)
                );
                this.check(
@@ -197,7 +197,7 @@ final class DevContainers2Test {
                      "lectern: the block is still a lectern without the book",
                      this.onClient(
                         () -> this.minecraft.level.getBlockState(pos).is(Blocks.LECTERN)
-                           && !(Boolean)this.minecraft.level.getBlockState(pos).getValue(BlockStateProperties.HAS_BOOK)
+                           && !this.minecraft.level.getBlockState(pos).getValue(BlockStateProperties.HAS_BOOK)
                      ),
                      this.onClient(() -> String.valueOf(this.minecraft.level.getBlockState(pos)))
                   );
@@ -375,7 +375,7 @@ final class DevContainers2Test {
       );
       this.check(
          "jukebox: the block has a record",
-         this.await(() -> (Boolean)this.minecraft.level.getBlockState(pos).getValue(BlockStateProperties.HAS_RECORD), 3000L),
+         this.await(() -> this.minecraft.level.getBlockState(pos).getValue(BlockStateProperties.HAS_RECORD), 3000L),
          this.onClient(() -> String.valueOf(this.minecraft.level.getBlockState(pos)))
       );
       this.check(
@@ -397,7 +397,7 @@ final class DevContainers2Test {
       );
       this.check(
          "jukebox: the block has no record again",
-         this.await(() -> !(Boolean)this.minecraft.level.getBlockState(pos).getValue(BlockStateProperties.HAS_RECORD), 3000L),
+         this.await(() -> !this.minecraft.level.getBlockState(pos).getValue(BlockStateProperties.HAS_RECORD), 3000L),
          this.onClient(() -> String.valueOf(this.minecraft.level.getBlockState(pos)))
       );
       this.check(
@@ -488,8 +488,8 @@ final class DevContainers2Test {
          Field f = JigsawBlockEditScreen.class.getDeclaredField(field);
          f.setAccessible(true);
          ((EditBox)f.get(screen)).setValue(value);
-      } catch (ReflectiveOperationException var4) {
-         throw new IllegalStateException("jigsaw screen field " + field, var4);
+      } catch (ReflectiveOperationException e) {
+         throw new IllegalStateException("jigsaw screen field " + field, e);
       }
    }
 
@@ -498,8 +498,8 @@ final class DevContainers2Test {
          Field f = JigsawBlockEditScreen.class.getDeclaredField(field);
          f.setAccessible(true);
          return ((EditBox)f.get(screen)).getValue();
-      } catch (ReflectiveOperationException var3) {
-         throw new IllegalStateException("jigsaw screen field " + field, var3);
+      } catch (ReflectiveOperationException e) {
+         throw new IllegalStateException("jigsaw screen field " + field, e);
       }
    }
 
@@ -712,7 +712,7 @@ final class DevContainers2Test {
    private static void sleep(long millis) {
       try {
          Thread.sleep(millis);
-      } catch (InterruptedException var3) {
+      } catch (InterruptedException e) {
          Thread.currentThread().interrupt();
       }
    }

@@ -7,10 +7,10 @@ public record CubeDef(
    float[] origin,
    float[] size,
    float[] rotation,
-   @Nullable float[] pivot,
+   float @Nullable [] pivot,
    float inflate,
    @Nullable Boolean mirror,
-   @Nullable float[] boxUv,
+   float @Nullable [] boxUv,
    @Nullable Map<Face, FaceUv> faces
 ) {
 }

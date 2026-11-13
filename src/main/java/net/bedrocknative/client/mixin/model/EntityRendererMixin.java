@@ -15,11 +15,11 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin({EntityRenderer.class})
+@Mixin(EntityRenderer.class)
 public abstract class EntityRendererMixin {
    @Inject(
-      method = {"createRenderState(Lnet/minecraft/world/entity/Entity;F)Lnet/minecraft/client/renderer/entity/state/EntityRenderState;"},
-      at = {@At("RETURN")}
+      method = "createRenderState(Lnet/minecraft/world/entity/Entity;F)Lnet/minecraft/client/renderer/entity/state/EntityRenderState;",
+      at = @At("RETURN")
    )
    private void bedrocknative$modelRuntime(Entity entity, float partialTicks, CallbackInfoReturnable<EntityRenderState> info) {
       if (!(entity instanceof BedrockActorEntity)) {

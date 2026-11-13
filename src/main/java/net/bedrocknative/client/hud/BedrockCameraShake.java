@@ -14,8 +14,7 @@ public final class BedrockCameraShake {
    private static final float FADE_OUT_SECONDS = 0.25F;
    private static final float[] FREQUENCIES = new float[]{71.0F, 53.0F, 89.0F};
    private static final float[] OVERTONES = new float[]{137.0F, 109.0F, 149.0F};
-   @Nullable
-   private static BedrockCameraShake.Shake current;
+   private static BedrockCameraShake.@Nullable Shake current;
    private static float peakOffset;
    private static volatile String lastRequest = "";
 
@@ -56,31 +55,31 @@ public final class BedrockCameraShake {
       BedrockCameraShake.Shake shake = current;
       if (shake == null) {
          return BedrockCameraShake.Offset.NONE;
-      } else {
-         long now = System.nanoTime();
-         if (now >= shake.endNanos) {
-            current = null;
-            return BedrockCameraShake.Offset.NONE;
-         } else {
-            float elapsed = (float)(now - shake.startNanos) / 1.0E9F;
-            float remaining = (float)(shake.endNanos - now) / 1.0E9F;
-            float amplitude = shake.intensity * Math.min(1.0F, remaining / 0.25F);
-            float[] axes = new float[3];
-
-            for (int i = 0; i < axes.length; i++) {
-               axes[i] = noise(shake, elapsed, i) * amplitude;
-            }
-
-            BedrockCameraShake.Offset offset = shake.type == CameraShakeType.POSITIONAL
-               ? new BedrockCameraShake.Offset(axes[0] * 0.04F, axes[1] * 0.04F, axes[2] * 0.04F, 0.0F, 0.0F)
-               : new BedrockCameraShake.Offset(0.0F, 0.0F, 0.0F, axes[0] * 1.0F, axes[1] * 1.0F);
-            float largest = Math.max(
-               Math.max(Math.abs(offset.x), Math.abs(offset.y)), Math.max(Math.abs(offset.z), Math.max(Math.abs(offset.yaw), Math.abs(offset.pitch)))
-            );
-            peakOffset = Math.max(peakOffset, largest);
-            return offset;
-         }
       }
+
+      long now = System.nanoTime();
+      if (now >= shake.endNanos) {
+         current = null;
+         return BedrockCameraShake.Offset.NONE;
+      }
+
+      float elapsed = (float)(now - shake.startNanos) / 1.0E9F;
+      float remaining = (float)(shake.endNanos - now) / 1.0E9F;
+      float amplitude = shake.intensity * Math.min(1.0F, remaining / 0.25F);
+      float[] axes = new float[3];
+
+      for (int i = 0; i < axes.length; i++) {
+         axes[i] = noise(shake, elapsed, i) * amplitude;
+      }
+
+      BedrockCameraShake.Offset offset = shake.type == CameraShakeType.POSITIONAL
+         ? new BedrockCameraShake.Offset(axes[0] * 0.04F, axes[1] * 0.04F, axes[2] * 0.04F, 0.0F, 0.0F)
+         : new BedrockCameraShake.Offset(0.0F, 0.0F, 0.0F, axes[0] * 1.0F, axes[1] * 1.0F);
+      float largest = Math.max(
+         Math.max(Math.abs(offset.x), Math.abs(offset.y)), Math.max(Math.abs(offset.z), Math.max(Math.abs(offset.yaw), Math.abs(offset.pitch)))
+      );
+      peakOffset = Math.max(peakOffset, largest);
+      return offset;
    }
 
    public static float takePeakOffset() {

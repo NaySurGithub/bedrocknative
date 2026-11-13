@@ -58,21 +58,16 @@ public final class BedrockSkin {
    }
 
    public static BedrockSkin defaultSteve() {
-      try {
-         BedrockSkin var2;
-         try (InputStream raw = BedrockSkin.class.getResourceAsStream("/assets/bedrocknative/skins/steve.json.gz")) {
-            if (raw == null) {
-               throw new IllegalStateException("Missing bundled resource /assets/bedrocknative/skins/steve.json.gz");
-            }
-
-            try (InputStreamReader reader = new InputStreamReader(new GZIPInputStream(raw), StandardCharsets.UTF_8)) {
-               var2 = new BedrockSkin(JsonParser.parseReader(reader).getAsJsonObject(), true);
-            }
+      try (InputStream raw = BedrockSkin.class.getResourceAsStream("/assets/bedrocknative/skins/steve.json.gz")) {
+         if (raw == null) {
+            throw new IllegalStateException("Missing bundled resource /assets/bedrocknative/skins/steve.json.gz");
          }
 
-         return var2;
-      } catch (IOException var8) {
-         throw new UncheckedIOException(var8);
+         try (InputStreamReader reader = new InputStreamReader(new GZIPInputStream(raw), StandardCharsets.UTF_8)) {
+            return new BedrockSkin(JsonParser.parseReader(reader).getAsJsonObject(), true);
+         }
+      } catch (IOException e) {
+         throw new UncheckedIOException(e);
       }
    }
 
@@ -80,8 +75,9 @@ public final class BedrockSkin {
       BufferedImage image = ImageIO.read(skinPack.resolve(textureName).toFile());
       byte[] rgba = new byte[image.getWidth() * image.getHeight() * 4];
       int y = 0;
+      int i = 0;
 
-      for (int i = 0; y < image.getHeight(); y++) {
+      while (y < image.getHeight()) {
          for (int x = 0; x < image.getWidth(); x++) {
             int argb = image.getRGB(x, y);
             rgba[i++] = (byte)(argb >> 16);
@@ -89,6 +85,8 @@ public final class BedrockSkin {
             rgba[i++] = (byte)argb;
             rgba[i++] = (byte)(argb >>> 24);
          }
+
+         y++;
       }
 
       String geometry = JsonParser.parseString(Files.readString(skinPack.resolve("geometry.json"))).toString();
@@ -135,43 +133,38 @@ public final class BedrockSkin {
 
    public static Optional<BedrockSkin> fromRealClientLogin(String authJson, String clientDataJwt, String ownXuid, String ownDeviceId) {
       JsonElement auth = JsonParser.parseString(authJson);
-      if (auth.isJsonObject()) {
-         JsonElement xuid = auth.getAsJsonObject().get("Token");
-         if (xuid instanceof JsonElement && xuid.isJsonPrimitive()) {
-            xuid = MultiplayerTokenClaims.payload(xuid.getAsString()).get("xid");
-            if (xuid != null && xuid.isJsonPrimitive() && xuid.getAsString().equals(ownXuid)) {
-               JsonObject clientData = MultiplayerTokenClaims.payload(clientDataJwt);
-               JsonElement deviceId = clientData.get("DeviceId");
-               if (deviceId != null && deviceId.isJsonPrimitive() && !deviceId.getAsString().equalsIgnoreCase(ownDeviceId)) {
-                  return Optional.of(fromClientData(clientData));
-               }
-
-               return Optional.empty();
-            }
-
+      if (auth.isJsonObject() && auth.getAsJsonObject().get("Token") instanceof JsonElement token && token.isJsonPrimitive()) {
+         JsonElement xuid = MultiplayerTokenClaims.payload(token.getAsString()).get("xid");
+         if (xuid != null && xuid.isJsonPrimitive() && xuid.getAsString().equals(ownXuid)) {
+            JsonObject clientData = MultiplayerTokenClaims.payload(clientDataJwt);
+            JsonElement deviceId = clientData.get("DeviceId");
+            return deviceId != null && deviceId.isJsonPrimitive() && !deviceId.getAsString().equalsIgnoreCase(ownDeviceId)
+               ? Optional.of(fromClientData(clientData))
+               : Optional.empty();
+         } else {
             return Optional.empty();
          }
+      } else {
+         return Optional.empty();
       }
-
-      return Optional.empty();
    }
 
    public static BedrockSkin load(Path file) throws IOException {
       JsonElement json;
       try {
          json = JsonParser.parseString(Files.readString(file, StandardCharsets.UTF_8));
-      } catch (RuntimeException var4) {
-         throw new IOException("Not a skin file: " + file, var4);
+      } catch (RuntimeException e) {
+         throw new IOException("Not a skin file: " + file, e);
       }
 
       if (!json.isJsonObject()) {
          throw new IOException("Not a skin file: " + file);
-      } else {
-         try {
-            return fromClientData(json.getAsJsonObject());
-         } catch (IllegalArgumentException var3) {
-            throw new IOException("Not a usable skin in " + file + ": " + var3.getMessage(), var3);
-         }
+      }
+
+      try {
+         return fromClientData(json.getAsJsonObject());
+      } catch (IllegalArgumentException e) {
+         throw new IOException("Not a usable skin in " + file + ": " + e.getMessage(), e);
       }
    }
 
@@ -182,7 +175,7 @@ public final class BedrockSkin {
 
       try {
          Files.move(temporary, file, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-      } catch (AtomicMoveNotSupportedException var4) {
+      } catch (AtomicMoveNotSupportedException e) {
          Files.move(temporary, file, StandardCopyOption.REPLACE_EXISTING);
       }
    }
@@ -200,8 +193,7 @@ public final class BedrockSkin {
    }
 
    public boolean persona() {
-      JsonElement var2 = this.claims.get("PersonaSkin");
-      return var2 instanceof JsonElement && var2.isJsonPrimitive() && var2.getAsBoolean();
+      return this.claims.get("PersonaSkin") instanceof JsonElement persona && persona.isJsonPrimitive() && persona.getAsBoolean();
    }
 
    public String describe() {
@@ -209,40 +201,30 @@ public final class BedrockSkin {
    }
 
    private static BedrockSkin validated(JsonObject skin) {
-      JsonElement data = skin.get("SkinId");
-      if (data instanceof JsonElement && data.isJsonPrimitive() && !data.getAsString().isEmpty()) {
-         JsonElement width = skin.get("SkinData");
-         if (width instanceof JsonElement) {
-            data = width;
-            if (width.isJsonPrimitive()) {
-               JsonElement expected = skin.get("SkinImageWidth");
-               if (expected instanceof JsonElement) {
-                  expected = skin.get("SkinImageHeight");
-                  if (expected instanceof JsonElement && expected.isJsonPrimitive() && expected.isJsonPrimitive()) {
-                     long expectedx = (long)expected.getAsInt() * expected.getAsInt() * 4L;
+      if (!(skin.get("SkinId") instanceof JsonElement id && id.isJsonPrimitive() && !id.getAsString().isEmpty())) {
+         throw new IllegalArgumentException("no SkinId");
+      } else if (!(skin.get("SkinData") instanceof JsonElement data && data.isJsonPrimitive())) {
+         throw new IllegalArgumentException("no SkinData");
+      } else if (skin.get("SkinImageWidth") instanceof JsonElement width
+         && skin.get("SkinImageHeight") instanceof JsonElement height
+         && width.isJsonPrimitive()
+         && height.isJsonPrimitive()) {
+         long expected = (long)width.getAsInt() * height.getAsInt() * 4L;
 
-                     int actual;
-                     try {
-                        actual = Base64.getDecoder().decode(data.getAsString()).length;
-                     } catch (IllegalArgumentException var9) {
-                        throw new IllegalArgumentException("SkinData is not base64");
-                     }
-
-                     if (expectedx > 0L && actual == expectedx) {
-                        return new BedrockSkin(skin, false);
-                     }
-
-                     throw new IllegalArgumentException("SkinData holds " + actual + " bytes for a " + expected + "x" + expected + " image");
-                  }
-               }
-
-               throw new IllegalArgumentException("no image size");
-            }
+         int actual;
+         try {
+            actual = Base64.getDecoder().decode(data.getAsString()).length;
+         } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("SkinData is not base64");
          }
 
-         throw new IllegalArgumentException("no SkinData");
+         if (expected > 0L && actual == expected) {
+            return new BedrockSkin(skin, false);
+         } else {
+            throw new IllegalArgumentException("SkinData holds " + actual + " bytes for a " + width + "x" + height + " image");
+         }
       } else {
-         throw new IllegalArgumentException("no SkinId");
+         throw new IllegalArgumentException("no image size");
       }
    }
 }

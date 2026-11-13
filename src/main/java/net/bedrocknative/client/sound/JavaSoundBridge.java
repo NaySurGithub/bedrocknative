@@ -29,14 +29,11 @@ import org.jspecify.annotations.Nullable;
 
 public final class JavaSoundBridge {
    private static final Map<SoundInstance, BedrockSoundInstance> BRIDGED = new WeakHashMap<>();
-   private static final Map<BlockState, String> NAMES = new IdentityHashMap<>();
-   @Nullable
-   private static SoundCatalog namesOf;
+   private static final Map<BlockState, @Nullable String> NAMES = new IdentityHashMap<>();
+   private static @Nullable SoundCatalog namesOf;
    private static boolean direct;
-   @Nullable
-   private static BlockPos breakingAt;
-   @Nullable
-   private static BlockState breaking;
+   private static @Nullable BlockPos breakingAt;
+   private static @Nullable BlockState breaking;
    private static int bridged;
    private static int silenced;
    private static boolean failed;
@@ -60,8 +57,7 @@ public final class JavaSoundBridge {
       breaking = state;
    }
 
-   @Nullable
-   public static PlayResult play(SoundInstance instance) {
+   public static @Nullable PlayResult play(SoundInstance instance) {
       if (!direct
          && !(instance instanceof TickableSoundInstance)
          && instance instanceof AbstractSoundInstance
@@ -70,11 +66,11 @@ public final class JavaSoundBridge {
          && instance.canPlaySound()) {
          try {
             return bridge(instance);
-         } catch (RuntimeException var2) {
+         } catch (RuntimeException e) {
             if (!failed) {
                failed = true;
                BedrockNative.LOGGER
-                  .warn("Java sound {} couldn't go the Bedrock way; Java's sounds play as Java's where this happens", instance.getIdentifier(), var2);
+                  .warn("Java sound {} couldn't go the Bedrock way; Java's sounds play as Java's where this happens", instance.getIdentifier(), e);
             }
 
             return null;
@@ -84,8 +80,7 @@ public final class JavaSoundBridge {
       }
    }
 
-   @Nullable
-   private static PlayResult bridge(SoundInstance instance) {
+   private static @Nullable PlayResult bridge(SoundInstance instance) {
       SoundCatalog catalog = BedrockSoundEngine.catalog();
       Identifier id = instance.getIdentifier();
       Minecraft minecraft = Minecraft.getInstance();
@@ -119,11 +114,11 @@ public final class JavaSoundBridge {
 
          if (play == null) {
             customBlock = false;
-            String namex = SoundMappings.get().bedrockName(id.getPath());
+            String name = SoundMappings.get().bedrockName(id.getPath());
             AbstractSoundInstanceAccessor raw = (AbstractSoundInstanceAccessor)instance;
-            play = namex == null
+            play = name == null
                ? null
-               : SoundPlanner.definition(catalog.definitions(), namex, raw.bedrocknative$volume(), raw.bedrocknative$pitch(), false, random);
+               : SoundPlanner.definition(catalog.definitions(), name, raw.bedrocknative$volume(), raw.bedrocknative$pitch(), false, random);
          }
 
          if (play != null && (BedrockSoundEngine.vanilla() || play.serverContent() || customBlock)) {
@@ -146,8 +141,7 @@ public final class JavaSoundBridge {
       }
    }
 
-   @Nullable
-   public static BedrockSoundInstance standIn(SoundInstance instance) {
+   public static @Nullable BedrockSoundInstance standIn(SoundInstance instance) {
       return !BRIDGED.isEmpty() && Minecraft.getInstance().isSameThread() ? BRIDGED.get(instance) : null;
    }
 
@@ -155,11 +149,11 @@ public final class JavaSoundBridge {
       BedrockSoundInstance standIn = standIn(instance);
       if (standIn == null) {
          return false;
-      } else {
-         BRIDGED.remove(instance);
-         BedrockSoundEngine.stop(standIn);
-         return true;
       }
+
+      BRIDGED.remove(instance);
+      BedrockSoundEngine.stop(standIn);
+      return true;
    }
 
    static void release() {
@@ -178,50 +172,48 @@ public final class JavaSoundBridge {
       return silenced;
    }
 
-   @Nullable
-   private static BlockState blockOf(JavaBlockSounds.BlockSound sound, Identifier id, Vec3 position, @Nullable ClientLevel level) {
+   private static @Nullable BlockState blockOf(JavaBlockSounds.BlockSound sound, Identifier id, Vec3 position, @Nullable ClientLevel level) {
       if (sound.action() != JavaBlockSounds.Action.BREAK) {
          if (level == null) {
             return null;
-         } else {
-            BlockState at = level.getBlockState(BlockPos.containing(position));
-            if (!at.isAir() && sound.madeBy(at, id)) {
-               return at;
-            } else {
-               if (sound.action().underfoot()) {
-                  BlockState below = level.getBlockState(BlockPos.containing(position.x, position.y - 0.2, position.z));
-                  if (!below.isAir() && sound.madeBy(below, id)) {
-                     return below;
-                  }
-               }
+         }
 
-               return null;
+         BlockState at = level.getBlockState(BlockPos.containing(position));
+         if (!at.isAir() && sound.madeBy(at, id)) {
+            return at;
+         }
+
+         if (sound.action().underfoot()) {
+            BlockState below = level.getBlockState(BlockPos.containing(position.x, position.y - 0.2, position.z));
+            if (!below.isAir() && sound.madeBy(below, id)) {
+               return below;
             }
          }
+
+         return null;
       } else {
          BlockState broken = breaking;
          return broken != null && BlockPos.containing(position).equals(breakingAt) && sound.madeBy(broken, id) ? broken : null;
       }
    }
 
-   @Nullable
-   private static String bedrockName(BlockState state, SoundCatalog catalog) {
+   private static @Nullable String bedrockName(BlockState state, SoundCatalog catalog) {
       BlockMappings mappings = BlockMappings.get();
       if (state.getBlock() instanceof CarrierBlock) {
          return mappings.bedrockName(mappings.toBedrock(state));
-      } else {
-         if (namesOf != catalog) {
-            NAMES.clear();
-            namesOf = catalog;
-         }
-
-         if (NAMES.containsKey(state)) {
-            return NAMES.get(state);
-         } else {
-            String name = mappings.bedrockName(mappings.toBedrock(state));
-            NAMES.put(state, name);
-            return name;
-         }
       }
+
+      if (namesOf != catalog) {
+         NAMES.clear();
+         namesOf = catalog;
+      }
+
+      if (NAMES.containsKey(state)) {
+         return NAMES.get(state);
+      }
+
+      String name = mappings.bedrockName(mappings.toBedrock(state));
+      NAMES.put(state, name);
+      return name;
    }
 }

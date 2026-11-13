@@ -102,9 +102,9 @@ public final class DevTexturesOffline {
       Thread.ofVirtual().start(() -> {
          try {
             new DevTexturesOffline(Minecraft.getInstance(), folders).run();
-         } catch (RuntimeException var2) {
-            DevTexturesTest.log("FAILED: {}", var2.toString());
-            throw var2;
+         } catch (RuntimeException e) {
+            DevTexturesTest.log("FAILED: {}", e.toString());
+            throw e;
          }
       });
    }
@@ -165,8 +165,8 @@ public final class DevTexturesOffline {
          Method drop = BlockableEventLoop.class.getDeclaredMethod("dropAllTasks");
          drop.setAccessible(true);
          drop.invoke(this.minecraft);
-      } catch (ReflectiveOperationException var2) {
-         DevTexturesTest.log("couldn't drop the client's tasks: {}", var2.toString());
+      } catch (ReflectiveOperationException e) {
+         DevTexturesTest.log("couldn't drop the client's tasks: {}", e.toString());
       }
    }
 
@@ -180,8 +180,8 @@ public final class DevTexturesOffline {
                TextureAtlas texture = this.minecraft.getAtlasManager().getAtlasOrThrow(atlas);
                texture.dumpContents(texture.location(), dir);
             }
-         } catch (Exception var5) {
-            DevTexturesTest.log("atlas dump failed: {}", var5.toString());
+         } catch (Exception e) {
+            DevTexturesTest.log("atlas dump failed: {}", e.toString());
          }
       });
       DevTexturesTest.sleep(1000L);
@@ -193,6 +193,7 @@ public final class DevTexturesOffline {
          super(Component.literal("Bedrock textures"));
       }
 
+      @Override
       public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
          graphics.fill(0, 0, this.width, this.height, -8355712);
          Minecraft minecraft = Minecraft.getInstance();
@@ -206,6 +207,7 @@ public final class DevTexturesOffline {
          }
       }
 
+      @Override
       public boolean isPauseScreen() {
          return false;
       }

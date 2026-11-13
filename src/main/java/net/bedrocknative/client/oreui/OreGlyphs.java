@@ -51,19 +51,19 @@ final class OreGlyphs {
          NativeImage image = page.texture.getPixels();
          if (image == null) {
             return new OreGlyphs.Placed(null, 0, 0, 0, 0, 0, 0);
-         } else {
-            for (int y = 0; y < glyph.height(); y++) {
-               for (int x = 0; x < glyph.width(); x++) {
-                  image.setPixel(page.x + x, page.y + y, glyph.argb()[y * glyph.width() + x]);
-               }
-            }
-
-            OreGlyphs.Placed placed = new OreGlyphs.Placed(page.id, page.x, page.y, glyph.width(), glyph.height(), glyph.left(), glyph.top());
-            page.x = page.x + glyph.width() + 1;
-            page.rowHeight = Math.max(page.rowHeight, glyph.height());
-            page.dirty = true;
-            return placed;
          }
+
+         for (int y = 0; y < glyph.height(); y++) {
+            for (int x = 0; x < glyph.width(); x++) {
+               image.setPixel(page.x + x, page.y + y, glyph.argb()[y * glyph.width() + x]);
+            }
+         }
+
+         OreGlyphs.Placed placed = new OreGlyphs.Placed(page.id, page.x, page.y, glyph.width(), glyph.height(), glyph.left(), glyph.top());
+         page.x = page.x + glyph.width() + 1;
+         page.rowHeight = Math.max(page.rowHeight, glyph.height());
+         page.dirty = true;
+         return placed;
       } else {
          return new OreGlyphs.Placed(null, 0, 0, 0, 0, 0, 0);
       }

@@ -31,15 +31,15 @@ public final class AnimationParser {
       JsonObject root = ModelJson.object(file, "animations");
       if (root == null) {
          return animations;
-      } else {
-         for (Entry<String, JsonElement> entry : root.entrySet()) {
-            if (entry.getValue() instanceof JsonObject json) {
-               animations.put(entry.getKey(), this.animation(entry.getKey(), json));
-            }
-         }
-
-         return animations;
       }
+
+      for (Entry<String, JsonElement> entry : root.entrySet()) {
+         if (entry.getValue() instanceof JsonObject json) {
+            animations.put(entry.getKey(), this.animation(entry.getKey(), json));
+         }
+      }
+
+      return animations;
    }
 
    public AnimationDef animation(String name, JsonObject json) {
@@ -69,12 +69,12 @@ public final class AnimationParser {
       List<AnimationDef.TimedScript> timeline = new ArrayList<>();
       JsonObject timelineJson = ModelJson.object(json, "timeline");
       if (timelineJson != null) {
-         for (Entry<String, JsonElement> entryx : timelineJson.entrySet()) {
-            float time = time(entryx.getKey());
+         for (Entry<String, JsonElement> entry : timelineJson.entrySet()) {
+            float time = time(entry.getKey());
             if (!Float.isNaN(time)) {
                List<MolangProgram> programs = new ArrayList<>();
 
-               for (String source : strings(entryx.getValue())) {
+               for (String source : strings(entry.getValue())) {
                   programs.add(this.compile(source));
                }
 
@@ -130,13 +130,11 @@ public final class AnimationParser {
       return LoopMode.ONCE;
    }
 
-   @Nullable
-   Keyframe[] channel(@Nullable JsonElement json, float fill) {
+   Keyframe @Nullable [] channel(@Nullable JsonElement json, float fill) {
       return this.channel(json, fill, false);
    }
 
-   @Nullable
-   Keyframe[] channel(@Nullable JsonElement json, float fill, boolean rotation) {
+   Keyframe @Nullable [] channel(@Nullable JsonElement json, float fill, boolean rotation) {
       if (json != null && !json.isJsonNull()) {
          List<Keyframe> keys = new ArrayList<>();
          if (json instanceof JsonObject object && isKeyframeMap(object)) {
@@ -205,20 +203,20 @@ public final class AnimationParser {
    private static boolean isAxisList(JsonArray array) {
       if (array.isEmpty()) {
          return false;
-      } else {
-         for (JsonElement element : array) {
-            if (!(element instanceof JsonObject object) || object.size() != 1) {
-               return false;
-            }
+      }
 
-            String key = ((String)object.keySet().iterator().next()).toLowerCase(Locale.ROOT);
-            if (!key.equals("x") && !key.equals("y") && !key.equals("z")) {
-               return false;
-            }
+      for (JsonElement element : array) {
+         if (!(element instanceof JsonObject object) || object.size() != 1) {
+            return false;
          }
 
-         return true;
+         String key = ((String)object.keySet().iterator().next()).toLowerCase(Locale.ROOT);
+         if (!key.equals("x") && !key.equals("y") && !key.equals("z")) {
+            return false;
+         }
       }
+
+      return true;
    }
 
    Vec3Value vector(JsonElement json, float fill) {
@@ -325,7 +323,7 @@ public final class AnimationParser {
    static float time(String key) {
       try {
          return Float.parseFloat(key.trim());
-      } catch (NumberFormatException var2) {
+      } catch (NumberFormatException e) {
          return Float.NaN;
       }
    }

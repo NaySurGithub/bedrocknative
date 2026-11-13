@@ -33,14 +33,14 @@ public final class CdnDownload {
       URI uri;
       try {
          uri = URI.create(url.trim());
-      } catch (IllegalArgumentException var22) {
+      } catch (IllegalArgumentException e) {
          throw new IOException("Invalid CDN URL");
       }
 
       HttpResponse<InputStream> response;
       try {
          response = SafeHttp.get(HTTP, uri, this.guard, CONNECT_TIMEOUT);
-      } catch (InterruptedException var21) {
+      } catch (InterruptedException e) {
          Thread.currentThread().interrupt();
          throw new IOException("CDN download interrupted");
       }
@@ -52,36 +52,40 @@ public final class CdnDownload {
          this.body = in;
          if (this.cancelled) {
             throw new IOException("CDN download cancelled");
-         } else if (response.statusCode() != 200) {
+         }
+
+         if (response.statusCode() != 200) {
             throw new IOException("CDN answered HTTP " + response.statusCode());
-         } else if (response.headers().firstValueAsLong("content-length").orElse(-1L) > maxBytes) {
+         }
+
+         if (response.headers().firstValueAsLong("content-length").orElse(-1L) > maxBytes) {
             throw new IOException("CDN pack is larger than " + maxBytes + " bytes");
-         } else {
-            progress.accept(0L);
-            MessageDigest digest = PackCache.sha256();
-            byte[] buffer = new byte[65536];
-            long total = 0L;
+         }
 
-            int read;
-            while ((read = in.read(buffer)) >= 0) {
-               total += read;
-               if (total > maxBytes) {
-                  throw new IOException("CDN pack is larger than " + maxBytes + " bytes");
-               }
+         progress.accept(0L);
+         MessageDigest digest = PackCache.sha256();
+         byte[] buffer = new byte[65536];
+         long total = 0L;
 
-               if (this.cancelled || System.nanoTime() > end) {
-                  throw new IOException(this.cancelled ? "CDN download cancelled" : "CDN download timed out");
-               }
-
-               digest.update(buffer, 0, read);
-               out.write(buffer, 0, read);
-               progress.accept(total);
+         int read;
+         while ((read = in.read(buffer)) >= 0) {
+            total += read;
+            if (total > maxBytes) {
+               throw new IOException("CDN pack is larger than " + maxBytes + " bytes");
             }
 
-            return digest.digest();
+            if (this.cancelled || System.nanoTime() > end) {
+               throw new IOException(this.cancelled ? "CDN download cancelled" : "CDN download timed out");
+            }
+
+            digest.update(buffer, 0, read);
+            out.write(buffer, 0, read);
+            progress.accept(total);
          }
-      } catch (IOException var25) {
-         throw this.cancelled ? new IOException("CDN download cancelled") : var25;
+
+         return digest.digest();
+      } catch (IOException e) {
+         throw this.cancelled ? new IOException("CDN download cancelled") : e;
       }
    }
 

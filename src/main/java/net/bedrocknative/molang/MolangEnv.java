@@ -9,28 +9,21 @@ public final class MolangEnv {
    public VariableStore context = new VariableStore(8);
    public final VariableStore temps = new VariableStore();
    public float thisValue;
-   @Nullable
-   public MolangResources resources;
-   @Nullable
-   public MolangControllerScope controller;
-   @Nullable
-   public MolangGeometry geometry;
-   @Nullable
-   public EffectSink effects;
+   public @Nullable MolangResources resources;
+   public @Nullable MolangControllerScope controller;
+   public @Nullable MolangGeometry geometry;
+   public @Nullable EffectSink effects;
    public SplittableRandom random = new SplittableRandom();
    public float animTime;
    public float deltaTime;
    public float frameAlpha;
    public float keyFrameLerpTime;
    public boolean attachable;
-   @Nullable
-   Object object;
-   @Nullable
-   Object pending;
+   @Nullable Object object;
+   @Nullable Object pending;
    int flow;
    float returnValue;
-   @Nullable
-   Object returnObject;
+   @Nullable Object returnObject;
    int depth;
    long steps = 100000L;
    public static final long MAX_STEPS = 100000L;
@@ -46,8 +39,7 @@ public final class MolangEnv {
       }
    }
 
-   @Nullable
-   public Object result() {
+   public @Nullable Object result() {
       return this.object;
    }
 

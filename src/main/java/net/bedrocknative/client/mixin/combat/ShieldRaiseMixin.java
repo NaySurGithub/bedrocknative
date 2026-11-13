@@ -12,12 +12,9 @@ import net.minecraft.world.item.ItemStack;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 
-@Mixin({IsUsingItem.class})
+@Mixin(IsUsingItem.class)
 public abstract class ShieldRaiseMixin {
-   @ModifyReturnValue(
-      method = {"get"},
-      at = {@At("RETURN")}
-   )
+   @ModifyReturnValue(method = "get", at = @At("RETURN"))
    private boolean bedrocknative$sneakBlocking(boolean original, @Local(argsOnly = true) ItemStack stack, @Local(argsOnly = true) LivingEntity owner) {
       if (!original
          && BedrockMovement.active()

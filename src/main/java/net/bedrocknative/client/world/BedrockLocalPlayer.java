@@ -4,7 +4,6 @@ import java.lang.runtime.SwitchBootstraps;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -79,10 +78,8 @@ public final class BedrockLocalPlayer {
    private static volatile boolean serverBlocking;
    private static volatile long lastRuntimeId = -1L;
    private Vector3f boundingBox = Vector3f.from(1.0F, 0.6F, 1.8F);
-   @Nullable
-   private static volatile Vector2f localSize;
-   @Nullable
-   private Vector3f seatOffset;
+   private static volatile @Nullable Vector2f localSize;
+   private @Nullable Vector3f seatOffset;
    private boolean respawnAsked;
    private PermissionSet permissions;
 
@@ -130,13 +127,11 @@ public final class BedrockLocalPlayer {
    public void apply(BedrockPacket packet) {
       LocalPlayer player = this.minecraft.player;
       if (player != null && this.minecraft.level != null) {
-         Objects.requireNonNull(packet);
          BedrockPacket var3 = packet;
          byte var4 = 0;
 
          while (true) {
-            switch (SwitchBootstraps.typeSwitch<"typeSwitch",UpdateAttributesPacket,SetHealthPacket,SetPlayerGameTypePacket,UpdatePlayerGameTypePacket,SetDefaultGameTypePacket,SetSpawnPositionPacket,DeathInfoPacket,PlayerStartItemCooldownPacket,RespawnPacket>(
-               var3, var4
+            switch (net.bedrocknative.TypeSwitchHelper.index(new Class<?>[]{UpdateAttributesPacket.class, SetHealthPacket.class, SetPlayerGameTypePacket.class, UpdatePlayerGameTypePacket.class, SetDefaultGameTypePacket.class, SetSpawnPositionPacket.class, DeathInfoPacket.class, PlayerStartItemCooldownPacket.class, RespawnPacket.class}, var3, var4
             )) {
                case 0:
                   UpdateAttributesPacket attributes = (UpdateAttributesPacket)var3;
@@ -210,8 +205,7 @@ public final class BedrockLocalPlayer {
       }
    }
 
-   @Nullable
-   public static Vector2f localSize() {
+   public static @Nullable Vector2f localSize() {
       return localSize;
    }
 
@@ -285,15 +279,14 @@ public final class BedrockLocalPlayer {
       }
    }
 
-   @Nullable
-   public Vec3 seatPosition(Entity vehicle) {
+   public @Nullable Vec3 seatPosition(Entity vehicle) {
       Vector3f seat = this.seatOffset;
       if (seat == null) {
          return null;
-      } else {
-         Vec3 offset = new Vec3(seat.getX(), 0.0, seat.getZ()).yRot(-vehicle.getYRot() * (float) (Math.PI / 180.0));
-         return new Vec3(vehicle.getX() + offset.x, (float)(vehicle.getY() + ActorOffsets.move(vehicle)) + seat.getY(), vehicle.getZ() + offset.z);
       }
+
+      Vec3 offset = new Vec3(seat.getX(), 0.0, seat.getZ()).yRot(-vehicle.getYRot() * (float) (Math.PI / 180.0));
+      return new Vec3(vehicle.getX() + offset.x, (float)(vehicle.getY() + ActorOffsets.move(vehicle)) + seat.getY(), vehicle.getZ() + offset.z);
    }
 
    private static void startCooldown(LocalPlayer player, PlayerStartItemCooldownPacket packet) {
@@ -394,8 +387,7 @@ public final class BedrockLocalPlayer {
    }
 
    private void applyAttribute(LocalPlayer player, AttributeData attribute) {
-      String var3 = attribute.getName();
-      switch (var3) {
+      switch (attribute.getName()) {
          case "minecraft:health":
             setBase(player.getAttribute(Attributes.MAX_HEALTH), attribute.getMaximum());
             this.setHealth(player, attribute.getValue());
@@ -482,13 +474,13 @@ public final class BedrockLocalPlayer {
    static PermissionSet permissions(CommandPermission permission) {
       if (permission == null) {
          return LevelBasedPermissionSet.ALL;
-      } else {
-         return switch (permission) {
-            case ANY -> LevelBasedPermissionSet.ALL;
-            case GAME_DIRECTORS -> LevelBasedPermissionSet.GAMEMASTER;
-            default -> LevelBasedPermissionSet.OWNER;
-         };
       }
+
+      return switch (permission) {
+         case ANY -> LevelBasedPermissionSet.ALL;
+         case GAME_DIRECTORS -> LevelBasedPermissionSet.GAMEMASTER;
+         default -> LevelBasedPermissionSet.OWNER;
+      };
    }
 
    private void setGameType(GameType gameType) {

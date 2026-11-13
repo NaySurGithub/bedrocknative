@@ -45,6 +45,7 @@ public final class OreServerFormScreen extends Screen implements LobbyScreen, Or
       return this.ui;
    }
 
+   @Override
    protected void init() {
       this.ui.size(OreSession.windowWidth(), OreSession.windowHeight());
       this.syncTextInput();
@@ -71,6 +72,7 @@ public final class OreServerFormScreen extends Screen implements LobbyScreen, Or
       }
    }
 
+   @Override
    public void removed() {
       if (this.textInput) {
          this.textInput = false;
@@ -80,15 +82,18 @@ public final class OreServerFormScreen extends Screen implements LobbyScreen, Or
       super.removed();
    }
 
+   @Override
    public boolean isPauseScreen() {
       return false;
    }
 
+   @Override
    public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
       BedrockPanorama.prepare(this.minecraft);
       this.extractPanorama(graphics, a);
    }
 
+   @Override
    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
       this.ui.text(this.session.text());
       this.ui.size(OreSession.windowWidth(), OreSession.windowHeight());
@@ -96,8 +101,8 @@ public final class OreServerFormScreen extends Screen implements LobbyScreen, Or
 
       try (OreSession.Painter painter = this.session.paint(graphics)) {
          this.ui.render(painter.painter(), System.currentTimeMillis());
-      } catch (RuntimeException var10) {
-         this.parent.fallBack("server form", var10);
+      } catch (RuntimeException e) {
+         this.parent.fallBack("server form", e);
       }
    }
 
@@ -105,30 +110,34 @@ public final class OreServerFormScreen extends Screen implements LobbyScreen, Or
       return gui * OreSession.guiScale();
    }
 
+   @Override
    public void mouseMoved(double x, double y) {
       this.ui.mouseMoved(window(x), window(y));
    }
 
+   @Override
    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
       if (event.button() != 1) {
          return false;
-      } else {
-         this.ui.mousePressed(window(event.x()), window(event.y()), event.hasShiftDown());
-         this.syncTextInput();
-         return true;
       }
+
+      this.ui.mousePressed(window(event.x()), window(event.y()), event.hasShiftDown());
+      this.syncTextInput();
+      return true;
    }
 
+   @Override
    public boolean mouseReleased(MouseButtonEvent event) {
       if (event.button() != 1) {
          return false;
-      } else {
-         this.ui.mouseReleased(window(event.x()), window(event.y()));
-         this.syncTextInput();
-         return true;
       }
+
+      this.ui.mouseReleased(window(event.x()), window(event.y()));
+      this.syncTextInput();
+      return true;
    }
 
+   @Override
    public boolean keyPressed(KeyEvent event) {
       OreKey key = OreKeys.of(event);
       boolean used = key != null
@@ -144,10 +153,12 @@ public final class OreServerFormScreen extends Screen implements LobbyScreen, Or
       return used;
    }
 
+   @Override
    public boolean charTyped(CharacterEvent event) {
       return event.isAllowedChatCharacter() && this.ui.typed(event.codepointAsString());
    }
 
+   @Override
    public void onClose() {
       this.ui.back();
    }

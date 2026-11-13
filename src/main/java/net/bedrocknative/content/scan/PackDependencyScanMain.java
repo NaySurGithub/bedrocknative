@@ -228,7 +228,7 @@ public final class PackDependencyScanMain {
       Map<String, PackLookup> altLookups = new LinkedHashMap<>();
 
       for (Entry<String, String> alt : alts.entrySet()) {
-         PackIndex altIndex = PackIndex.of(alt.getKey(), new FolderPack(Path.of(alt.getValue())), true, filex -> null);
+         PackIndex altIndex = PackIndex.of(alt.getKey(), new FolderPack(Path.of(alt.getValue())), true, file -> null);
          PackLookup altLookup = PackLookup.layers(List.of(altIndex));
          altLookups.put(alt.getKey(), altLookup);
          List<DependencyScan.CoverageRow> rows = DependencyScan.coverage(all, altLookup);
@@ -283,15 +283,15 @@ public final class PackDependencyScanMain {
          own.files()
             .values()
             .forEach(
-               filex -> ownSet.append(filex.path())
+               file -> ownSet.append(file.path())
                   .append('\t')
-                  .append(filex.size())
+                  .append(file.size())
                   .append('\t')
-                  .append(filex.sha1())
+                  .append(file.sha1())
                   .append('\t')
-                  .append(filex.kinds())
+                  .append(file.kinds())
                   .append('\t')
-                  .append(String.join(",", filex.origins()))
+                  .append(String.join(",", file.origins()))
                   .append('\n')
             );
          Files.writeString(out.resolve("base-set-" + alt.getKey() + ".tsv"), ownSet);
@@ -319,18 +319,18 @@ public final class PackDependencyScanMain {
       Files.writeString(out.resolve("summary.md"), summary.toString());
       StringBuilder baseSet = new StringBuilder("path\tsize\tlayer\tsha1\tkinds\torigins\n");
 
-      for (DependencyScan.BaseFile filex : all.files().values()) {
-         baseSet.append(filex.path())
+      for (DependencyScan.BaseFile file : all.files().values()) {
+         baseSet.append(file.path())
             .append('\t')
-            .append(filex.size())
+            .append(file.size())
             .append('\t')
-            .append(filex.layer())
+            .append(file.layer())
             .append('\t')
-            .append(filex.sha1())
+            .append(file.sha1())
             .append('\t')
-            .append(filex.kinds())
+            .append(file.kinds())
             .append('\t')
-            .append(String.join(",", filex.origins()))
+            .append(String.join(",", file.origins()))
             .append('\n');
       }
 
@@ -504,7 +504,7 @@ public final class PackDependencyScanMain {
    private static long sizeOf(PackSource source, String path) {
       try {
          return source.read(path).map(data -> (long)data.length).orElse(0L);
-      } catch (IOException var3) {
+      } catch (IOException e) {
          return 0L;
       }
    }
@@ -517,7 +517,7 @@ public final class PackDependencyScanMain {
             String name = header != null && header.get("name") != null ? header.get("name").getAsString() : "?";
             return name.replaceAll("§.", "").replace("|", "/").strip();
          }
-      } catch (UiJson.Error | RuntimeException | IOException var4) {
+      } catch (IOException | UiJson.Error | RuntimeException var4) {
       }
 
       return "?";
@@ -526,13 +526,10 @@ public final class PackDependencyScanMain {
    private static long size(Path path) throws IOException {
       if (!Files.isDirectory(path)) {
          return Files.size(path);
-      } else {
-         long var2;
-         try (Stream<Path> files = Files.walk(path)) {
-            var2 = files.filter(x$0 -> Files.isRegularFile(x$0)).mapToLong(file -> file.toFile().length()).sum();
-         }
+      }
 
-         return var2;
+      try (Stream<Path> files = Files.walk(path)) {
+         return files.filter(x$0 -> Files.isRegularFile(x$0)).mapToLong(file -> file.toFile().length()).sum();
       }
    }
 
@@ -540,8 +537,7 @@ public final class PackDependencyScanMain {
       return bytes >= 10485760L ? String.format(Locale.ROOT, "%.1f MB", bytes / 1048576.0) : String.format(Locale.ROOT, "%.0f KB", bytes / 1024.0);
    }
 
-   @Nullable
-   private static String first(Map<String, List<String>> options, String key, @Nullable String fallback) {
+   private static @Nullable String first(Map<String, List<String>> options, String key, @Nullable String fallback) {
       List<String> values = options.get(key);
       return values != null && !values.isEmpty() ? values.getFirst() : fallback;
    }

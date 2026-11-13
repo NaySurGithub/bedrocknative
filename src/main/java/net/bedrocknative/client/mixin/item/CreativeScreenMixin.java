@@ -3,7 +3,6 @@ package net.bedrocknative.client.mixin.item;
 import java.util.Collection;
 import net.bedrocknative.client.inventory.BedrockCreativeTabs;
 import net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen;
-import net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen.ItemPickerMenu;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.inventory.Slot;
@@ -18,7 +17,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin({CreativeModeInventoryScreen.class})
+@Mixin(CreativeModeInventoryScreen.class)
 public abstract class CreativeScreenMixin {
    @Shadow
    @Final
@@ -26,19 +25,14 @@ public abstract class CreativeScreenMixin {
    @Shadow
    private static CreativeModeTab selectedTab;
    @Shadow
-   @Nullable
-   private Slot destroyItemSlot;
+   private @Nullable Slot destroyItemSlot;
 
    @Shadow
    private void refreshCurrentTabContents(Collection<ItemStack> displayList) {
       throw new AssertionError();
    }
 
-   @Inject(
-      method = {"slotClicked"},
-      at = {@At("HEAD")},
-      cancellable = true
-   )
+   @Inject(method = "slotClicked", at = @At("HEAD"), cancellable = true)
    private void bedrocknative$bedrockEntry(@Nullable Slot slot, int slotId, int buttonNum, ContainerInput input, CallbackInfo ci) {
       if (slot != null
          && slot.container == CONTAINER
@@ -49,7 +43,7 @@ public abstract class CreativeScreenMixin {
          if (!BedrockCreativeTabs.isHeader(clicked)) {
             BedrockCreativeTabs.pick(clicked);
          } else {
-            boolean carrying = !((ItemPickerMenu)((CreativeModeInventoryScreen)this).getMenu()).getCarried().isEmpty();
+            boolean carrying = !((CreativeModeInventoryScreen)(Object)this).getMenu().getCarried().isEmpty();
             if (!carrying || input != ContainerInput.PICKUP) {
                if (!carrying && (input == ContainerInput.PICKUP || input == ContainerInput.QUICK_MOVE)) {
                   BedrockCreativeTabs.toggle(clicked, selectedTab);

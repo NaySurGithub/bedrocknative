@@ -385,7 +385,7 @@ final class DevTexturesTest {
       this.run(() -> {
          Map<String, String> layers = new LinkedHashMap<>();
          LAYER_CHECKS.forEach(name -> {
-            Block block = (Block)BuiltInRegistries.BLOCK.getValue(Identifier.withDefaultNamespace(name));
+            Block block = BuiltInRegistries.BLOCK.getValue(Identifier.withDefaultNamespace(name));
             List<BlockStateModelPart> parts = new ArrayList<>();
             this.minecraft.getModelManager().getBlockStateModelSet().get(block.defaultBlockState()).collectParts(RandomSource.create(0L), parts);
             TreeSet<String> found = new TreeSet<>();
@@ -551,7 +551,7 @@ final class DevTexturesTest {
    static void sleep(long millis) {
       try {
          Thread.sleep(millis);
-      } catch (InterruptedException var3) {
+      } catch (InterruptedException e) {
          Thread.currentThread().interrupt();
       }
    }

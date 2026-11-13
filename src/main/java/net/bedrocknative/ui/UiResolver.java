@@ -44,30 +44,28 @@ final class UiResolver implements UiAnimation.Resolver {
       this.instance = instance;
    }
 
-   @Nullable
-   UiControl root(String reference, UiScope engine) {
+   @Nullable UiControl root(String reference, UiScope engine) {
       UiElementDef def = this.definitions.element(reference, null);
       if (def == null) {
          this.problems.add("unresolved-base", "no screen " + reference);
          return null;
-      } else {
-         UiTemplate template = this.definitions.template(def, engine::get);
-         if (template == null) {
-            return null;
-         } else {
-            this.instance.contributing.or(template.packs());
-            return this.build(def.name(), template.props(), template::namespaceOf, def.id(), engine, 0, this.definitions.fromServer(template.packs()), Set.of());
-         }
       }
+
+      UiTemplate template = this.definitions.template(def, engine::get);
+      if (template == null) {
+         return null;
+      }
+
+      this.instance.contributing.or(template.packs());
+      return this.build(def.name(), template.props(), template::namespaceOf, def.id(), engine, 0, this.definitions.fromServer(template.packs()), Set.of());
    }
 
-   @Nullable
-   UiControl spawn(UiControl parent, String reference, String namespace, @Nullable String childName, Map<String, UiValue> variables) {
+   @Nullable UiControl spawn(UiControl parent, String reference, String namespace, @Nullable String childName, Map<String, UiValue> variables) {
       String ref = reference.startsWith("@") ? reference.substring(1) : reference;
       int at = ref.indexOf(64);
       String name = childName;
       if (at > 0) {
-         name = childName == null ? ref.substring(0, at) : childName;
+         name = name == null ? ref.substring(0, at) : name;
          ref = ref.substring(at + 1);
       }
 
@@ -133,8 +131,7 @@ final class UiResolver implements UiAnimation.Resolver {
       return depth;
    }
 
-   @Nullable
-   private UiControl build(
+   private @Nullable UiControl build(
       String name,
       JsonObject merged,
       Function<String, String> keyNamespaces,
@@ -148,116 +145,119 @@ final class UiResolver implements UiAnimation.Resolver {
          this.problems.add("limit", "deeper than 128 at " + name);
          this.instance.cutShort = true;
          return null;
-      } else if (this.instance.controlCount >= 20000) {
+      }
+
+      if (this.instance.controlCount >= 20000) {
          this.problems.add("limit", "more than 20000 controls");
          this.instance.cutShort = true;
          return null;
-      } else if (this.instance.ignored(name)) {
+      }
+
+      if (this.instance.ignored(name)) {
          return null;
-      } else {
-         this.buildingName = name;
-         this.buildingJoin = " (";
-         this.buildingDetail = defId;
-         UiScope scope = this.cachedScope(merged, parentScope);
-         JsonElement ignored = merged.get("ignored");
-         if (ignored != null && this.condition(ignored, scope::get)) {
+      }
+
+      this.buildingName = name;
+      this.buildingJoin = " (";
+      this.buildingDetail = defId;
+      UiScope scope = this.cachedScope(merged, parentScope);
+      JsonElement ignored = merged.get("ignored");
+      if (ignored != null && this.condition(ignored, scope::get)) {
+         return null;
+      }
+
+      UiType type = UiType.of(this.eval(merged.get("type"), scope::get).stringOrNull());
+      if (type == null) {
+         if (merged.has("anim_type")) {
+            this.problems.add("element", name + " (" + defId + ") is an animation used as a control");
             return null;
-         } else {
-            UiType type = UiType.of(this.eval(merged.get("type"), scope::get).stringOrNull());
-            if (type == null) {
-               if (merged.has("anim_type")) {
-                  this.problems.add("element", name + " (" + defId + ") is an animation used as a control");
-                  return null;
-               }
+         }
 
-               if (merged.has("type")) {
-                  this.problems.add("unknown-type", name + " (" + defId + "): " + merged.get("type"));
-                  this.instance.gaps.unknownType(String.valueOf(this.eval(merged.get("type"), scope::get).stringOrNull()));
-               }
+         if (merged.has("type")) {
+            this.problems.add("unknown-type", name + " (" + defId + "): " + merged.get("type"));
+            this.instance.gaps.unknownType(String.valueOf(this.eval(merged.get("type"), scope::get).stringOrNull()));
+         }
 
-               type = UiType.PANEL;
-            }
+         type = UiType.PANEL;
+      }
 
-            UiControl control = new UiControl(name, type, defId, scope, keyNamespaces);
-            control.fromServer = fromServer;
-            this.instance.controlCount++;
+      UiControl control = new UiControl(name, type, defId, scope, keyNamespaces);
+      control.fromServer = fromServer;
+      this.instance.controlCount++;
 
-            for (Entry<String, JsonElement> entry : merged.entrySet()) {
-               String key = entry.getKey();
-               if (!key.startsWith("$") && !STRUCTURAL.contains(key)) {
-                  control.props.put(key, this.eval(entry.getValue(), scope::get));
-               }
-            }
-
-            JsonObject var22 = this.eval(merged.get("property_bag"), scope::get).object();
-            if (var22 instanceof JsonObject) {
-               for (Entry<String, JsonElement> entryx : var22.entrySet()) {
-                  control.seed(entryx.getKey(), this.eval(entryx.getValue(), scope::get));
-               }
-            }
-
-            control.collectionName = string(control.props.get("collection_name"));
-            UiValue explicitIndex = control.props.get("collection_index");
-            if (explicitIndex != null && explicitIndex.isNumber()) {
-               control.collectionIndex = (int)explicitIndex.asNumber();
-            }
-
-            control.bindings = this.bindings(merged.get("bindings"), scope, control);
-
-            for (UiBinding binding : control.bindings) {
-               if (binding.type == UiBinding.Type.COLLECTION_DETAILS && binding.collection == null) {
-                  control.contextual = true;
-               }
-            }
-
-            control.buttonMappings = this.substituted(merged.get("button_mappings"), scope);
-            control.factory = this.factory(control, merged, scope, keyNamespaces, entryVariables);
-            if (type == UiType.GRID) {
-               control.grid = this.grid(control, keyNamespaces);
-            }
-
-            JsonElement controls = merged.get("controls");
-            if (controls != null) {
-               UiValue controlsValue = this.eval(controls, scope::get);
-               JsonArray array = controlsValue.array();
-               if (array == null && controlsValue.stringOrNull() != null) {
-                  this.problems
-                     .note(
-                        "controls-text",
-                        name + " (" + defId + "): controls is the text \"" + controlsValue.stringOrNull() + "\", no children, read as Bedrock reads it"
-                     );
-               } else if (array != null) {
-                  String namespace = keyNamespaces.apply("controls");
-
-                  for (JsonElement entryx : array) {
-                     UiControl child = this.child(control, entryx, namespace, depth + 1);
-                     if (child != null) {
-                        this.instance.attach(control, child, -1);
-                     }
-                  }
-               } else {
-                  this.problems.add("element", name + " (" + defId + "): controls is not an array");
-               }
-            }
-
-            if (type == UiType.COLLECTION_PANEL) {
-               for (int i = 0; i < control.children.size(); i++) {
-                  UiControl child = control.children.get(i);
-                  if (child.collectionIndex < 0) {
-                     child.collectionIndex = i;
-                     child.indexCollection = control.collectionName;
-                  }
-               }
-            }
-
-            if (type == UiType.GRID && control.grid.template() == null && control.collectionName != null) {
-               indexGridChildren(control);
-            }
-
-            this.animations(control, merged, scope);
-            return control;
+      for (Entry<String, JsonElement> entry : merged.entrySet()) {
+         String key = entry.getKey();
+         if (!key.startsWith("$") && !STRUCTURAL.contains(key)) {
+            control.props.put(key, this.eval(entry.getValue(), scope::get));
          }
       }
+
+      if (this.eval(merged.get("property_bag"), scope::get).object() instanceof JsonObject bag) {
+         for (Entry<String, JsonElement> entry : bag.entrySet()) {
+            control.seed(entry.getKey(), this.eval(entry.getValue(), scope::get));
+         }
+      }
+
+      control.collectionName = string(control.props.get("collection_name"));
+      UiValue explicitIndex = control.props.get("collection_index");
+      if (explicitIndex != null && explicitIndex.isNumber()) {
+         control.collectionIndex = (int)explicitIndex.asNumber();
+      }
+
+      control.bindings = this.bindings(merged.get("bindings"), scope, control);
+
+      for (UiBinding binding : control.bindings) {
+         if (binding.type == UiBinding.Type.COLLECTION_DETAILS && binding.collection == null) {
+            control.contextual = true;
+         }
+      }
+
+      control.buttonMappings = this.substituted(merged.get("button_mappings"), scope);
+      control.factory = this.factory(control, merged, scope, keyNamespaces, entryVariables);
+      if (type == UiType.GRID) {
+         control.grid = this.grid(control, keyNamespaces);
+      }
+
+      JsonElement controls = merged.get("controls");
+      if (controls != null) {
+         UiValue controlsValue = this.eval(controls, scope::get);
+         JsonArray array = controlsValue.array();
+         if (array == null && controlsValue.stringOrNull() != null) {
+            this.problems
+               .note(
+                  "controls-text",
+                  name + " (" + defId + "): controls is the text \"" + controlsValue.stringOrNull() + "\", no children, read as Bedrock reads it"
+               );
+         } else if (array != null) {
+            String namespace = keyNamespaces.apply("controls");
+
+            for (JsonElement entry : array) {
+               UiControl child = this.child(control, entry, namespace, depth + 1);
+               if (child != null) {
+                  this.instance.attach(control, child, -1);
+               }
+            }
+         } else {
+            this.problems.add("element", name + " (" + defId + "): controls is not an array");
+         }
+      }
+
+      if (type == UiType.COLLECTION_PANEL) {
+         for (int i = 0; i < control.children.size(); i++) {
+            UiControl child = control.children.get(i);
+            if (child.collectionIndex < 0) {
+               child.collectionIndex = i;
+               child.indexCollection = control.collectionName;
+            }
+         }
+      }
+
+      if (type == UiType.GRID && control.grid.template() == null && control.collectionName != null) {
+         indexGridChildren(control);
+      }
+
+      this.animations(control, merged, scope);
+      return control;
    }
 
    private static void indexGridChildren(UiControl grid) {
@@ -293,9 +293,9 @@ final class UiResolver implements UiAnimation.Resolver {
       List<Entry<String, JsonElement>> waiting = new ArrayList<>();
 
       for (Entry<String, JsonElement> entry : merged.entrySet()) {
-         String keyx = entry.getKey();
-         if (keyx.startsWith("$")) {
-            if (this.readsLater(entry.getValue(), variableOf(keyx), unassigned)) {
+         String key = entry.getKey();
+         if (key.startsWith("$")) {
+            if (this.readsLater(entry.getValue(), variableOf(key), unassigned)) {
                waiting.add(entry);
             } else {
                this.assign(builder, merged, entry, unassigned);
@@ -307,16 +307,16 @@ final class UiResolver implements UiAnimation.Resolver {
          boolean last = round == 7;
          List<Entry<String, JsonElement>> still = new ArrayList<>();
 
-         for (Entry<String, JsonElement> entryx : waiting) {
-            if (!last && this.readsLater(entryx.getValue(), variableOf(entryx.getKey()), unassigned)) {
-               still.add(entryx);
+         for (Entry<String, JsonElement> entry : waiting) {
+            if (!last && this.readsLater(entry.getValue(), variableOf(entry.getKey()), unassigned)) {
+               still.add(entry);
             } else {
-               this.assign(builder, merged, entryx, unassigned);
+               this.assign(builder, merged, entry, unassigned);
             }
          }
 
          if (still.size() == waiting.size()) {
-            still.forEach(entryxx -> this.assign(builder, merged, entryxx, unassigned));
+            still.forEach(entryx -> this.assign(builder, merged, entryx, unassigned));
             still.clear();
          }
 
@@ -337,19 +337,19 @@ final class UiResolver implements UiAnimation.Resolver {
             }
          }
 
-         for (JsonObject blockx : blocks) {
-            JsonElement requires = blockx.get("requires");
+         for (JsonObject block : blocks) {
+            JsonElement requires = block.get("requires");
             if (requires == null || this.condition(requires, builder::get)) {
-               for (Entry<String, JsonElement> entryxx : blockx.entrySet()) {
-                  String keyx = entryxx.getKey();
-                  if (keyx.startsWith("$")) {
-                     if (keyx.endsWith("|default")) {
-                        String variable = keyx.substring(0, keyx.length() - "|default".length());
+               for (Entry<String, JsonElement> entry : block.entrySet()) {
+                  String key = entry.getKey();
+                  if (key.startsWith("$")) {
+                     if (key.endsWith("|default")) {
+                        String variable = key.substring(0, key.length() - "|default".length());
                         if (builder.defaultApplies(variable)) {
-                           builder.putDefault(variable, this.eval(entryxx.getValue(), builder::get));
+                           builder.putDefault(variable, this.eval(entry.getValue(), builder::get));
                         }
                      } else {
-                        builder.put(keyx, this.eval(entryxx.getValue(), builder::get));
+                        builder.put(key, this.eval(entry.getValue(), builder::get));
                      }
                   }
                }
@@ -369,19 +369,21 @@ final class UiResolver implements UiAnimation.Resolver {
          String text = primitive.getAsString();
          if (text.length() > 1 && text.charAt(0) == '$' && UiControl.isName(text, 1)) {
             return !text.equals(self) && unassigned.containsKey(text);
-         } else if (text.indexOf(36) >= 0 && UiExpression.looksLikeExpression(text)) {
+         }
+
+         if (text.indexOf(36) >= 0 && UiExpression.looksLikeExpression(text)) {
             UiExpression expression = this.definitions.expression(text);
             if (!expression.valid()) {
                return false;
-            } else {
-               for (String name : expression.dollarNames()) {
-                  if (!name.equals(self) && unassigned.containsKey(name)) {
-                     return true;
-                  }
-               }
-
-               return false;
             }
+
+            for (String name : expression.dollarNames()) {
+               if (!name.equals(self) && unassigned.containsKey(name)) {
+                  return true;
+               }
+            }
+
+            return false;
          } else {
             return false;
          }
@@ -404,7 +406,7 @@ final class UiResolver implements UiAnimation.Resolver {
       unassigned.computeIfPresent(variable, (name, count) -> count > 1 ? count - 1 : null);
    }
 
-   private UiValue evalAssigned(JsonElement value, Function<String, UiValue> variables) {
+   private UiValue evalAssigned(JsonElement value, Function<String, @Nullable UiValue> variables) {
       if (value instanceof JsonPrimitive primitive && primitive.isString()) {
          String text = primitive.getAsString();
          if (text.length() > 1 && text.charAt(0) == '$' && UiControl.isName(text, 1) && variables.apply(text) == null) {
@@ -416,8 +418,7 @@ final class UiResolver implements UiAnimation.Resolver {
       return this.eval(value, variables);
    }
 
-   @Nullable
-   private UiControl child(UiControl parent, JsonElement entry, String namespace, int depth) {
+   private @Nullable UiControl child(UiControl parent, JsonElement entry, String namespace, int depth) {
       if (entry instanceof JsonObject object && object.size() == 1) {
          Entry<String, JsonElement> only = (Entry<String, JsonElement>)object.entrySet().iterator().next();
          String key = only.getKey();
@@ -465,8 +466,8 @@ final class UiResolver implements UiAnimation.Resolver {
          if (base == null) {
             JsonObject merged = value;
             Function<String, String> keyNamespaces = k -> namespace;
-            if (value.get("modifications") instanceof JsonArray pending) {
-               merged = this.definitions.applyPending(value, pending, parent + "/" + name);
+            if (merged.get("modifications") instanceof JsonArray pending) {
+               merged = this.definitions.applyPending(merged, pending, parent + "/" + name);
             }
 
             return this.build(name, merged, keyNamespaces, defId, parent.scope, depth, parent.fromServer, Set.of());
@@ -488,45 +489,45 @@ final class UiResolver implements UiAnimation.Resolver {
                if (template == null) {
                   this.problems.add("unresolved-base", parent + ": child " + name + " (" + def.id() + ") has no usable inheritance chain");
                   return null;
-               } else {
-                  this.instance.contributing.or(template.packs());
-                  defId = def.id();
-                  boolean serverMade = parent.fromServer || this.definitions.fromServer(template.packs());
-                  UiResolver.Merged known = this.merges.computeIfAbsent(template, unused -> new IdentityHashMap<>()).get(value);
-                  if (known != null && known.namespace().equals(namespace)) {
-                     return this.build(name, known.merged(), known.keyNamespaces(), defId, parent.scope, depth, serverMade, entryVariables(value));
-                  } else {
-                     long problemsBefore = this.problems.changes();
-                     JsonObject merged;
-                     Function<String, String> keyNamespaces;
-                     if (value.isEmpty()) {
-                        merged = template.props();
-                        keyNamespaces = template::namespaceOf;
-                     } else {
-                        merged = new JsonObject();
-
-                        for (Entry<String, JsonElement> property : template.props().entrySet()) {
-                           merged.add(property.getKey(), property.getValue());
-                        }
-
-                        for (Entry<String, JsonElement> property : value.entrySet()) {
-                           merged.add(property.getKey(), property.getValue());
-                        }
-
-                        keyNamespaces = k -> value.has(k) ? namespace : template.namespaceOf(k);
-                     }
-
-                     if (merged.get("modifications") instanceof JsonArray pending) {
-                        merged = this.definitions.applyPending(merged, pending, parent + "/" + name);
-                     }
-
-                     if (this.problems.changes() == problemsBefore) {
-                        this.merges.get(template).put(value, new UiResolver.Merged(namespace, merged, keyNamespaces));
-                     }
-
-                     return this.build(name, merged, keyNamespaces, defId, parent.scope, depth, serverMade, entryVariables(value));
-                  }
                }
+
+               this.instance.contributing.or(template.packs());
+               defId = def.id();
+               boolean serverMade = parent.fromServer || this.definitions.fromServer(template.packs());
+               UiResolver.Merged known = this.merges.computeIfAbsent(template, unused -> new IdentityHashMap<>()).get(value);
+               if (known != null && known.namespace().equals(namespace)) {
+                  return this.build(name, known.merged(), known.keyNamespaces(), defId, parent.scope, depth, serverMade, entryVariables(value));
+               }
+
+               long problemsBefore = this.problems.changes();
+               JsonObject merged;
+               Function<String, String> keyNamespaces;
+               if (value.isEmpty()) {
+                  merged = template.props();
+                  keyNamespaces = template::namespaceOf;
+               } else {
+                  merged = new JsonObject();
+
+                  for (Entry<String, JsonElement> property : template.props().entrySet()) {
+                     merged.add(property.getKey(), property.getValue());
+                  }
+
+                  for (Entry<String, JsonElement> property : value.entrySet()) {
+                     merged.add(property.getKey(), property.getValue());
+                  }
+
+                  keyNamespaces = k -> value.has(k) ? namespace : template.namespaceOf(k);
+               }
+
+               if (merged.get("modifications") instanceof JsonArray pending) {
+                  merged = this.definitions.applyPending(merged, pending, parent + "/" + name);
+               }
+
+               if (this.problems.changes() == problemsBefore) {
+                  this.merges.get(template).put(value, new UiResolver.Merged(namespace, merged, keyNamespaces));
+               }
+
+               return this.build(name, merged, keyNamespaces, defId, parent.scope, depth, serverMade, entryVariables(value));
             }
          }
       } else {
@@ -540,15 +541,15 @@ final class UiResolver implements UiAnimation.Resolver {
       UiScope known = byParent.get(parentScope);
       if (known != null) {
          return known;
-      } else {
-         long problemsBefore = this.problems.changes();
-         UiScope made = this.scope(merged, parentScope);
-         if (this.problems.changes() == problemsBefore) {
-            byParent.put(parentScope, made);
-         }
-
-         return made;
       }
+
+      long problemsBefore = this.problems.changes();
+      UiScope made = this.scope(merged, parentScope);
+      if (this.problems.changes() == problemsBefore) {
+         byParent.put(parentScope, made);
+      }
+
+      return made;
    }
 
    private boolean ignoredHere(JsonObject value, UiScope scope) {
@@ -559,33 +560,33 @@ final class UiResolver implements UiAnimation.Resolver {
    private List<UiBinding> bindings(@Nullable JsonElement raw, UiScope scope, Object where) {
       if (raw == null) {
          return List.of();
-      } else {
-         JsonArray array = this.eval(raw, scope::get).array();
-         if (array == null) {
-            return List.of();
-         } else {
-            List<UiBinding> bindings = new ArrayList<>(array.size());
+      }
 
-            for (JsonElement element : array) {
-               if (element instanceof JsonObject object) {
-                  Map<String, UiValue> fields = new HashMap<>();
+      JsonArray array = this.eval(raw, scope::get).array();
+      if (array == null) {
+         return List.of();
+      }
 
-                  for (Entry<String, JsonElement> entry : object.entrySet()) {
-                     fields.put(entry.getKey(), this.eval(entry.getValue(), scope::get));
-                  }
+      List<UiBinding> bindings = new ArrayList<>(array.size());
 
-                  if (!fields.containsKey("ignored") || !fields.get("ignored").truthy()) {
-                     UiBinding binding = this.binding(fields, scope, where);
-                     if (binding != null) {
-                        bindings.add(binding);
-                     }
-                  }
-               }
+      for (JsonElement element : array) {
+         if (element instanceof JsonObject object) {
+            Map<String, UiValue> fields = new HashMap<>();
+
+            for (Entry<String, JsonElement> entry : object.entrySet()) {
+               fields.put(entry.getKey(), this.eval(entry.getValue(), scope::get));
             }
 
-            return bindings;
+            if (!fields.containsKey("ignored") || !fields.get("ignored").truthy()) {
+               UiBinding binding = this.binding(fields, scope, where);
+               if (binding != null) {
+                  bindings.add(binding);
+               }
+            }
          }
       }
+
+      return bindings;
    }
 
    private void invalidName(String name, UiExpression expression, @Nullable String target, Object where) {
@@ -625,8 +626,7 @@ final class UiResolver implements UiAnimation.Resolver {
       return expression.valid() && expression.constant() && !name.trim().startsWith("(");
    }
 
-   @Nullable
-   private UiBinding binding(Map<String, UiValue> fields, UiScope scope, Object where) {
+   private @Nullable UiBinding binding(Map<String, UiValue> fields, UiScope scope, Object where) {
       String typeName = text(fields.get("binding_type"));
       String name = text(fields.get("binding_name"));
       String override = text(fields.get("binding_name_override"));
@@ -728,42 +728,43 @@ final class UiResolver implements UiAnimation.Resolver {
    private List<JsonObject> substituted(@Nullable JsonElement raw, UiScope scope) {
       if (raw == null) {
          return List.of();
-      } else {
-         JsonArray array = this.eval(raw, scope::get).array();
-         if (array == null) {
-            return List.of();
-         } else {
-            List<JsonObject> mappings = new ArrayList<>(array.size());
+      }
 
-            for (JsonElement element : array) {
-               if (element instanceof JsonObject object) {
-                  JsonObject copy = new JsonObject();
-                  boolean ignored = false;
+      JsonArray array = this.eval(raw, scope::get).array();
+      if (array == null) {
+         return List.of();
+      }
 
-                  for (Entry<String, JsonElement> entry : object.entrySet()) {
-                     UiValue value = entry.getKey().equals("ignored")
-                        ? UiValue.of(this.condition(entry.getValue(), scope::get))
-                        : this.eval(entry.getValue(), scope::get);
-                     if (entry.getKey().equals("ignored")) {
-                        ignored = value.truthy();
-                     }
+      List<JsonObject> mappings = new ArrayList<>(array.size());
 
-                     copy.add(entry.getKey(), value.toJson());
-                  }
+      for (JsonElement element : array) {
+         if (element instanceof JsonObject object) {
+            JsonObject copy = new JsonObject();
+            boolean ignored = false;
 
-                  if (!ignored) {
-                     mappings.add(copy);
-                  }
+            for (Entry<String, JsonElement> entry : object.entrySet()) {
+               UiValue value = entry.getKey().equals("ignored")
+                  ? UiValue.of(this.condition(entry.getValue(), scope::get))
+                  : this.eval(entry.getValue(), scope::get);
+               if (entry.getKey().equals("ignored")) {
+                  ignored = value.truthy();
                }
+
+               copy.add(entry.getKey(), value.toJson());
             }
 
-            return mappings;
+            if (!ignored) {
+               mappings.add(copy);
+            }
          }
       }
+
+      return mappings;
    }
 
-   @Nullable
-   private UiControl.Factory factory(UiControl control, JsonObject merged, UiScope scope, Function<String, String> keyNamespaces, Set<String> entryVariables) {
+   private UiControl.@Nullable Factory factory(
+      UiControl control, JsonObject merged, UiScope scope, Function<String, String> keyNamespaces, Set<String> entryVariables
+   ) {
       JsonObject spec = this.eval(merged.get("factory"), scope::get).object();
       if (control.type == UiType.FACTORY) {
          String name = spec != null && text(UiValue.of(spec.get("name"))) != null ? spec.get("name").getAsString() : control.name;
@@ -788,16 +789,18 @@ final class UiResolver implements UiAnimation.Resolver {
             keyNamespaces.apply(merged.has("control_ids") ? "control_ids" : "factory"),
             this.weakForChildren(entryVariables, passed, scope)
          );
-      } else if (spec == null) {
-         return null;
       } else {
-         String namex = text(this.eval(spec.get("name"), scope::get));
-         JsonObject idsx = this.eval(spec.get("control_ids"), scope::get).object();
+         if (spec == null) {
+            return null;
+         }
+
+         String name = text(this.eval(spec.get("name"), scope::get));
+         JsonObject ids = this.eval(spec.get("control_ids"), scope::get).object();
          String controlName = text(this.eval(spec.get("control_name"), scope::get));
          UiValue max = this.eval(spec.get("max_children_size"), scope::get);
          return new UiControl.Factory(
-            namex != null ? namex : control.name,
-            this.idMap(idsx, scope),
+            name != null ? name : control.name,
+            this.idMap(ids, scope),
             controlName,
             (int)max.asNumber(),
             control.collectionName != null || lengthBound(control),
@@ -810,21 +813,21 @@ final class UiResolver implements UiAnimation.Resolver {
    private Set<String> weakForChildren(Set<String> entryVariables, @Nullable JsonElement factoryVariables, UiScope scope) {
       if (entryVariables.isEmpty()) {
          return Set.of();
-      } else {
-         Set<String> weak = new HashSet<>(entryVariables);
-         JsonArray names = factoryVariables == null
-            ? null
-            : (factoryVariables instanceof JsonArray array ? array : this.eval(factoryVariables, scope::get).array());
-         if (names != null) {
-            for (JsonElement entry : names) {
-               if (entry instanceof JsonPrimitive primitive && primitive.isString()) {
-                  weak.remove(primitive.getAsString());
-               }
+      }
+
+      Set<String> weak = new HashSet<>(entryVariables);
+      JsonArray names = factoryVariables == null
+         ? null
+         : (factoryVariables instanceof JsonArray array ? array : this.eval(factoryVariables, scope::get).array());
+      if (names != null) {
+         for (JsonElement entry : names) {
+            if (entry instanceof JsonPrimitive primitive && primitive.isString()) {
+               weak.remove(primitive.getAsString());
             }
          }
-
-         return weak.isEmpty() ? Set.of() : Set.copyOf(weak);
       }
+
+      return weak.isEmpty() ? Set.of() : Set.copyOf(weak);
    }
 
    private static boolean lengthBound(UiControl control) {
@@ -840,18 +843,18 @@ final class UiResolver implements UiAnimation.Resolver {
    private Map<String, String> idMap(@Nullable JsonObject ids, UiScope scope) {
       if (ids == null) {
          return Map.of();
-      } else {
-         Map<String, String> map = new LinkedHashMap<>();
-
-         for (Entry<String, JsonElement> entry : ids.entrySet()) {
-            String reference = text(this.eval(entry.getValue(), scope::get));
-            if (reference != null) {
-               map.put(entry.getKey(), reference);
-            }
-         }
-
-         return map;
       }
+
+      Map<String, String> map = new LinkedHashMap<>();
+
+      for (Entry<String, JsonElement> entry : ids.entrySet()) {
+         String reference = text(this.eval(entry.getValue(), scope::get));
+         if (reference != null) {
+            map.put(entry.getKey(), reference);
+         }
+      }
+
+      return map;
    }
 
    private UiControl.Grid grid(UiControl control, Function<String, String> keyNamespaces) {
@@ -962,10 +965,12 @@ final class UiResolver implements UiAnimation.Resolver {
       }
    }
 
-   UiValue eval(@Nullable JsonElement value, Function<String, UiValue> variables) {
+   UiValue eval(@Nullable JsonElement value, Function<String, @Nullable UiValue> variables) {
       if (value == null) {
          return UiValue.NULL;
-      } else if (value instanceof JsonPrimitive primitive && primitive.isString()) {
+      }
+
+      if (value instanceof JsonPrimitive primitive && primitive.isString()) {
          String text = primitive.getAsString();
          if (text.length() > 1 && text.charAt(0) == '$' && UiControl.isName(text, 1)) {
             UiValue resolved = variables.apply(text);
@@ -1012,7 +1017,7 @@ final class UiResolver implements UiAnimation.Resolver {
       return false;
    }
 
-   boolean condition(JsonElement value, Function<String, UiValue> variables) {
+   boolean condition(JsonElement value, Function<String, @Nullable UiValue> variables) {
       if (value instanceof JsonPrimitive primitive && primitive.isString()) {
          String text = primitive.getAsString().trim();
          if (text.length() > 1 && text.charAt(0) == '$' && UiControl.isName(text, 1)) {
@@ -1033,8 +1038,7 @@ final class UiResolver implements UiAnimation.Resolver {
       }
    }
 
-   @Nullable
-   static String text(@Nullable UiValue value) {
+   static @Nullable String text(@Nullable UiValue value) {
       if (value != null && !value.isNull()) {
          String text = value.asString();
          return text.isEmpty() ? null : text;
@@ -1043,13 +1047,11 @@ final class UiResolver implements UiAnimation.Resolver {
       }
    }
 
-   @Nullable
-   static String string(@Nullable UiValue value) {
+   static @Nullable String string(@Nullable UiValue value) {
       return value == null ? null : value.stringOrNull();
    }
 
-   @Nullable
-   static float[] floats(@Nullable UiValue value) {
+   static float @Nullable [] floats(@Nullable UiValue value) {
       return value == null ? null : value.floats();
    }
 

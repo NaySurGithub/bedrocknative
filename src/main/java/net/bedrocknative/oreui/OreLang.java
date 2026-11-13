@@ -12,8 +12,7 @@ import org.jspecify.annotations.Nullable;
 public final class OreLang {
    private final Map<String, String> entries;
    public static final OreLang EMPTY = new OreLang(Map.of());
-   @Nullable
-   static volatile Set<String> asked;
+   static volatile @Nullable Set<String> asked;
 
    private OreLang(Map<String, String> entries) {
       this.entries = Map.copyOf(entries);
@@ -64,44 +63,45 @@ public final class OreLang {
    static String format(String text, Object... args) {
       if (text.indexOf(37) < 0) {
          return text;
-      } else {
-         StringBuilder out = new StringBuilder();
-         int next = 0;
-
-         for (int i = 0; i < text.length(); i++) {
-            char c = text.charAt(i);
-            if (c == '%' && i + 1 < text.length()) {
-               char d = text.charAt(i + 1);
-               if (d == '%') {
-                  out.append('%');
-                  i++;
-               } else {
-                  int j = i + 1;
-
-                  int number;
-                  for (number = 0; j < text.length() && Character.isDigit(text.charAt(j)); j++) {
-                     number = number * 10 + (text.charAt(j) - '0');
-                  }
-
-                  if (j <= i + 1 || j + 1 >= text.length() || text.charAt(j) != '$' || text.charAt(j + 1) != 's' && text.charAt(j + 1) != 'd') {
-                     if (j == i + 1 && (d == 's' || d == 'd')) {
-                        out.append(next < args.length ? String.valueOf(args[next]) : "");
-                        next++;
-                        i++;
-                     } else {
-                        out.append(c);
-                     }
-                  } else {
-                     out.append(number >= 1 && number <= args.length ? String.valueOf(args[number - 1]) : "");
-                     i = j + 1;
-                  }
-               }
-            } else {
-               out.append(c);
-            }
-         }
-
-         return out.toString();
       }
+
+      StringBuilder out = new StringBuilder();
+      int next = 0;
+
+      for (int i = 0; i < text.length(); i++) {
+         char c = text.charAt(i);
+         if (c == '%' && i + 1 < text.length()) {
+            char d = text.charAt(i + 1);
+            if (d == '%') {
+               out.append('%');
+               i++;
+            } else {
+               int j = i + 1;
+               int number = 0;
+
+               while (j < text.length() && Character.isDigit(text.charAt(j))) {
+                  number = number * 10 + (text.charAt(j) - '0');
+                  j++;
+               }
+
+               if (j <= i + 1 || j + 1 >= text.length() || text.charAt(j) != '$' || text.charAt(j + 1) != 's' && text.charAt(j + 1) != 'd') {
+                  if (j == i + 1 && (d == 's' || d == 'd')) {
+                     out.append(next < args.length ? String.valueOf(args[next]) : "");
+                     next++;
+                     i++;
+                  } else {
+                     out.append(c);
+                  }
+               } else {
+                  out.append(number >= 1 && number <= args.length ? String.valueOf(args[number - 1]) : "");
+                  i = j + 1;
+               }
+            }
+         } else {
+            out.append(c);
+         }
+      }
+
+      return out.toString();
    }
 }

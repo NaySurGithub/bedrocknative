@@ -66,8 +66,7 @@ public final class OrePlayScreen extends Screen implements LobbyScreen, OrePlayU
    private boolean consentAsked;
    private boolean hidden;
    private int ticks;
-   @Nullable
-   private static String lastSelected;
+   private static @Nullable String lastSelected;
    private final DiscordButton discord = new DiscordButton(true, true);
 
    private OrePlayScreen(Screen parent, OreSession session, int tab) {
@@ -80,18 +79,17 @@ public final class OrePlayScreen extends Screen implements LobbyScreen, OrePlayU
       );
    }
 
-   @Nullable
-   public static OrePlayScreen create(Screen parent, int tab) {
+   public static @Nullable OrePlayScreen create(Screen parent, int tab) {
       OreSession session = OreUi.session();
       if (session == null) {
          return null;
-      } else {
-         OrePlayScreen screen = new OrePlayScreen(parent, session, tab);
-         screen.loadPartners();
-         screen.refreshServers();
-         screen.loadWorlds();
-         return screen;
       }
+
+      OrePlayScreen screen = new OrePlayScreen(parent, session, tab);
+      screen.loadPartners();
+      screen.refreshServers();
+      screen.loadWorlds();
+      return screen;
    }
 
    public OrePlayUi ui() {
@@ -142,16 +140,18 @@ public final class OrePlayScreen extends Screen implements LobbyScreen, OrePlayU
    private static String modeTag(@Nullable LevelSummary level) {
       if (level == null) {
          return "hbui.WorldTag.unknown";
-      } else if (level.isHardcore()) {
-         return "hbui.WorldTag.hardcore";
-      } else {
-         return switch (level.getGameMode()) {
-            case SURVIVAL -> "hbui.WorldTag.survival";
-            case CREATIVE -> "hbui.WorldTag.creative";
-            case ADVENTURE -> "hbui.WorldTag.adventure";
-            default -> "hbui.WorldTag.unknown";
-         };
       }
+
+      if (level.isHardcore()) {
+         return "hbui.WorldTag.hardcore";
+      }
+
+      return switch (level.getGameMode()) {
+         case SURVIVAL -> "hbui.WorldTag.survival";
+         case CREATIVE -> "hbui.WorldTag.creative";
+         case ADVENTURE -> "hbui.WorldTag.adventure";
+         default -> "hbui.WorldTag.unknown";
+      };
    }
 
    private void loadPartners() {
@@ -221,7 +221,7 @@ public final class OrePlayScreen extends Screen implements LobbyScreen, OrePlayU
          PlayData.Status status;
          try {
             status = LobbyStatusProbe.bedrockServer(server.address(), server.port(), 2500);
-         } catch (RuntimeException var5) {
+         } catch (RuntimeException e) {
             status = PlayData.Status.OFFLINE;
          }
 
@@ -249,8 +249,8 @@ public final class OrePlayScreen extends Screen implements LobbyScreen, OrePlayU
 
       try {
          service.answer(accept);
-      } catch (IOException var4) {
-         BedrockNative.LOGGER.warn("Partner servers: couldn't store the answer ({}); asked again next time", var4.getMessage());
+      } catch (IOException e) {
+         BedrockNative.LOGGER.warn("Partner servers: couldn't store the answer ({}); asked again next time", e.getMessage());
       }
 
       this.applyPartners(service.state());
@@ -275,6 +275,7 @@ public final class OrePlayScreen extends Screen implements LobbyScreen, OrePlayU
       }
    }
 
+   @Override
    protected void init() {
       this.ui.size(OreSession.windowWidth(), OreSession.windowHeight());
       if (this.hidden) {
@@ -289,6 +290,7 @@ public final class OrePlayScreen extends Screen implements LobbyScreen, OrePlayU
       preloadRegistries(this.ui.tab());
    }
 
+   @Override
    public void tick() {
       if (++this.ticks % 300 == 0) {
          this.servers.pingAll(this::refreshServers);
@@ -296,6 +298,7 @@ public final class OrePlayScreen extends Screen implements LobbyScreen, OrePlayU
       }
    }
 
+   @Override
    public void removed() {
       this.hidden = true;
       this.servers.stopDiscovery();
@@ -307,23 +310,26 @@ public final class OrePlayScreen extends Screen implements LobbyScreen, OrePlayU
       this.session.release();
    }
 
+   @Override
    public boolean isPauseScreen() {
       return false;
    }
 
+   @Override
    public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
       BedrockPanorama.prepare(this.minecraft);
       this.extractPanorama(graphics, a);
    }
 
+   @Override
    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
       this.ui.text(this.session.text());
       this.ui.size(OreSession.windowWidth(), OreSession.windowHeight());
 
       try (OreSession.Painter painter = this.session.paint(graphics)) {
          this.ui.render(painter.painter(), System.currentTimeMillis());
-      } catch (RuntimeException var10) {
-         this.fallBack("play screen", var10);
+      } catch (RuntimeException e) {
+         this.fallBack("play screen", e);
       }
 
       this.discord.render(graphics, this.width, this.height, mouseX, mouseY);
@@ -333,60 +339,69 @@ public final class OrePlayScreen extends Screen implements LobbyScreen, OrePlayU
       OreUi.fail(what, e);
       int tab = this.ui.tab();
       this.release();
-      this.minecraft
-         .execute(() -> this.minecraft.gui.setScreen((Screen)(tab == 0 ? new SelectWorldScreen(this.parent) : new JoinMultiplayerScreen(this.parent))));
+      this.minecraft.execute(() -> this.minecraft.gui.setScreen(tab == 0 ? new SelectWorldScreen(this.parent) : new JoinMultiplayerScreen(this.parent)));
    }
 
    private static double window(double gui) {
       return gui * OreSession.guiScale();
    }
 
+   @Override
    public void mouseMoved(double x, double y) {
       this.ui.mouseMoved(window(x), window(y));
    }
 
+   @Override
    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
       if (event.button() != 1) {
          return false;
-      } else if (this.discord.clicked(event.x(), event.y())) {
-         return true;
-      } else {
-         this.ui.mousePressed(window(event.x()), window(event.y()));
+      }
+
+      if (this.discord.clicked(event.x(), event.y())) {
          return true;
       }
+
+      this.ui.mousePressed(window(event.x()), window(event.y()));
+      return true;
    }
 
+   @Override
    public boolean mouseReleased(MouseButtonEvent event) {
       if (event.button() != 1) {
          return false;
-      } else {
-         this.ui.mouseReleased(window(event.x()), window(event.y()));
-         return true;
       }
+
+      this.ui.mouseReleased(window(event.x()), window(event.y()));
+      return true;
    }
 
+   @Override
    public boolean mouseDragged(MouseButtonEvent event, double dx, double dy) {
       if (event.button() != 1) {
          return false;
-      } else {
-         this.ui.mouseDragged(window(event.x()), window(event.y()));
-         return true;
       }
+
+      this.ui.mouseDragged(window(event.x()), window(event.y()));
+      return true;
    }
 
+   @Override
    public boolean mouseScrolled(double x, double y, double scrollX, double scrollY) {
       return this.ui.scrolled(window(x), window(y), scrollY);
    }
 
+   @Override
    public boolean keyPressed(KeyEvent event) {
       OreKey key = OreKeys.of(event);
       return key != null && this.ui.key(key, event.hasShiftDown());
    }
 
+   @Override
    public boolean charTyped(CharacterEvent event) {
       return false;
    }
 
+   @Override
    public void onClose() {
       this.back();
    }
@@ -456,9 +471,9 @@ public final class OrePlayScreen extends Screen implements LobbyScreen, OrePlayU
          LevelStorageAccess access;
          try {
             access = this.minecraft.getLevelSource().validateAndCreateAccess(levelId);
-         } catch (Exception var6) {
+         } catch (Exception e) {
             SystemToast.onWorldAccessFailure(this.minecraft, levelId);
-            BedrockNative.LOGGER.warn("Ore UI play screen: couldn't open world {} to edit it", levelId, var6);
+            BedrockNative.LOGGER.warn("Ore UI play screen: couldn't open world {} to edit it", levelId, e);
             return;
          }
 
@@ -470,10 +485,10 @@ public final class OrePlayScreen extends Screen implements LobbyScreen, OrePlayU
                this.minecraft.gui.setScreen(this);
                this.loadWorlds();
             }));
-         } catch (Exception var5) {
+         } catch (Exception e) {
             access.safeClose();
             SystemToast.onWorldAccessFailure(this.minecraft, levelId);
-            BedrockNative.LOGGER.warn("Ore UI play screen: couldn't read world {} to edit it", levelId, var5);
+            BedrockNative.LOGGER.warn("Ore UI play screen: couldn't read world {} to edit it", levelId, e);
          }
       }
    }
@@ -573,6 +588,6 @@ public final class OrePlayScreen extends Screen implements LobbyScreen, OrePlayU
    }
 
    static String noticeText(String key) {
-      return I18n.get(key, new Object[0]);
+      return I18n.get(key);
    }
 }

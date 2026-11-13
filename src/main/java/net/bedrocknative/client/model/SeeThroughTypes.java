@@ -66,7 +66,7 @@ final class SeeThroughTypes {
          Optional.of(base.getPrimitiveTopology()),
          base.pushConstantSize()
       );
-      return RenderPipeline.builder(new Snippet[]{snippet})
+      return RenderPipeline.builder(snippet)
          .withLocation(Identifier.fromNamespaceAndPath("bedrocknative", location))
          .withDepthStencilState(Optional.empty())
          .build();

@@ -37,7 +37,6 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
@@ -222,7 +221,7 @@ final class DevItemsTest {
                         return seen;
                      }
                   );
-               } catch (RuntimeException var16x) {
+               } catch (RuntimeException e) {
                   break;
                }
 
@@ -319,8 +318,8 @@ final class DevItemsTest {
 
       try {
          Files.write(Path.of("items-smooth-samples.csv"), csv);
-      } catch (IOException var15) {
-         log("could not write the samples: {}", var15.toString());
+      } catch (IOException e) {
+         log("could not write the samples: {}", e.toString());
       }
 
       for (int group = 0; group < 2; group++) {
@@ -691,7 +690,7 @@ final class DevItemsTest {
       this.command("tp @e[type=item,r=6] @s");
 
       for (int wait = 0;
-         wait < 20 && !this.onClient(() -> this.minecraft.player.getInventory().contains(stack -> stack.is((Item)Items.DYED_SHULKER_BOX.red())));
+         wait < 20 && !this.onClient(() -> this.minecraft.player.getInventory().contains(stack -> stack.is(Items.DYED_SHULKER_BOX.red())));
          wait++
       ) {
          sleep(500L);
@@ -724,7 +723,7 @@ final class DevItemsTest {
       sleep(3000L);
       this.run(() -> {
          ItemStack map = this.minecraft.player.getMainHandItem();
-         MapId id = (MapId)map.get(DataComponents.MAP_ID);
+         MapId id = map.get(DataComponents.MAP_ID);
          MapItemSavedData data = id == null ? null : this.minecraft.level.getMapData(id);
          int painted = 0;
          if (data != null) {
@@ -1050,7 +1049,7 @@ final class DevItemsTest {
          + " "
          + stack.getComponentsPatch()
          + " tooltip ["
-         + lines.stream().<CharSequence>map(Component::getString).collect(Collectors.joining(" | "))
+         + lines.stream().map(Component::getString).collect(Collectors.joining(" | "))
          + "]";
    }
 
@@ -1178,7 +1177,7 @@ final class DevItemsTest {
    private static void sleep(long millis) {
       try {
          Thread.sleep(millis);
-      } catch (InterruptedException var3) {
+      } catch (InterruptedException e) {
          Thread.currentThread().interrupt();
       }
    }
@@ -1191,6 +1190,7 @@ final class DevItemsTest {
          this.stacks = stacks;
       }
 
+      @Override
       public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
          super.extractRenderState(graphics, mouseX, mouseY, a);
          int columns = 3;
@@ -1205,10 +1205,10 @@ final class DevItemsTest {
             List<ClientTooltipComponent> lines = getTooltipFromItem(this.minecraft, stack)
                .stream()
                .map(Component::getVisualOrderText)
-               .<ClientTooltipComponent>map(ClientTooltipComponent::create)
+               .map(ClientTooltipComponent::create)
                .collect(Collectors.toList());
             stack.getTooltipImage().ifPresent(image -> lines.add(Math.min(1, lines.size()), ClientTooltipComponent.create(image)));
-            graphics.tooltip(this.font, lines, x + 8, y + 12, DefaultTooltipPositioner.INSTANCE, (Identifier)stack.get(DataComponents.TOOLTIP_STYLE), true);
+            graphics.tooltip(this.font, lines, x + 8, y + 12, DefaultTooltipPositioner.INSTANCE, stack.get(DataComponents.TOOLTIP_STYLE), true);
             graphics.nextStratum();
          }
       }

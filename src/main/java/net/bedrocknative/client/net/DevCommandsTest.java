@@ -53,8 +53,8 @@ final class DevCommandsTest {
                         .getSmartUsage(this.minecraft.getConnection().getCommands().getRoot(), this.minecraft.getConnection().getSuggestionsProvider())
                         .size()
                   );
-               } catch (Throwable var2x) {
-                  BedrockNative.LOGGER.warn("Dev commands test: root usage failed", var2x);
+               } catch (Throwable e) {
+                  BedrockNative.LOGGER.warn("Dev commands test: root usage failed", e);
                }
             }
          );
@@ -260,7 +260,7 @@ final class DevCommandsTest {
    private static void sleep(long millis) {
       try {
          Thread.sleep(millis);
-      } catch (InterruptedException var3) {
+      } catch (InterruptedException e) {
          Thread.currentThread().interrupt();
       }
    }

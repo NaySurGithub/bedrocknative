@@ -15,8 +15,7 @@ public final class LevelEventSounds {
       SOUNDS.put(event, new LevelEventSounds.Sound(name, pitch, pitchFromData));
    }
 
-   @Nullable
-   public static LevelEventSounds.Sound of(LevelEvent event) {
+   public static LevelEventSounds.@Nullable Sound of(LevelEvent event) {
       return SOUNDS.get(event);
    }
 

@@ -12,13 +12,9 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.At.Shift;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin({Minecraft.class})
+@Mixin(Minecraft.class)
 public abstract class MinecraftFrameMixin {
-   @Inject(
-      method = {"runTick"},
-      at = {@At("HEAD")},
-      require = 0
-   )
+   @Inject(method = "runTick", at = @At("HEAD"), require = 0)
    private void bedrocknative$frame(boolean advanceGameTime, CallbackInfo ci) {
       ChunkStream.frameStarted();
       FrameClock.frameStarted();
@@ -27,15 +23,7 @@ public abstract class MinecraftFrameMixin {
       }
    }
 
-   @Inject(
-      method = {"runTick"},
-      at = {@At(
-         value = "INVOKE",
-         target = "Lnet/minecraft/client/Minecraft;runAllTasks()V",
-         shift = Shift.AFTER
-      )},
-      require = 0
-   )
+   @Inject(method = "runTick", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Minecraft;runAllTasks()V", shift = Shift.AFTER), require = 0)
    private void bedrocknative$drainChunks(boolean advanceGameTime, CallbackInfo ci) {
       ChunkStream.drainActive();
       ActorPrep.drainActive();

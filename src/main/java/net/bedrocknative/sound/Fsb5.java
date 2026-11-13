@@ -32,8 +32,7 @@ public final class Fsb5 {
       return data.length >= 4 && intLE(data, 0) == 893539142;
    }
 
-   @Nullable
-   public static Fsb5 parse(byte[] data) {
+   public static @Nullable Fsb5 parse(byte[] data) {
       if (data.length >= 60 && isFsb5(data)) {
          int version = intLE(data, 4);
          int count = intLE(data, 8);
@@ -47,97 +46,90 @@ public final class Fsb5 {
             long dataStart = (long)base + sampleHeaders + nameTable;
             if (dataStart > data.length) {
                return null;
-            } else {
-               List<Fsb5.Sample> samples = new ArrayList<>(count);
-               int position = base;
-               long[] modes = new long[count];
-               int[][] overrides = new int[count][];
-
-               for (int i = 0; i < count; i++) {
-                  if (position + 8 > base + sampleHeaders) {
-                     return null;
-                  }
-
-                  long mode = longLE(data, position);
-                  position += 8;
-                  modes[i] = mode;
-                  int[] values = new int[]{-1, -1, -1, -1};
-                  boolean more = (mode & 1L) != 0L;
-
-                  while (more) {
-                     if (position + 4 > base + sampleHeaders) {
-                        return null;
-                     }
-
-                     int chunk = intLE(data, position);
-                     more = (chunk & 1) != 0;
-                     int size = chunk >>> 1 & 16777215;
-                     int type = chunk >>> 25 & 127;
-                     int body = position + 4;
-                     if (body + size > base + sampleHeaders) {
-                        return null;
-                     }
-
-                     if (type == 1 && size >= 1) {
-                        values[0] = data[body] & 255;
-                     } else if (type == 2 && size >= 4) {
-                        values[1] = intLE(data, body);
-                     } else if (type == 3 && size >= 4) {
-                        values[2] = intLE(data, body);
-                        values[3] = size >= 8 ? intLE(data, body + 4) + 1 : -1;
-                     }
-
-                     position = body + size;
-                  }
-
-                  overrides[i] = values;
-               }
-
-               for (int i = 0; i < count; i++) {
-                  long mode = modes[i];
-                  int frames = (int)(mode >>> 34 & 1073741823L);
-                  long offset = (mode >>> 7 & 134217727L) << 5;
-                  long next = i + 1 < count ? (modes[i + 1] >>> 7 & 134217727L) << 5 : dataSize;
-
-                  int channels = switch ((int)(mode >>> 5 & 3L)) {
-                     case 0 -> 1;
-                     case 1 -> 2;
-                     case 2 -> 6;
-                     default -> 8;
-                  };
-                  int index = (int)(mode >>> 1 & 15L);
-                  int frequency = index < FREQUENCIES.length ? FREQUENCIES[index] : '걄';
-                  int[] values = overrides[i];
-                  if (values[0] > 0) {
-                     channels = values[0];
-                  }
-
-                  if (values[1] > 0) {
-                     frequency = values[1];
-                  }
-
-                  long start = dataStart + offset;
-                  long end = Math.min(dataStart + Math.max(offset, next), (long)data.length);
-                  if (start > data.length) {
-                     return null;
-                  }
-
-                  samples.add(
-                     new Fsb5.Sample(
-                        name(data, base + sampleHeaders, nameTable, i, count),
-                        frequency,
-                        channels,
-                        frames,
-                        (int)start,
-                        (int)(end - start),
-                        values[2],
-                        values[3]
-                     )
-                  );
-               }
-
-               return new Fsb5(data, codec, bigEndian, List.copyOf(samples));
             }
+
+            List<Fsb5.Sample> samples = new ArrayList<>(count);
+            int position = base;
+            long[] modes = new long[count];
+            int[][] overrides = new int[count][];
+
+            for (int i = 0; i < count; i++) {
+               if (position + 8 > base + sampleHeaders) {
+                  return null;
+               }
+
+               long mode = longLE(data, position);
+               position += 8;
+               modes[i] = mode;
+               int[] values = new int[]{-1, -1, -1, -1};
+               boolean more = (mode & 1L) != 0L;
+
+               while (more) {
+                  if (position + 4 > base + sampleHeaders) {
+                     return null;
+                  }
+
+                  int chunk = intLE(data, position);
+                  more = (chunk & 1) != 0;
+                  int size = chunk >>> 1 & 16777215;
+                  int type = chunk >>> 25 & 127;
+                  int body = position + 4;
+                  if (body + size > base + sampleHeaders) {
+                     return null;
+                  }
+
+                  if (type == 1 && size >= 1) {
+                     values[0] = data[body] & 255;
+                  } else if (type == 2 && size >= 4) {
+                     values[1] = intLE(data, body);
+                  } else if (type == 3 && size >= 4) {
+                     values[2] = intLE(data, body);
+                     values[3] = size >= 8 ? intLE(data, body + 4) + 1 : -1;
+                  }
+
+                  position = body + size;
+               }
+
+               overrides[i] = values;
+            }
+
+            for (int i = 0; i < count; i++) {
+               long mode = modes[i];
+               int frames = (int)(mode >>> 34 & 1073741823L);
+               long offset = (mode >>> 7 & 134217727L) << 5;
+               long next = i + 1 < count ? (modes[i + 1] >>> 7 & 134217727L) << 5 : dataSize;
+
+               int channels = switch ((int)(mode >>> 5 & 3L)) {
+                  case 0 -> 1;
+                  case 1 -> 2;
+                  case 2 -> 6;
+                  default -> 8;
+               };
+               int index = (int)(mode >>> 1 & 15L);
+               int frequency = index < FREQUENCIES.length ? FREQUENCIES[index] : 44100;
+               int[] values = overrides[i];
+               if (values[0] > 0) {
+                  channels = values[0];
+               }
+
+               if (values[1] > 0) {
+                  frequency = values[1];
+               }
+
+               long start = dataStart + offset;
+               long end = Math.min(dataStart + Math.max(offset, next), data.length);
+               if (start > data.length) {
+                  return null;
+               }
+
+               samples.add(
+                  new Fsb5.Sample(
+                     name(data, base + sampleHeaders, nameTable, i, count), frequency, channels, frames, (int)start, (int)(end - start), values[2], values[3]
+                  )
+               );
+            }
+
+            return new Fsb5(data, codec, bigEndian, List.copyOf(samples));
          } else {
             return null;
          }
@@ -158,13 +150,11 @@ public final class Fsb5 {
       return this.codec == 16 || this.codec == 2 || this.codec == 1 || this.codec == 5;
    }
 
-   @Nullable
-   public PcmAudio decode() {
+   public @Nullable PcmAudio decode() {
       return this.decode(0);
    }
 
-   @Nullable
-   public PcmAudio decode(int index) {
+   public @Nullable PcmAudio decode(int index) {
       if (this.decodable() && index >= 0 && index < this.samples.size()) {
          Fsb5.Sample sample = this.samples.get(index);
 
@@ -179,16 +169,15 @@ public final class Fsb5 {
       }
    }
 
-   @Nullable
-   public PcmStream stream(int index) {
+   public @Nullable PcmStream stream(int index) {
       if (this.decodable() && index >= 0 && index < this.samples.size()) {
          Fsb5.Sample sample = this.samples.get(index);
          if (this.codec == 16) {
             return new Fadpcm.Stream(this.data, sample.offset(), sample.length(), sample.channels(), sample.frequency(), sample.frames());
-         } else {
-            PcmAudio whole = this.decode(index);
-            return whole == null ? null : PcmStream.of(whole);
          }
+
+         PcmAudio whole = this.decode(index);
+         return whole == null ? null : PcmStream.of(whole);
       } else {
          return null;
       }
@@ -200,7 +189,7 @@ public final class Fsb5 {
 
       for (int i = 0; i < out.length; i++) {
          int at = sample.offset() + i * 2;
-         out[i] = this.bigEndian ? (short)(this.data[at] << 8 | this.data[at + 1] & 255) : (short)(this.data[at + 1] << 8 | this.data[at] & 255);
+         out[i] = this.bigEndian ? (short)(this.data[at] << 8 | this.data[at + 1] & 0xFF) : (short)(this.data[at + 1] << 8 | this.data[at] & 0xFF);
       }
 
       return new PcmAudio(sample.frequency(), sample.channels(), out);

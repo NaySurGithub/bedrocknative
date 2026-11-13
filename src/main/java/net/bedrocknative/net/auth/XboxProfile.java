@@ -27,8 +27,7 @@ public record XboxProfile(@Nullable String gamerscore, @Nullable String pictureU
       return new XboxProfile(score, picture(settings.get("GameDisplayPicRaw")));
    }
 
-   @Nullable
-   static String picture(@Nullable String raw) {
+   static @Nullable String picture(@Nullable String raw) {
       if (raw != null && raw.length() <= 2048) {
          try {
             URI uri = URI.create(raw);
@@ -43,7 +42,7 @@ public record XboxProfile(@Nullable String gamerscore, @Nullable String pictureU
             } else {
                return null;
             }
-         } catch (IllegalArgumentException var4) {
+         } catch (IllegalArgumentException e) {
             return null;
          }
       } else {

@@ -72,16 +72,16 @@ final class DevSignsBooksTest {
 
       try {
          this.signs(base);
-      } catch (RuntimeException var4) {
-         this.fail("signs", "exception " + var4);
-         BedrockNative.LOGGER.error("Dev signs-books test: signs part failed", var4);
+      } catch (RuntimeException e) {
+         this.fail("signs", "exception " + e);
+         BedrockNative.LOGGER.error("Dev signs-books test: signs part failed", e);
       }
 
       try {
          this.books();
-      } catch (RuntimeException var3) {
-         this.fail("books", "exception " + var3);
-         BedrockNative.LOGGER.error("Dev signs-books test: books part failed", var3);
+      } catch (RuntimeException e) {
+         this.fail("books", "exception " + e);
+         BedrockNative.LOGGER.error("Dev signs-books test: books part failed", e);
       }
 
       this.run(() -> this.minecraft.gui.setScreen(null));
@@ -196,7 +196,7 @@ final class DevSignsBooksTest {
       sleep(500L);
       this.screenshot("signs-books-hanging-sign");
       this.teleport(front, signPos);
-      this.useItemOn((Item)Items.DYE.red(), signPos, Direction.NORTH, Vec3.atCenterOf(signPos).add(0.0, 0.0, -0.1));
+      this.useItemOn(Items.DYE.red(), signPos, Direction.NORTH, Vec3.atCenterOf(signPos).add(0.0, 0.0, -0.1));
       boolean red = this.await(
          () -> this.minecraft.level.getBlockEntity(signPos) instanceof SignBlockEntity sign && sign.getText(SignTextSlot.FRONT).getColor() == DyeColor.RED,
          4000L
@@ -225,9 +225,7 @@ final class DevSignsBooksTest {
 
    private String signLine(BlockPos pos, SignTextSlot slot, int line) {
       return this.onClient(
-         () -> this.minecraft.level.getBlockEntity(pos) instanceof SignBlockEntity sign
-            ? ((Component)sign.getText(slot).getMessages(false).get(line)).getString()
-            : "?"
+         () -> this.minecraft.level.getBlockEntity(pos) instanceof SignBlockEntity sign ? sign.getText(slot).getMessages(false).get(line).getString() : "?"
       );
    }
 
@@ -322,9 +320,7 @@ final class DevSignsBooksTest {
                written,
                "held " + this.onClient(() -> String.valueOf(this.minecraft.player.getMainHandItem()))
             );
-            WrittenBookContent content = this.onClient(
-               () -> (WrittenBookContent)this.minecraft.player.getMainHandItem().get(DataComponents.WRITTEN_BOOK_CONTENT)
-            );
+            WrittenBookContent content = this.onClient(() -> this.minecraft.player.getMainHandItem().get(DataComponents.WRITTEN_BOOK_CONTENT));
             this.check(
                "signed book: title, author and the two pages left after the delete",
                content != null
@@ -332,7 +328,7 @@ final class DevSignsBooksTest {
                   && List.of("page one", "page three").equals(content.getPages(false).stream().map(Component::getString).toList()),
                content == null
                   ? "no content"
-                  : (String)content.title().raw() + " by " + content.author() + " " + content.getPages(false).stream().map(Component::getString).toList()
+                  : content.title().raw() + " by " + content.author() + " " + content.getPages(false).stream().map(Component::getString).toList()
             );
             this.check(
                "signed book: author is the player's name",
@@ -366,7 +362,7 @@ final class DevSignsBooksTest {
                sleep(1500L);
                this.run(() -> this.minecraft.gameMode.dropItem(this.minecraft.player, true));
                ItemStack dropped = this.awaitDroppedBook(Items.WRITABLE_BOOK, 5000L);
-               WritableBookContent pages = dropped == null ? null : (WritableBookContent)dropped.get(DataComponents.WRITABLE_BOOK_CONTENT);
+               WritableBookContent pages = dropped == null ? null : dropped.get(DataComponents.WRITABLE_BOOK_CONTENT);
                List<String> text = pages == null ? List.of() : pages.getPages(false).toList();
                this.check("second book: the server has C, B, A (insert, swap and replace)", List.of("C", "B", "A").equals(text), "dropped pages " + text);
             }
@@ -578,7 +574,7 @@ final class DevSignsBooksTest {
    private static void sleep(long millis) {
       try {
          Thread.sleep(millis);
-      } catch (InterruptedException var3) {
+      } catch (InterruptedException e) {
          Thread.currentThread().interrupt();
       }
    }

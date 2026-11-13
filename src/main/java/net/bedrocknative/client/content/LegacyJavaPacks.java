@@ -27,7 +27,6 @@ import net.minecraft.client.renderer.texture.atlas.SpriteResourceLoader;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.PackResources;
 import net.minecraft.server.packs.PackType;
-import net.minecraft.server.packs.metadata.pack.PackFormat;
 import net.minecraft.server.packs.metadata.pack.PackMetadataSection;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
@@ -70,9 +69,9 @@ final class LegacyJavaPacks {
 
    static boolean isLegacy(PackResources pack) {
       try {
-         PackMetadataSection meta = (PackMetadataSection)pack.getMetadataSection(PackMetadataSection.CLIENT_TYPE);
-         return meta != null && LegacyTextureNames.isLegacyFormat(((PackFormat)meta.supportedFormats().maxInclusive()).major());
-      } catch (Exception var2) {
+         PackMetadataSection meta = pack.getMetadataSection(PackMetadataSection.CLIENT_TYPE);
+         return meta != null && LegacyTextureNames.isLegacyFormat(meta.supportedFormats().maxInclusive().major());
+      } catch (Exception e) {
          return false;
       }
    }
@@ -82,11 +81,10 @@ final class LegacyJavaPacks {
    }
 
    List<String> ids() {
-      return this.packs.stream().<String>map(PackResources::packId).toList();
+      return this.packs.stream().map(PackResources::packId).toList();
    }
 
-   @Nullable
-   LegacyJavaPacks.Found find(List<LegacyTextureNames.Candidate> candidates, @Nullable Resource shown) {
+   LegacyJavaPacks.@Nullable Found find(List<LegacyTextureNames.Candidate> candidates, @Nullable Resource shown) {
       int shownPlace = shown != null && JavaResourcePacks.isPlayers(shown) ? this.order.getOrDefault(shown.source(), -1) : -1;
 
       for (PackResources pack : this.packs) {
@@ -140,8 +138,8 @@ final class LegacyJavaPacks {
                      }
 
                      return;
-                  } catch (Exception var12x) {
-                     BedrockNative.LOGGER.debug("Unreadable legacy model {} in {}", new Object[]{id, pack.packId(), var12x});
+                  } catch (Exception e) {
+                     BedrockNative.LOGGER.debug("Unreadable legacy model {} in {}", new Object[]{id, pack.packId(), e});
                   }
                }
             }
@@ -164,8 +162,7 @@ final class LegacyJavaPacks {
       return sprites;
    }
 
-   @Nullable
-   private LegacyJavaPacks.Found findIn(PackResources pack, String path) {
+   private LegacyJavaPacks.@Nullable Found findIn(PackResources pack, String path) {
       Identifier file = Identifier.tryBuild("minecraft", path);
       if (file != null && pack.getResource(PackType.CLIENT_RESOURCES, file) != null) {
          Resource resource = this.resourceOf(pack, file);
@@ -177,8 +174,7 @@ final class LegacyJavaPacks {
       }
    }
 
-   @Nullable
-   private Resource resourceOf(PackResources pack, Identifier file) {
+   private @Nullable Resource resourceOf(PackResources pack, Identifier file) {
       for (Resource resource : this.manager.getResourceStack(file)) {
          if (resource.source() == pack) {
             return resource;
@@ -189,24 +185,23 @@ final class LegacyJavaPacks {
    }
 
    record Found(Resource resource, LegacyTextureNames.Candidate candidate, String packId, LegacyJavaPacks.Strips strips) {
-      @Nullable
-      SpriteContents load(SpriteResourceLoader loader, Identifier id) {
+      @Nullable SpriteContents load(SpriteResourceLoader loader, Identifier id) {
          if (!this.candidate.strip()) {
             return loader.loadSprite(id, this.resource);
-         } else {
-            try {
-               ArgbImage strip = this.strips.decoded(this.packId + "/" + this.candidate.file(), this.resource);
-               int frames = Math.max(1, strip.height() / strip.width());
-               int frame = Math.min(frames - 1, this.candidate.frame() * frames / this.candidate.frames());
-               return BedrockSpriteSource.still(id, strip.crop(0, frame * strip.width(), strip.width(), strip.width()));
-            } catch (Exception var6) {
-               BedrockNative.LOGGER
-                  .warn(
-                     "Couldn't read frame {} of the legacy pack strip {} for {}",
-                     new Object[]{this.candidate.frame(), this.resource.sourcePackId() + "/" + this.candidate.file(), id, var6}
-                  );
-               return null;
-            }
+         }
+
+         try {
+            ArgbImage strip = this.strips.decoded(this.packId + "/" + this.candidate.file(), this.resource);
+            int frames = Math.max(1, strip.height() / strip.width());
+            int frame = Math.min(frames - 1, this.candidate.frame() * frames / this.candidate.frames());
+            return BedrockSpriteSource.still(id, strip.crop(0, frame * strip.width(), strip.width(), strip.width()));
+         } catch (Exception e) {
+            BedrockNative.LOGGER
+               .warn(
+                  "Couldn't read frame {} of the legacy pack strip {} for {}",
+                  new Object[]{this.candidate.frame(), this.resource.sourcePackId() + "/" + this.candidate.file(), id, e}
+               );
+            return null;
          }
       }
    }
@@ -221,23 +216,18 @@ final class LegacyJavaPacks {
          if (first != null) {
             try {
                return first.join();
-            } catch (CompletionException var11) {
-               throw var11.getCause() instanceof IOException io ? io : new IOException(var11.getCause());
+            } catch (CompletionException e) {
+               throw e.getCause() instanceof IOException io ? io : new IOException(e.getCause());
             }
          } else {
-            try {
-               ArgbImage var7;
-               try (InputStream input = resource.open()) {
-                  this.decodes.incrementAndGet();
-                  ArgbImage image = BedrockImages.decode(BedrockImages.readChecked(input, 67108864));
-                  mine.complete(image);
-                  var7 = image;
-               }
-
-               return var7;
-            } catch (RuntimeException | IOException var10) {
-               mine.completeExceptionally(var10);
-               throw var10;
+            try (InputStream input = resource.open()) {
+               this.decodes.incrementAndGet();
+               ArgbImage image = BedrockImages.decode(BedrockImages.readChecked(input, 67108864));
+               mine.complete(image);
+               return image;
+            } catch (IOException | RuntimeException e) {
+               mine.completeExceptionally(e);
+               throw e;
             }
          }
       }

@@ -9,8 +9,7 @@ import org.jspecify.annotations.Nullable;
 public final class ThreadedLight {
    public static final boolean ENABLED = !"off".equalsIgnoreCase(System.getProperty("bedrocknative.lightThread", "on"));
    private static volatile boolean armed;
-   @Nullable
-   private static volatile ThreadedLightEngine current;
+   private static volatile @Nullable ThreadedLightEngine current;
 
    private ThreadedLight() {
    }
@@ -22,14 +21,14 @@ public final class ThreadedLight {
    public static synchronized LevelLightEngine create(LightChunkGetter source, boolean hasBlockLight, boolean hasSkyLight) {
       if (!armed) {
          return new LevelLightEngine(source, hasBlockLight, hasSkyLight);
-      } else {
-         armed = false;
-         closeCurrent();
-         ThreadedLightEngine engine = new ThreadedLightEngine(source, hasBlockLight, hasSkyLight);
-         current = engine;
-         BedrockNative.LOGGER.info("Light: the level's light engine runs on its own thread (-PlightThread=off keeps it on the client thread)");
-         return engine;
       }
+
+      armed = false;
+      closeCurrent();
+      ThreadedLightEngine engine = new ThreadedLightEngine(source, hasBlockLight, hasSkyLight);
+      current = engine;
+      BedrockNative.LOGGER.info("Light: the level's light engine runs on its own thread (-PlightThread=off keeps it on the client thread)");
+      return engine;
    }
 
    public static synchronized void closeCurrent() {
@@ -45,13 +44,11 @@ public final class ThreadedLight {
       }
    }
 
-   @Nullable
-   public static ThreadedLightEngine of(@Nullable ClientLevel level) {
+   public static @Nullable ThreadedLightEngine of(@Nullable ClientLevel level) {
       return level != null && level.getChunkSource().getLightEngine() instanceof ThreadedLightEngine engine ? engine : null;
    }
 
-   @Nullable
-   public static ThreadedLightEngine current() {
+   public static @Nullable ThreadedLightEngine current() {
       return current;
    }
 }

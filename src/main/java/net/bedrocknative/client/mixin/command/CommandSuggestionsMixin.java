@@ -34,7 +34,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin({CommandSuggestions.class})
+@Mixin(CommandSuggestions.class)
 public abstract class CommandSuggestionsMixin implements SuggestionsView {
    @Unique
    private static final int LIST_BOTTOM_FROM_SCREEN_BOTTOM = 15;
@@ -47,10 +47,9 @@ public abstract class CommandSuggestionsMixin implements SuggestionsView {
    @Final
    private EditBox input;
    @Shadow
-   @Nullable
-   private CompletableFuture<Suggestions> pendingSuggestions;
+   private @Nullable CompletableFuture<Suggestions> pendingSuggestions;
    @Shadow
-   private SuggestionsList suggestions;
+   private SuggestionsList/* @Nullable */ suggestions;
    @Shadow
    private boolean allowSuggestions;
    @Shadow
@@ -78,10 +77,7 @@ public abstract class CommandSuggestionsMixin implements SuggestionsView {
    @Shadow
    public abstract void showSuggestions(boolean var1);
 
-   @Inject(
-      method = {"<init>"},
-      at = {@At("RETURN")}
-   )
+   @Inject(method = "<init>", at = @At("RETURN"))
    private void bedrocknative$keepJavaLimit(CallbackInfo ci) {
       this.bedrocknative$javaLimit = this.suggestionLineLimit;
    }
@@ -137,19 +133,12 @@ public abstract class CommandSuggestionsMixin implements SuggestionsView {
       }
    }
 
-   @Inject(
-      method = {"showSuggestions"},
-      at = {@At("HEAD")}
-   )
+   @Inject(method = "showSuggestions", at = @At("HEAD"))
    private void bedrocknative$rowsBeforeList(boolean immediateNarration, CallbackInfo ci) {
       this.bedrocknative$applyRows();
    }
 
-   @Inject(
-      method = {"keyPressed"},
-      at = {@At("HEAD")},
-      cancellable = true
-   )
+   @Inject(method = "keyPressed", at = @At("HEAD"), cancellable = true)
    private void bedrocknative$pageKeys(KeyEvent event, CallbackInfoReturnable<Boolean> cir) {
       if (this.suggestions != null && this.bedrocknative$scrolling() && (event.key() == 75 || event.key() == 78)) {
          this.bedrocknative$applyRows();
@@ -163,11 +152,7 @@ public abstract class CommandSuggestionsMixin implements SuggestionsView {
       }
    }
 
-   @Inject(
-      method = {"mouseScrolled"},
-      at = {@At("HEAD")},
-      cancellable = true
-   )
+   @Inject(method = "mouseScrolled", at = @At("HEAD"), cancellable = true)
    private void bedrocknative$wheel(double scroll, CallbackInfoReturnable<Boolean> cir) {
       if (this.suggestions != null && this.bedrocknative$scrolling()) {
          int x = (int)this.minecraft.mouseHandler.getScaledXPos(this.minecraft.getWindow());
@@ -186,17 +171,16 @@ public abstract class CommandSuggestionsMixin implements SuggestionsView {
          : ((SuggestionsListAccessor)this.suggestions).bedrocknative$suggestionList().stream().<String>map(Suggestion::getText).toList();
    }
 
-   @Nullable
    @Override
-   public SuggestionWindow bedrocknative$window() {
+   public @Nullable SuggestionWindow bedrocknative$window() {
       if (this.suggestions == null) {
          return null;
-      } else {
-         SuggestionsListAccessor list = (SuggestionsListAccessor)this.suggestions;
-         return new SuggestionWindow(
-            list.bedrocknative$suggestionList().size(), this.suggestionLineLimit, list.bedrocknative$offset(), list.bedrocknative$current()
-         );
       }
+
+      SuggestionsListAccessor list = (SuggestionsListAccessor)this.suggestions;
+      return new SuggestionWindow(
+         list.bedrocknative$suggestionList().size(), this.suggestionLineLimit, list.bedrocknative$offset(), list.bedrocknative$current()
+      );
    }
 
    @Override
@@ -230,12 +214,12 @@ public abstract class CommandSuggestionsMixin implements SuggestionsView {
    public List<String> bedrocknative$shown() {
       if (this.suggestions == null) {
          return List.of();
-      } else {
-         SuggestionsListAccessor list = (SuggestionsListAccessor)this.suggestions;
-         List<Suggestion> all = list.bedrocknative$suggestionList();
-         int from = Math.max(0, Math.min(list.bedrocknative$offset(), all.size()));
-         return all.subList(from, Math.min(all.size(), from + this.suggestionLineLimit)).stream().<String>map(Suggestion::getText).toList();
       }
+
+      SuggestionsListAccessor list = (SuggestionsListAccessor)this.suggestions;
+      List<Suggestion> all = list.bedrocknative$suggestionList();
+      int from = Math.max(0, Math.min(list.bedrocknative$offset(), all.size()));
+      return all.subList(from, Math.min(all.size(), from + this.suggestionLineLimit)).stream().<String>map(Suggestion::getText).toList();
    }
 
    @Override
@@ -259,11 +243,7 @@ public abstract class CommandSuggestionsMixin implements SuggestionsView {
       }).toList();
    }
 
-   @Inject(
-      method = {"fillNodeUsage"},
-      at = {@At("HEAD")},
-      cancellable = true
-   )
+   @Inject(method = "fillNodeUsage", at = @At("HEAD"), cancellable = true)
    private void bedrocknative$bedrockUsage(
       SuggestionContext<ClientSuggestionProvider> context, Style format, CallbackInfoReturnable<List<FormattedCharSequence>> cir
    ) {
@@ -275,10 +255,7 @@ public abstract class CommandSuggestionsMixin implements SuggestionsView {
       }
    }
 
-   @Inject(
-      method = {"updateUsageInfo"},
-      at = {@At("TAIL")}
-   )
+   @Inject(method = "updateUsageInfo", at = @At("TAIL"))
    private void bedrocknative$usageAtLeft(CallbackInfo ci) {
       if (BedrockCommands.active() != null) {
          this.commandUsagePosition = 0;
@@ -286,11 +263,11 @@ public abstract class CommandSuggestionsMixin implements SuggestionsView {
    }
 
    @WrapOperation(
-      method = {"updateCommandInfo"},
-      at = {@At(
+      method = "updateCommandInfo",
+      at = @At(
          value = "INVOKE",
          target = "Lnet/minecraft/commands/SharedSuggestionProvider;suggest(Ljava/lang/Iterable;Lcom/mojang/brigadier/suggestion/SuggestionsBuilder;)Ljava/util/concurrent/CompletableFuture;"
-      )}
+      )
    )
    private CompletableFuture<Suggestions> bedrocknative$mentions(
       Iterable<String> names, SuggestionsBuilder builder, Operation<CompletableFuture<Suggestions>> original
@@ -300,10 +277,7 @@ public abstract class CommandSuggestionsMixin implements SuggestionsView {
          : (CompletableFuture)original.call(new Object[]{names, builder});
    }
 
-   @Inject(
-      method = {"updateCommandInfo"},
-      at = {@At("TAIL")}
-   )
+   @Inject(method = "updateCommandInfo", at = @At("TAIL"))
    private void bedrocknative$showMentions(CallbackInfo ci) {
       if (BedrockCommands.active() != null
          && !this.currentParseIsCommand
@@ -312,7 +286,7 @@ public abstract class CommandSuggestionsMixin implements SuggestionsView {
          && this.pendingSuggestions != null
          && this.pendingSuggestions.isDone()
          && !this.pendingSuggestions.join().isEmpty()
-         && (Boolean)this.minecraft.options.autoSuggestions().get()) {
+         && this.minecraft.options.autoSuggestions().get()) {
          this.showSuggestions(false);
       }
    }

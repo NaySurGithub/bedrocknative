@@ -39,16 +39,11 @@ public final class OreUi {
       "bedrocknative.partner.consent.accept",
       "bedrocknative.partner.consent.refuse"
    );
-   @Nullable
-   private static volatile CompletableFuture<OreInstall> install;
-   @Nullable
-   private static OreFonts fonts;
-   @Nullable
-   private static OreLang lang;
-   @Nullable
-   private static String langCode;
-   @Nullable
-   private static OreTheme theme;
+   private static volatile @Nullable CompletableFuture<@Nullable OreInstall> install;
+   private static @Nullable OreFonts fonts;
+   private static @Nullable OreLang lang;
+   private static @Nullable String langCode;
+   private static @Nullable OreTheme theme;
    private static boolean logged;
    private static volatile boolean failed;
    private static final Map<Integer, OreText> TEXTS = new HashMap<>();
@@ -106,11 +101,10 @@ public final class OreUi {
       return current.isDone() && !current.isCompletedExceptionally() ? current.join() : null;
    }
 
-   @Nullable
-   public static OreInstall awaitInstall() {
+   public static @Nullable OreInstall awaitInstall() {
       try {
          return installFuture().join();
-      } catch (RuntimeException var1) {
+      } catch (RuntimeException e) {
          return null;
       }
    }
@@ -125,20 +119,20 @@ public final class OreUi {
    public static boolean available() {
       if (failed) {
          return false;
-      } else {
-         OreInstall read = awaitInstall();
-         if (read == null) {
-            return false;
-         } else {
-            boolean ok = fonts(read).complete() && REQUIRED_SPRITES.stream().allMatch(read::has);
-            if (!ok && !logged) {
-               logged = true;
-               BedrockNative.LOGGER.warn("Ore UI: the install lacks fonts or pictures the Play screen needs; Java's screens stay");
-            }
-
-            return ok;
-         }
       }
+
+      OreInstall read = awaitInstall();
+      if (read == null) {
+         return false;
+      }
+
+      boolean ok = fonts(read).complete() && REQUIRED_SPRITES.stream().allMatch(read::has);
+      if (!ok && !logged) {
+         logged = true;
+         BedrockNative.LOGGER.warn("Ore UI: the install lacks fonts or pictures the Play screen needs; Java's screens stay");
+      }
+
+      return ok;
    }
 
    private static void prewarm(OreInstall read) {
@@ -150,8 +144,8 @@ public final class OreUi {
          long millis = (System.nanoTime() - started) / 1000000L;
          StartupClock.background("Ore UI fonts", millis);
          BedrockNative.LOGGER.info("Ore UI: the Play screen's fonts{} and the theme ready in {} ms", complete ? "" : " (incomplete)", millis);
-      } catch (LinkageError | RuntimeException var6) {
-         BedrockNative.LOGGER.info("Ore UI: fonts left to the Play screen ({})", var6.toString());
+      } catch (RuntimeException | LinkageError e) {
+         BedrockNative.LOGGER.info("Ore UI: fonts left to the Play screen ({})", e.toString());
       }
    }
 
@@ -207,13 +201,12 @@ public final class OreUi {
       return TEXTS.computeIfAbsent(scale, key -> new OreText(fonts(read), new OreScale(key)));
    }
 
-   @Nullable
-   public static OreSession session() {
+   public static @Nullable OreSession session() {
       if (!available()) {
          return null;
-      } else {
-         OreInstall read = install();
-         return read == null ? null : new OreSession(read);
       }
+
+      OreInstall read = install();
+      return read == null ? null : new OreSession(read);
    }
 }

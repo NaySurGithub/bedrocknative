@@ -6,7 +6,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
@@ -48,8 +47,8 @@ public final class DevJsonUiHudOffline {
       Thread.ofVirtual().start(() -> {
          try {
             new DevJsonUiHudOffline(Minecraft.getInstance()).run();
-         } catch (RuntimeException var4) {
-            BedrockNative.LOGGER.error("{}: FAILED with {}", new Object[]{"Dev jsonui-hud-offline", var4.toString(), var4});
+         } catch (RuntimeException e) {
+            BedrockNative.LOGGER.error("{}: FAILED with {}", new Object[]{"Dev jsonui-hud-offline", e.toString(), e});
          } finally {
             Minecraft.getInstance().execute(() -> Minecraft.getInstance().stop());
          }
@@ -283,8 +282,8 @@ public final class DevJsonUiHudOffline {
       return CompletableFuture.<T>supplyAsync(() -> {
          try {
             return task.call();
-         } catch (Exception var2) {
-            throw new IllegalStateException(var2);
+         } catch (Exception e) {
+            throw new IllegalStateException(e);
          }
       }, this.minecraft::execute).join();
    }
@@ -300,27 +299,24 @@ public final class DevJsonUiHudOffline {
    private static void sleep(long millis) {
       try {
          Thread.sleep(millis);
-      } catch (InterruptedException var3) {
+      } catch (InterruptedException e) {
          Thread.currentThread().interrupt();
       }
    }
 
    private final class HudScreen extends Screen {
-      final HudData data;
+      final HudData data = new HudData();
       final UiDefinitionSet definitions;
-      @Nullable
-      UiScreenInstance hud;
-      List<UiDrawCommand> drawn;
+      @Nullable UiScreenInstance hud;
+      List<UiDrawCommand> drawn = List.of();
       private long start;
 
       HudScreen(UiDefinitionSet definitions) {
-         Objects.requireNonNull(DevJsonUiHudOffline.this);
          super(Component.literal("JSON UI HUD"));
-         this.data = new HudData();
-         this.drawn = List.of();
          this.definitions = definitions;
       }
 
+      @Override
       public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
          graphics.fill(0, 0, graphics.guiWidth(), graphics.guiHeight(), -12957094);
          UiEnvironment environment = JsonUi.environment(this.definitions);
@@ -361,6 +357,7 @@ public final class DevJsonUiHudOffline {
          }
       }
 
+      @Override
       public boolean isPauseScreen() {
          return false;
       }

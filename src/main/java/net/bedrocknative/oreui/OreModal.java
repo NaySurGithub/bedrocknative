@@ -138,7 +138,7 @@ public final class OreModal {
       if (id != null && id.startsWith("modal:") && !id.equals("modal:close")) {
          try {
             return Integer.parseInt(id.substring("modal:".length()));
-         } catch (NumberFormatException var2) {
+         } catch (NumberFormatException e) {
             return -1;
          }
       } else {

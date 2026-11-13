@@ -34,8 +34,7 @@ public final class PartnerCache {
    private PartnerCache() {
    }
 
-   @Nullable
-   public static PartnerCache.Cached load(Path configFolder, String url, Instant now) {
+   public static PartnerCache.@Nullable Cached load(Path configFolder, String url, Instant now) {
       Path file = configFolder.resolve("partner-servers-cache.json");
 
       try {
@@ -66,7 +65,7 @@ public final class PartnerCache {
          } else {
             return null;
          }
-      } catch (JsonParseException | IllegalStateException | DateTimeParseException | UnsupportedOperationException | IOException var16) {
+      } catch (IOException | JsonParseException | IllegalStateException | DateTimeParseException | UnsupportedOperationException e) {
          return null;
       }
    }
@@ -99,28 +98,27 @@ public final class PartnerCache {
       return name;
    }
 
-   @Nullable
-   public static Path picture(Path configFolder, String name, PartnerImage.Kind kind) {
+   public static @Nullable Path picture(Path configFolder, String name, PartnerImage.Kind kind) {
       if (!PICTURE_NAME.matcher(name).matches()) {
          return null;
-      } else {
-         Path file = configFolder.resolve("partner-servers-pictures").resolve(name);
+      }
 
-         try {
-            if (Files.isRegularFile(file) && Files.size(file) <= kind.maxUrlBytes) {
-               byte[] bytes = Files.readAllBytes(file);
-               if (!name.equals(sha256(bytes) + ".png")) {
-                  return null;
-               } else {
-                  PartnerImage.check(bytes, kind, kind.maxUrlBytes);
-                  return file;
-               }
-            } else {
+      Path file = configFolder.resolve("partner-servers-pictures").resolve(name);
+
+      try {
+         if (Files.isRegularFile(file) && Files.size(file) <= kind.maxUrlBytes) {
+            byte[] bytes = Files.readAllBytes(file);
+            if (!name.equals(sha256(bytes) + ".png")) {
                return null;
             }
-         } catch (IOException var5) {
+
+            PartnerImage.check(bytes, kind, kind.maxUrlBytes);
+            return file;
+         } else {
             return null;
          }
+      } catch (IOException e) {
+         return null;
       }
    }
 
@@ -151,17 +149,14 @@ public final class PartnerCache {
    static String sha256(byte[] bytes) {
       try {
          return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes));
-      } catch (NoSuchAlgorithmException var2) {
-         throw new IllegalStateException(var2);
+      } catch (NoSuchAlgorithmException e) {
+         throw new IllegalStateException(e);
       }
    }
 
    public record Cached(String body, Instant fetched, Map<String, String> pictures) {
-      public Cached(String body, Instant fetched, Map<String, String> pictures) {
+      public Cached {
          pictures = Map.copyOf(pictures);
-         this.body = body;
-         this.fetched = fetched;
-         this.pictures = pictures;
       }
    }
 }

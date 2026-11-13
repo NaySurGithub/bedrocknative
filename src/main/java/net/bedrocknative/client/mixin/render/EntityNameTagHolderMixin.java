@@ -6,15 +6,13 @@ import org.jspecify.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 
-@Mixin({Entity.class})
+@Mixin(Entity.class)
 public abstract class EntityNameTagHolderMixin implements BedrockNameTag.Holder {
    @Unique
-   @Nullable
-   private BedrockNameTag bedrocknative$nameTag;
+   private @Nullable BedrockNameTag bedrocknative$nameTag;
 
-   @Nullable
    @Override
-   public BedrockNameTag bedrocknative$nameTag() {
+   public @Nullable BedrockNameTag bedrocknative$nameTag() {
       return this.bedrocknative$nameTag;
    }
 

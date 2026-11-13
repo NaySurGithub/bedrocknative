@@ -111,7 +111,7 @@ final class DevTextTest {
       this.check(stand != null, "the armor stand arrived with its multi-line name");
       if (floating != null) {
          BedrockNameTag tag = BedrockNameTag.of(floating);
-         List<String> lines = this.onClient(() -> tag.lines().stream().<String>map(Component::getString).toList());
+         List<String> lines = this.onClient(() -> tag.lines().stream().map(Component::getString).toList());
          this.check(
             lines.equals(List.of("\ue504 BedrockNative \ue500", "Redstone Copper Quartz", "\ue501 Diamond \ue502 Lapis \ue503", "last line")),
             "floating text split into 4 lines: " + lines
@@ -131,7 +131,7 @@ final class DevTextTest {
 
       if (stand != null) {
          BedrockNameTag tag = BedrockNameTag.of(stand);
-         List<String> lines = this.onClient(() -> tag.lines().stream().<String>map(Component::getString).toList());
+         List<String> lines = this.onClient(() -> tag.lines().stream().map(Component::getString).toList());
          this.check(lines.equals(List.of("Stand top", "Amethyst Resin", "Netherite Iron Gold")), "armor stand split into 3 lines: " + lines);
          this.check(!this.onClient(() -> tag.textOnly(stand)), "armor stand keeps its model");
          this.colour(tag, 1, "Amethyst", 10116294, false);
@@ -293,8 +293,7 @@ final class DevTextTest {
       );
    }
 
-   @Nullable
-   private Entity tagged(String name) {
+   private @Nullable Entity tagged(String name) {
       for (Entity entity : this.minecraft.level.entitiesForRendering()) {
          BedrockNameTag tag = BedrockNameTag.of(entity);
          if (tag != null && tag.name().equals(name)) {
@@ -352,7 +351,7 @@ final class DevTextTest {
    private static void sleep(long millis) {
       try {
          Thread.sleep(millis);
-      } catch (InterruptedException var3) {
+      } catch (InterruptedException e) {
          Thread.currentThread().interrupt();
       }
    }

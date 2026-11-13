@@ -52,8 +52,7 @@ public final class HudRenderers {
 
    public static List<UiDrawCommand> expand(UiDrawCommand.Custom command, HudValues values, UiTextures textures) {
       HudRenderers.Out out = new HudRenderers.Out(command, textures);
-      String var4 = command.renderer();
-      switch (var4) {
+      switch (command.renderer()) {
          case "hotbar_renderer":
             hotbarSlot(out, values);
             break;
@@ -209,7 +208,7 @@ public final class HudRenderers {
       if (values.mode().survivalUi() && values.airShown() && !values.hides(HudValues.Part.AIR)) {
          Random random = new Random(values.tick() * 312871L);
          int max = Math.max(1, values.maxAir());
-         int air = Math.clamp((long)values.air(), 0, max);
+         int air = Math.clamp(values.air(), 0, max);
          boolean underwater = values.underwater();
          int full = bubble(air, max, -2);
          int popping = bubble(air, max, 0);
@@ -238,7 +237,7 @@ public final class HudRenderers {
 
    public static int burstingBubble(HudValues values) {
       int max = Math.max(1, values.maxAir());
-      int air = Math.clamp((long)values.air(), 0, max);
+      int air = Math.clamp(values.air(), 0, max);
       int full = bubble(air, max, -2);
       int popping = bubble(air, max, 0);
       return values.underwater() && values.airShown() && full != popping ? popping : 0;
@@ -246,7 +245,7 @@ public final class HudRenderers {
 
    public static int emptyBubbles(HudValues values) {
       int max = Math.max(1, values.maxAir());
-      int air = Math.clamp((long)values.air(), 0, max);
+      int air = Math.clamp(values.air(), 0, max);
       return 10 - bubble(air, max, values.underwater() && air != 0 ? 1 : 0);
    }
 
@@ -324,13 +323,13 @@ public final class HudRenderers {
    static float iconAlpha(HudValues.Effect effect) {
       if (!effect.endingSoon()) {
          return 1.0F;
-      } else {
-         int duration = effect.duration();
-         int used = 10 - duration / 20;
-         float alpha = Math.clamp(duration / 10.0F / 5.0F * 0.5F, 0.0F, 0.5F)
-            + (float)Math.cos(duration * Math.PI / 5.0) * Math.clamp(used / 10.0F * 0.25F, 0.0F, 0.25F);
-         return Math.clamp(alpha, 0.0F, 1.0F);
       }
+
+      int duration = effect.duration();
+      int used = 10 - duration / 20;
+      float alpha = Math.clamp(duration / 10.0F / 5.0F * 0.5F, 0.0F, 0.5F)
+         + (float)Math.cos(duration * Math.PI / 5.0) * Math.clamp(used / 10.0F * 0.25F, 0.0F, 0.25F);
+      return Math.clamp(alpha, 0.0F, 1.0F);
    }
 
    public static String effectTexture(String id) {

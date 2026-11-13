@@ -161,10 +161,10 @@ public final class OreComponents {
          return new OreBorderImage(
             "tabBar_neutral_pressed", 2, 2, 2, 2, true, new float[]{0.4F, 0.4F, 0.4F, 0.4F}, new float[4], new float[]{0.4F, 0.4F, 0.4F, 0.4F}
          );
-      } else {
-         String sprite = state.hovered() ? "tabBar_neutral_hovered" : "tabBar_neutral_default";
-         return new OreBorderImage(sprite, 2, 2, 4, 2, true, new float[]{0.4F, 0.4F, 0.8F, 0.4F}, new float[4], new float[]{0.4F, 0.4F, 0.8F, 0.4F});
       }
+
+      String sprite = state.hovered() ? "tabBar_neutral_hovered" : "tabBar_neutral_default";
+      return new OreBorderImage(sprite, 2, 2, 4, 2, true, new float[]{0.4F, 0.4F, 0.8F, 0.4F}, new float[4], new float[]{0.4F, 0.4F, 0.8F, 0.4F});
    }
 
    public static void listItem(OreDraw d, OrePlayLayout.ListItem item, boolean selected, OreComponents.State state) {

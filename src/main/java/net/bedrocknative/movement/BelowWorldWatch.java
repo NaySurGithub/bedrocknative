@@ -18,8 +18,7 @@ public final class BelowWorldWatch {
       this.reported = false;
    }
 
-   @Nullable
-   public String tick(int minY, BelowWorldWatch.Sample sample) {
+   public @Nullable String tick(int minY, BelowWorldWatch.Sample sample) {
       boolean below = sample.y() < minY;
       if (!below) {
          if (this.belowSince >= 0L) {
@@ -41,27 +40,27 @@ public final class BelowWorldWatch {
       } else if (this.belowSince < 0L) {
          if (this.falls >= 3) {
             return null;
-         } else {
-            this.falls++;
-            this.belowSince = sample.tick();
-            this.correctionsAtStart = sample.corrections();
-            this.teleportsAtStart = sample.teleports();
-            this.reported = false;
-            return String.format(
-               Locale.ROOT,
-               "Below the world bottom (y %d) at (%.2f, %.2f, %.2f), falling %.3f a tick, %s, health %.1f; so far %d corrections from the server%s and %d teleports; on Bedrock the server handles the void",
-               minY,
-               sample.x(),
-               sample.y(),
-               sample.z(),
-               sample.dy(),
-               sample.gameMode(),
-               sample.health(),
-               sample.corrections(),
-               lastCorrected(sample),
-               sample.teleports()
-            );
          }
+
+         this.falls++;
+         this.belowSince = sample.tick();
+         this.correctionsAtStart = sample.corrections();
+         this.teleportsAtStart = sample.teleports();
+         this.reported = false;
+         return String.format(
+            Locale.ROOT,
+            "Below the world bottom (y %d) at (%.2f, %.2f, %.2f), falling %.3f a tick, %s, health %.1f; so far %d corrections from the server%s and %d teleports; on Bedrock the server handles the void",
+            minY,
+            sample.x(),
+            sample.y(),
+            sample.z(),
+            sample.dy(),
+            sample.gameMode(),
+            sample.health(),
+            sample.corrections(),
+            lastCorrected(sample),
+            sample.teleports()
+         );
       } else if (!this.reported && sample.tick() - this.belowSince >= 100L) {
          this.reported = true;
          return String.format(

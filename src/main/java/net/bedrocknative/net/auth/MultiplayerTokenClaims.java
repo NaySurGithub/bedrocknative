@@ -17,24 +17,22 @@ public record MultiplayerTokenClaims(@Nullable Integer ap, @Nullable String ipt,
       String[] parts = token == null ? new String[0] : token.split("\\.");
       if (parts.length != 3) {
          return new JsonObject();
-      } else {
-         try {
-            JsonElement payload = JsonParser.parseString(new String(Base64.getUrlDecoder().decode(parts[1]), StandardCharsets.UTF_8));
-            return payload.isJsonObject() ? payload.getAsJsonObject() : new JsonObject();
-         } catch (RuntimeException var3) {
-            return new JsonObject();
-         }
+      }
+
+      try {
+         JsonElement payload = JsonParser.parseString(new String(Base64.getUrlDecoder().decode(parts[1]), StandardCharsets.UTF_8));
+         return payload.isJsonObject() ? payload.getAsJsonObject() : new JsonObject();
+      } catch (RuntimeException e) {
+         return new JsonObject();
       }
    }
 
-   @Nullable
-   private static Integer integer(JsonObject claims, String key) {
+   private static @Nullable Integer integer(JsonObject claims, String key) {
       JsonElement value = claims.get(key);
       return value != null && value.isJsonPrimitive() && value.getAsJsonPrimitive().isNumber() ? value.getAsInt() : null;
    }
 
-   @Nullable
-   private static String string(JsonObject claims, String key) {
+   private static @Nullable String string(JsonObject claims, String key) {
       JsonElement value = claims.get(key);
       return value != null && value.isJsonPrimitive() ? value.getAsString() : null;
    }

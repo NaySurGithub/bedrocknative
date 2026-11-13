@@ -20,16 +20,16 @@ public final class LegacyText {
       component.visit((style, text) -> {
          if (text.isEmpty()) {
             return Optional.empty();
-         } else {
-            String codes = codes(style);
-            if (!codes.isEmpty() || styled[0]) {
-               out.append('§').append('r').append(codes);
-               styled[0] = !codes.isEmpty();
-            }
-
-            out.append(text);
-            return Optional.empty();
          }
+
+         String codes = codes(style);
+         if (!codes.isEmpty() || styled[0]) {
+            out.append('§').append('r').append(codes);
+            styled[0] = !codes.isEmpty();
+         }
+
+         out.append(text);
+         return Optional.empty();
       }, Style.EMPTY);
       return out.toString();
    }
@@ -56,28 +56,27 @@ public final class LegacyText {
       return codes.toString();
    }
 
-   @Nullable
-   static ChatFormatting color(@Nullable TextColor color) {
+   static @Nullable ChatFormatting color(@Nullable TextColor color) {
       if (color == null) {
          return null;
-      } else {
-         int rgb = color.getValue();
-         ChatFormatting best = null;
-         int bestDistance = Integer.MAX_VALUE;
-
-         for (ChatFormatting candidate : COLORS) {
-            int value = TextColor.fromLegacyFormat(candidate).getValue();
-            int dr = (value >> 16 & 0xFF) - (rgb >> 16 & 0xFF);
-            int dg = (value >> 8 & 0xFF) - (rgb >> 8 & 0xFF);
-            int db = (value & 0xFF) - (rgb & 0xFF);
-            int distance = dr * dr + dg * dg + db * db;
-            if (distance < bestDistance) {
-               bestDistance = distance;
-               best = candidate;
-            }
-         }
-
-         return best;
       }
+
+      int rgb = color.getValue();
+      ChatFormatting best = null;
+      int bestDistance = Integer.MAX_VALUE;
+
+      for (ChatFormatting candidate : COLORS) {
+         int value = TextColor.fromLegacyFormat(candidate).getValue();
+         int dr = (value >> 16 & 0xFF) - (rgb >> 16 & 0xFF);
+         int dg = (value >> 8 & 0xFF) - (rgb >> 8 & 0xFF);
+         int db = (value & 0xFF) - (rgb & 0xFF);
+         int distance = dr * dr + dg * dg + db * db;
+         if (distance < bestDistance) {
+            bestDistance = distance;
+            best = candidate;
+         }
+      }
+
+      return best;
    }
 }

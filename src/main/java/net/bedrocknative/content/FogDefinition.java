@@ -20,14 +20,13 @@ public record FogDefinition(String identifier, Map<FogDefinition.Medium, FogDefi
       for (int shift = 16; shift >= 0; shift -= 8) {
          int a = from >> shift & 0xFF;
          int b = to >> shift & 0xFF;
-         rgb |= Math.clamp((long)Math.round(lerp(a, b, progress)), 0, 255) << shift;
+         rgb |= Math.clamp(Math.round(lerp(a, b, progress)), 0, 255) << shift;
       }
 
       return rgb;
    }
 
-   @Nullable
-   public static FogDefinition parse(String json) {
+   public static @Nullable FogDefinition parse(String json) {
       try {
          JsonElement root = JsonParser.parseString(json);
          if (root.isJsonObject() && root.getAsJsonObject().has("minecraft:fog_settings")) {
@@ -56,13 +55,12 @@ public record FogDefinition(String identifier, Map<FogDefinition.Medium, FogDefi
          } else {
             return null;
          }
-      } catch (RuntimeException var12) {
+      } catch (RuntimeException e) {
          return null;
       }
    }
 
-   @Nullable
-   private static FogDefinition.Distance distance(JsonObject object) {
+   private static FogDefinition.@Nullable Distance distance(JsonObject object) {
       if (object.has("fog_start") && object.has("fog_end") && object.has("fog_color")) {
          try {
             float start = object.get("fog_start").getAsFloat();
@@ -74,7 +72,7 @@ public record FogDefinition(String identifier, Map<FogDefinition.Medium, FogDefi
             } else {
                return null;
             }
-         } catch (RuntimeException var5) {
+         } catch (RuntimeException e) {
             return null;
          }
       } else {
@@ -82,24 +80,23 @@ public record FogDefinition(String identifier, Map<FogDefinition.Medium, FogDefi
       }
    }
 
-   @Nullable
-   private static FogDefinition.Transition transition(@Nullable JsonElement element) {
+   private static FogDefinition.@Nullable Transition transition(@Nullable JsonElement element) {
       if (element instanceof JsonObject object && object.get("init_fog") instanceof JsonObject initJson) {
          try {
             FogDefinition.Distance init = distance(initJson);
             if (init == null) {
                return null;
-            } else {
-               init = new FogDefinition.Distance(init.start(), init.end(), init.rgb(), init.relativeToRenderDistance());
-               float minPercent = number(object, "min_percent", 0.0F);
-               float midSeconds = number(object, "mid_seconds", 0.0F);
-               float midPercent = number(object, "mid_percent", minPercent);
-               float maxSeconds = number(object, "max_seconds", 0.0F);
-               return maxSeconds > 0.0F && !(midSeconds < 0.0F) && !(midSeconds > maxSeconds) && Float.isFinite(minPercent) && Float.isFinite(midPercent)
-                  ? new FogDefinition.Transition(init, Math.clamp(minPercent, 0.0F, 1.0F), midSeconds, Math.clamp(midPercent, 0.0F, 1.0F), maxSeconds)
-                  : null;
             }
-         } catch (RuntimeException var8) {
+
+            init = new FogDefinition.Distance(init.start(), init.end(), init.rgb(), init.relativeToRenderDistance());
+            float minPercent = number(object, "min_percent", 0.0F);
+            float midSeconds = number(object, "mid_seconds", 0.0F);
+            float midPercent = number(object, "mid_percent", minPercent);
+            float maxSeconds = number(object, "max_seconds", 0.0F);
+            return maxSeconds > 0.0F && !(midSeconds < 0.0F) && !(midSeconds > maxSeconds) && Float.isFinite(minPercent) && Float.isFinite(midPercent)
+               ? new FogDefinition.Transition(init, Math.clamp(minPercent, 0.0F, 1.0F), midSeconds, Math.clamp(midPercent, 0.0F, 1.0F), maxSeconds)
+               : null;
+         } catch (RuntimeException e) {
             return null;
          }
       } else {
@@ -112,8 +109,7 @@ public record FogDefinition(String identifier, Map<FogDefinition.Medium, FogDefi
       return value != null && value.isJsonPrimitive() && value.getAsJsonPrimitive().isNumber() ? value.getAsFloat() : fallback;
    }
 
-   @Nullable
-   static Integer color(JsonElement element) {
+   static @Nullable Integer color(JsonElement element) {
       if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isString()) {
          String text = element.getAsString().trim();
          if (text.startsWith("#")) {
@@ -130,41 +126,41 @@ public record FogDefinition(String identifier, Map<FogDefinition.Medium, FogDefi
 
          if (text.length() != 6) {
             return null;
-         } else {
-            try {
-               return Integer.parseInt(text, 16);
-            } catch (NumberFormatException var10) {
-               return null;
-            }
+         }
+
+         try {
+            return Integer.parseInt(text, 16);
+         } catch (NumberFormatException e) {
+            return null;
          }
       } else if (element.isJsonArray()) {
          JsonArray array = element.getAsJsonArray();
          if (array.size() < 3) {
             return null;
-         } else {
-            float[] channels = new float[3];
-            boolean bytes = false;
-
-            for (int i = 0; i < 3; i++) {
-               channels[i] = array.get(i).getAsFloat();
-               bytes |= channels[i] > 1.0F;
-            }
-
-            int rgb = 0;
-
-            for (float channel : channels) {
-               int value = Math.round(Math.clamp(bytes ? channel : channel * 255.0F, 0.0F, 255.0F));
-               rgb = rgb << 8 | value;
-            }
-
-            return rgb;
          }
+
+         float[] channels = new float[3];
+         boolean bytes = false;
+
+         for (int i = 0; i < 3; i++) {
+            channels[i] = array.get(i).getAsFloat();
+            bytes |= channels[i] > 1.0F;
+         }
+
+         int rgb = 0;
+
+         for (float channel : channels) {
+            int value = Math.round(Math.clamp(bytes ? channel : channel * 255.0F, 0.0F, 255.0F));
+            rgb = rgb << 8 | value;
+         }
+
+         return rgb;
       } else {
          return null;
       }
    }
 
-   public record Distance(float start, float end, int rgb, boolean relativeToRenderDistance, @Nullable FogDefinition.Transition transition) {
+   public record Distance(float start, float end, int rgb, boolean relativeToRenderDistance, FogDefinition.@Nullable Transition transition) {
       public Distance(float start, float end, int rgb, boolean relativeToRenderDistance) {
          this(start, end, rgb, relativeToRenderDistance, null);
       }
@@ -182,19 +178,19 @@ public record FogDefinition(String identifier, Map<FogDefinition.Medium, FogDefi
          float end = this.endBlocks(renderDistanceBlocks);
          if (this.transition == null) {
             return new float[]{start, end, this.rgb};
-         } else {
-            float progress = this.transition.progress(seconds);
-            FogDefinition.Distance init = this.transition.init();
-            return new float[]{
-               FogDefinition.lerp(init.startBlocks(renderDistanceBlocks), start, progress),
-               FogDefinition.lerp(init.endBlocks(renderDistanceBlocks), end, progress),
-               FogDefinition.lerpColor(init.rgb(), this.rgb, progress)
-            };
          }
+
+         float progress = this.transition.progress(seconds);
+         FogDefinition.Distance init = this.transition.init();
+         return new float[]{
+            FogDefinition.lerp(init.startBlocks(renderDistanceBlocks), start, progress),
+            FogDefinition.lerp(init.endBlocks(renderDistanceBlocks), end, progress),
+            FogDefinition.lerpColor(init.rgb(), this.rgb, progress)
+         };
       }
    }
 
-   public static enum Medium {
+   public enum Medium {
       AIR("air"),
       WATER("water"),
       LAVA("lava"),
@@ -204,7 +200,7 @@ public record FogDefinition(String identifier, Map<FogDefinition.Medium, FogDefi
 
       private final String key;
 
-      private Medium(String key) {
+      Medium(String key) {
          this.key = key;
       }
 

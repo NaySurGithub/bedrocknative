@@ -7,10 +7,9 @@ import org.jspecify.annotations.Nullable;
 public final class VariableStore {
    private int[] keys;
    private float[] values;
-   private Object[] objects;
+   private @Nullable Object[] objects;
    private int size;
-   @Nullable
-   private VariableStore parent;
+   private @Nullable VariableStore parent;
 
    public VariableStore() {
       this(16);
@@ -27,8 +26,7 @@ public final class VariableStore {
       return this.size;
    }
 
-   @Nullable
-   public VariableStore parent() {
+   public @Nullable VariableStore parent() {
       return this.parent;
    }
 
@@ -53,14 +51,12 @@ public final class VariableStore {
       return this.get(MolangNames.id(name));
    }
 
-   @Nullable
-   public Object object(int id) {
+   public @Nullable Object object(int id) {
       int index = this.index(id);
       return index >= 0 ? this.objects[index] : null;
    }
 
-   @Nullable
-   public Object object(String name) {
+   public @Nullable Object object(String name) {
       return this.object(MolangNames.id(name));
    }
 
@@ -150,8 +146,7 @@ public final class VariableStore {
       return this.values[index];
    }
 
-   @Nullable
-   Object objectAt(int index) {
+   @Nullable Object objectAt(int index) {
       return this.objects[index];
    }
 

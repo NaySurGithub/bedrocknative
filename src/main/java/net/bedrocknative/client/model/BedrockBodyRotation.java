@@ -15,29 +15,29 @@ public final class BedrockBodyRotation {
       ActorState state = BedrockActors.state(entity);
       if (state == null) {
          return false;
-      } else {
-         ActorData data = state.data();
-         Entity vehicle = entity.getVehicle();
-         BodyRotation.Rule rule = BodyRotation.rule(
-            data.flag(EntityFlag.BODY_ROTATION_BLOCKED),
-            data.flag(EntityFlag.BODY_ROTATION_AXIS_ALIGNED),
-            data.flag(EntityFlag.BODY_ROTATION_ALWAYS_FOLLOWS_HEAD),
-            data.flag(EntityFlag.BODY_ROTATION_LOCKED_TO_VEHICLE),
-            vehicle != null
-         );
-         BodyRotation.Tracker tracker = rule == BodyRotation.Rule.FREE ? state.existingBodyTracker() : state.bodyTracker();
-         if (tracker == null) {
-            return false;
-         } else {
-            float next = tracker.next(rule, entity.yBodyRot, entity.getYRot(), entity.getYHeadRot(), vehicleYaw(vehicle));
-            if (Float.isNaN(next)) {
-               return false;
-            } else {
-               entity.yBodyRot = next;
-               return true;
-            }
-         }
       }
+
+      ActorData data = state.data();
+      Entity vehicle = entity.getVehicle();
+      BodyRotation.Rule rule = BodyRotation.rule(
+         data.flag(EntityFlag.BODY_ROTATION_BLOCKED),
+         data.flag(EntityFlag.BODY_ROTATION_AXIS_ALIGNED),
+         data.flag(EntityFlag.BODY_ROTATION_ALWAYS_FOLLOWS_HEAD),
+         data.flag(EntityFlag.BODY_ROTATION_LOCKED_TO_VEHICLE),
+         vehicle != null
+      );
+      BodyRotation.Tracker tracker = rule == BodyRotation.Rule.FREE ? state.existingBodyTracker() : state.bodyTracker();
+      if (tracker == null) {
+         return false;
+      }
+
+      float next = tracker.next(rule, entity.yBodyRot, entity.getYRot(), entity.getYHeadRot(), vehicleYaw(vehicle));
+      if (Float.isNaN(next)) {
+         return false;
+      }
+
+      entity.yBodyRot = next;
+      return true;
    }
 
    private static float vehicleYaw(@Nullable Entity vehicle) {

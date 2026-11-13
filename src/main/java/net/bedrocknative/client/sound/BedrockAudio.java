@@ -45,8 +45,7 @@ public final class BedrockAudio {
    private static final Set<BedrockAudio.Located> UNPLAYABLE = ConcurrentHashMap.newKeySet();
    private static final Set<String> LOGGED = ConcurrentHashMap.newKeySet();
    private static final Set<BedrockAudio.Kind> FIRST_DECODES = ConcurrentHashMap.newKeySet();
-   @Nullable
-   private static volatile BedrockAudio.BufferCache cache;
+   private static volatile BedrockAudio.@Nullable BufferCache cache;
    private static final List<BedrockAudio.Discard> DISCARDS = new ArrayList<>();
    private static final long DISCARD_DELAY_MS = 2000L;
 
@@ -62,36 +61,41 @@ public final class BedrockAudio {
       SoundCatalog.SoundFile file = catalog.foundFile(variantPath, extra);
       if (file == null) {
          return Optional.empty();
-      } else {
-         BedrockAudio.Kind kind = kind(file.path(), file.data());
-         if (kind == null) {
-            if (LOGGED.add(file.path())) {
-               BedrockNative.LOGGER.info("Bedrock sound {} in {} not playable (unknown audio format); the Java sound stands in", file.path(), file.pack());
-            }
+      }
 
-            return Optional.empty();
-         } else {
-            return Optional.of(new BedrockAudio.Located(file.pack(), file.path(), kind, file.serverPack()));
+      BedrockAudio.Kind kind = kind(file.path(), file.data());
+      if (kind == null) {
+         if (LOGGED.add(file.path())) {
+            BedrockNative.LOGGER.info("Bedrock sound {} in {} not playable (unknown audio format); the Java sound stands in", file.path(), file.pack());
          }
+
+         return Optional.empty();
+      } else {
+         return Optional.of(new BedrockAudio.Located(file.pack(), file.path(), kind, file.serverPack()));
       }
    }
 
-   @Nullable
-   static BedrockAudio.Kind kind(String path, byte[] data) {
+   static BedrockAudio.@Nullable Kind kind(String path, byte[] data) {
       if (Fsb5.isFsb5(data)) {
          return BedrockAudio.Kind.FSB;
-      } else if (WavAudio.isWav(data)) {
-         return BedrockAudio.Kind.WAV;
-      } else if (data.length >= 4 && data[0] == 79 && data[1] == 103 && data[2] == 103 && data[3] == 83) {
-         return BedrockAudio.Kind.OGG;
-      } else if (data.length > 0) {
-         return null;
-      } else {
-         String lower = path.toLowerCase(Locale.ROOT);
-         return lower.endsWith(".fsb")
-            ? BedrockAudio.Kind.FSB
-            : (lower.endsWith(".ogg") ? BedrockAudio.Kind.OGG : (lower.endsWith(".wav") ? BedrockAudio.Kind.WAV : null));
       }
+
+      if (WavAudio.isWav(data)) {
+         return BedrockAudio.Kind.WAV;
+      }
+
+      if (data.length >= 4 && data[0] == 79 && data[1] == 103 && data[2] == 103 && data[3] == 83) {
+         return BedrockAudio.Kind.OGG;
+      }
+
+      if (data.length > 0) {
+         return null;
+      }
+
+      String lower = path.toLowerCase(Locale.ROOT);
+      return lower.endsWith(".fsb")
+         ? BedrockAudio.Kind.FSB
+         : (lower.endsWith(".ogg") ? BedrockAudio.Kind.OGG : (lower.endsWith(".wav") ? BedrockAudio.Kind.WAV : null));
    }
 
    private static BedrockAudio.Kind checked(BedrockAudio.Located file, byte[] data) throws IOException {
@@ -108,8 +112,7 @@ public final class BedrockAudio {
       }
    }
 
-   @Nullable
-   private static String fsbProblem(byte[] data) {
+   private static @Nullable String fsbProblem(byte[] data) {
       Fsb5 bank = Fsb5.parse(data);
       if (bank == null) {
          return "broken FMOD bank";
@@ -139,12 +142,12 @@ public final class BedrockAudio {
       return CompletableFuture.supplyAsync(() -> {
          if (source == null) {
             throw new CompletionException(new IOException("No Bedrock sound for " + path));
-         } else {
-            try {
-               return decode(source);
-            } catch (RuntimeException | IOException var3) {
-               throw unplayable(source.file(), var3);
-            }
+         }
+
+         try {
+            return decode(source);
+         } catch (IOException | RuntimeException e) {
+            throw unplayable(source.file(), e);
          }
       }, Util.nonCriticalIoPool());
    }
@@ -154,12 +157,12 @@ public final class BedrockAudio {
       return CompletableFuture.supplyAsync(() -> {
          if (source == null) {
             throw new CompletionException(new IOException("No Bedrock sound for " + path));
-         } else {
-            try {
-               return open(source, looping);
-            } catch (RuntimeException | IOException var4) {
-               throw unplayable(source.file(), var4);
-            }
+         }
+
+         try {
+            return open(source, looping);
+         } catch (IOException | RuntimeException e) {
+            throw unplayable(source.file(), e);
          }
       }, Util.nonCriticalIoPool());
    }
@@ -221,42 +224,28 @@ public final class BedrockAudio {
 
       if (audio.samples().length * 2L > 67108864L) {
          throw new IOException("audio longer than 64 MiB of PCM");
-      } else {
-         audio = source.mono() ? audio.mono() : audio.atMostStereo();
-         if (source.offset() > 0.0F) {
-            audio = audio.from(source.offset());
-         }
-
-         return new SoundBuffer(pcmBuffer(audio.samples(), audio.samples().length), format(audio.sampleRate(), audio.channels()));
       }
+
+      audio = source.mono() ? audio.mono() : audio.atMostStereo();
+      if (source.offset() > 0.0F) {
+         audio = audio.from(source.offset());
+      }
+
+      return new SoundBuffer(pcmBuffer(audio.samples(), audio.samples().length), format(audio.sampleRate(), audio.channels()));
    }
 
    private static PcmAudio ogg(byte[] data) throws IOException {
-      JOrbisAudioStream stream = new JOrbisAudioStream(new ByteArrayInputStream(data));
-
-      PcmAudio var4;
-      try {
+      try (JOrbisAudioStream stream = new JOrbisAudioStream(new ByteArrayInputStream(data))) {
          AudioFormat format = stream.getFormat();
          short[] samples = PcmCollector.collect(stream::read);
-         var4 = new PcmAudio((int)format.getSampleRate(), format.getChannels(), samples);
-      } catch (Throwable var6) {
-         try {
-            stream.close();
-         } catch (Throwable var5) {
-            var6.addSuppressed(var5);
-         }
-
-         throw var6;
+         return new PcmAudio((int)format.getSampleRate(), format.getChannels(), samples);
       }
-
-      stream.close();
-      return var4;
    }
 
    private static AudioStream open(BedrockAudio.Source source, boolean looping) throws IOException {
       byte[] data = read(source.file());
 
-      return (AudioStream)(switch (checked(source.file(), data)) {
+      return switch (checked(source.file(), data)) {
          case FSB -> {
             Fsb5 bank = Fsb5.parse(data);
             if (bank == null || bank.stream(0) == null) {
@@ -274,14 +263,14 @@ public final class BedrockAudio {
             yield new BedrockAudio.PcmAudioStream(() -> PcmStream.of(audio), source.mono(), looping, source.offset());
          }
          case OGG -> {
-            AudioStream ogg = (AudioStream)(looping
+            AudioStream ogg = looping
                ? new LoopingAudioStream(JOrbisAudioStream::new, new ByteArrayInputStream(data))
-               : new JOrbisAudioStream(new ByteArrayInputStream(data)));
-            AudioStream mixed = (AudioStream)(source.mono() && ogg.getFormat().getChannels() > 1 ? new BedrockAudio.MonoAudioStream(ogg) : ogg);
+               : new JOrbisAudioStream(new ByteArrayInputStream(data));
+            AudioStream mixed = source.mono() && ogg.getFormat().getChannels() > 1 ? new BedrockAudio.MonoAudioStream(ogg) : ogg;
             skip(mixed, source.offset());
             yield mixed;
          }
-      });
+      };
    }
 
    private static void skip(AudioStream stream, float seconds) throws IOException {
@@ -337,10 +326,10 @@ public final class BedrockAudio {
          DISCARDS.removeIf(discard -> {
             if (discard.after() > now) {
                return false;
-            } else {
-               discard.buffer().thenAccept(SoundBuffer::discardAlBuffer);
-               return true;
             }
+
+            discard.buffer().thenAccept(SoundBuffer::discardAlBuffer);
+            return true;
          });
       }
    }
@@ -358,7 +347,7 @@ public final class BedrockAudio {
    private record Key(BedrockAudio.Located file, boolean mono, float offset) {
    }
 
-   static enum Kind {
+   enum Kind {
       FSB,
       WAV,
       OGG;
@@ -374,10 +363,12 @@ public final class BedrockAudio {
          this.stereo = stereo;
       }
 
+      @Override
       public AudioFormat getFormat() {
          return BedrockAudio.format((int)this.stereo.getFormat().getSampleRate(), 1);
       }
 
+      @Override
       public ByteBuffer read(int expectedSize) throws IOException {
          int channels = this.stereo.getFormat().getChannels();
          ShortBuffer in = this.stereo.read(expectedSize * channels).order(ByteOrder.nativeOrder()).asShortBuffer();
@@ -397,6 +388,7 @@ public final class BedrockAudio {
          return BedrockAudio.pcmBuffer(out, out.length);
       }
 
+      @Override
       public void close() throws IOException {
          this.stereo.close();
       }
@@ -415,19 +407,21 @@ public final class BedrockAudio {
          PcmStream opened = factory.open();
          if (opened == null) {
             throw new IOException("no audio stream");
-         } else {
-            this.stream = opened;
-            this.mono = mono && opened.channels() > 1;
-            if (offset > 0.0F) {
-               opened.skip(offset);
-            }
+         }
+
+         this.stream = opened;
+         this.mono = mono && opened.channels() > 1;
+         if (offset > 0.0F) {
+            opened.skip(offset);
          }
       }
 
+      @Override
       public AudioFormat getFormat() {
          return BedrockAudio.format(this.stream.sampleRate(), this.mono ? 1 : Math.min(2, this.stream.channels()));
       }
 
+      @Override
       public ByteBuffer read(int expectedSize) {
          int channels = this.stream.channels();
          int outChannels = this.mono ? 1 : Math.min(2, channels);
@@ -467,13 +461,13 @@ public final class BedrockAudio {
          return BedrockAudio.pcmBuffer(out, out.length);
       }
 
+      @Override
       public void close() {
       }
 
       @FunctionalInterface
       interface StreamFactory {
-         @Nullable
-         PcmStream open();
+         @Nullable PcmStream open();
       }
    }
 

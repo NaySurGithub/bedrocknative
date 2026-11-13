@@ -31,8 +31,7 @@ public final class BedrockBlockNames {
       }
    }
 
-   @Nullable
-   public static String customNameAt(ClientLevel level, BlockPos pos) {
+   public static @Nullable String customNameAt(ClientLevel level, BlockPos pos) {
       String opened = nameAt(level, pos);
       String partner = null;
       BlockState state = level.getBlockState(pos);
@@ -43,8 +42,7 @@ public final class BedrockBlockNames {
       return ContainerNames.pick(opened, partner);
    }
 
-   @Nullable
-   private static String nameAt(ClientLevel level, BlockPos pos) {
+   private static @Nullable String nameAt(ClientLevel level, BlockPos pos) {
       BlockEntity entity = level.getBlockEntity(pos);
       return entity == null ? null : NAMES.get(entity);
    }

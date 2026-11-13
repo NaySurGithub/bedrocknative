@@ -12,8 +12,8 @@ public record PreparedColumn(
    Map<Integer, LevelChunkSection> sections,
    boolean replaceAll,
    List<NbtMap> blockEntities,
-   @Nullable long[][] heightmaps,
-   @Nullable int[] blockEntityBlocks,
+   long @Nullable [][] heightmaps,
+   int @Nullable [] blockEntityBlocks,
    boolean fullColumn
 ) {
    static boolean empty(PreparedColumn column) {

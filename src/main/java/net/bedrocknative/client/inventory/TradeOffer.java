@@ -29,28 +29,28 @@ public record TradeOffer(
       List<TradeOffer> parsed = new ArrayList<>();
       if (offers == null) {
          return parsed;
-      } else {
-         for (NbtMap recipe : offers.getList("Recipes", NbtType.COMPOUND)) {
-            parsed.add(
-               new TradeOffer(
-                  recipe.getInt("netId", 0),
-                  recipe.getCompound("buyA"),
-                  recipe.getInt("buyCountA", 0),
-                  recipe.getCompound("buyB"),
-                  recipe.getInt("buyCountB", 0),
-                  recipe.getCompound("sell"),
-                  recipe.getInt("uses", 0),
-                  recipe.getInt("maxUses", 0),
-                  recipe.getInt("tier", 0),
-                  recipe.getInt("traderExp", 0),
-                  recipe.getFloat("priceMultiplierA", 0.0F),
-                  recipe.getInt("demand", 0)
-               )
-            );
-         }
-
-         return parsed;
       }
+
+      for (NbtMap recipe : offers.getList("Recipes", NbtType.COMPOUND)) {
+         parsed.add(
+            new TradeOffer(
+               recipe.getInt("netId", 0),
+               recipe.getCompound("buyA"),
+               recipe.getInt("buyCountA", 0),
+               recipe.getCompound("buyB"),
+               recipe.getInt("buyCountB", 0),
+               recipe.getCompound("sell"),
+               recipe.getInt("uses", 0),
+               recipe.getInt("maxUses", 0),
+               recipe.getInt("tier", 0),
+               recipe.getInt("traderExp", 0),
+               recipe.getFloat("priceMultiplierA", 0.0F),
+               recipe.getInt("demand", 0)
+            )
+         );
+      }
+
+      return parsed;
    }
 
    public static List<Integer> tierExp(NbtMap offers) {
@@ -84,25 +84,24 @@ public record TradeOffer(
       return count(this.sell);
    }
 
-   @Nullable
-   public static ItemData item(NbtMap item, Function<String, ItemDefinition> definitions) {
+   public static @Nullable ItemData item(NbtMap item, Function<String, ItemDefinition> definitions) {
       if (!isItem(item)) {
          return null;
-      } else {
-         ItemDefinition definition = definitions.apply(item.getString("Name"));
-         if (definition == null) {
-            return null;
-         } else {
-            int data = item.getShort("Damage", (short)0);
-            NbtMap tag = item.getCompound("tag", null);
-            return ItemData.builder()
-               .definition(definition)
-               .damage(data == 32767 ? 0 : data)
-               .count(count(item))
-               .tag(tag != null && !tag.isEmpty() ? tag : null)
-               .build();
-         }
       }
+
+      ItemDefinition definition = definitions.apply(item.getString("Name"));
+      if (definition == null) {
+         return null;
+      }
+
+      int data = item.getShort("Damage", (short)0);
+      NbtMap tag = item.getCompound("tag", null);
+      return ItemData.builder()
+         .definition(definition)
+         .damage(data == 32767 ? 0 : data)
+         .count(count(item))
+         .tag(tag != null && !tag.isEmpty() ? tag : null)
+         .build();
    }
 
    public static boolean isItem(NbtMap item) {

@@ -24,8 +24,7 @@ public final class BlockCullingRules {
    private BlockCullingRules() {
    }
 
-   @Nullable
-   public static String layer(String cullingLayer) {
+   public static @Nullable String layer(String cullingLayer) {
       String trimmed = cullingLayer.trim();
       return !trimmed.isEmpty() && !trimmed.equalsIgnoreCase("minecraft:culling_layer.undefined") ? trimmed.toLowerCase(Locale.ROOT) : null;
    }
@@ -42,8 +41,8 @@ public final class BlockCullingRules {
                   if (root != null) {
                      parse(root).forEach(rules::putIfAbsent);
                   }
-               } catch (RuntimeException | IOException var8) {
-                  BedrockNative.LOGGER.warn("Couldn't read culling rules {} from {}", new Object[]{file, pack, var8});
+               } catch (IOException | RuntimeException e) {
+                  BedrockNative.LOGGER.warn("Couldn't read culling rules {} from {}", new Object[]{file, pack, e});
                }
             }
          }
@@ -76,70 +75,63 @@ public final class BlockCullingRules {
       }
    }
 
-   @Nullable
-   private static BlockCullingRules.Rule rule(JsonObject object) {
+   private static BlockCullingRules.@Nullable Rule rule(JsonObject object) {
       String directionName = string(object.get("direction"));
       Direction direction = directionName == null ? null : Direction.byName(directionName.toLowerCase(Locale.ROOT));
       if (direction != null && object.get("geometry_part") instanceof JsonObject part && string(part.get("bone")) != null) {
          int cube = -1;
-         JsonElement against = part.get("cube");
-         if (against instanceof JsonElement) {
-            JsonElement cubeElement = against;
-            if (against.isJsonPrimitive()) {
-               try {
-                  cube = Math.max(-1, cubeElement.getAsInt());
-               } catch (NumberFormatException var9) {
-                  cube = -1;
-               }
+         if (part.get("cube") instanceof JsonElement cubeElement && cubeElement.isJsonPrimitive()) {
+            try {
+               cube = Math.max(-1, cubeElement.getAsInt());
+            } catch (NumberFormatException e) {
+               cube = -1;
             }
          }
 
          String face = string(part.get("face"));
-         JsonElement var8 = object.get("cull_against_full_and_opaque");
-         boolean againstx = !(var8 instanceof JsonElement) || !var8.isJsonPrimitive() || bool(var8);
+         boolean against = !(object.get("cull_against_full_and_opaque") instanceof JsonElement flag && flag.isJsonPrimitive() && !bool(flag));
          return new BlockCullingRules.Rule(
             direction,
             string(part.get("bone")).toLowerCase(Locale.ROOT),
             cube,
             face == null ? null : face.toLowerCase(Locale.ROOT),
             BlockCullingRules.Condition.parse(string(object.get("condition"))),
-            againstx
+            against
          );
       } else {
          return null;
       }
    }
 
-   @Nullable
-   private static String string(@Nullable JsonElement element) {
+   private static @Nullable String string(@Nullable JsonElement element) {
       return element != null && element.isJsonPrimitive() ? element.getAsString() : null;
    }
 
    private static boolean bool(JsonElement element) {
       if (element.getAsJsonPrimitive().isBoolean()) {
          return element.getAsBoolean();
-      } else {
-         String text = element.getAsString();
-         return !text.equalsIgnoreCase("false") && !text.equals("0");
       }
+
+      String text = element.getAsString();
+      return !text.equalsIgnoreCase("false") && !text.equals("0");
    }
 
    public record Check(Direction direction, BlockCullingRules.Condition condition, boolean againstFullAndOpaque) {
       public boolean culls(BlockCullingRules.Neighbour neighbour, String block, @Nullable String layer) {
          if (this.againstFullAndOpaque && neighbour.fullAndOpaque()) {
             return true;
-         } else {
-            return switch (this.condition) {
-               case DEFAULT -> false;
-               case SAME_BLOCK -> block.equals(neighbour.customBlock());
-               case SAME_BLOCK_PERMUTATION -> neighbour.samePermutation();
-               case SAME_CULLING_LAYER -> layer != null && layer.equals(neighbour.cullingLayer());
-            };
          }
+
+         return switch (this.condition) {
+            case DEFAULT -> false;
+            case SAME_BLOCK -> block.equals(neighbour.customBlock());
+            case SAME_BLOCK_PERMUTATION -> neighbour.samePermutation();
+            case SAME_CULLING_LAYER -> layer != null && layer.equals(neighbour.cullingLayer());
+         };
       }
    }
 
-   public static enum Condition {
+   public enum Condition {
       DEFAULT,
       SAME_BLOCK,
       SAME_BLOCK_PERMUTATION,
@@ -148,16 +140,14 @@ public final class BlockCullingRules {
       static BlockCullingRules.Condition parse(@Nullable String name) {
          if (name == null) {
             return DEFAULT;
-         } else {
-            String var1 = name.toLowerCase(Locale.ROOT);
-
-            return switch (var1) {
-               case "same_block" -> SAME_BLOCK;
-               case "same_block_permutation" -> SAME_BLOCK_PERMUTATION;
-               case "same_culling_layer" -> SAME_CULLING_LAYER;
-               default -> DEFAULT;
-            };
          }
+
+         return switch (name.toLowerCase(Locale.ROOT)) {
+            case "same_block" -> SAME_BLOCK;
+            case "same_block_permutation" -> SAME_BLOCK_PERMUTATION;
+            case "same_culling_layer" -> SAME_CULLING_LAYER;
+            default -> DEFAULT;
+         };
       }
    }
 

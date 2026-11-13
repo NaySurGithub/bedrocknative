@@ -65,11 +65,8 @@ public final class SoundCatalog {
          read(pack, "sounds/music_definitions.json").ifPresent(json -> musicFiles.add(new SoundDefinitions.PackJson(json, stackIndex, server)));
          read(pack, "blocks.json").ifPresent(json -> {
             for (Entry<String, JsonElement> entry : json.entrySet()) {
-               if (entry.getValue() instanceof JsonObject block) {
-                  String patt1$temp = ModelJson.string(block, "sound");
-                  if (patt1$temp instanceof String && !patt1$temp.isBlank()) {
-                     blockSounds.put(entry.getKey().toLowerCase(Locale.ROOT), patt1$temp.toLowerCase(Locale.ROOT));
-                  }
+               if (entry.getValue() instanceof JsonObject block && ModelJson.string(block, "sound") instanceof String sound && !sound.isBlank()) {
+                  blockSounds.put(entry.getKey().toLowerCase(Locale.ROOT), sound.toLowerCase(Locale.ROOT));
                }
             }
          });
@@ -95,8 +92,8 @@ public final class SoundCatalog {
       try {
          Optional<byte[]> data = pack.read(path);
          return data.isEmpty() ? Optional.empty() : Optional.ofNullable(ModelJson.parse(data.get(), path + " in " + pack));
-      } catch (IOException var3) {
-         BedrockNative.LOGGER.warn("Couldn't read {} from {}", new Object[]{path, pack, var3});
+      } catch (IOException e) {
+         BedrockNative.LOGGER.warn("Couldn't read {} from {}", new Object[]{path, pack, e});
          return Optional.empty();
       }
    }
@@ -113,8 +110,7 @@ public final class SoundCatalog {
       return this.music;
    }
 
-   @Nullable
-   public String blockSound(String blockName) {
+   public @Nullable String blockSound(String blockName) {
       String key = blockName.toLowerCase(Locale.ROOT);
       String sound = this.blockSounds.get(key);
       if (sound == null && key.startsWith("minecraft:")) {
@@ -128,61 +124,59 @@ public final class SoundCatalog {
       return this.blockSounds.size();
    }
 
-   @Nullable
-   public SoundCatalog.SoundFile file(String path, List<? extends PackSource> extra) {
+   public SoundCatalog.@Nullable SoundFile file(String path, List<? extends PackSource> extra) {
       String clean = path.replace('\\', '/');
       if (PackPaths.escapes(clean)) {
          return null;
-      } else {
-         String lower = clean.toLowerCase(Locale.ROOT);
-         boolean hasExtension = EXTENSIONS.stream().anyMatch(lower::endsWith);
+      }
 
-         for (int index = 0; index < this.topFirst.size() + extra.size(); index++) {
-            PackSource pack = index < this.topFirst.size() ? this.topFirst.get(index) : extra.get(index - this.topFirst.size());
+      String lower = clean.toLowerCase(Locale.ROOT);
+      boolean hasExtension = EXTENSIONS.stream().anyMatch(lower::endsWith);
 
-            for (String extension : hasExtension ? List.of("") : EXTENSIONS) {
-               try {
-                  Optional<byte[]> data = pack.read(clean + extension);
-                  if (data.isPresent()) {
-                     return new SoundCatalog.SoundFile(clean + extension, data.get(), pack, index < this.serverPacks);
-                  }
-               } catch (RuntimeException | IOException var11) {
-                  BedrockNative.LOGGER.debug("Couldn't read {} from {}: {}", new Object[]{clean + extension, pack, var11.toString()});
+      for (int index = 0; index < this.topFirst.size() + extra.size(); index++) {
+         PackSource pack = index < this.topFirst.size() ? this.topFirst.get(index) : extra.get(index - this.topFirst.size());
+
+         for (String extension : hasExtension ? List.of("") : EXTENSIONS) {
+            try {
+               Optional<byte[]> data = pack.read(clean + extension);
+               if (data.isPresent()) {
+                  return new SoundCatalog.SoundFile(clean + extension, data.get(), pack, index < this.serverPacks);
                }
+            } catch (IOException | RuntimeException e) {
+               BedrockNative.LOGGER.debug("Couldn't read {} from {}: {}", new Object[]{clean + extension, pack, e.toString()});
             }
          }
-
-         return null;
       }
+
+      return null;
    }
 
-   @Nullable
-   public SoundCatalog.SoundFile foundFile(String path, List<? extends PackSource> extra) {
+   public SoundCatalog.@Nullable SoundFile foundFile(String path, List<? extends PackSource> extra) {
       String clean = path.replace('\\', '/');
       if (PackPaths.escapes(clean)) {
          return null;
-      } else {
-         String lower = clean.toLowerCase(Locale.ROOT);
-         boolean hasExtension = EXTENSIONS.stream().anyMatch(lower::endsWith);
+      }
 
-         for (int index = 0; index < this.topFirst.size() + extra.size(); index++) {
-            PackSource pack = index < this.topFirst.size() ? this.topFirst.get(index) : extra.get(index - this.topFirst.size());
+      String lower = clean.toLowerCase(Locale.ROOT);
+      boolean hasExtension = EXTENSIONS.stream().anyMatch(lower::endsWith);
 
-            for (String extension : hasExtension ? List.of("") : EXTENSIONS) {
-               String candidate = clean + extension;
+      for (int index = 0; index < this.topFirst.size() + extra.size(); index++) {
+         PackSource pack = index < this.topFirst.size() ? this.topFirst.get(index) : extra.get(index - this.topFirst.size());
 
-               try {
-                  if (pack.has(candidate)) {
-                     return new SoundCatalog.SoundFile(candidate, NOT_READ, pack, index < this.serverPacks);
-                  }
-               } catch (RuntimeException | IOException var12) {
-                  BedrockNative.LOGGER.debug("Couldn't look up {} in {}: {}", new Object[]{candidate, pack, var12.toString()});
+         for (String extension : hasExtension ? List.of("") : EXTENSIONS) {
+            String candidate = clean + extension;
+
+            try {
+               if (pack.has(candidate)) {
+                  return new SoundCatalog.SoundFile(candidate, NOT_READ, pack, index < this.serverPacks);
                }
+            } catch (IOException | RuntimeException e) {
+               BedrockNative.LOGGER.debug("Couldn't look up {} in {}: {}", new Object[]{candidate, pack, e.toString()});
             }
          }
-
-         return null;
       }
+
+      return null;
    }
 
    public List<PackSource> packs() {

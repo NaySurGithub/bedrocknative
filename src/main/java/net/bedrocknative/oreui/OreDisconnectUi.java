@@ -23,8 +23,7 @@ public final class OreDisconnectUi {
    private float messageScroll;
    private float leftScroll;
    private float rightScroll;
-   @Nullable
-   private OreDisconnectUi.Layout layout;
+   private OreDisconnectUi.@Nullable Layout layout;
    private float width;
    private float height;
 
@@ -48,8 +47,7 @@ public final class OreDisconnectUi {
       return this.interaction;
    }
 
-   @Nullable
-   public OreDisconnectUi.Layout layout() {
+   public OreDisconnectUi.@Nullable Layout layout() {
       return this.layout;
    }
 
@@ -514,30 +512,29 @@ public final class OreDisconnectUi {
    public boolean scrolled(double x, double y, double delta) {
       if (this.layout == null) {
          return false;
-      } else {
-         float step = this.px(4.8F) * (float)(-delta);
-
-         for (OreDisconnectUi.ScrollBox box : new OreDisconnectUi.ScrollBox[]{this.layout.messageBox(), this.layout.left(), this.layout.right()}) {
-            if (box != null && box.box().contains(x, y) && box.scroll().scrollable()) {
-               String var12 = box.id();
-               switch (var12) {
-                  case "message":
-                     this.messageScroll += step;
-                     break;
-                  case "left":
-                     this.leftScroll += step;
-                     break;
-                  default:
-                     this.rightScroll += step;
-               }
-
-               this.layout(this.width, this.height);
-               return true;
-            }
-         }
-
-         return false;
       }
+
+      float step = this.px(4.8F) * (float)(-delta);
+
+      for (OreDisconnectUi.ScrollBox box : new OreDisconnectUi.ScrollBox[]{this.layout.messageBox(), this.layout.left(), this.layout.right()}) {
+         if (box != null && box.box().contains(x, y) && box.scroll().scrollable()) {
+            switch (box.id()) {
+               case "message":
+                  this.messageScroll += step;
+                  break;
+               case "left":
+                  this.leftScroll += step;
+                  break;
+               default:
+                  this.rightScroll += step;
+            }
+
+            this.layout(this.width, this.height);
+            return true;
+         }
+      }
+
+      return false;
    }
 
    public boolean key(OreKey key, boolean shift) {
@@ -621,16 +618,15 @@ public final class OreDisconnectUi {
       List<OreDisconnectUi.TextBlock> texts,
       @Nullable OreBox image,
       @Nullable String imageSprite,
-      @Nullable OreDisconnectUi.ScrollBox messageBox,
+      OreDisconnectUi.@Nullable ScrollBox messageBox,
       List<OreDisconnectUi.Button> buttons,
-      @Nullable OrePlayLayout.Header header,
-      @Nullable OreDisconnectUi.Tab tab,
-      @Nullable OreDisconnectUi.ScrollBox left,
-      @Nullable OreDisconnectUi.ScrollBox right,
+      OrePlayLayout.@Nullable Header header,
+      OreDisconnectUi.@Nullable Tab tab,
+      OreDisconnectUi.@Nullable ScrollBox left,
+      OreDisconnectUi.@Nullable ScrollBox right,
       OreWidgets widgets
    ) {
-      @Nullable
-      public OreDisconnectUi.Button button(String id) {
+      public OreDisconnectUi.@Nullable Button button(String id) {
          for (OreDisconnectUi.Button button : this.buttons) {
             if (button.id().equals(id)) {
                return button;
@@ -641,7 +637,7 @@ public final class OreDisconnectUi {
       }
    }
 
-   public static enum Route {
+   public enum Route {
       MAIN,
       DETAILS;
    }

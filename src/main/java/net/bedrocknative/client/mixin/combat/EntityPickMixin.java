@@ -14,10 +14,10 @@ import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.Vec3;
 import org.spongepowered.asm.mixin.Mixin;
 
-@Mixin({ProjectileUtil.class})
+@Mixin(ProjectileUtil.class)
 public abstract class EntityPickMixin {
    @WrapMethod(
-      method = {"getEntityHitResult(Lnet/minecraft/world/entity/Entity;Lnet/minecraft/world/phys/Vec3;Lnet/minecraft/world/phys/Vec3;Lnet/minecraft/world/phys/AABB;Ljava/util/function/Predicate;D)Lnet/minecraft/world/phys/EntityHitResult;"}
+      method = "getEntityHitResult(Lnet/minecraft/world/entity/Entity;Lnet/minecraft/world/phys/Vec3;Lnet/minecraft/world/phys/Vec3;Lnet/minecraft/world/phys/AABB;Ljava/util/function/Predicate;D)Lnet/minecraft/world/phys/EntityHitResult;"
    )
    private static EntityHitResult bedrocknative$pick(
       Entity except, Vec3 from, Vec3 to, AABB box, Predicate<Entity> matching, double maxValue, Operation<EntityHitResult> original

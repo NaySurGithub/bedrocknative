@@ -19,9 +19,8 @@ public interface UiDataSource {
          return UiValue.NULL;
       }
 
-      @Nullable
       @Override
-      public String kind(String collection, int index) {
+      public @Nullable String kind(String collection, int index) {
          return null;
       }
 
@@ -37,8 +36,7 @@ public interface UiDataSource {
 
    UiValue item(String var1, int var2, String var3);
 
-   @Nullable
-   String kind(String var1, int var2);
+   @Nullable String kind(String var1, int var2);
 
    long version();
 

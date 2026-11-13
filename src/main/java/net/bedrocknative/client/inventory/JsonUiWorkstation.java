@@ -112,18 +112,14 @@ final class JsonUiWorkstation implements WorkstationData.Actions, ContainerListe
    private int[] enchantingNow = new int[13];
    private boolean enchantingRead;
    private List<WorkstationData.Option> enchantingOptions = List.of();
-   @Nullable
-   private Object cutterRecipes;
+   private @Nullable Object cutterRecipes;
    private List<WorkstationData.Choice> cutterChoices = List.of();
-   @Nullable
-   private List<Holder<BannerPattern>> loomPatterns;
+   private @Nullable List<Holder<BannerPattern>> loomPatterns;
    private boolean loomFull;
-   @Nullable
-   private DyeColor loomDye;
+   private @Nullable DyeColor loomDye;
    private List<WorkstationData.Choice> loomChoices = List.of();
    private boolean listening;
-   @Nullable
-   private BookModel book;
+   private @Nullable BookModel book;
    private final RandomSource random = RandomSource.create();
    private ItemStack lastEnchanted = ItemStack.EMPTY;
    private float open;
@@ -132,14 +128,10 @@ final class JsonUiWorkstation implements WorkstationData.Actions, ContainerListe
    private float oFlip;
    private float flipTarget;
    private float flipSpeed;
-   @Nullable
-   private BannerFlagModel flag;
-   @Nullable
-   private ArmorStandRenderState armorStand;
-   @Nullable
-   private Holder<MobEffect> primary;
-   @Nullable
-   private Holder<MobEffect> secondary;
+   private @Nullable BannerFlagModel flag;
+   private @Nullable ArmorStandRenderState armorStand;
+   private @Nullable Holder<MobEffect> primary;
+   private @Nullable Holder<MobEffect> secondary;
 
    JsonUiWorkstation(Minecraft minecraft, AbstractContainerMenu menu, WorkstationData data) {
       this.minecraft = minecraft;
@@ -153,7 +145,7 @@ final class JsonUiWorkstation implements WorkstationData.Actions, ContainerListe
          case EnchantmentMenu ignored:
             this.book = new BookModel(this.minecraft.getEntityModels().bakeLayer(ModelLayers.BOOK));
             break;
-         case LoomMenu ignoredx:
+         case LoomMenu ignored:
             this.flag = new BannerFlagModel(this.minecraft.getEntityModels().bakeLayer(ModelLayers.STANDING_BANNER_FLAG));
             break;
          case SmithingMenu smithing:
@@ -315,45 +307,34 @@ final class JsonUiWorkstation implements WorkstationData.Actions, ContainerListe
    private String clue(EnchantmentMenu enchanting, int i, LocalPlayer player, boolean infinite, int lapis) {
       if (this.minecraft.level == null) {
          return "";
-      } else {
-         Optional<Reference<Enchantment>> enchantment = this.minecraft
-            .level
-            .registryAccess()
-            .lookupOrThrow(Registries.ENCHANTMENT)
-            .get(enchanting.enchantClue[i]);
-         int level = enchanting.levelClue[i];
-         if (!enchantment.isEmpty() && level >= 0) {
-            List<Component> lines = new ArrayList<>();
-            lines.add(
-               Component.translatable("container.enchant.clue", new Object[]{Enchantment.getFullname((Holder)enchantment.get(), level)})
-                  .withStyle(ChatFormatting.WHITE)
-            );
-            if (!infinite) {
-               lines.add(Component.empty());
-               int cost = enchanting.costs[i];
-               int uses = i + 1;
-               if (player.experienceLevel < cost) {
-                  lines.add(Component.translatable("container.enchant.level.requirement", new Object[]{cost}).withStyle(ChatFormatting.RED));
-               } else {
-                  lines.add(
-                     (uses == 1
-                           ? Component.translatable("container.enchant.lapis.one")
-                           : Component.translatable("container.enchant.lapis.many", new Object[]{uses}))
-                        .withStyle(lapis >= uses ? ChatFormatting.GRAY : ChatFormatting.RED)
-                  );
-                  lines.add(
-                     (uses == 1
-                           ? Component.translatable("container.enchant.level.one")
-                           : Component.translatable("container.enchant.level.many", new Object[]{uses}))
-                        .withStyle(ChatFormatting.GRAY)
-                  );
-               }
-            }
+      }
 
-            return String.join("\n", lines.stream().map(LegacyText::of).toList());
-         } else {
-            return "";
+      Optional<Reference<Enchantment>> enchantment = this.minecraft.level.registryAccess().lookupOrThrow(Registries.ENCHANTMENT).get(enchanting.enchantClue[i]);
+      int level = enchanting.levelClue[i];
+      if (!enchantment.isEmpty() && level >= 0) {
+         List<Component> lines = new ArrayList<>();
+         lines.add(Component.translatable("container.enchant.clue", Enchantment.getFullname(enchantment.get(), level)).withStyle(ChatFormatting.WHITE));
+         if (!infinite) {
+            lines.add(Component.empty());
+            int cost = enchanting.costs[i];
+            int uses = i + 1;
+            if (player.experienceLevel < cost) {
+               lines.add(Component.translatable("container.enchant.level.requirement", cost).withStyle(ChatFormatting.RED));
+            } else {
+               lines.add(
+                  (uses == 1 ? Component.translatable("container.enchant.lapis.one") : Component.translatable("container.enchant.lapis.many", uses))
+                     .withStyle(lapis >= uses ? ChatFormatting.GRAY : ChatFormatting.RED)
+               );
+               lines.add(
+                  (uses == 1 ? Component.translatable("container.enchant.level.one") : Component.translatable("container.enchant.level.many", uses))
+                     .withStyle(ChatFormatting.GRAY)
+               );
+            }
          }
+
+         return String.join("\n", lines.stream().map(LegacyText::of).toList());
+      } else {
+         return "";
       }
    }
 
@@ -379,8 +360,8 @@ final class JsonUiWorkstation implements WorkstationData.Actions, ContainerListe
 
    private void readLoom(LoomMenu loom) {
       ItemStack banner = loom.getBannerSlot().getItem();
-      boolean full = ((BannerPatternLayers)banner.getOrDefault(DataComponents.BANNER_PATTERNS, BannerPatternLayers.EMPTY)).layers().size() >= 6;
-      DyeColor dye = (DyeColor)loom.getDyeSlot().getItem().getOrDefault(DataComponents.DYE, DyeColor.WHITE);
+      boolean full = banner.getOrDefault(DataComponents.BANNER_PATTERNS, BannerPatternLayers.EMPTY).layers().size() >= 6;
+      DyeColor dye = loom.getDyeSlot().getItem().getOrDefault(DataComponents.DYE, DyeColor.WHITE);
       List<Holder<BannerPattern>> patterns = loom.getSelectablePatterns();
       if (patterns != this.loomPatterns || full != this.loomFull || dye != this.loomDye) {
          this.loomPatterns = patterns;
@@ -389,9 +370,7 @@ final class JsonUiWorkstation implements WorkstationData.Actions, ContainerListe
          List<WorkstationData.Choice> choices = new ArrayList<>();
          if (!full) {
             for (Holder<BannerPattern> pattern : patterns) {
-               choices.add(
-                  new WorkstationData.Choice(Component.translatable(((BannerPattern)pattern.value()).translationKey() + "." + dye.getName()).getString(), 1)
-               );
+               choices.add(new WorkstationData.Choice(Component.translatable(pattern.value().translationKey() + "." + dye.getName()).getString(), 1));
             }
          }
 
@@ -435,19 +414,18 @@ final class JsonUiWorkstation implements WorkstationData.Actions, ContainerListe
       this.data.cartography(mode, key != null && result ? this.text(key) : "");
    }
 
-   @Nullable
-   private static String name(@Nullable Holder<MobEffect> effect) {
+   private static @Nullable String name(@Nullable Holder<MobEffect> effect) {
       if (effect == null) {
          return null;
-      } else {
-         for (Entry<String, Holder<MobEffect>> power : POWERS.entrySet()) {
-            if (power.getValue().equals(effect)) {
-               return power.getKey();
-            }
-         }
-
-         return null;
       }
+
+      for (Entry<String, Holder<MobEffect>> power : POWERS.entrySet()) {
+         if (power.getValue().equals(effect)) {
+            return power.getKey();
+         }
+      }
+
+      return null;
    }
 
    @Override
@@ -511,6 +489,7 @@ final class JsonUiWorkstation implements WorkstationData.Actions, ContainerListe
       }
    }
 
+   @Override
    public void slotChanged(AbstractContainerMenu container, int slot, ItemStack stack) {
       if (this.menu instanceof AnvilMenu && slot == 0) {
          this.rename(stack.isEmpty() ? "" : stack.getHoverName().getString());
@@ -519,6 +498,7 @@ final class JsonUiWorkstation implements WorkstationData.Actions, ContainerListe
       }
    }
 
+   @Override
    public void dataChanged(AbstractContainerMenu container, int id, int value) {
       if (this.menu instanceof BeaconMenu beacon) {
          this.primary = beacon.getPrimaryEffect();
@@ -536,7 +516,7 @@ final class JsonUiWorkstation implements WorkstationData.Actions, ContainerListe
          state.legsEquipment = ItemStack.EMPTY;
          state.feetEquipment = ItemStack.EMPTY;
          if (!stack.isEmpty()) {
-            Equippable equippable = (Equippable)stack.get(DataComponents.EQUIPPABLE);
+            Equippable equippable = stack.get(DataComponents.EQUIPPABLE);
             EquipmentSlot slot = equippable == null ? null : equippable.slot();
             if (slot == EquipmentSlot.HEAD) {
                state.headEquipment = stack.copy();
@@ -571,8 +551,7 @@ final class JsonUiWorkstation implements WorkstationData.Actions, ContainerListe
       int y0 = Math.round(renderer.y());
       int x1 = Math.round(renderer.x() + renderer.w());
       int y1 = Math.round(renderer.y() + renderer.h());
-      String var7 = renderer.renderer();
-      switch (var7) {
+      switch (renderer.renderer()) {
          case "enchanting_book_renderer":
             if (this.book == null) {
                return false;
@@ -622,7 +601,7 @@ final class JsonUiWorkstation implements WorkstationData.Actions, ContainerListe
             graphics.bannerPattern(
                this.flag,
                banner.getColor(),
-               (BannerPatternLayers)result.getOrDefault(DataComponents.BANNER_PATTERNS, BannerPatternLayers.EMPTY),
+               result.getOrDefault(DataComponents.BANNER_PATTERNS, BannerPatternLayers.EMPTY),
                Math.round(renderer.x()),
                Math.round(renderer.y()),
                Math.round(renderer.x() + renderer.w()),

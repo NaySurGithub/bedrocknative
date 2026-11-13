@@ -26,30 +26,24 @@ public record PackManifest(UUID uuid, String version, List<PackManifest.Subpack>
          JsonElement var6 = root.get("subpacks");
          if (var6 instanceof JsonArray) {
             for (JsonElement element : (JsonArray)var6) {
-               if (element instanceof JsonObject subpack) {
-                  JsonElement name = subpack.get("folder_name");
-                  if (name instanceof JsonElement && name.isJsonPrimitive()) {
-                     JsonElement namex = subpack.get("name");
-                     subpacks.add(
-                        new PackManifest.Subpack(
-                           name.getAsString(),
-                           namex != null && namex.isJsonPrimitive() ? namex.getAsString() : "",
-                           tier(subpack.get("memory_performance_tier"))
-                        )
-                     );
-                  }
+               if (element instanceof JsonObject subpack && subpack.get("folder_name") instanceof JsonElement folder && folder.isJsonPrimitive()) {
+                  JsonElement name = subpack.get("name");
+                  subpacks.add(
+                     new PackManifest.Subpack(
+                        folder.getAsString(), name != null && name.isJsonPrimitive() ? name.getAsString() : "", tier(subpack.get("memory_performance_tier"))
+                     )
+                  );
                }
             }
          }
 
          return new PackManifest(UUID.fromString(header.get("uuid").getAsString().trim()), version(header.get("version")), List.copyOf(subpacks));
-      } catch (RuntimeException var11) {
-         throw new IOException("Invalid manifest.json: " + var11.getMessage(), var11);
+      } catch (RuntimeException e) {
+         throw new IOException("Invalid manifest.json: " + e.getMessage(), e);
       }
    }
 
-   @Nullable
-   public String subpackFolder(String selected) {
+   public @Nullable String subpackFolder(String selected) {
       String wanted = selected.trim().toLowerCase(Locale.ROOT);
 
       for (PackManifest.Subpack subpack : this.subpacks) {
@@ -58,34 +52,33 @@ public record PackManifest(UUID uuid, String version, List<PackManifest.Subpack>
          }
       }
 
-      for (PackManifest.Subpack subpackx : this.subpacks) {
-         if (subpackx.name().trim().toLowerCase(Locale.ROOT).equals(wanted)) {
-            return subpackx.folder();
+      for (PackManifest.Subpack subpack : this.subpacks) {
+         if (subpack.name().trim().toLowerCase(Locale.ROOT).equals(wanted)) {
+            return subpack.folder();
          }
       }
 
       return null;
    }
 
-   @Nullable
-   public String defaultSubpackFolder(int deviceTier) {
+   public @Nullable String defaultSubpackFolder(int deviceTier) {
       if (this.subpacks.isEmpty()) {
          return null;
-      } else {
-         for (int i = this.subpacks.size() - 1; i >= 0; i--) {
-            if (this.subpacks.get(i).tier() <= deviceTier) {
-               return this.subpacks.get(i).folder();
-            }
-         }
-
-         return this.subpacks.getFirst().folder();
       }
+
+      for (int i = this.subpacks.size() - 1; i >= 0; i--) {
+         if (this.subpacks.get(i).tier() <= deviceTier) {
+            return this.subpacks.get(i).folder();
+         }
+      }
+
+      return this.subpacks.getFirst().folder();
    }
 
    private static int tier(@Nullable JsonElement tier) {
       try {
          return tier != null && tier.isJsonPrimitive() ? Math.max(0, tier.getAsInt()) : 0;
-      } catch (RuntimeException var2) {
+      } catch (RuntimeException e) {
          return 0;
       }
    }

@@ -21,8 +21,7 @@ import org.jspecify.annotations.Nullable;
 
 public final class BedrockAtlas {
    private final Identifier location;
-   @Nullable
-   private TextureAtlas atlas;
+   private @Nullable TextureAtlas atlas;
 
    public BedrockAtlas(Identifier location) {
       this.location = location;

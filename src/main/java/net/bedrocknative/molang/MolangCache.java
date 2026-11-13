@@ -25,15 +25,15 @@ public final class MolangCache {
       MolangProgram cached = this.programs.get(key);
       if (cached != null) {
          return cached;
-      } else {
-         MolangProgram program = MolangCompiler.compile(joined, version, lowerCaseStrings);
-         if (entries.size() > 1 && program.diagnostics().aborted()) {
-            program = MolangProgram.sequence(joined, entries.stream().map(entry -> this.compile(entry, version, lowerCaseStrings)).toList());
-         }
-
-         MolangProgram previous = this.programs.putIfAbsent(key, program);
-         return previous != null ? previous : program;
       }
+
+      MolangProgram program = MolangCompiler.compile(joined, version, lowerCaseStrings);
+      if (entries.size() > 1 && program.diagnostics().aborted()) {
+         program = MolangProgram.sequence(joined, entries.stream().map(entry -> this.compile(entry, version, lowerCaseStrings)).toList());
+      }
+
+      MolangProgram previous = this.programs.putIfAbsent(key, program);
+      return previous != null ? previous : program;
    }
 
    public int size() {

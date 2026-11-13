@@ -35,12 +35,12 @@ public final class OwnUiPack implements PackSource {
       String normalized = PackStack.normalize(path);
       if (normalized == null) {
          return false;
-      } else {
-         String lower = normalized.toLowerCase(Locale.ROOT);
-         return lower.startsWith("textures/")
-            ? OwnArt.hasFile(lower)
-            : (lower.startsWith("ui/") || lower.startsWith("texts/")) && this.files.read(lower).isPresent();
       }
+
+      String lower = normalized.toLowerCase(Locale.ROOT);
+      return lower.startsWith("textures/")
+         ? OwnArt.hasFile(lower)
+         : (lower.startsWith("ui/") || lower.startsWith("texts/")) && this.files.read(lower).isPresent();
    }
 
    @Override

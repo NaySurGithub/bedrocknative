@@ -99,23 +99,23 @@ final class ActorFacing {
       ClientEntityDef definition = registry != null ? registry.entity(identifier) : null;
       if (definition == null) {
          return registry != null ? ", no client entity" : "";
-      } else {
-         try {
-            DefinitionNeeds.Needs needs = DefinitionNeeds.of(registry, definition);
-            Set<String> queries = needs.queries();
-            List<String> rotation = new ArrayList<>();
+      }
 
-            for (String query : ROTATION_QUERIES) {
-               if (queries.contains(query)) {
-                  List<String> calls = needs.cameraCalls().stream().filter(call -> call.startsWith(query + "(")).limit(6L).toList();
-                  rotation.addAll(calls.isEmpty() ? List.of(query) : calls);
-               }
+      try {
+         DefinitionNeeds.Needs needs = DefinitionNeeds.of(registry, definition);
+         Set<String> queries = needs.queries();
+         List<String> rotation = new ArrayList<>();
+
+         for (String query : ROTATION_QUERIES) {
+            if (queries.contains(query)) {
+               List<String> calls = needs.cameraCalls().stream().filter(call -> call.startsWith(query + "(")).limit(6L).toList();
+               rotation.addAll(calls.isEmpty() ? List.of(query) : calls);
             }
-
-            return rotation.isEmpty() ? ", reads no rotation query" : ", reads " + rotation;
-         } catch (RuntimeException var9) {
-            return ", queries unreadable (" + var9 + ")";
          }
+
+         return rotation.isEmpty() ? ", reads no rotation query" : ", reads " + rotation;
+      } catch (RuntimeException e) {
+         return ", queries unreadable (" + e + ")";
       }
    }
 

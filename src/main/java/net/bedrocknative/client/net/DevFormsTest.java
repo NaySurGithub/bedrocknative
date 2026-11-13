@@ -35,7 +35,6 @@ import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.input.MouseButtonInfo;
-import net.minecraft.network.chat.Component;
 import org.cloudburstmc.protocol.bedrock.packet.ModalFormRequestPacket;
 import org.cloudburstmc.protocol.bedrock.packet.ServerSettingsResponsePacket;
 import org.jspecify.annotations.Nullable;
@@ -108,43 +107,43 @@ final class DevFormsTest {
          () -> {
             if (!(json.form() instanceof BedrockForm.Modal)) {
                return "not a modal form: FAIL";
-            } else {
-               UiControl dialog = json.ui().instance().find("modal_bg_buttons");
-               UiControl first = json.ui().input().firing("popup_dialog.left_button", null, -1);
-               UiControl second = json.ui().input().firing("popup_dialog.rightcancel_button", null, -1);
-               List<String> labels = new ArrayList<>();
-               if (dialog != null) {
-                  dialog.walk(control -> {
-                     if (control.type() == UiType.LABEL && control.visible() && !control.text().isEmpty()) {
-                        labels.add(control.text());
-                     }
-                  });
-               }
-
-               FormData data = json.data();
-               List<String> wanted = List.of(
-                  data.global("#modal_title_text").asString(),
-                  data.global("#modal_label_text").asString(),
-                  data.global("#modal_left_button_text").asString(),
-                  data.global("#modal_rightcancel_button_text").asString()
-               );
-               boolean pass = dialog != null
-                  && dialog.visible()
-                  && first != null
-                  && second != null
-                  && first.y() + first.height() <= second.y() + 0.01F
-                  && labels.equals(wanted);
-               return String.format(
-                  "popup %s (%.0fx%.0f), labels %s, button1 above button2 %s, problems %s: %s",
-                  "modal_dialog_popup",
-                  dialog == null ? 0.0F : dialog.width(),
-                  dialog == null ? 0.0F : dialog.height(),
-                  labels,
-                  first != null && second != null && first.y() < second.y(),
-                  json.ui().instance().problems(),
-                  pass ? "PASS" : "FAIL"
-               );
             }
+
+            UiControl dialog = json.ui().instance().find("modal_bg_buttons");
+            UiControl first = json.ui().input().firing("popup_dialog.left_button", null, -1);
+            UiControl second = json.ui().input().firing("popup_dialog.rightcancel_button", null, -1);
+            List<String> labels = new ArrayList<>();
+            if (dialog != null) {
+               dialog.walk(control -> {
+                  if (control.type() == UiType.LABEL && control.visible() && !control.text().isEmpty()) {
+                     labels.add(control.text());
+                  }
+               });
+            }
+
+            FormData data = json.data();
+            List<String> wanted = List.of(
+               data.global("#modal_title_text").asString(),
+               data.global("#modal_label_text").asString(),
+               data.global("#modal_left_button_text").asString(),
+               data.global("#modal_rightcancel_button_text").asString()
+            );
+            boolean pass = dialog != null
+               && dialog.visible()
+               && first != null
+               && second != null
+               && first.y() + first.height() <= second.y() + 0.01F
+               && labels.equals(wanted);
+            return String.format(
+               "popup %s (%.0fx%.0f), labels %s, button1 above button2 %s, problems %s: %s",
+               "modal_dialog_popup",
+               dialog == null ? 0.0F : dialog.width(),
+               dialog == null ? 0.0F : dialog.height(),
+               labels,
+               first != null && second != null && first.y() < second.y(),
+               json.ui().instance().problems(),
+               pass ? "PASS" : "FAIL"
+            );
          }
       );
       log("JSON UI: modal form {}", line);
@@ -301,8 +300,8 @@ final class DevFormsTest {
       FormScreen form;
       try {
          form = this.open("marker");
-      } catch (IllegalStateException var3) {
-         log("marker: no form ({}); run testing/bds/install.sh and restart the BDS", var3.getMessage());
+      } catch (IllegalStateException e) {
+         log("marker: no form ({}); run testing/bds/install.sh and restart the BDS", e.getMessage());
          return;
       }
 
@@ -376,7 +375,7 @@ final class DevFormsTest {
       });
       FormScreen form = this.await(FormScreen.class, 2000L);
       sleep(700L);
-      log("bad slider: error form shown ({}): {}", kind(form), this.<Component>onClient(form::getTitle).getString());
+      log("bad slider: error form shown ({}): {}", kind(form), this.onClient(form::getTitle).getString());
       this.run(() -> form.keyPressed(ESCAPE));
       sleep(700L);
    }
@@ -466,25 +465,24 @@ final class DevFormsTest {
       }
    }
 
-   @Nullable
-   private UiControl generated(JsonUiFormScreen form, int index) {
+   private @Nullable UiControl generated(JsonUiFormScreen form, int index) {
       UiControl root = form.ui().instance().root();
       if (root == null) {
          return null;
-      } else {
-         Deque<UiControl> queue = new ArrayDeque<>(List.of(root));
+      }
 
-         while (!queue.isEmpty()) {
-            UiControl control = queue.poll();
-            if (control.isFactory() && "custom_form".equals(control.collectionName()) && control.generated().size() > index) {
-               return control.generated().get(index);
-            }
+      Deque<UiControl> queue = new ArrayDeque<>(List.of(root));
 
-            queue.addAll(control.children());
+      while (!queue.isEmpty()) {
+         UiControl control = queue.poll();
+         if (control.isFactory() && "custom_form".equals(control.collectionName()) && control.generated().size() > index) {
+            return control.generated().get(index);
          }
 
-         return null;
+         queue.addAll(control.children());
       }
+
+      return null;
    }
 
    private UiControl element(JsonUiFormScreen form, int index, UiType type) {
@@ -635,7 +633,7 @@ final class DevFormsTest {
    private static void sleep(long millis) {
       try {
          Thread.sleep(millis);
-      } catch (InterruptedException var3) {
+      } catch (InterruptedException e) {
          Thread.currentThread().interrupt();
       }
    }

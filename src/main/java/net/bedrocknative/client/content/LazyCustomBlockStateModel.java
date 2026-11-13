@@ -23,8 +23,7 @@ final class LazyCustomBlockStateModel implements BlockStateModel {
    private final CustomBlockLooks.Look look;
    private final Map<String, BedrockBlockModels.Placed> placed;
    private final TextureAtlasSprite missing;
-   @Nullable
-   private CustomBlockStateModel delegate;
+   private @Nullable CustomBlockStateModel delegate;
 
    LazyCustomBlockStateModel(CustomBlockState state, CustomBlockLooks.Look look, Map<String, BedrockBlockModels.Placed> placed, TextureAtlasSprite missing) {
       this.state = state;
@@ -44,16 +43,18 @@ final class LazyCustomBlockStateModel implements BlockStateModel {
       return built;
    }
 
+   @Override
    public void collectParts(RandomSource random, List<BlockStateModelPart> output) {
       this.model().collectParts(random, output);
    }
 
+   @Override
    public Baked particleMaterial() {
       return this.model().particleMaterial();
    }
 
-   @MaterialFlags
-   public int materialFlags() {
+   @Override
+   public @MaterialFlags int materialFlags() {
       return this.model().materialFlags();
    }
 

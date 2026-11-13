@@ -19,7 +19,7 @@ final class FormTextWidget extends AbstractWidget {
       super(0, 0, width, 0, text);
       this.font = font;
       this.kind = kind;
-      Component shown = (Component)(kind == FormTextWidget.Kind.HEADER ? text.copy().withStyle(ChatFormatting.BOLD) : text);
+      Component shown = kind == FormTextWidget.Kind.HEADER ? text.copy().withStyle(ChatFormatting.BOLD) : text;
       this.lines = kind == FormTextWidget.Kind.DIVIDER ? List.of() : font.split(shown, width - 4);
       this.setHeight(kind == FormTextWidget.Kind.DIVIDER ? 7 : Math.max(1, this.lines.size()) * 9 + (kind == FormTextWidget.Kind.HEADER ? 3 : 1));
       this.active = false;
@@ -29,6 +29,7 @@ final class FormTextWidget extends AbstractWidget {
       return new FormTextWidget(font, Component.empty(), width, FormTextWidget.Kind.DIVIDER);
    }
 
+   @Override
    protected void extractWidgetRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
       if (this.kind == FormTextWidget.Kind.DIVIDER) {
          int y = this.getY() + this.getHeight() / 2;
@@ -43,11 +44,12 @@ final class FormTextWidget extends AbstractWidget {
       }
    }
 
+   @Override
    protected void updateWidgetNarration(NarrationElementOutput output) {
       output.add(NarratedElementType.TITLE, this.getMessage());
    }
 
-   static enum Kind {
+   enum Kind {
       TEXT,
       HEADER,
       DIVIDER;

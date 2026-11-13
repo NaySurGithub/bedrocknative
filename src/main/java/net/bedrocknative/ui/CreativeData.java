@@ -27,8 +27,7 @@ public final class CreativeData implements UiDataSource {
       CreativeData.Tab.SEARCH
    );
    private final ContainerData slots;
-   @Nullable
-   private CreativeData.Actions actions;
+   private CreativeData.@Nullable Actions actions;
    private List<CreativeData.Cell> cells = List.of();
    private CreativeData.Tab tab = CreativeData.Tab.CONSTRUCTION;
    private CreativeData.Layout layout = CreativeData.Layout.CREATIVE;
@@ -44,7 +43,7 @@ public final class CreativeData implements UiDataSource {
       return this.slots;
    }
 
-   public void actions(@Nullable CreativeData.Actions target) {
+   public void actions(CreativeData.@Nullable Actions target) {
       this.actions = target;
    }
 
@@ -119,44 +118,47 @@ public final class CreativeData implements UiDataSource {
    public UiValue item(String collection, int index, String name) {
       if (!collection.equals("recipe_book")) {
          return this.slots.item(collection, index, name);
-      } else if (index < 0) {
-         return name.equals("#recipe_book_total_items") ? UiValue.of(this.cells.size()) : UiValue.NULL;
-      } else if (index >= this.cells.size()) {
-         return UiValue.NULL;
-      } else {
-         CreativeData.Cell cell = this.cells.get(index);
-
-         return switch (name) {
-            case "#recipe_hover_text", "#hover_text" -> UiValue.of(cell.hoverText());
-            case "#recipe_craftable_count", "#inventory_stack_count" -> UiValue.of("");
-            case "#stack_count_visible", "#is_creative_selected_slot", "#item_durability_visible", "#item_storage_visible", "#inactive_item", "#item_lock" -> UiValue.FALSE;
-            case "#container_item_background_texture" -> {
-               yield UiValue.of(switch (cell.kind()) {
-                  case ENTRY -> "textures/ui/recipe_book_item_bg";
-                  case HEAD_CLOSED -> "textures/ui/recipe_book_group_collapsed";
-                  case HEAD_OPEN -> "textures/ui/recipe_book_group_expanded";
-                  case GROUP_ENTRY -> "textures/ui/recipe_book_group_bg";
-               });
-            }
-            case "#container_item_modifier" -> UiValue.of(
-               cell.kind() == CreativeData.Kind.HEAD_CLOSED ? 2.0 : (cell.kind() == CreativeData.Kind.HEAD_OPEN ? 1.0 : 0.0)
-            );
-            case "#container_item_background" -> {
-               yield UiValue.of(switch (cell.kind()) {
-                  case ENTRY -> 0.0;
-                  case HEAD_CLOSED -> 1.0;
-                  case HEAD_OPEN -> 2.0;
-                  case GROUP_ENTRY -> 3.0;
-               });
-            }
-            default -> UiValue.NULL;
-         };
       }
+
+      if (index < 0) {
+         return name.equals("#recipe_book_total_items") ? UiValue.of(this.cells.size()) : UiValue.NULL;
+      }
+
+      if (index >= this.cells.size()) {
+         return UiValue.NULL;
+      }
+
+      CreativeData.Cell cell = this.cells.get(index);
+
+      return switch (name) {
+         case "#recipe_hover_text", "#hover_text" -> UiValue.of(cell.hoverText());
+         case "#recipe_craftable_count", "#inventory_stack_count" -> UiValue.of("");
+         case "#stack_count_visible", "#is_creative_selected_slot", "#item_durability_visible", "#item_storage_visible", "#inactive_item", "#item_lock" -> UiValue.FALSE;
+         case "#container_item_background_texture" -> {
+            yield UiValue.of(switch (cell.kind()) {
+               case ENTRY -> "textures/ui/recipe_book_item_bg";
+               case HEAD_CLOSED -> "textures/ui/recipe_book_group_collapsed";
+               case HEAD_OPEN -> "textures/ui/recipe_book_group_expanded";
+               case GROUP_ENTRY -> "textures/ui/recipe_book_group_bg";
+            });
+         }
+         case "#container_item_modifier" -> UiValue.of(
+            cell.kind() == CreativeData.Kind.HEAD_CLOSED ? 2.0 : (cell.kind() == CreativeData.Kind.HEAD_OPEN ? 1.0 : 0.0)
+         );
+         case "#container_item_background" -> {
+            yield UiValue.of(switch (cell.kind()) {
+               case ENTRY -> 0.0;
+               case HEAD_CLOSED -> 1.0;
+               case HEAD_OPEN -> 2.0;
+               case GROUP_ENTRY -> 3.0;
+            });
+         }
+         default -> UiValue.NULL;
+      };
    }
 
-   @Nullable
    @Override
-   public String kind(String collection, int index) {
+   public @Nullable String kind(String collection, int index) {
       return null;
    }
 
@@ -221,20 +223,20 @@ public final class CreativeData implements UiDataSource {
    public record Cell(String hoverText, CreativeData.Kind kind) {
    }
 
-   public static enum Kind {
+   public enum Kind {
       ENTRY,
       HEAD_CLOSED,
       HEAD_OPEN,
       GROUP_ENTRY;
    }
 
-   public static enum Layout {
+   public enum Layout {
       CREATIVE,
       BOTH,
       SURVIVAL;
    }
 
-   public static enum Tab {
+   public enum Tab {
       CONSTRUCTION,
       EQUIPMENT,
       ITEMS,

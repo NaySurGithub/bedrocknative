@@ -3,7 +3,6 @@ package net.bedrocknative.client.inventory;
 import java.lang.runtime.SwitchBootstraps;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
 import net.bedrocknative.BedrockNative;
@@ -123,72 +122,69 @@ final class JavaRecipeBookFeed {
       };
    }
 
-   @Nullable
-   private static RecipeDisplayEntry entry(BookRecipe recipe, OptionalInt group, RecipeBookCategory category) {
+   private static @Nullable RecipeDisplayEntry entry(BookRecipe recipe, OptionalInt group, RecipeBookCategory category) {
       RecipeDisplay display = display(recipe);
       if (display == null) {
          return null;
-      } else {
-         List<Ingredient> requirements = new ArrayList<>();
+      }
 
+      List<Ingredient> requirements = new ArrayList<>();
+
+      for (BookRecipe.Unit unit : recipe.units()) {
+         Ingredient ingredient = ingredient(unit.ingredient());
+         if (ingredient == null) {
+            return null;
+         }
+
+         for (int i = 0; i < unit.perCraft(); i++) {
+            requirements.add(ingredient);
+         }
+      }
+
+      return new RecipeDisplayEntry(new RecipeDisplayId(recipe.netId()), display, group, category, Optional.of(requirements));
+   }
+
+   static @Nullable RecipeDisplay display(BookRecipe recipe) {
+      ItemStack result = ItemMappings.toJava(recipe.result());
+      if (result.isEmpty()) {
+         return null;
+      }
+
+      SlotDisplay shown = new ItemStackSlotDisplay(ItemStackTemplate.fromNonEmptyStack(result));
+      SlotDisplay station = new ItemSlotDisplay(Items.CRAFTING_TABLE.builtInRegistryHolder());
+      List<SlotDisplay> cells = new ArrayList<>();
+      if (recipe.shaped()) {
+         if (recipe.ingredients().size() != recipe.width() * recipe.height()) {
+            return null;
+         }
+
+         for (ItemDescriptorWithCount ingredient : recipe.ingredients()) {
+            SlotDisplay cell = BookRecipe.empty(ingredient) ? Empty.INSTANCE : slot(ingredient.getDescriptor());
+            if (cell == null) {
+               return null;
+            }
+
+            cells.add(cell);
+         }
+
+         return new ShapedCraftingRecipeDisplay(recipe.width(), recipe.height(), cells, shown, station);
+      } else {
          for (BookRecipe.Unit unit : recipe.units()) {
-            Ingredient ingredient = ingredient(unit.ingredient());
-            if (ingredient == null) {
+            SlotDisplay cell = slot(unit.ingredient().getDescriptor());
+            if (cell == null) {
                return null;
             }
 
             for (int i = 0; i < unit.perCraft(); i++) {
-               requirements.add(ingredient);
+               cells.add(cell);
             }
          }
 
-         return new RecipeDisplayEntry(new RecipeDisplayId(recipe.netId()), display, group, category, Optional.of(requirements));
+         return new ShapelessCraftingRecipeDisplay(cells, shown, station);
       }
    }
 
-   @Nullable
-   static RecipeDisplay display(BookRecipe recipe) {
-      ItemStack result = ItemMappings.toJava(recipe.result());
-      if (result.isEmpty()) {
-         return null;
-      } else {
-         SlotDisplay shown = new ItemStackSlotDisplay(ItemStackTemplate.fromNonEmptyStack(result));
-         SlotDisplay station = new ItemSlotDisplay(Items.CRAFTING_TABLE.builtInRegistryHolder());
-         List<SlotDisplay> cells = new ArrayList<>();
-         if (recipe.shaped()) {
-            if (recipe.ingredients().size() != recipe.width() * recipe.height()) {
-               return null;
-            } else {
-               for (ItemDescriptorWithCount ingredient : recipe.ingredients()) {
-                  SlotDisplay cell = (SlotDisplay)(BookRecipe.empty(ingredient) ? Empty.INSTANCE : slot(ingredient.getDescriptor()));
-                  if (cell == null) {
-                     return null;
-                  }
-
-                  cells.add(cell);
-               }
-
-               return new ShapedCraftingRecipeDisplay(recipe.width(), recipe.height(), cells, shown, station);
-            }
-         } else {
-            for (BookRecipe.Unit unit : recipe.units()) {
-               SlotDisplay cell = slot(unit.ingredient().getDescriptor());
-               if (cell == null) {
-                  return null;
-               }
-
-               for (int i = 0; i < unit.perCraft(); i++) {
-                  cells.add(cell);
-               }
-            }
-
-            return new ShapelessCraftingRecipeDisplay(cells, shown, station);
-         }
-      }
-   }
-
-   @Nullable
-   private static SlotDisplay slot(ItemDescriptor descriptor) {
+   private static @Nullable SlotDisplay slot(ItemDescriptor descriptor) {
       if (!(descriptor instanceof ItemTagDescriptor tag)) {
          ItemStack stack = stack(descriptor);
          return stack.isEmpty() ? null : new ItemStackSlotDisplay(ItemStackTemplate.fromNonEmptyStack(stack));
@@ -196,29 +192,28 @@ final class JavaRecipeBookFeed {
          HolderSet<Item> javaTag = javaTag(tag.getItemTag());
          if (javaTag != null) {
             return new TagSlotDisplay(javaTag);
-         } else {
-            List<SlotDisplay> items = new ArrayList<>();
-
-            for (ItemStack stack : tagged(tag.getItemTag())) {
-               items.add(new ItemStackSlotDisplay(ItemStackTemplate.fromNonEmptyStack(stack)));
-            }
-
-            return (SlotDisplay)(items.isEmpty() ? null : (items.size() == 1 ? items.getFirst() : new Composite(items)));
          }
+
+         List<SlotDisplay> items = new ArrayList<>();
+
+         for (ItemStack stack : tagged(tag.getItemTag())) {
+            items.add(new ItemStackSlotDisplay(ItemStackTemplate.fromNonEmptyStack(stack)));
+         }
+
+         return items.isEmpty() ? null : (items.size() == 1 ? items.getFirst() : new Composite(items));
       }
    }
 
-   @Nullable
-   private static Ingredient ingredient(ItemDescriptorWithCount ingredient) {
+   private static @Nullable Ingredient ingredient(ItemDescriptorWithCount ingredient) {
       ItemDescriptor descriptor = ingredient.getDescriptor();
       if (descriptor instanceof ItemTagDescriptor tag) {
          HolderSet<Item> javaTag = javaTag(tag.getItemTag());
          if (javaTag != null) {
             return Ingredient.of(javaTag);
-         } else {
-            List<ItemStack> stacks = tagged(tag.getItemTag());
-            return stacks.isEmpty() ? null : Ingredient.of(stacks.stream().map(ItemStack::getItem).distinct());
          }
+
+         List<ItemStack> stacks = tagged(tag.getItemTag());
+         return stacks.isEmpty() ? null : Ingredient.of(stacks.stream().map(ItemStack::getItem).distinct());
       } else {
          ItemStack stack = stack(descriptor);
          return stack.isEmpty() ? null : Ingredient.of(stack.getItem());
@@ -226,14 +221,13 @@ final class JavaRecipeBookFeed {
    }
 
    private static ItemStack stack(ItemDescriptor descriptor) {
-      Objects.requireNonNull(descriptor);
       ItemDescriptor var3 = descriptor;
       byte var4 = 0;
 
       while (true) {
          String identifier;
          int aux;
-         switch (SwitchBootstraps.typeSwitch<"typeSwitch",DefaultDescriptor,DeferredDescriptor>(var3, var4)) {
+         switch (net.bedrocknative.TypeSwitchHelper.index(new Class<?>[]{DefaultDescriptor.class, DeferredDescriptor.class}, var3, var4)) {
             case 0:
                DefaultDescriptor exact = (DefaultDescriptor)var3;
                if (exact.getItemId() == null) {
@@ -267,16 +261,15 @@ final class JavaRecipeBookFeed {
       }
    }
 
-   @Nullable
-   private static HolderSet<Item> javaTag(String tag) {
+   private static @Nullable HolderSet<Item> javaTag(String tag) {
       String name = Crafting.javaTagName(tag);
       Identifier id = name == null ? null : Identifier.tryParse(name);
       if (id == null) {
          return null;
-      } else {
-         Optional<Named<Item>> set = BuiltInRegistries.ITEM.get(TagKey.create(Registries.ITEM, id));
-         return set.isPresent() && set.get().size() > 0 ? (HolderSet)set.get() : null;
       }
+
+      Optional<Named<Item>> set = BuiltInRegistries.ITEM.get(TagKey.create(Registries.ITEM, id));
+      return set.isPresent() && set.get().size() > 0 ? set.get() : null;
    }
 
    private static List<ItemStack> tagged(String tag) {
@@ -315,15 +308,15 @@ final class JavaRecipeBookFeed {
          if (placed > 0) {
             requests.inventory().showMenu(menu);
             return true;
-         } else {
-            RecipeDisplay display = display(recipe);
-            ClientPacketListener connection = this.minecraft.getConnection();
-            if (display != null && connection != null) {
-               connection.handlePlaceRecipe(new ClientboundPlaceGhostRecipePacket(packet.containerId(), display));
-            }
-
-            return true;
          }
+
+         RecipeDisplay display = display(recipe);
+         ClientPacketListener connection = this.minecraft.getConnection();
+         if (display != null && connection != null) {
+            connection.handlePlaceRecipe(new ClientboundPlaceGhostRecipePacket(packet.containerId(), display));
+         }
+
+         return true;
       } else {
          return recipe != null;
       }

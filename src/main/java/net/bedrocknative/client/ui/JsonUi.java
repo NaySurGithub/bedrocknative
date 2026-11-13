@@ -47,21 +47,14 @@ public final class JsonUi {
    );
    public static final Set<String> IN_GAME_CHECK_PENDING = Set.of("xbox_signin_qr", "xbox_signin_welcome", "xbox_signin_problem", "xbox_signin_waiting");
    private static volatile JsonUi.Mode mode = JsonUi.Mode.of(System.getProperty("bedrocknative.jsonui", "default"));
-   @Nullable
-   private static volatile List<PackSource> loadedFor;
-   @Nullable
-   private static volatile CompletableFuture<UiDefinitionSet> definitions;
-   @Nullable
-   private static volatile CompletableFuture<UiFonts> fonts;
+   private static volatile @Nullable List<PackSource> loadedFor;
+   private static volatile @Nullable CompletableFuture<UiDefinitionSet> definitions;
+   private static volatile @Nullable CompletableFuture<UiFonts> fonts;
    private static volatile int serverPacks;
-   @Nullable
-   private static volatile UiDefinitionSet environmentFor;
-   @Nullable
-   private static volatile UiEnvironment environment;
-   @Nullable
-   private static volatile BedrockFont font;
-   @Nullable
-   private static volatile BedrockOptions options;
+   private static volatile @Nullable UiDefinitionSet environmentFor;
+   private static volatile @Nullable UiEnvironment environment;
+   private static volatile @Nullable BedrockFont font;
+   private static volatile @Nullable BedrockOptions options;
    private static int loggedScale;
    private static int loggedJavaOption = -1;
    private static volatile boolean devBackdrop;
@@ -77,8 +70,7 @@ public final class JsonUi {
       mode = newMode;
    }
 
-   @Nullable
-   public static UiDefinitionSet definitions() {
+   public static @Nullable UiDefinitionSet definitions() {
       if (mode != JsonUi.Mode.OFF && BaseContent.hasUi()) {
          PackStack stack = PackStack.active();
          List<PackSource> packs = stack.packs();
@@ -148,7 +140,7 @@ public final class JsonUi {
          options = settings;
       }
 
-      int javaOption = (Integer)minecraft.options.guiScale().get();
+      int javaOption = minecraft.options.guiScale().get();
       int bedrock = UiScale.scale(window.getWidth(), window.getHeight(), settings.guiScaleModifier(), settings.accessibilityScaling());
       int scale = UiScale.followingJava(javaOption, window.getWidth(), window.getHeight(), bedrock);
       if (scale != loggedScale || javaOption != loggedJavaOption) {
@@ -217,7 +209,7 @@ public final class JsonUi {
       UiEnvironment current = environment;
       if (current == null || environmentFor != set) {
          BedrockFont loaded = BedrockFont.load(readyFonts());
-         UiTextMeasurer measurer = (UiTextMeasurer)(loaded.bitmap().hasPages() ? loaded.metrics() : UiTextMeasurer.FIXED);
+         UiTextMeasurer measurer = loaded.bitmap().hasPages() ? loaded.metrics() : UiTextMeasurer.FIXED;
          current = new UiEnvironment(measurer, new JsonUiTextures(new UiPackTextures(PackStack.active())), BedrockText::lookupKey);
          BedrockFont previous = font;
          font = loaded;
@@ -232,8 +224,7 @@ public final class JsonUi {
       return current;
    }
 
-   @Nullable
-   static BedrockFont font() {
+   static @Nullable BedrockFont font() {
       return font;
    }
 
@@ -252,7 +243,7 @@ public final class JsonUi {
       return devBackdrop;
    }
 
-   public static enum Mode {
+   public enum Mode {
       OFF,
       AUTO,
       DEFAULT,
@@ -261,7 +252,7 @@ public final class JsonUi {
       static JsonUi.Mode of(String name) {
          try {
             return valueOf(name.trim().toUpperCase(Locale.ROOT));
-         } catch (IllegalArgumentException var2) {
+         } catch (IllegalArgumentException e) {
             return DEFAULT;
          }
       }

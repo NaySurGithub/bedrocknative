@@ -52,10 +52,12 @@ public final class BedrockItemIcons {
    private static final Vector3fc CUBE_TO = new Vector3f(16.0F, 16.0F, 16.0F);
    private static final UVs FULL_FACE = new UVs(0.0F, 0.0F, 16.0F, 16.0F);
    private static final Interner AS_IS = new Interner() {
+      @Override
       public Vector3fc vector(Vector3fc vector) {
          return vector;
       }
 
+      @Override
       public MaterialInfo materialInfo(MaterialInfo material) {
          return material;
       }
@@ -68,8 +70,7 @@ public final class BedrockItemIcons {
    private BedrockItemIcons() {
    }
 
-   @Nullable
-   public static BedrockItemIcons.Icon icon(String identifier) {
+   public static BedrockItemIcons.@Nullable Icon icon(String identifier) {
       return icons.get(identifier);
    }
 
@@ -157,29 +158,27 @@ public final class BedrockItemIcons {
       return new BedrockItemIcons.Loaded(requests, images);
    }
 
-   @Nullable
-   private static BedrockItemIcons.Request iconRequest(String identifier, String icon, int frame, Map<String, List<String>> itemTextures) {
+   private static BedrockItemIcons.@Nullable Request iconRequest(String identifier, String icon, int frame, Map<String, List<String>> itemTextures) {
       List<String> paths = itemTextures.get(icon);
-      return paths == null ? null : new BedrockItemIcons.Request(identifier, List.of(paths.get(Math.clamp((long)frame, 0, paths.size() - 1))), false);
+      return paths == null ? null : new BedrockItemIcons.Request(identifier, List.of(paths.get(Math.clamp(frame, 0, paths.size() - 1))), false);
    }
 
    private static boolean read(PackStack stack, String path, Map<String, NativeImage> images) {
       Optional<PackStack.Resource> resource = stack.texture(path);
       if (resource.isEmpty()) {
          return false;
-      } else {
-         try {
-            images.put(path, BedrockTextures.decode(resource.get().data()));
-            return true;
-         } catch (RuntimeException | IOException var5) {
-            BedrockNative.LOGGER.warn("Couldn't decode Bedrock texture {}", resource.get().path(), var5);
-            return false;
-         }
+      }
+
+      try {
+         images.put(path, BedrockTextures.decode(resource.get().data()));
+         return true;
+      } catch (IOException | RuntimeException e) {
+         BedrockNative.LOGGER.warn("Couldn't decode Bedrock texture {}", resource.get().path(), e);
+         return false;
       }
    }
 
-   @Nullable
-   private static BedrockItemIcons.Request blockRequest(CustomItem item, Map<String, List<String>> terrain, Map<String, JsonElement> blocksJson) {
+   private static BedrockItemIcons.@Nullable Request blockRequest(CustomItem item, Map<String, List<String>> terrain, Map<String, JsonElement> blocksJson) {
       NbtMap definition = BlockMappings.get().customBlock(item.block());
       NbtMap materials = definition == null
          ? NbtMap.EMPTY
@@ -205,8 +204,7 @@ public final class BedrockItemIcons {
       return new BedrockItemIcons.Request(item.identifier(), List.copyOf(paths), true);
    }
 
-   @Nullable
-   private static String materialTexture(NbtMap materials, Direction face) {
+   private static @Nullable String materialTexture(NbtMap materials, Direction face) {
       for (String key : faceKeys(face)) {
          String texture = materials.getCompound(key).getString("texture", "");
          if (!texture.isEmpty()) {
@@ -217,26 +215,26 @@ public final class BedrockItemIcons {
       return null;
    }
 
-   @Nullable
-   private static String blocksJsonTexture(@Nullable JsonElement textures, Direction face) {
+   private static @Nullable String blocksJsonTexture(@Nullable JsonElement textures, Direction face) {
       if (textures == null) {
          return null;
-      } else if (textures.isJsonPrimitive()) {
-         return textures.getAsString();
-      } else {
-         if (textures.isJsonObject()) {
-            JsonObject byFace = textures.getAsJsonObject();
+      }
 
-            for (String key : faceKeys(face)) {
-               JsonElement var6 = byFace.get(key);
-               if (var6 instanceof JsonElement && var6.isJsonPrimitive()) {
-                  return var6.getAsString();
-               }
+      if (textures.isJsonPrimitive()) {
+         return textures.getAsString();
+      }
+
+      if (textures.isJsonObject()) {
+         JsonObject byFace = textures.getAsJsonObject();
+
+         for (String key : faceKeys(face)) {
+            if (byFace.get(key) instanceof JsonElement value && value.isJsonPrimitive()) {
+               return value.getAsString();
             }
          }
-
-         return null;
       }
+
+      return null;
    }
 
    private static List<String> faceKeys(Direction face) {
@@ -262,8 +260,8 @@ public final class BedrockItemIcons {
                      )
                   );
             }
-         } catch (IOException var6) {
-            BedrockNative.LOGGER.warn("Couldn't read blocks.json from {}", pack, var6);
+         } catch (IOException e) {
+            BedrockNative.LOGGER.warn("Couldn't read blocks.json from {}", pack, e);
          }
       }
 

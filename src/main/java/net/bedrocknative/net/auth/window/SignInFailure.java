@@ -5,8 +5,7 @@ import org.jspecify.annotations.Nullable;
 
 public final class SignInFailure extends IOException {
    private final SignInFailure.Reason reason;
-   @Nullable
-   private final String oauthError;
+   private final @Nullable String oauthError;
 
    public SignInFailure(SignInFailure.Reason reason, String description) {
       this(reason, description, null);
@@ -22,8 +21,7 @@ public final class SignInFailure extends IOException {
       return this.reason;
    }
 
-   @Nullable
-   public String oauthError() {
+   public @Nullable String oauthError() {
       return this.oauthError;
    }
 
@@ -42,7 +40,7 @@ public final class SignInFailure extends IOException {
       }
    }
 
-   public static enum Reason {
+   public enum Reason {
       CLOSED,
       DECLINED,
       INCOMPLETE,

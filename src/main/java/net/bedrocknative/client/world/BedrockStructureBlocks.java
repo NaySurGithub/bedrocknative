@@ -62,7 +62,7 @@ public final class BedrockStructureBlocks {
             case Z -> Mirror.LEFT_RIGHT;
             default -> Mirror.NONE;
          });
-         structure.setRotation((Rotation)Rotation.BY_ID.apply(tag.getByte("rotation", (byte)0)));
+         structure.setRotation(Rotation.BY_ID.apply(tag.getByte("rotation", (byte)0)));
          structure.setIgnoreEntities(tag.getBoolean("ignoreEntities", true));
          structure.setShowBoundingBox(tag.getBoolean("showBoundingBox", true));
          structure.setIntegrity(Math.clamp(tag.getFloat("integrity", 100.0F) / 100.0F, 0.0F, 1.0F));
@@ -79,7 +79,6 @@ public final class BedrockStructureBlocks {
          case LOAD -> StructureBlockType.LOAD;
          case CORNER -> StructureBlockType.CORNER;
          case DATA -> StructureBlockType.DATA;
-         default -> throw new MatchException(null, null);
       };
 
       StructureSettings settings = new StructureSettings(
@@ -149,7 +148,6 @@ public final class BedrockStructureBlocks {
          case CLOCKWISE_90 -> StructureRotation.ROTATE_90;
          case CLOCKWISE_180 -> StructureRotation.ROTATE_180;
          case COUNTERCLOCKWISE_90 -> StructureRotation.ROTATE_270;
-         default -> throw new MatchException(null, null);
       };
    }
 

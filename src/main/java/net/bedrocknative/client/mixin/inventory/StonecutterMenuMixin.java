@@ -8,12 +8,9 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin({StonecutterMenu.class})
+@Mixin(StonecutterMenu.class)
 public abstract class StonecutterMenuMixin {
-   @Inject(
-      method = {"clickMenuButton"},
-      at = {@At("TAIL")}
-   )
+   @Inject(method = "clickMenuButton", at = @At("TAIL"))
    private void bedrocknative$recipeSelected(Player player, int id, CallbackInfoReturnable<Boolean> cir) {
       if ((Boolean)cir.getReturnValue()) {
          ClientBedrockSession session = ClientBedrockSession.active();

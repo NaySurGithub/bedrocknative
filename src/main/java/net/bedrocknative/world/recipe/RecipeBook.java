@@ -17,8 +17,7 @@ import org.jspecify.annotations.Nullable;
 public final class RecipeBook {
    public static final int MAX_TIMES = 999;
    private final RecipeIndex index;
-   @Nullable
-   private final RecipeUnlocks unlocks;
+   private final @Nullable RecipeUnlocks unlocks;
    private final RecipeBook.Catalog catalog;
    private final ItemMatcher matcher;
    private String tag = "crafting_table";
@@ -28,8 +27,7 @@ public final class RecipeBook {
    private String search = "";
    private boolean filtering;
    private final Set<Integer> open = new HashSet<>();
-   @Nullable
-   private String selected;
+   private @Nullable String selected;
    private int indexVersion = -1;
    private int unlocksVersion = -1;
    private int catalogVersion = -1;
@@ -121,7 +119,7 @@ public final class RecipeBook {
       return this.open.contains(group);
    }
 
-   public void select(@Nullable RecipeBook.Entry entry) {
+   public void select(RecipeBook.@Nullable Entry entry) {
       String key = entry == null ? null : entry.key();
       if (!Objects.equals(key, this.selected)) {
          this.selected = key;
@@ -129,19 +127,18 @@ public final class RecipeBook {
       }
    }
 
-   @Nullable
-   public RecipeBook.Entry selected() {
+   public RecipeBook.@Nullable Entry selected() {
       if (this.selected == null) {
          return null;
-      } else {
-         for (RecipeBook.Entry entry : this.entries()) {
-            if (entry.key().equals(this.selected)) {
-               return entry;
-            }
-         }
-
-         return null;
       }
+
+      for (RecipeBook.Entry entry : this.entries()) {
+         if (entry.key().equals(this.selected)) {
+            return entry;
+         }
+      }
+
+      return null;
    }
 
    public boolean needsCraftingTable() {
@@ -169,8 +166,7 @@ public final class RecipeBook {
       return this.entriesVersion;
    }
 
-   @Nullable
-   public RecipeBook.Entry entry(ItemData result) {
+   public RecipeBook.@Nullable Entry entry(ItemData result) {
       String key = key(result);
 
       for (RecipeBook.Entry entry : this.entries()) {
@@ -294,9 +290,9 @@ public final class RecipeBook {
       } else {
          List<RecipeBook.Entry> shown = new ArrayList<>();
 
-         for (RecipeBook.Entry entryx : this.entries) {
-            if (entryx.place().category() == this.tab && this.passesFilter(entryx)) {
-               shown.add(entryx);
+         for (RecipeBook.Entry entry : this.entries) {
+            if (entry.place().category() == this.tab && this.passesFilter(entry)) {
+               shown.add(entry);
             }
          }
 
@@ -362,8 +358,7 @@ public final class RecipeBook {
    }
 
    public interface Catalog {
-      @Nullable
-      RecipeBook.Place place(ItemData var1);
+      RecipeBook.@Nullable Place place(ItemData var1);
 
       String groupName(int var1);
 
@@ -376,7 +371,7 @@ public final class RecipeBook {
       }
    }
 
-   public record Cell(RecipeBook.Kind kind, @Nullable RecipeBook.Entry entry, int group, ItemData icon, String name, boolean craftable, boolean selected) {
+   public record Cell(RecipeBook.Kind kind, RecipeBook.@Nullable Entry entry, int group, ItemData icon, String name, boolean craftable, boolean selected) {
    }
 
    public static final class Entry {
@@ -388,8 +383,7 @@ public final class RecipeBook {
       private int times;
       private boolean fits;
       private boolean partial;
-      @Nullable
-      private BookRecipe usable;
+      private @Nullable BookRecipe usable;
 
       Entry(String key, ItemData result, List<BookRecipe> recipes, RecipeBook.Place place, String name) {
          this.key = key;
@@ -444,7 +438,7 @@ public final class RecipeBook {
       }
    }
 
-   public static enum Kind {
+   public enum Kind {
       ENTRY,
       HEAD_CLOSED,
       HEAD_OPEN,
@@ -455,7 +449,7 @@ public final class RecipeBook {
       public static final RecipeBook.Place NONE = new RecipeBook.Place(RecipeBook.Tab.ITEMS, -1, false, Integer.MAX_VALUE);
    }
 
-   public static enum Tab {
+   public enum Tab {
       CONSTRUCTION,
       EQUIPMENT,
       ITEMS,

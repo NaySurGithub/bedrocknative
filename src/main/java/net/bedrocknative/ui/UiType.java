@@ -33,16 +33,15 @@ public enum UiType {
    GRID_ITEM,
    SCROLLBAR;
 
-   @Nullable
-   public static UiType of(@Nullable String name) {
+   public static @Nullable UiType of(@Nullable String name) {
       if (name == null) {
          return null;
-      } else {
-         try {
-            return valueOf(name.trim().toUpperCase(Locale.ROOT));
-         } catch (IllegalArgumentException var2) {
-            return null;
-         }
+      }
+
+      try {
+         return valueOf(name.trim().toUpperCase(Locale.ROOT));
+      } catch (IllegalArgumentException e) {
+         return null;
       }
    }
 }

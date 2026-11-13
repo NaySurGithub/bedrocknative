@@ -12,8 +12,7 @@ public final class BlockIdCheck {
    public static final int COLUMNS = 32;
    private static final int TOP_STATES = 5;
    private static final int AIR_PER_MILLE = 10;
-   @Nullable
-   private static volatile BlockIdCheck.Report last;
+   private static volatile BlockIdCheck.@Nullable Report last;
    private static volatile boolean misread;
    private final BlockIdCheck.Ids ids;
    private final int air;
@@ -29,8 +28,7 @@ public final class BlockIdCheck {
       misread = false;
    }
 
-   @Nullable
-   public static BlockIdCheck.Report last() {
+   public static BlockIdCheck.@Nullable Report last() {
       return last;
    }
 
@@ -42,47 +40,46 @@ public final class BlockIdCheck {
       return !this.done;
    }
 
-   @Nullable
-   public synchronized BlockIdCheck.Report column(List<int[]> layers) {
+   public synchronized BlockIdCheck.@Nullable Report column(List<int @Nullable []> layers) {
       if (this.done) {
          return null;
-      } else {
-         int[] top = null;
+      }
 
-         for (int[] blocks : layers) {
-            if (blocks != null) {
-               this.sections++;
-               this.count(blocks);
-               top = blocks;
-            }
-         }
+      int[] top = null;
 
-         if (top == null) {
-            return null;
-         } else {
-            this.columns++;
-            if (!contains(top, this.air)) {
-               this.topWithoutAir++;
-            }
-
-            if (this.columns < 32) {
-               return null;
-            } else {
-               this.done = true;
-
-               BlockIdCheck.Report report;
-               try {
-                  report = this.report();
-               } catch (RuntimeException var5) {
-                  report = new BlockIdCheck.Report(this.columns + " columns: the block id check failed (" + var5 + ")", false);
-               }
-
-               last = report;
-               misread = report.suspicious();
-               return report;
-            }
+      for (int[] blocks : layers) {
+         if (blocks != null) {
+            this.sections++;
+            this.count(blocks);
+            top = blocks;
          }
       }
+
+      if (top == null) {
+         return null;
+      }
+
+      this.columns++;
+      if (!contains(top, this.air)) {
+         this.topWithoutAir++;
+      }
+
+      if (this.columns < 32) {
+         return null;
+      }
+
+      this.done = true;
+
+      BlockIdCheck.Report report;
+      try {
+         report = this.report();
+      } catch (RuntimeException e) {
+         report = new BlockIdCheck.Report(this.columns + " columns: the block id check failed (" + e + ")", false);
+      }
+
+      last = report;
+      misread = report.suspicious();
+      return report;
    }
 
    private void count(int[] blocks) {
@@ -145,8 +142,8 @@ public final class BlockIdCheck {
       List<String> top = new ArrayList<>(5);
 
       for (int i = 0; i < Math.min(5, entries.size()); i++) {
-         Entry entryx = entries.get(i);
-         top.add(this.label(entryx.getIntKey()) + " " + percent(entryx.getLongValue(), blocks));
+         Entry entry = entries.get(i);
+         top.add(this.label(entry.getIntKey()) + " " + percent(entry.getLongValue(), blocks));
       }
 
       boolean noAirOnTop = this.topWithoutAir * 4 >= this.columns * 3 && airBlocks * 1000L < blocks * 10L;
@@ -210,8 +207,7 @@ public final class BlockIdCheck {
    public interface Ids {
       int air();
 
-      @Nullable
-      String name(int var1);
+      @Nullable String name(int var1);
 
       boolean blockEntity(int var1);
    }

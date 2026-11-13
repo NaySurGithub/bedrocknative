@@ -22,8 +22,7 @@ public final class BedrockAbilities {
    private BedrockAbilities() {
    }
 
-   @Nullable
-   public static Boolean apply(LocalPlayer player, UpdateAbilitiesPacket packet) {
+   public static @Nullable Boolean apply(LocalPlayer player, UpdateAbilitiesPacket packet) {
       List<AbilityLayer> layers = packet.getAbilityLayers()
          .stream()
          .filter(layer -> layer.getLayerType() != null && layer.getLayerType() != Type.CACHE && layer.getLayerType() != Type.SPECTATOR)
@@ -66,14 +65,12 @@ public final class BedrockAbilities {
       }
    }
 
-   @Nullable
-   private static Boolean flag(List<AbilityLayer> layers, Ability ability) {
+   private static @Nullable Boolean flag(List<AbilityLayer> layers, Ability ability) {
       AbilityLayer layer = layer(layers, ability);
       return layer == null ? null : layer.getAbilityValues().contains(ability);
    }
 
-   @Nullable
-   private static AbilityLayer layer(List<AbilityLayer> layers, Ability ability) {
+   private static @Nullable AbilityLayer layer(List<AbilityLayer> layers, Ability ability) {
       for (AbilityLayer layer : layers) {
          if (layer.getAbilitiesSet().contains(ability)) {
             return layer;

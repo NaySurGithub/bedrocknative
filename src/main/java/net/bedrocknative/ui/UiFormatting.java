@@ -42,7 +42,7 @@ public final class UiFormatting {
       };
    }
 
-   public static List<UiFormatting.Run> runs(String line, UiFormatting.State state, @Nullable UiFormatting.State[] end) {
+   public static List<UiFormatting.Run> runs(String line, UiFormatting.State state, UiFormatting.State @Nullable [] end) {
       List<UiFormatting.Run> runs = new ArrayList<>();
       int rgb = state.rgb();
       boolean bold = state.bold();

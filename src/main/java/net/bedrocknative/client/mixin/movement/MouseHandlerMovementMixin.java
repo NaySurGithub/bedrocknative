@@ -8,15 +8,9 @@ import net.minecraft.world.entity.player.Abilities;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 
-@Mixin({MouseHandler.class})
+@Mixin(MouseHandler.class)
 public abstract class MouseHandlerMovementMixin {
-   @WrapOperation(
-      method = {"onScroll"},
-      at = {@At(
-         value = "INVOKE",
-         target = "Lnet/minecraft/world/entity/player/Abilities;setFlyingSpeed(F)V"
-      )}
-   )
+   @WrapOperation(method = "onScroll", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/player/Abilities;setFlyingSpeed(F)V"))
    private void bedrocknative$serverFlySpeed(Abilities abilities, float speed, Operation<Void> original) {
       if (!BedrockMovement.active()) {
          original.call(new Object[]{abilities, speed});

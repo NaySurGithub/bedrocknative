@@ -66,8 +66,8 @@ public final class DevPerfTest {
    void run() {
       try {
          this.test();
-      } catch (RuntimeException var2) {
-         BedrockNative.LOGGER.error("Dev perf test failed", var2);
+      } catch (RuntimeException e) {
+         BedrockNative.LOGGER.error("Dev perf test failed", e);
       }
 
       BedrockNative.LOGGER.info("Dev perf test: done");
@@ -246,12 +246,12 @@ public final class DevPerfTest {
    private static double percentile(long[] nanos, int percent) {
       if (nanos.length == 0) {
          return 0.0;
-      } else {
-         long[] sorted = (long[])nanos.clone();
-         Arrays.sort(sorted);
-         int rank = (int)Math.ceil(percent / 100.0 * sorted.length);
-         return sorted[Math.clamp((long)(rank - 1), 0, sorted.length - 1)] / 1000000.0;
       }
+
+      long[] sorted = (long[])nanos.clone();
+      Arrays.sort(sorted);
+      int rank = (int)Math.ceil(percent / 100.0 * sorted.length);
+      return sorted[Math.clamp(rank - 1, 0, sorted.length - 1)] / 1000000.0;
    }
 
    private List<Runnable> watchGc() {
@@ -334,22 +334,22 @@ public final class DevPerfTest {
       this.minecraft.execute(() -> {
          try {
             future.complete(supplier.get());
-         } catch (RuntimeException var3) {
-            future.completeExceptionally(var3);
+         } catch (RuntimeException e) {
+            future.completeExceptionally(e);
          }
       });
 
       try {
          return future.get(30L, TimeUnit.SECONDS);
-      } catch (Exception var4) {
-         throw new IllegalStateException(var4);
+      } catch (Exception e) {
+         throw new IllegalStateException(e);
       }
    }
 
    private static void sleep(long millis) {
       try {
          Thread.sleep(millis);
-      } catch (InterruptedException var3) {
+      } catch (InterruptedException e) {
          Thread.currentThread().interrupt();
       }
    }

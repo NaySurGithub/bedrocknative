@@ -116,43 +116,45 @@ public interface UiTextMeasurer {
    default List<String> cut(List<String> lines, int keep, float maxWidth, UiFont font) {
       if (keep <= 0 || lines.isEmpty()) {
          return List.of();
-      } else if (keep >= lines.size()) {
+      }
+
+      if (keep >= lines.size()) {
          return lines;
-      } else {
-         List<String> kept = new ArrayList<>(lines.subList(0, keep));
-         String last = kept.get(keep - 1);
-         String dots = "...";
-         StringBuilder carried = new StringBuilder();
+      }
 
-         for (int line = 0; line < keep - 1; line++) {
-            carryFormats(carried, kept.get(line));
-         }
+      List<String> kept = new ArrayList<>(lines.subList(0, keep));
+      String last = kept.get(keep - 1);
+      String dots = "...";
+      StringBuilder carried = new StringBuilder();
 
-         String carry = carried.toString();
-         if (!Float.isNaN(maxWidth) && !(this.width(carry + last.stripTrailing() + dots, font) <= maxWidth)) {
-            int best = 0;
-            int i = 0;
+      for (int line = 0; line < keep - 1; line++) {
+         carryFormats(carried, kept.get(line));
+      }
 
-            while (i < last.length()) {
-               int next = i + Character.charCount(last.codePointAt(i));
-               if (last.charAt(i) == 167 && next < last.length()) {
-                  next += Character.charCount(last.codePointAt(next));
-               }
+      String carry = carried.toString();
+      if (!Float.isNaN(maxWidth) && !(this.width(carry + last.stripTrailing() + dots, font) <= maxWidth)) {
+         int best = 0;
+         int i = 0;
 
-               if (this.width(carry + last.substring(0, next) + dots, font) > maxWidth) {
-                  break;
-               }
-
-               best = next;
-               i = next;
+         while (i < last.length()) {
+            int next = i + Character.charCount(last.codePointAt(i));
+            if (last.charAt(i) == 167 && next < last.length()) {
+               next += Character.charCount(last.codePointAt(next));
             }
 
-            kept.set(keep - 1, last.substring(0, best).stripTrailing() + dots);
-            return kept;
-         } else {
-            kept.set(keep - 1, last.stripTrailing() + dots);
-            return kept;
+            if (this.width(carry + last.substring(0, next) + dots, font) > maxWidth) {
+               break;
+            }
+
+            best = next;
+            i = next;
          }
+
+         kept.set(keep - 1, last.substring(0, best).stripTrailing() + dots);
+         return kept;
+      } else {
+         kept.set(keep - 1, last.stripTrailing() + dots);
+         return kept;
       }
    }
 

@@ -17,7 +17,6 @@ import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -45,81 +44,73 @@ final class SignalingHttp {
       SignalingHttp.ObservedSocket socket = new SignalingHttp.ObservedSocket();
       SignalingHttp.Deadline deadline = new SignalingHttp.Deadline(socket, connectTimeout);
 
-      Socket e;
       try {
          socket.connect(address, millis(connectTimeout));
          socket.setSoTimeout(millis(readTimeout));
          socket.setTcpNoDelay(true);
-         if (scheme != SignalingScheme.HTTP) {
-            SignalingHttp.PresentedCertificate presented = new SignalingHttp.PresentedCertificate(trust != null ? trust : defaultTrust());
-            SSLContext context = SSLContext.getInstance("TLS");
-            context.init(null, new TrustManager[]{presented}, null);
-            SSLSocket tls = (SSLSocket)context.getSocketFactory().createSocket(socket, unbracketed(host), address.getPort(), true);
-            SSLParameters parameters = tls.getSSLParameters();
-            parameters.setEndpointIdentificationAlgorithm("HTTPS");
-            tls.setSSLParameters(parameters);
-
-            try {
-               tls.startHandshake();
-            } catch (SocketTimeoutException var18) {
-               if (socket.firstCount() != 0 && !deadline.expired()) {
-                  throw new SignalingHttp.TlsFailure(presented.presented, TlsFallbackRule.classify(socket.first(), socket.firstCount()), var18);
-               }
-
-               throw var18;
-            } catch (IOException var19) {
-               if (deadline.expired()) {
-                  throw deadline.timeout("no TLS handshake");
-               }
-
-               throw new SignalingHttp.TlsFailure(presented.presented, TlsFallbackRule.classify(socket.first(), socket.firstCount()), var19);
-            }
-
-            return deadline.opened(tls);
+         if (scheme == SignalingScheme.HTTP) {
+            return deadline.opened(socket);
          }
 
-         e = deadline.opened(socket);
-      } catch (GeneralSecurityException | RuntimeException | IOException var20) {
+         SignalingHttp.PresentedCertificate presented = new SignalingHttp.PresentedCertificate(trust != null ? trust : defaultTrust());
+         SSLContext context = SSLContext.getInstance("TLS");
+         context.init(null, new TrustManager[]{presented}, null);
+         SSLSocket tls = (SSLSocket)context.getSocketFactory().createSocket(socket, unbracketed(host), address.getPort(), true);
+         SSLParameters parameters = tls.getSSLParameters();
+         parameters.setEndpointIdentificationAlgorithm("HTTPS");
+         tls.setSSLParameters(parameters);
+
+         try {
+            tls.startHandshake();
+         } catch (SocketTimeoutException e) {
+            if (socket.firstCount() != 0 && !deadline.expired()) {
+               throw new SignalingHttp.TlsFailure(presented.presented, TlsFallbackRule.classify(socket.first(), socket.firstCount()), e);
+            }
+
+            throw e;
+         } catch (IOException e) {
+            if (deadline.expired()) {
+               throw deadline.timeout("no TLS handshake");
+            }
+
+            throw new SignalingHttp.TlsFailure(presented.presented, TlsFallbackRule.classify(socket.first(), socket.firstCount()), e);
+         }
+
+         return deadline.opened(tls);
+      } catch (IOException | GeneralSecurityException | RuntimeException e) {
          socket.close();
          if (deadline.expired()) {
             throw deadline.timeout("no connection");
-         }
-
-         if (var20 instanceof IOException io) {
+         } else if (e instanceof IOException io) {
             throw io;
+         } else {
+            throw new IOException(e);
          }
-
-         throw new IOException(var20);
       } finally {
          deadline.close();
       }
-
-      return e;
    }
 
    static SignalingHttp.Reply exchange(
-      Socket socket, String method, String path, String host, int port, Map<String, String> headers, @Nullable byte[] body, int maxBody, Duration readTimeout
+      Socket socket, String method, String path, String host, int port, Map<String, String> headers, byte @Nullable [] body, int maxBody, Duration readTimeout
    ) throws IOException {
       SignalingHttp.Deadline deadline = new SignalingHttp.Deadline(socket, readTimeout);
 
-      SignalingHttp.Reply e;
       try {
-         e = exchangeNow(socket, method, path, host, port, headers, body, maxBody, readTimeout);
-      } catch (IOException var14) {
-         if (deadline.expired() && !(var14 instanceof SignalingHttp.TooLargeException)) {
+         return exchangeNow(socket, method, path, host, port, headers, body, maxBody, readTimeout);
+      } catch (IOException e) {
+         if (deadline.expired() && !(e instanceof SignalingHttp.TooLargeException)) {
             throw deadline.timeout("no complete answer");
+         } else {
+            throw e;
          }
-
-         throw var14;
       } finally {
          deadline.close();
       }
-
-      return e;
    }
 
    private static SignalingHttp.Reply exchangeNow(
-      Socket socket, String method, String path, String host, int port, Map<String, String> headers, @Nullable byte[] body, int maxBody, Duration readTimeout
+      Socket socket, String method, String path, String host, int port, Map<String, String> headers, byte @Nullable [] body, int maxBody, Duration readTimeout
    ) throws IOException {
       StringBuilder head = new StringBuilder(method).append(' ').append(path).append(" HTTP/1.1\r\n");
       head.append("Host: ").append(hostHeader(host, port)).append("\r\n");
@@ -144,7 +135,7 @@ final class SignalingHttp {
          int status;
          try {
             status = Integer.parseInt(parts[1]);
-         } catch (NumberFormatException var25) {
+         } catch (NumberFormatException e) {
             throw new IOException("not an HTTP status: " + printable(parts[1]));
          }
 
@@ -171,7 +162,7 @@ final class SignalingHttp {
             long declared;
             try {
                declared = Long.parseLong(length);
-            } catch (NumberFormatException var24) {
+            } catch (NumberFormatException e) {
                throw new IOException("bad Content-Length: " + printable(length));
             }
 
@@ -282,17 +273,12 @@ final class SignalingHttp {
    static final class ObservedSocket extends Socket {
       private final byte[] first = new byte[16];
       private int firstCount;
-      @Nullable
-      private InputStream observed;
+      private @Nullable InputStream observed;
 
       @Override
       public synchronized InputStream getInputStream() throws IOException {
          if (this.observed == null) {
             this.observed = new FilterInputStream(super.getInputStream()) {
-               {
-                  Objects.requireNonNull(ObservedSocket.this);
-               }
-
                @Override
                public int read() throws IOException {
                   int value = super.read();
@@ -407,9 +393,9 @@ final class SignalingHttp {
          long left = (this.deadline - System.nanoTime()) / 1000000L;
          if (left <= 0L) {
             throw new SocketTimeoutException("no complete answer in time");
-         } else {
-            this.socket.setSoTimeout((int)Math.min(left, 2147483647L));
          }
+
+         this.socket.setSoTimeout((int)Math.min(left, 2147483647L));
       }
 
       String line(int max) throws IOException {
@@ -473,7 +459,7 @@ final class SignalingHttp {
             int size;
             try {
                size = Integer.parseInt((semicolon >= 0 ? sizeLine.substring(0, semicolon) : sizeLine).trim(), 16);
-            } catch (NumberFormatException var7) {
+            } catch (NumberFormatException e) {
                throw new IOException("bad chunk size: " + SignalingHttp.printable(sizeLine));
             }
 

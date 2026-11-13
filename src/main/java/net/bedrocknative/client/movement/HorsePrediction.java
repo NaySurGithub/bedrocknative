@@ -16,8 +16,7 @@ final class HorsePrediction implements VehiclePrediction {
    private final AbstractHorse horse;
    private final HorsePrediction.Frame[] frames = new HorsePrediction.Frame[64];
    private long lastTick = -1L;
-   @Nullable
-   private HorsePrediction.Frame pending;
+   private HorsePrediction.@Nullable Frame pending;
 
    HorsePrediction(AbstractHorse horse) {
       this.horse = horse;

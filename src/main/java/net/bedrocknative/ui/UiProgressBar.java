@@ -10,35 +10,35 @@ public final class UiProgressBar {
       UiControl c = command.control();
       if (!truthy(c.bag("#progress_bar_visible")) && !truthy(c.bag("#touch_progress_bar_visible"))) {
          return List.of();
-      } else {
-         double total = number(c.bag("#progress_bar_total_amount"));
-         if (total > 0.0 && !(command.w() <= 0.0F) && !(command.h() <= 0.0F)) {
-            float fraction = (float)Math.max(0.0, Math.min(1.0, number(c.bag("#progress_bar_current_amount")) / total));
-            float width = command.w() * fraction;
-            if (truthy(c.bag("round_value"))) {
-               width = Math.round(width);
-            }
+      }
 
-            int alpha = command.argb() >>> 24;
-            int color;
-            if (truthy(c.bag("is_durability"))) {
-               color = hsv(fraction / 3.0F, 1.0F, 1.0F);
-            } else if (truthy(c.bag("is_storage_bar"))) {
-               color = rgb(fraction >= 1.0F ? c.prop("full_storage_color") : c.prop("primary_color"), command.argb());
-            } else {
-               color = rgb(c.prop("primary_color"), command.argb());
-            }
-
-            UiProgressBar.Fill bar = new UiProgressBar.Fill(command.x(), command.y(), width, command.h(), alpha << 24 | color & 16777215);
-            if (!truthy(c.bag("drop_shadow"))) {
-               return width > 0.0F ? List.of(bar) : List.of();
-            } else {
-               UiProgressBar.Fill shadow = new UiProgressBar.Fill(command.x(), command.y(), command.w(), command.h() * 2.0F, alpha << 24);
-               return width > 0.0F ? List.of(shadow, bar) : List.of(shadow);
-            }
-         } else {
-            return List.of();
+      double total = number(c.bag("#progress_bar_total_amount"));
+      if (total > 0.0 && !(command.w() <= 0.0F) && !(command.h() <= 0.0F)) {
+         float fraction = (float)Math.max(0.0, Math.min(1.0, number(c.bag("#progress_bar_current_amount")) / total));
+         float width = command.w() * fraction;
+         if (truthy(c.bag("round_value"))) {
+            width = Math.round(width);
          }
+
+         int alpha = command.argb() >>> 24;
+         int color;
+         if (truthy(c.bag("is_durability"))) {
+            color = hsv(fraction / 3.0F, 1.0F, 1.0F);
+         } else if (truthy(c.bag("is_storage_bar"))) {
+            color = rgb(fraction >= 1.0F ? c.prop("full_storage_color") : c.prop("primary_color"), command.argb());
+         } else {
+            color = rgb(c.prop("primary_color"), command.argb());
+         }
+
+         UiProgressBar.Fill bar = new UiProgressBar.Fill(command.x(), command.y(), width, command.h(), alpha << 24 | color & 16777215);
+         if (!truthy(c.bag("drop_shadow"))) {
+            return width > 0.0F ? List.of(bar) : List.of();
+         }
+
+         UiProgressBar.Fill shadow = new UiProgressBar.Fill(command.x(), command.y(), command.w(), command.h() * 2.0F, alpha << 24);
+         return width > 0.0F ? List.of(shadow, bar) : List.of(shadow);
+      } else {
+         return List.of();
       }
    }
 

@@ -35,36 +35,38 @@ public final class NetherNetDiagnosis {
                : "The server's key (sha256 " + untrusted.shortDigest() + ") is not trusted yet",
             detail
          );
-      } else {
-         SignalingRefusedException refused = find(failure, SignalingRefusedException.class);
-         if (refused != null) {
-            return refused.code() == 37
-               ? new NetherNetDiagnosis.Explanation("Signaling error 37 (IdentityNotAllowed): the server refused our Xbox identity", detail)
-               : new NetherNetDiagnosis.Explanation(refused.getMessage(), detail);
-         } else if (find(failure, ServerIdentityException.class) != null) {
-            return new NetherNetDiagnosis.Explanation("The server's identity could not be verified", detail);
-         } else {
-            NetherNetConnectException connect = NetherNetConnectException.in(failure);
-            if (connect == null) {
-               return new NetherNetDiagnosis.Explanation("The NetherNet connection failed", detail);
-            } else {
-               return switch (connect.stage()) {
-                  case UNAVAILABLE -> new NetherNetDiagnosis.Explanation("NetherNet is not available on this system (native library)", detail);
-                  case OFFER -> new NetherNetDiagnosis.Explanation("NetherNet could not start on this computer (WebRTC made no offer)", detail);
-                  case SIGNALING -> find(failure, SocketTimeoutException.class) == null && connect.getCause() != null
-                     ? new NetherNetDiagnosis.Explanation("The server's NetherNet signaling failed", detail)
-                     : new NetherNetDiagnosis.Explanation("The server's NetherNet signaling did not answer in time", detail);
-                  case LINK -> new NetherNetDiagnosis.Explanation(
-                     "Reached the server, but no UDP path (firewall or NAT): candidates offered "
-                        + Math.max(0, connect.offeredCandidates())
-                        + ", answered "
-                        + Math.max(0, connect.answerCandidates()),
-                     detail
-                  );
-               };
-            }
-         }
       }
+
+      SignalingRefusedException refused = find(failure, SignalingRefusedException.class);
+      if (refused != null) {
+         return refused.code() == 37
+            ? new NetherNetDiagnosis.Explanation("Signaling error 37 (IdentityNotAllowed): the server refused our Xbox identity", detail)
+            : new NetherNetDiagnosis.Explanation(refused.getMessage(), detail);
+      }
+
+      if (find(failure, ServerIdentityException.class) != null) {
+         return new NetherNetDiagnosis.Explanation("The server's identity could not be verified", detail);
+      }
+
+      NetherNetConnectException connect = NetherNetConnectException.in(failure);
+      if (connect == null) {
+         return new NetherNetDiagnosis.Explanation("The NetherNet connection failed", detail);
+      }
+
+      return switch (connect.stage()) {
+         case UNAVAILABLE -> new NetherNetDiagnosis.Explanation("NetherNet is not available on this system (native library)", detail);
+         case OFFER -> new NetherNetDiagnosis.Explanation("NetherNet could not start on this computer (WebRTC made no offer)", detail);
+         case SIGNALING -> find(failure, SocketTimeoutException.class) == null && connect.getCause() != null
+            ? new NetherNetDiagnosis.Explanation("The server's NetherNet signaling failed", detail)
+            : new NetherNetDiagnosis.Explanation("The server's NetherNet signaling did not answer in time", detail);
+         case LINK -> new NetherNetDiagnosis.Explanation(
+            "Reached the server, but no UDP path (firewall or NAT): candidates offered "
+               + Math.max(0, connect.offeredCandidates())
+               + ", answered "
+               + Math.max(0, connect.answerCandidates()),
+            detail
+         );
+      };
    }
 
    public static NetherNetDiagnosis.Explanation forJoin(@Nullable ProbeResult probe, @Nullable Throwable failure, int port) {
@@ -92,39 +94,36 @@ public final class NetherNetDiagnosis {
    public static TransportChooser.JoinFailure kind(Throwable failure) {
       if (UntrustedServerException.in(failure) != null) {
          return TransportChooser.JoinFailure.NETHERNET_UNTRUSTED;
-      } else {
-         NetherNetConnectException connect = NetherNetConnectException.in(failure);
-         return (connect == null || connect.stage() != NetherNetConnectException.Stage.UNAVAILABLE)
-               && find(failure, TransportUnavailableException.class) == null
-            ? TransportChooser.JoinFailure.NETHERNET_LINK
-            : TransportChooser.JoinFailure.UNAVAILABLE;
       }
+
+      NetherNetConnectException connect = NetherNetConnectException.in(failure);
+      return (connect == null || connect.stage() != NetherNetConnectException.Stage.UNAVAILABLE) && find(failure, TransportUnavailableException.class) == null
+         ? TransportChooser.JoinFailure.NETHERNET_LINK
+         : TransportChooser.JoinFailure.UNAVAILABLE;
    }
 
-   @Nullable
-   public static DisconnectFailReason reason(Throwable failure) {
+   public static @Nullable DisconnectFailReason reason(Throwable failure) {
       SignalingRefusedException refused = find(failure, SignalingRefusedException.class);
       if (refused != null) {
          return refused.code() == 37 ? DisconnectFailReason.NETHER_NET_IDENTITY_NOT_ALLOWED : DisconnectFailReason.CONN_CLIENT_SIGNALING_ERROR;
-      } else {
-         NetherNetConnectException connect = NetherNetConnectException.in(failure);
-         if (connect == null) {
-            return null;
-         } else {
-            return switch (connect.stage()) {
-               case UNAVAILABLE -> DisconnectFailReason.UNSUPPORTED_TRANSPORT;
-               case OFFER -> DisconnectFailReason.CANT_CONNECT;
-               case SIGNALING -> connect.getCause() != null && find(failure, SocketTimeoutException.class) == null
-                  ? DisconnectFailReason.CANT_CONNECT
-                  : DisconnectFailReason.CONN_NEGOTIATION_TIMEOUT_WAITING_FOR_RESPONSE;
-               case LINK -> DisconnectFailReason.CONN_ICE;
-            };
-         }
       }
+
+      NetherNetConnectException connect = NetherNetConnectException.in(failure);
+      if (connect == null) {
+         return null;
+      }
+
+      return switch (connect.stage()) {
+         case UNAVAILABLE -> DisconnectFailReason.UNSUPPORTED_TRANSPORT;
+         case OFFER -> DisconnectFailReason.CANT_CONNECT;
+         case SIGNALING -> connect.getCause() != null && find(failure, SocketTimeoutException.class) == null
+            ? DisconnectFailReason.CANT_CONNECT
+            : DisconnectFailReason.CONN_NEGOTIATION_TIMEOUT_WAITING_FOR_RESPONSE;
+         case LINK -> DisconnectFailReason.CONN_ICE;
+      };
    }
 
-   @Nullable
-   private static <T extends Throwable> T find(@Nullable Throwable failure, Class<T> type) {
+   private static <T extends Throwable> @Nullable T find(@Nullable Throwable failure, Class<T> type) {
       for (Throwable cause = failure; cause != null; cause = cause.getCause() == cause ? null : cause.getCause()) {
          if (type.isInstance(cause)) {
             return type.cast(cause);

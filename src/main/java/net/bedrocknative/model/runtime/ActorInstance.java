@@ -46,10 +46,8 @@ public final class ActorInstance implements MolangGeometry, WearerBones {
    private final BoneSlots slots = new BoneSlots();
    private final Map<String, ActorInstance.GeometryState> geometries = new HashMap<>();
    private final ActorInstance.GeometryState[] geometryList;
-   @Nullable
-   private final ActorInstance.GeometryState primary;
-   @Nullable
-   private ActorInstance.GeometryState rest;
+   private final ActorInstance.@Nullable GeometryState primary;
+   private ActorInstance.@Nullable GeometryState rest;
    private final PoseBuffer pose;
    private final Map<AnimationDef, int[]> animationSlots = new HashMap<>();
    private final List<ActorInstance.AnimateSlot> animate = new ArrayList<>();
@@ -57,10 +55,8 @@ public final class ActorInstance implements MolangGeometry, WearerBones {
    private final List<RuntimeController> pendingRuntimeControllers = new ArrayList<>();
    private final List<ActorInstance> attachables = new ArrayList<>();
    private final Map<String, MolangProgram> bindings = new HashMap<>();
-   @Nullable
-   private WearerBones wearer;
-   @Nullable
-   private MolangGeometry wearerGeometry;
+   private @Nullable WearerBones wearer;
+   private @Nullable MolangGeometry wearerGeometry;
    private final MolangEnv bindingEnv = new MolangEnv();
    private final DrawList drawList = new DrawList();
    private final DrawList.DrawCall[] callPool;
@@ -70,10 +66,8 @@ public final class ActorInstance implements MolangGeometry, WearerBones {
    private int changeColor = -1;
    private int secondColor = -1;
    private final boolean vanilla;
-   @Nullable
-   private ActorInstance.GeometryState firstDrawn;
-   @Nullable
-   private boolean[] drawnControllers;
+   private ActorInstance.@Nullable GeometryState firstDrawn;
+   private boolean @Nullable [] drawnControllers;
    private long lastHeldSignature;
 
    public ActorInstance(ModelRegistry registry, ClientEntityDef definition) {
@@ -84,7 +78,7 @@ public final class ActorInstance implements MolangGeometry, WearerBones {
       this(registry, definition, vanilla, null);
    }
 
-   public ActorInstance(ModelRegistry registry, ClientEntityDef definition, boolean vanilla, @Nullable Function<String, MeshedGeometry> own) {
+   public ActorInstance(ModelRegistry registry, ClientEntityDef definition, boolean vanilla, @Nullable Function<String, @Nullable MeshedGeometry> own) {
       this.registry = registry;
       this.definition = definition;
       this.vanilla = vanilla;
@@ -131,15 +125,14 @@ public final class ActorInstance implements MolangGeometry, WearerBones {
       }
    }
 
-   @Nullable
-   private static String primaryGeometry(ClientEntityDef definition) {
+   private static @Nullable String primaryGeometry(ClientEntityDef definition) {
       String queryable = definition.queryableGeometry() != null ? definition.geometry(definition.queryableGeometry()) : null;
       if (queryable != null) {
          return queryable;
-      } else {
-         String fallback = definition.geometry("default");
-         return fallback != null ? fallback : definition.geometries().values().stream().findFirst().orElse(null);
       }
+
+      String fallback = definition.geometry("default");
+      return fallback != null ? fallback : definition.geometries().values().stream().findFirst().orElse(null);
    }
 
    public ClientEntityDef definition() {
@@ -187,19 +180,16 @@ public final class ActorInstance implements MolangGeometry, WearerBones {
       return this.slots;
    }
 
-   @Nullable
-   public Skeleton skeleton(String geometryIdentifier) {
+   public @Nullable Skeleton skeleton(String geometryIdentifier) {
       ActorInstance.GeometryState state = this.geometries.get(geometryIdentifier);
       return state != null ? state.skeleton : null;
    }
 
-   @Nullable
-   public Skeleton primarySkeleton() {
+   public @Nullable Skeleton primarySkeleton() {
       return this.primary != null ? this.primary.skeleton : null;
    }
 
-   @Nullable
-   public Skeleton drawnSkeleton() {
+   public @Nullable Skeleton drawnSkeleton() {
       return this.firstDrawn != null ? this.firstDrawn.skeleton : null;
    }
 
@@ -216,15 +206,15 @@ public final class ActorInstance implements MolangGeometry, WearerBones {
       if (signature != this.lastHeldSignature) {
          this.lastHeldSignature = signature;
 
-         for (int ix = 0; ix < this.animate.size(); ix++) {
-            ActorInstance.AnimateSlot slot = this.animate.get(ix);
+         for (int i = 0; i < this.animate.size(); i++) {
+            ActorInstance.AnimateSlot slot = this.animate.get(i);
             slot.heldMask = null;
             if (slot.playable instanceof AnimationNode node && !node.looping()) {
                int[] mask = null;
 
                for (int bone = 0; bone < node.slots().length; bone++) {
                   int boneSlot = node.slots()[bone];
-                  if (boneSlot >= 0 && this.coveredLater(ix, boneSlot)) {
+                  if (boneSlot >= 0 && this.coveredLater(i, boneSlot)) {
                      if (mask == null) {
                         mask = (int[])node.slots().clone();
                      }
@@ -254,19 +244,16 @@ public final class ActorInstance implements MolangGeometry, WearerBones {
       return false;
    }
 
-   @Nullable
-   Playable create(String name) {
+   @Nullable Playable create(String name) {
       return this.create(name, List.of());
    }
 
-   @Nullable
-   private Playable create(String name, List<String> ancestors) {
+   private @Nullable Playable create(String name, List<String> ancestors) {
       String id = this.definition.animation(name);
       return this.createById(id != null ? id : name, ancestors);
    }
 
-   @Nullable
-   private Playable createById(String id, List<String> ancestors) {
+   private @Nullable Playable createById(String id, List<String> ancestors) {
       ControllerDef controller = this.registry.controller(id);
       if (controller != null) {
          if (ancestors.size() < 8 && !ancestors.contains(id)) {
@@ -295,17 +282,17 @@ public final class ActorInstance implements MolangGeometry, WearerBones {
 
       if (definitionAnimation == null) {
          return false;
-      } else {
-         String key = controller.isEmpty() ? animation : controller;
-         this.runtimeControllers.removeIf(running -> running.key.equals(key));
-         this.pendingRuntimeControllers.removeIf(pending -> pending.key.equals(key));
-         MolangProgram stop = this.registry
-            .molang()
-            .compile(stopExpression.isBlank() ? "query.any_animation_finished" : stopExpression, MolangVersion.ofProtocol(stopExpressionVersion));
-         this.pendingRuntimeControllers
-            .add(new RuntimeController(key, new AnimationNode(definitionAnimation, this.slotsFor(definitionAnimation)), stop, blendOutTime));
-         return true;
       }
+
+      String key = controller.isEmpty() ? animation : controller;
+      this.runtimeControllers.removeIf(running -> running.key.equals(key));
+      this.pendingRuntimeControllers.removeIf(pending -> pending.key.equals(key));
+      MolangProgram stop = this.registry
+         .molang()
+         .compile(stopExpression.isBlank() ? "query.any_animation_finished" : stopExpression, MolangVersion.ofProtocol(stopExpressionVersion));
+      this.pendingRuntimeControllers
+         .add(new RuntimeController(key, new AnimationNode(definitionAnimation, this.slotsFor(definitionAnimation)), stop, blendOutTime));
+      return true;
    }
 
    public void play(AnimationDef animation, String key, @Nullable MolangProgram stop, float blendOutTime) {
@@ -327,8 +314,8 @@ public final class ActorInstance implements MolangGeometry, WearerBones {
          }
       }
 
-      for (int ix = 0; ix < this.pendingRuntimeControllers.size(); ix++) {
-         if (this.pendingRuntimeControllers.get(ix).key.equals(key)) {
+      for (int i = 0; i < this.pendingRuntimeControllers.size(); i++) {
+         if (this.pendingRuntimeControllers.get(i).key.equals(key)) {
             return true;
          }
       }
@@ -368,17 +355,14 @@ public final class ActorInstance implements MolangGeometry, WearerBones {
       EffectSink outer = env.effects;
       if (outer == null) {
          return this.frameScoped(env, actor, deltaTime, frameAlpha);
-      } else {
-         env.effects = outer.forDefinition(this.definition);
+      }
 
-         DrawList var6;
-         try {
-            var6 = this.frameScoped(env, actor, deltaTime, frameAlpha);
-         } finally {
-            env.effects = outer;
-         }
+      env.effects = outer.forDefinition(this.definition);
 
-         return var6;
+      try {
+         return this.frameScoped(env, actor, deltaTime, frameAlpha);
+      } finally {
+         env.effects = outer;
       }
    }
 
@@ -432,16 +416,16 @@ public final class ActorInstance implements MolangGeometry, WearerBones {
          }
       }
 
-      for (int ix = 0; ix < this.pendingRuntimeControllers.size(); ix++) {
-         RuntimeController pending = this.pendingRuntimeControllers.get(ix);
+      for (int i = 0; i < this.pendingRuntimeControllers.size(); i++) {
+         RuntimeController pending = this.pendingRuntimeControllers.get(i);
          pending.start(env);
          this.runtimeControllers.add(pending);
       }
 
       this.pendingRuntimeControllers.clear();
 
-      for (int ix = 0; ix < this.runtimeControllers.size(); ix++) {
-         RuntimeController controller = this.runtimeControllers.get(ix);
+      for (int i = 0; i < this.runtimeControllers.size(); i++) {
+         RuntimeController controller = this.runtimeControllers.get(i);
          controller.update(env, deltaTime);
          controller.apply(this.pose, env);
       }
@@ -452,12 +436,12 @@ public final class ActorInstance implements MolangGeometry, WearerBones {
       this.firstDrawn = null;
       List<ClientEntityDef.RenderControllerRef> references = this.definition.renderControllers();
 
-      for (int ix = 0; ix < references.size(); ix++) {
-         ClientEntityDef.RenderControllerRef reference = references.get(ix);
-         if ((this.drawnControllers == null || this.drawnControllers[ix]) && (reference.condition() == null || reference.condition().test(env))) {
+      for (int i = 0; i < references.size(); i++) {
+         ClientEntityDef.RenderControllerRef reference = references.get(i);
+         if ((this.drawnControllers == null || this.drawnControllers[i]) && (reference.condition() == null || reference.condition().test(env))) {
             RenderControllerDef controller = this.registry.renderController(reference.name());
-            if (controller != null && this.render(controller, env, this.callPool[ix])) {
-               this.drawList.add(this.callPool[ix]);
+            if (controller != null && this.render(controller, env, this.callPool[i])) {
+               this.drawList.add(this.callPool[i]);
             }
          }
       }
@@ -468,8 +452,8 @@ public final class ActorInstance implements MolangGeometry, WearerBones {
          this.posed(this.primary);
       }
 
-      for (int ixx = 0; ixx < this.attachables.size(); ixx++) {
-         List<DrawList.DrawCall> attached = this.attachables.get(ixx).frame(env, actor, deltaTime, frameAlpha).calls();
+      for (int i = 0; i < this.attachables.size(); i++) {
+         List<DrawList.DrawCall> attached = this.attachables.get(i).frame(env, actor, deltaTime, frameAlpha).calls();
 
          for (int call = 0; call < attached.size(); call++) {
             this.drawList.add(attached.get(call));
@@ -571,72 +555,72 @@ public final class ActorInstance implements MolangGeometry, WearerBones {
       ActorInstance.GeometryState drawn = this.firstDrawn != null ? this.firstDrawn : this.primary;
       if (drawn == null) {
          return out.append("; nothing drawn").append(details.length() > 0 ? " | animations" + details : "").toString();
-      } else {
-         out.append("; ").append(drawn.mesh.identifier()).append(" moved");
+      }
 
-         for (int i = 0; i < drawn.mesh.boneCount(); i++) {
-            int slot = drawn.boneSlots[i];
-            if (slot >= 0) {
-               MeshedGeometry.Bone bone = drawn.mesh.bone(i);
-               float[] rest = bone.restRotation();
-               boolean moved = false;
+      out.append("; ").append(drawn.mesh.identifier()).append(" moved");
 
-               for (int axis = 0; axis < 3; axis++) {
-                  moved |= this.pose.position(slot, axis) != 0.0F || this.pose.scale(slot, axis) != 1.0F || this.pose.rotation(slot, axis) != rest[axis];
-               }
+      for (int i = 0; i < drawn.mesh.boneCount(); i++) {
+         int slot = drawn.boneSlots[i];
+         if (slot >= 0) {
+            MeshedGeometry.Bone bone = drawn.mesh.bone(i);
+            float[] rest = bone.restRotation();
+            boolean moved = false;
 
-               if (moved) {
-                  out.append(
-                     String.format(
-                        Locale.ROOT,
-                        " %s[pivot %.1f %.1f %.1f, position %.2f %.2f %.2f, rotation %.1f %.1f %.1f, scale %.2f %.2f %.2f]",
-                        bone.name(),
-                        0.0F - bone.pivot()[0],
-                        bone.pivot()[1],
-                        bone.pivot()[2],
-                        this.pose.position(slot, 0),
-                        this.pose.position(slot, 1),
-                        this.pose.position(slot, 2),
-                        this.pose.rotation(slot, 0),
-                        this.pose.rotation(slot, 1),
-                        this.pose.rotation(slot, 2),
-                        this.pose.scale(slot, 0),
-                        this.pose.scale(slot, 1),
-                        this.pose.scale(slot, 2)
-                     )
-                  );
-               }
+            for (int axis = 0; axis < 3; axis++) {
+               moved |= this.pose.position(slot, axis) != 0.0F || this.pose.scale(slot, axis) != 1.0F || this.pose.rotation(slot, axis) != rest[axis];
+            }
+
+            if (moved) {
+               out.append(
+                  String.format(
+                     Locale.ROOT,
+                     " %s[pivot %.1f %.1f %.1f, position %.2f %.2f %.2f, rotation %.1f %.1f %.1f, scale %.2f %.2f %.2f]",
+                     bone.name(),
+                     0.0F - bone.pivot()[0],
+                     bone.pivot()[1],
+                     bone.pivot()[2],
+                     this.pose.position(slot, 0),
+                     this.pose.position(slot, 1),
+                     this.pose.position(slot, 2),
+                     this.pose.rotation(slot, 0),
+                     this.pose.rotation(slot, 1),
+                     this.pose.rotation(slot, 2),
+                     this.pose.scale(slot, 0),
+                     this.pose.scale(slot, 1),
+                     this.pose.scale(slot, 2)
+                  )
+               );
             }
          }
-
-         return details.length() > 0 ? out.append(" | animations").append((CharSequence)details).toString() : out.toString();
       }
+
+      return details.length() > 0 ? out.append(" | animations").append(details).toString() : out.toString();
    }
 
    public int openLids() {
       ActorInstance.GeometryState drawn = this.firstDrawn != null ? this.firstDrawn : this.primary;
       if (drawn == null) {
          return 0;
-      } else {
-         int open = 0;
+      }
 
-         for (int i = 0; i < drawn.mesh.boneCount(); i++) {
-            int slot = drawn.boneSlots[i];
-            String name = drawn.mesh.bone(i).name().toLowerCase(Locale.ROOT);
-            if (slot >= 0 && (name.equals("top") || name.contains("lid") || name.contains("cover") || name.contains("door") || name.contains("hatch"))) {
-               float[] rest = drawn.mesh.bone(i).restRotation();
+      int open = 0;
 
-               for (int axis = 0; axis < 3; axis++) {
-                  if (Math.abs(this.pose.rotation(slot, axis) - rest[axis]) > 60.0F) {
-                     open++;
-                     break;
-                  }
+      for (int i = 0; i < drawn.mesh.boneCount(); i++) {
+         int slot = drawn.boneSlots[i];
+         String name = drawn.mesh.bone(i).name().toLowerCase(Locale.ROOT);
+         if (slot >= 0 && (name.equals("top") || name.contains("lid") || name.contains("cover") || name.contains("door") || name.contains("hatch"))) {
+            float[] rest = drawn.mesh.bone(i).restRotation();
+
+            for (int axis = 0; axis < 3; axis++) {
+               if (Math.abs(this.pose.rotation(slot, axis) - rest[axis]) > 60.0F) {
+                  open++;
+                  break;
                }
             }
          }
-
-         return open;
       }
+
+      return open;
    }
 
    public DrawList lastDrawList() {
@@ -662,8 +646,7 @@ public final class ActorInstance implements MolangGeometry, WearerBones {
       env.attachable = this.wearer != null;
    }
 
-   @Nullable
-   private ActorInstance.GeometryState restGeometry(MolangEnv env) {
+   private ActorInstance.@Nullable GeometryState restGeometry(MolangEnv env) {
       List<ClientEntityDef.RenderControllerRef> references = this.definition.renderControllers();
 
       for (int i = 0; i < references.size(); i++) {
@@ -691,100 +674,100 @@ public final class ActorInstance implements MolangGeometry, WearerBones {
       ActorInstance.GeometryState state = geometryId != null ? this.geometries.get(geometryId) : null;
       if (state == null) {
          return false;
-      } else {
-         this.posed(state);
-         if (this.firstDrawn == null) {
-            this.firstDrawn = state;
-         }
-
-         call.reset(controller.name(), geometryId, state.mesh, state.skeleton, this.wearer != null ? state.bindings : null);
-         List<String> textures = call.mutableTextures();
-         List<MolangProgram> texturePrograms = controller.textures();
-
-         for (int i = 0; i < texturePrograms.size(); i++) {
-            String path = this.resolve(texturePrograms.get(i).evaluateObject(env), "texture");
-            if (path != null) {
-               textures.add(path);
-            }
-         }
-
-         int[][] patterns = state.patterns.get(controller);
-         if (patterns == null) {
-            patterns = patterns(controller, state.mesh);
-            state.patterns.put(controller, patterns);
-         }
-
-         int bones = state.mesh.boneCount();
-         MaterialTable.MaterialInfo[] materials = call.boneMaterials();
-         List<RenderControllerDef.PatternValue> materialPatterns = controller.materials();
-         if (materialPatterns.isEmpty()) {
-            String name = this.definition.material("default");
-            Arrays.fill(materials, this.registry.materials().get(name != null ? name : "entity_alphatest"));
-         }
-
-         for (int ix = 0; ix < materialPatterns.size(); ix++) {
-            String name = this.resolve(materialPatterns.get(ix).value().evaluateObject(env), "material");
-            if (name != null) {
-               MaterialTable.MaterialInfo material = this.registry.materials().get(name);
-
-               for (int bone : patterns[ix]) {
-                  materials[bone] = material;
-               }
-            }
-         }
-
-         boolean[] visible = call.boneVisible();
-         List<RenderControllerDef.PatternValue> visibility = controller.partVisibility();
-
-         for (int ixx = 0; ixx < visibility.size(); ixx++) {
-            boolean shown = visibility.get(ixx).value().test(env);
-
-            for (int bone : patterns[materialPatterns.size() + ixx]) {
-               visible[bone] = shown;
-            }
-         }
-
-         for (int bone = 0; !this.vanilla && bone < bones; bone++) {
-            int parent = state.mesh.bone(bone).parent();
-            if (parent >= 0 && !visible[parent]) {
-               visible[bone] = false;
-            }
-         }
-
-         call.changeColor(this.changeColor);
-         call.secondColor(this.secondColor);
-         if (controller.color() != null) {
-            this.color(controller.color(), env, call.colorArray(), WHITE);
-         }
-
-         if (controller.overlayColor() != null) {
-            this.color(controller.overlayColor(), env, call.overlayColorArray(), CLEAR);
-         }
-
-         if (controller.isHurtColor() != null) {
-            this.color(controller.isHurtColor(), env, call.hurtColorArray(), HURT);
-         }
-
-         if (controller.onFireColor() != null) {
-            this.color(controller.onFireColor(), env, call.fireColorArray(), CLEAR);
-         }
-
-         if (this.vanilla) {
-            env.thisValue = 0.0F;
-         }
-
-         RenderControllerDef.UvAnimation uv = controller.uvAnimation();
-         if (uv != null) {
-            float[] values = call.uvAnimationArray();
-            values[0] = uv.offsetU().evaluate(env);
-            values[1] = uv.offsetV().evaluate(env);
-            values[2] = uv.scaleU().evaluate(env);
-            values[3] = uv.scaleV().evaluate(env);
-         }
-
-         call.lighting(controller.ignoreLighting() != null && controller.ignoreLighting().test(env), value(controller.lightColorMultiplier(), env, 1.0F));
-         return true;
       }
+
+      this.posed(state);
+      if (this.firstDrawn == null) {
+         this.firstDrawn = state;
+      }
+
+      call.reset(controller.name(), geometryId, state.mesh, state.skeleton, this.wearer != null ? state.bindings : null);
+      List<String> textures = call.mutableTextures();
+      List<MolangProgram> texturePrograms = controller.textures();
+
+      for (int i = 0; i < texturePrograms.size(); i++) {
+         String path = this.resolve(texturePrograms.get(i).evaluateObject(env), "texture");
+         if (path != null) {
+            textures.add(path);
+         }
+      }
+
+      int[][] patterns = state.patterns.get(controller);
+      if (patterns == null) {
+         patterns = patterns(controller, state.mesh);
+         state.patterns.put(controller, patterns);
+      }
+
+      int bones = state.mesh.boneCount();
+      MaterialTable.MaterialInfo[] materials = call.boneMaterials();
+      List<RenderControllerDef.PatternValue> materialPatterns = controller.materials();
+      if (materialPatterns.isEmpty()) {
+         String name = this.definition.material("default");
+         Arrays.fill(materials, this.registry.materials().get(name != null ? name : "entity_alphatest"));
+      }
+
+      for (int i = 0; i < materialPatterns.size(); i++) {
+         String name = this.resolve(materialPatterns.get(i).value().evaluateObject(env), "material");
+         if (name != null) {
+            MaterialTable.MaterialInfo material = this.registry.materials().get(name);
+
+            for (int bone : patterns[i]) {
+               materials[bone] = material;
+            }
+         }
+      }
+
+      boolean[] visible = call.boneVisible();
+      List<RenderControllerDef.PatternValue> visibility = controller.partVisibility();
+
+      for (int i = 0; i < visibility.size(); i++) {
+         boolean shown = visibility.get(i).value().test(env);
+
+         for (int bone : patterns[materialPatterns.size() + i]) {
+            visible[bone] = shown;
+         }
+      }
+
+      for (int bone = 0; !this.vanilla && bone < bones; bone++) {
+         int parent = state.mesh.bone(bone).parent();
+         if (parent >= 0 && !visible[parent]) {
+            visible[bone] = false;
+         }
+      }
+
+      call.changeColor(this.changeColor);
+      call.secondColor(this.secondColor);
+      if (controller.color() != null) {
+         this.color(controller.color(), env, call.colorArray(), WHITE);
+      }
+
+      if (controller.overlayColor() != null) {
+         this.color(controller.overlayColor(), env, call.overlayColorArray(), CLEAR);
+      }
+
+      if (controller.isHurtColor() != null) {
+         this.color(controller.isHurtColor(), env, call.hurtColorArray(), HURT);
+      }
+
+      if (controller.onFireColor() != null) {
+         this.color(controller.onFireColor(), env, call.fireColorArray(), CLEAR);
+      }
+
+      if (this.vanilla) {
+         env.thisValue = 0.0F;
+      }
+
+      RenderControllerDef.UvAnimation uv = controller.uvAnimation();
+      if (uv != null) {
+         float[] values = call.uvAnimationArray();
+         values[0] = uv.offsetU().evaluate(env);
+         values[1] = uv.offsetV().evaluate(env);
+         values[2] = uv.scaleU().evaluate(env);
+         values[3] = uv.scaleV().evaluate(env);
+      }
+
+      call.lighting(controller.ignoreLighting() != null && controller.ignoreLighting().test(env), value(controller.lightColorMultiplier(), env, 1.0F));
+      return true;
    }
 
    private static int[][] patterns(RenderControllerDef controller, MeshedGeometry mesh) {
@@ -837,23 +820,22 @@ public final class ActorInstance implements MolangGeometry, WearerBones {
    private String bindingTarget(MeshedGeometry.Bone bone) {
       if (bone.binding() == null) {
          return bone.name();
-      } else {
-         MolangProgram program = this.bindings.get(bone.binding());
-         if (program == null) {
-            program = this.registry.molang().compile(bone.binding(), MolangVersion.LATEST);
-            this.bindings.put(bone.binding(), program);
-         }
-
-         this.bindingEnv.actor = this.currentActor;
-         this.bindingEnv.context = this.context;
-         this.bindingEnv.variables = this.variables;
-         this.bindingEnv.attachable = true;
-         return program.evaluateObject(this.bindingEnv) instanceof String name && !name.isEmpty() ? name : bone.name();
       }
+
+      MolangProgram program = this.bindings.get(bone.binding());
+      if (program == null) {
+         program = this.registry.molang().compile(bone.binding(), MolangVersion.LATEST);
+         this.bindings.put(bone.binding(), program);
+      }
+
+      this.bindingEnv.actor = this.currentActor;
+      this.bindingEnv.context = this.context;
+      this.bindingEnv.variables = this.variables;
+      this.bindingEnv.attachable = true;
+      return program.evaluateObject(this.bindingEnv) instanceof String name && !name.isEmpty() ? name : bone.name();
    }
 
-   @Nullable
-   private String resolve(@Nullable Object value, String kind) {
+   private @Nullable String resolve(@Nullable Object value, String kind) {
       if (value instanceof MolangResources.Ref ref) {
          return switch (kind) {
             case "geometry" -> this.definition.geometry(ref.name());
@@ -890,9 +872,8 @@ public final class ActorInstance implements MolangGeometry, WearerBones {
       }
    }
 
-   @Nullable
    @Override
-   public Matrix4f bone(String name) {
+   public @Nullable Matrix4f bone(String name) {
       ActorInstance.GeometryState drawn = this.firstDrawn;
       if (drawn != null && drawn != this.primary) {
          int index = drawn.mesh.bone(name);
@@ -922,45 +903,45 @@ public final class ActorInstance implements MolangGeometry, WearerBones {
       return null;
    }
 
-   @Nullable
    @Override
-   public float[] pivot(String name) {
+   public float @Nullable [] pivot(String name) {
       ActorInstance.GeometryState drawn = this.firstDrawn;
       if (drawn != null && drawn.mesh.bone(name) >= 0) {
          return drawn.mesh.bone(drawn.mesh.bone(name)).pivot();
-      } else if (this.primary != null && this.primary.mesh.bone(name) >= 0) {
-         return this.primary.mesh.bone(this.primary.mesh.bone(name)).pivot();
-      } else {
-         for (int i = 0; i < this.geometryList.length; i++) {
-            int index = this.geometryList[i].mesh.bone(name);
-            if (index >= 0) {
-               return this.geometryList[i].mesh.bone(index).pivot();
-            }
-         }
-
-         return null;
       }
+
+      if (this.primary != null && this.primary.mesh.bone(name) >= 0) {
+         return this.primary.mesh.bone(this.primary.mesh.bone(name)).pivot();
+      }
+
+      for (int i = 0; i < this.geometryList.length; i++) {
+         int index = this.geometryList[i].mesh.bone(name);
+         if (index >= 0) {
+            return this.geometryList[i].mesh.bone(index).pivot();
+         }
+      }
+
+      return null;
    }
 
-   @Nullable
    @Override
-   public MolangStruct bone(String query, String bone) {
+   public @Nullable MolangStruct bone(String query, String bone) {
       if (this.primary == null) {
          return null;
-      } else {
-         int index = this.primary.mesh.bone(bone);
-         if (index < 0) {
-            return null;
-         } else {
-            MeshedGeometry.Bone definitionBone = this.primary.mesh.bone(index);
-
-            return switch (query) {
-               case "origin" -> MolangStruct.xyz(-definitionBone.pivot()[0], definitionBone.pivot()[1], definitionBone.pivot()[2]);
-               case "rotation" -> MolangStruct.xyz(definitionBone.restRotation()[0], definitionBone.restRotation()[1], definitionBone.restRotation()[2]);
-               default -> aabb(definitionBone);
-            };
-         }
       }
+
+      int index = this.primary.mesh.bone(bone);
+      if (index < 0) {
+         return null;
+      }
+
+      MeshedGeometry.Bone definitionBone = this.primary.mesh.bone(index);
+
+      return switch (query) {
+         case "origin" -> MolangStruct.xyz(-definitionBone.pivot()[0], definitionBone.pivot()[1], definitionBone.pivot()[2]);
+         case "rotation" -> MolangStruct.xyz(definitionBone.restRotation()[0], definitionBone.restRotation()[1], definitionBone.restRotation()[2]);
+         default -> aabb(definitionBone);
+      };
    }
 
    private static MolangStruct aabb(MeshedGeometry.Bone bone) {
@@ -993,10 +974,10 @@ public final class ActorInstance implements MolangGeometry, WearerBones {
          int index = this.primary.mesh.bone(bone);
          if (index < 0) {
             return 0.0F;
-         } else {
-            float value = this.primary.mesh.bone(index).pivot()[axis];
-            return axis == 0 ? -value : value;
          }
+
+         float value = this.primary.mesh.bone(index).pivot()[axis];
+         return axis == 0 ? -value : value;
       } else {
          return 0.0F;
       }
@@ -1026,9 +1007,13 @@ public final class ActorInstance implements MolangGeometry, WearerBones {
    public float rootLocatorOffset(String locator, int axis) {
       if (this.wearerGeometry != null) {
          return this.wearerGeometry.rootLocatorOffset(locator, axis);
-      } else if (!this.vanilla) {
+      }
+
+      if (!this.vanilla) {
          return this.locatorOffset(locator, axis);
-      } else if (this.wearer == null && this.primary != null && axis >= 0 && axis <= 2) {
+      }
+
+      if (this.wearer == null && this.primary != null && axis >= 0 && axis <= 2) {
          for (int i = 0; i < this.primary.mesh.boneCount(); i++) {
             MeshedGeometry.Bone bone = this.primary.mesh.bone(i);
             List<MeshedGeometry.Locator> locators = bone.locators();
@@ -1050,13 +1035,11 @@ public final class ActorInstance implements MolangGeometry, WearerBones {
 
    private static final class AnimateSlot {
       final ClientEntityDef.AnimateEntry entry;
-      @Nullable
-      final Playable playable;
+      final @Nullable Playable playable;
       boolean active;
       float lastWeight;
       boolean held;
-      @Nullable
-      int[] heldMask;
+      int @Nullable [] heldMask;
 
       AnimateSlot(ClientEntityDef.AnimateEntry entry, @Nullable Playable playable) {
          this.entry = entry;

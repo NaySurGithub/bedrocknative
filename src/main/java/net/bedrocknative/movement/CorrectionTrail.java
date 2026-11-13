@@ -44,8 +44,7 @@ public final class CorrectionTrail {
       return this.newest;
    }
 
-   @Nullable
-   public CorrectionTrail.Sent at(long tick) {
+   public CorrectionTrail.@Nullable Sent at(long tick) {
       if (tick >= 0L && tick <= this.newest && this.newest - tick < 256L) {
          CorrectionTrail.Sent entry = this.sent[index(tick)];
          return entry != null && entry.tick() == tick ? entry : null;
@@ -54,8 +53,7 @@ public final class CorrectionTrail {
       }
    }
 
-   @Nullable
-   public CorrectionTrail.Match nearest(double x, double y, double z, int maxBack) {
+   public CorrectionTrail.@Nullable Match nearest(double x, double y, double z, int maxBack) {
       CorrectionTrail.Match best = null;
 
       for (long tick = this.newest; tick >= 0L && this.newest - tick < Math.min(maxBack, 256); tick--) {
@@ -75,8 +73,7 @@ public final class CorrectionTrail {
       return best;
    }
 
-   @Nullable
-   public CorrectionTrail.Match nearestSetBack(double x, double y, double z) {
+   public CorrectionTrail.@Nullable Match nearestSetBack(double x, double y, double z) {
       return this.nearest(x, y, z, 40);
    }
 
@@ -135,18 +132,8 @@ public final class CorrectionTrail {
    public record Sent(
       long tick, double x, double y, double z, double vx, double vy, double vz, boolean onGround, Set<PlayerAuthInputData> flags, boolean autoJump
    ) {
-      public Sent(long tick, double x, double y, double z, double vx, double vy, double vz, boolean onGround, Set<PlayerAuthInputData> flags, boolean autoJump) {
-         Set<PlayerAuthInputData> var18 = flags.isEmpty() ? EnumSet.noneOf(PlayerAuthInputData.class) : EnumSet.copyOf(flags);
-         this.tick = tick;
-         this.x = x;
-         this.y = y;
-         this.z = z;
-         this.vx = vx;
-         this.vy = vy;
-         this.vz = vz;
-         this.onGround = onGround;
-         this.flags = var18;
-         this.autoJump = autoJump;
+      public Sent {
+         flags = flags.isEmpty() ? EnumSet.noneOf(PlayerAuthInputData.class) : EnumSet.copyOf(flags);
       }
 
       public Sent(long tick, double x, double y, double z, double vx, double vy, double vz, boolean onGround, Set<PlayerAuthInputData> flags) {

@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -65,8 +64,7 @@ final class DevPvpTest {
    private final List<DevPvpTest.Line> server = new CopyOnWriteArrayList<>();
    private final List<String> results = new ArrayList<>();
    private volatile long botRuntimeId = -1L;
-   @Nullable
-   private volatile Consumer<Minecraft> perTick;
+   private volatile @Nullable Consumer<Minecraft> perTick;
    private boolean simulatedPlayer;
    private int failed;
    private double standKnockback = Double.NaN;
@@ -164,7 +162,7 @@ final class DevPvpTest {
 
    private void scenario(String name, Runnable body) {
       if (this.only.isEmpty() || this.only.contains(name) || this.only.size() == 1 && this.only.contains("trace")) {
-         int fpsLimit = this.call(() -> (Integer)this.minecraft.options.framerateLimit().get());
+         int fpsLimit = this.call(() -> this.minecraft.options.framerateLimit().get());
          int attempt = 1;
 
          while (true) {
@@ -221,9 +219,9 @@ final class DevPvpTest {
 
       try {
          body.run();
-      } catch (RuntimeException var4) {
-         this.check(name, false, "threw " + var4);
-         BedrockNative.LOGGER.error("Dev pvp scenario {} failed", name, var4);
+      } catch (RuntimeException e) {
+         this.check(name, false, "threw " + e);
+         BedrockNative.LOGGER.error("Dev pvp scenario {} failed", name, e);
       }
 
       this.perTick = null;
@@ -862,31 +860,29 @@ final class DevPvpTest {
       return this.bot() != null;
    }
 
-   @Nullable
-   private Entity bot() {
+   private @Nullable Entity bot() {
       return this.call(
          () -> {
             if (this.minecraft.level == null) {
                return null;
-            } else {
-               for (Entity entity : this.minecraft.level.entitiesForRendering()) {
-                  if (entity != this.minecraft.player
-                     && (
-                        entity instanceof Player player && "BNBot".equals(player.getGameProfile().name())
-                           || entity instanceof LivingEntity && entity.getType() == EntityTypes.HUSK
-                     )) {
-                     return entity;
-                  }
-               }
-
-               return null;
             }
+
+            for (Entity entity : this.minecraft.level.entitiesForRendering()) {
+               if (entity != this.minecraft.player
+                  && (
+                     entity instanceof Player player && "BNBot".equals(player.getGameProfile().name())
+                        || entity instanceof LivingEntity && entity.getType() == EntityTypes.HUSK
+                  )) {
+                  return entity;
+               }
+            }
+
+            return null;
          }
       );
    }
 
-   @Nullable
-   private Vec3 botPosition() {
+   private @Nullable Vec3 botPosition() {
       Entity bot = this.bot();
       return bot == null ? null : this.call(bot::position);
    }
@@ -947,7 +943,7 @@ final class DevPvpTest {
          boolean onBot = hit instanceof EntityHitResult entityHit && entityHit.getEntity() == bot;
          String crosshair = hit == null
             ? "nothing"
-            : (hit instanceof EntityHitResult entityHitx ? "entity " + entityHitx.getEntity().getName().getString() : hit.getType().name());
+            : (hit instanceof EntityHitResult entityHit ? "entity " + entityHit.getEntity().getName().getString() : hit.getType().name());
          return new DevPvpTest.Target(
             onBot,
             String.format(
@@ -998,39 +994,38 @@ final class DevPvpTest {
       List<MovementStats.Correction> all = this.stats.since(from);
       if (all.isEmpty()) {
          return "none";
-      } else {
-         StringBuilder text = new StringBuilder();
-
-         for (MovementStats.Correction c : all) {
-            String near = this.trace.get(c.receivedAt());
-            text.append(
-               String.format(
-                  Locale.ROOT,
-                  "[t%d@%d dist %.3f sΔ(%.3f,%.3f,%.3f) cΔ%s ground %s%s] ",
-                  c.tick(),
-                  c.receivedAt(),
-                  c.distance(),
-                  c.serverDelta().x,
-                  c.serverDelta().y,
-                  c.serverDelta().z,
-                  c.clientDelta() == null ? "?" : String.format(Locale.ROOT, "(%.3f,%.3f,%.3f)", c.clientDelta().x, c.clientDelta().y, c.clientDelta().z),
-                  c.serverOnGround(),
-                  near == null ? "" : " around: " + near
-               )
-            );
-         }
-
-         return text.toString().trim();
       }
+
+      StringBuilder text = new StringBuilder();
+
+      for (MovementStats.Correction c : all) {
+         String near = this.trace.get(c.receivedAt());
+         text.append(
+            String.format(
+               Locale.ROOT,
+               "[t%d@%d dist %.3f sΔ(%.3f,%.3f,%.3f) cΔ%s ground %s%s] ",
+               c.tick(),
+               c.receivedAt(),
+               c.distance(),
+               c.serverDelta().x,
+               c.serverDelta().y,
+               c.serverDelta().z,
+               c.clientDelta() == null ? "?" : String.format(Locale.ROOT, "(%.3f,%.3f,%.3f)", c.clientDelta().x, c.clientDelta().y, c.clientDelta().z),
+               c.serverOnGround(),
+               near == null ? "" : " around: " + near
+            )
+         );
+      }
+
+      return text.toString().trim();
    }
 
    private void onPacket(BedrockPacket packet) {
-      Objects.requireNonNull(packet);
       BedrockPacket var2 = packet;
       byte var3 = 0;
 
       while (true) {
-         switch (SwitchBootstraps.typeSwitch<"typeSwitch",AddPlayerPacket,AddEntityPacket,EntityEventPacket,AnimatePacket,TextPacket>(var2, var3)) {
+         switch (net.bedrocknative.TypeSwitchHelper.index(new Class<?>[]{AddPlayerPacket.class, AddEntityPacket.class, EntityEventPacket.class, AnimatePacket.class, TextPacket.class}, var2, var3)) {
             case 0:
                AddPlayerPacket add = (AddPlayerPacket)var2;
                if (!"BNBot".equals(add.getUsername())) {
@@ -1041,13 +1036,13 @@ final class DevPvpTest {
                this.botRuntimeId = add.getRuntimeEntityId();
                return;
             case 1:
-               AddEntityPacket add = (AddEntityPacket)var2;
-               if (!"minecraft:husk".equals(add.getIdentifier())) {
+               AddEntityPacket add2 = (AddEntityPacket)var2;
+               if (!"minecraft:husk".equals(add2.getIdentifier())) {
                   var3 = 2;
                   break;
                }
 
-               this.botRuntimeId = add.getRuntimeEntityId();
+               this.botRuntimeId = add2.getRuntimeEntityId();
                return;
             case 2:
                EntityEventPacket event = (EntityEventPacket)var2;
@@ -1131,8 +1126,7 @@ final class DevPvpTest {
       return count;
    }
 
-   @Nullable
-   private static Vec3 vector(String packet, String field) {
+   private static @Nullable Vec3 vector(String packet, String field) {
       Matcher matcher = Pattern.compile(field + "=\\((-?[0-9.E-]+), (-?[0-9.E-]+), (-?[0-9.E-]+)\\)").matcher(packet);
       return matcher.find() ? new Vec3(Double.parseDouble(matcher.group(1)), Double.parseDouble(matcher.group(2)), Double.parseDouble(matcher.group(3))) : null;
    }
@@ -1199,8 +1193,8 @@ final class DevPvpTest {
       this.minecraft.execute(() -> {
          try {
             future.complete(supplier.get());
-         } catch (RuntimeException var3) {
-            future.completeExceptionally(var3);
+         } catch (RuntimeException e) {
+            future.completeExceptionally(e);
          }
       });
       return future.join();

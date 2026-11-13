@@ -29,23 +29,17 @@ import org.jspecify.annotations.Nullable;
 
 final class JsonUiSignIn implements ItemSource {
    private static final int HINT_COLOUR = -3092272;
-   @Nullable
-   private static String languageLoaded;
+   private static @Nullable String languageLoaded;
    private final Minecraft minecraft = Minecraft.getInstance();
    private final JsonUiSignIn.Host host;
-   @Nullable
-   private JsonUiScreen ui;
-   @Nullable
-   private SignInData data;
+   private @Nullable JsonUiScreen ui;
+   private @Nullable SignInData data;
    private String builtFor = "";
    private boolean failed;
    private boolean pressed;
-   @Nullable
-   private Component hint;
-   @Nullable
-   private String pictureUrl;
-   @Nullable
-   private BedrockTextures.UrlImage picture;
+   private @Nullable Component hint;
+   private @Nullable String pictureUrl;
+   private BedrockTextures.@Nullable UrlImage picture;
 
    JsonUiSignIn(JsonUiSignIn.Host host) {
       this.host = host;
@@ -63,18 +57,15 @@ final class JsonUiSignIn implements ItemSource {
       return this.failed;
    }
 
-   @Nullable
-   SignInData.View view() {
+   SignInData.@Nullable View view() {
       return this.showing() && this.data != null ? this.data.view() : null;
    }
 
-   @Nullable
-   SignInData data() {
+   @Nullable SignInData data() {
       return this.showing() ? this.data : null;
    }
 
-   @Nullable
-   JsonUiScreen screen() {
+   @Nullable JsonUiScreen screen() {
       return this.showing() ? this.ui : null;
    }
 
@@ -84,46 +75,46 @@ final class JsonUiSignIn implements ItemSource {
          if (this.ui != null && this.data != null && fullKey.equals(this.builtFor)) {
             fill.accept(this.data);
             return true;
+         }
+
+         UiDefinitionSet definitions = JsonUi.definitions();
+         if (definitions == null) {
+            return false;
+         }
+
+         this.bedrockLanguage();
+         SignInData fresh = new SignInData(view);
+         fresh.actions(this.host);
+         fill.accept(fresh);
+
+         JsonUiScreen screen;
+         try {
+            screen = JsonUiScreen.create(definitions, view.screen, SignInData.variables(), fresh);
+         } catch (RuntimeException e) {
+            BedrockNative.LOGGER.warn("Bedrock's sign-in screen {} failed; the account screen's own panel takes its place", view, e);
+            this.failed = true;
+            return false;
+         }
+
+         if (screen == null) {
+            BedrockNative.LOGGER.info("Bedrock's sign-in screen {} does not resolve here; the account screen's own panel takes its place", view);
+            this.failed = true;
+            return false;
          } else {
-            UiDefinitionSet definitions = JsonUi.definitions();
-            if (definitions == null) {
-               return false;
-            } else {
-               this.bedrockLanguage();
-               SignInData fresh = new SignInData(view);
-               fresh.actions(this.host);
-               fill.accept(fresh);
-
-               JsonUiScreen screen;
-               try {
-                  screen = JsonUiScreen.create(definitions, view.screen, SignInData.variables(), fresh);
-               } catch (RuntimeException var9) {
-                  BedrockNative.LOGGER.warn("Bedrock's sign-in screen {} failed; the account screen's own panel takes its place", view, var9);
-                  this.failed = true;
-                  return false;
-               }
-
-               if (screen == null) {
-                  BedrockNative.LOGGER.info("Bedrock's sign-in screen {} does not resolve here; the account screen's own panel takes its place", view);
-                  this.failed = true;
-                  return false;
-               } else {
-                  screen.items(this);
-                  screen.diagnostics("Xbox sign-in " + view, view.screen);
-                  screen.fallback(() -> {
-                     this.failed = true;
-                     this.ui = null;
-                  });
-                  screen.instance().problems().log("Xbox sign-in " + view);
-                  this.ui = screen;
-                  this.data = fresh;
-                  this.builtFor = fullKey;
-                  this.pressed = false;
-                  screen.resize(this.minecraft.getWindow().getGuiScaledWidth(), this.minecraft.getWindow().getGuiScaledHeight());
-                  screen.event("screen.entrance_push");
-                  return true;
-               }
-            }
+            screen.items(this);
+            screen.diagnostics("Xbox sign-in " + view, view.screen);
+            screen.fallback(() -> {
+               this.failed = true;
+               this.ui = null;
+            });
+            screen.instance().problems().log("Xbox sign-in " + view);
+            this.ui = screen;
+            this.data = fresh;
+            this.builtFor = fullKey;
+            this.pressed = false;
+            screen.resize(this.minecraft.getWindow().getGuiScaledWidth(), this.minecraft.getWindow().getGuiScaledHeight());
+            screen.event("screen.entrance_push");
+            return true;
          }
       } else {
          return false;
@@ -234,8 +225,7 @@ final class JsonUiSignIn implements ItemSource {
       return this.showing() && this.ui.charTyped(event);
    }
 
-   @Nullable
-   UiControl control(String name) {
+   @Nullable UiControl control(String name) {
       JsonUiScreen screen = this.ui;
       if (screen != null && screen.instance().root() != null) {
          UiControl[] found = new UiControl[1];
@@ -254,11 +244,11 @@ final class JsonUiSignIn implements ItemSource {
       UiControl control = this.control(name);
       if (control == null) {
          return false;
-      } else {
-         float ux = JsonUi.toUi(x);
-         float uy = JsonUi.toUi(y);
-         return ux >= control.x() && uy >= control.y() && ux < control.x() + control.width() && uy < control.y() + control.height();
       }
+
+      float ux = JsonUi.toUi(x);
+      float uy = JsonUi.toUi(y);
+      return ux >= control.x() && uy >= control.y() && ux < control.x() + control.width() && uy < control.y() + control.height();
    }
 
    @Override
@@ -268,9 +258,7 @@ final class JsonUiSignIn implements ItemSource {
 
    @Override
    public boolean draw(GuiGraphicsExtractor graphics, UiDrawCommand.Custom renderer) {
-      String var3 = renderer.renderer();
-
-      return switch (var3) {
+      return switch (renderer.renderer()) {
          case "qr_code_renderer" -> {
             SignInData current = this.data;
             QrCode qr = current == null ? null : current.qr();

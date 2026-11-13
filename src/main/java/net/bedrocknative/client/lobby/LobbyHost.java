@@ -52,10 +52,10 @@ final class LobbyHost {
    boolean mouseClicked(MouseButtonEvent event) {
       if (event.button() != 1) {
          return false;
-      } else {
-         this.pressed = true;
-         return this.ui.mouseClicked(event);
       }
+
+      this.pressed = true;
+      return this.ui.mouseClicked(event);
    }
 
    boolean mouseReleased(MouseButtonEvent event) {

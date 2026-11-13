@@ -90,8 +90,7 @@ public final class MenuReference {
       return new MenuReference.Rect(what, locator, x0, y0, x1, y1, 1, "");
    }
 
-   @Nullable
-   private static float[] rect(@Nullable UiControl control) {
+   private static float @Nullable [] rect(@Nullable UiControl control) {
       return control == null ? null : new float[]{control.x(), control.y(), control.x() + control.width(), control.y() + control.height()};
    }
 
@@ -103,8 +102,7 @@ public final class MenuReference {
       return found -> rect(find(found, path));
    }
 
-   @Nullable
-   private static UiControl find(MenuReference.Found found, String... path) {
+   private static @Nullable UiControl find(MenuReference.Found found, String... path) {
       UiControl control = found.instance().root();
 
       for (String name : path) {
@@ -123,25 +121,25 @@ public final class MenuReference {
          float[] outer = button.apply(found);
          if (outer == null) {
             return null;
-         } else {
-            UiControl[] border = new UiControl[]{null};
-            found.instance()
-               .root()
-               .walk(
-                  control -> {
-                     if (border[0] == null
-                        && control.visible()
-                        && control.name().equals("border")
-                        && control.x() >= outer[0] - 0.01F
-                        && control.y() >= outer[1] - 0.01F
-                        && control.x() + control.width() <= outer[2] + 0.01F
-                        && control.y() + control.height() <= outer[3] + 0.01F) {
-                        border[0] = control;
-                     }
-                  }
-               );
-            return rect(border[0]);
          }
+
+         UiControl[] border = new UiControl[]{null};
+         found.instance()
+            .root()
+            .walk(
+               control -> {
+                  if (border[0] == null
+                     && control.visible()
+                     && control.name().equals("border")
+                     && control.x() >= outer[0] - 0.01F
+                     && control.y() >= outer[1] - 0.01F
+                     && control.x() + control.width() <= outer[2] + 0.01F
+                     && control.y() + control.height() <= outer[3] + 0.01F) {
+                     border[0] = control;
+                  }
+               }
+            );
+         return rect(border[0]);
       };
    }
 
@@ -150,26 +148,26 @@ public final class MenuReference {
          float[] control = image.apply(found);
          if (control == null) {
             return null;
-         } else {
-            float[] box = new float[]{Float.MAX_VALUE, Float.MAX_VALUE, -Float.MAX_VALUE, -Float.MAX_VALUE};
+         }
 
-            for (UiDrawCommand command : found.instance().drawList().commands()) {
-               if (command instanceof UiDrawCommand.Image drawn
-                  && drawn.control().x() == control[0]
-                  && drawn.control().y() == control[1]
-                  && drawn.control().x() + drawn.control().width() == control[2]
-                  && drawn.control().y() + drawn.control().height() == control[3]) {
-                  for (UiDrawCommand.Quad quad : drawn.quads()) {
-                     box[0] = Math.min(box[0], quad.x());
-                     box[1] = Math.min(box[1], quad.y());
-                     box[2] = Math.max(box[2], quad.x() + quad.w());
-                     box[3] = Math.max(box[3], quad.y() + quad.h());
-                  }
+         float[] box = new float[]{Float.MAX_VALUE, Float.MAX_VALUE, -Float.MAX_VALUE, -Float.MAX_VALUE};
+
+         for (UiDrawCommand command : found.instance().drawList().commands()) {
+            if (command instanceof UiDrawCommand.Image drawn
+               && drawn.control().x() == control[0]
+               && drawn.control().y() == control[1]
+               && drawn.control().x() + drawn.control().width() == control[2]
+               && drawn.control().y() + drawn.control().height() == control[3]) {
+               for (UiDrawCommand.Quad quad : drawn.quads()) {
+                  box[0] = Math.min(box[0], quad.x());
+                  box[1] = Math.min(box[1], quad.y());
+                  box[2] = Math.max(box[2], quad.x() + quad.w());
+                  box[3] = Math.max(box[3], quad.y() + quad.h());
                }
             }
-
-            return box[0] == Float.MAX_VALUE ? null : box;
          }
+
+         return box[0] == Float.MAX_VALUE ? null : box;
       };
    }
 
@@ -210,11 +208,11 @@ public final class MenuReference {
          float[] r = locator.apply(found);
          if (r == null) {
             return null;
-         } else {
-            float x = middleX ? (r[0] + r[2]) / 2.0F : r[0];
-            float y = middleY ? (r[1] + r[3]) / 2.0F : r[1];
-            return new float[]{x, y, x + 0.5F, y + 0.5F};
          }
+
+         float x = middleX ? (r[0] + r[2]) / 2.0F : r[0];
+         float y = middleY ? (r[1] + r[3]) / 2.0F : r[1];
+         return new float[]{x, y, x + 0.5F, y + 0.5F};
       };
    }
 
@@ -244,7 +242,7 @@ public final class MenuReference {
       }
    }
 
-   public record Result(MenuReference.Rect rect, @Nullable float[] ours, float off, boolean ok) {
+   public record Result(MenuReference.Rect rect, float @Nullable [] ours, float off, boolean ok) {
       @Override
       public String toString() {
          return this.ours == null

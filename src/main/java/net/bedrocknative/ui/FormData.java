@@ -40,36 +40,35 @@ public final class FormData extends UiDataMap {
    private final Object[] values;
    private final List<Map<String, UiValue>> items = new ArrayList<>();
    private final Map<String, List<Integer>> urls = new LinkedHashMap<>();
-   @Nullable
-   private FormData.Answers answers;
+   private FormData.@Nullable Answers answers;
    private boolean answered;
 
    public FormData(BedrockForm form, FormData.Texts texts, boolean settings) {
       if (!supports(form)) {
          throw new IllegalArgumentException("not a server_form screen form: " + form.getClass().getSimpleName());
-      } else {
-         this.form = form;
-         this.texts = texts;
-         this.settings = settings;
-         this.set("#title_text", texts.raw(form.title()));
-         this.set("#close_button_visible", true);
-         this.set("#tts_dialog_title", texts.raw(form.title()));
-         List<FormElement> elements = this.elements();
-         this.ordinals = new int[elements.size()];
-         this.values = new Object[elements.size()];
-         switch (form) {
-            case BedrockForm.Simple simple:
-               this.simple(simple);
-               break;
-            case BedrockForm.Custom custom:
-               this.custom(custom);
-               break;
-            case BedrockForm.Modal modal:
-               this.modal(modal);
-               break;
-            default:
-               throw new MatchException(null, null);
-         }
+      }
+
+      this.form = form;
+      this.texts = texts;
+      this.settings = settings;
+      this.set("#title_text", texts.raw(form.title()));
+      this.set("#close_button_visible", true);
+      this.set("#tts_dialog_title", texts.raw(form.title()));
+      List<FormElement> elements = this.elements();
+      this.ordinals = new int[elements.size()];
+      this.values = new Object[elements.size()];
+      switch (form) {
+         case BedrockForm.Simple simple:
+            this.simple(simple);
+            break;
+         case BedrockForm.Custom custom:
+            this.custom(custom);
+            break;
+         case BedrockForm.Modal modal:
+            this.modal(modal);
+            break;
+         default:
+            throw new MatchException(null, null);
       }
    }
 
@@ -84,8 +83,8 @@ public final class FormData extends UiDataMap {
    public String controlId() {
       return switch (this.form) {
          case BedrockForm.Simple ignored -> "long_form";
-         case BedrockForm.Custom ignoredx -> "custom_form";
-         case BedrockForm.Modal ignoredxx -> "modal_dialog_popup";
+         case BedrockForm.Custom ignored -> "custom_form";
+         case BedrockForm.Modal ignored -> "modal_dialog_popup";
          default -> throw new MatchException(null, null);
       };
    }
@@ -106,7 +105,7 @@ public final class FormData extends UiDataMap {
       return this.settings;
    }
 
-   public void answers(@Nullable FormData.Answers target) {
+   public void answers(FormData.@Nullable Answers target) {
       this.answers = target;
    }
 
@@ -282,7 +281,7 @@ public final class FormData extends UiDataMap {
          case FormElement.Input ignored:
             item.put("#custom_input_text", UiValue.of((String)this.values[index]));
             break;
-         case FormElement.Toggle ignoredx:
+         case FormElement.Toggle ignored:
             item.put("#custom_toggle_state", UiValue.of((Boolean)this.values[index]));
             break;
          case FormElement.Slider slider: {
@@ -365,8 +364,7 @@ public final class FormData extends UiDataMap {
          boolean custom = "custom_form".equals(collection) && this.form instanceof BedrockForm.Custom;
          if ((custom || "form_buttons".equals(collection) && this.form instanceof BedrockForm.Simple) && index >= 0 && index < this.items.size()) {
             FormElement element = elements.get(index);
-            String var9 = custom ? name : "";
-            switch (var9) {
+            switch (custom ? name : "") {
                case "#custom_toggle_state":
                   if (element instanceof FormElement.Toggle) {
                      this.values[index] = value.truthy();
@@ -374,13 +372,13 @@ public final class FormData extends UiDataMap {
                   break;
                case "#custom_slider_value":
                   if (element instanceof FormElement.Slider slider) {
-                     this.values[index] = (int)Math.max(0L, Math.min((long)slider.stepCount(), Math.round(value.asNumber() * slider.stepCount())));
+                     this.values[index] = (int)Math.max(0L, Math.min(slider.stepCount(), Math.round(value.asNumber() * slider.stepCount())));
                   }
                   break;
                case "#custom_slider_step_value":
                   if (element instanceof FormElement.StepSlider stepSlider && !stepSlider.steps().isEmpty()) {
                      int last = stepSlider.steps().size() - 1;
-                     this.values[index] = (int)Math.max(0L, Math.min((long)last, Math.round(value.asNumber() * last)));
+                     this.values[index] = (int)Math.max(0L, Math.min(last, Math.round(value.asNumber() * last)));
                   }
                   break;
                case "#custom_input_text":
@@ -467,10 +465,10 @@ public final class FormData extends UiDataMap {
       for (int i = 0; i < elements.size(); i++) {
          out.set(i, switch ((FormElement)elements.get(i)) {
             case FormElement.Input ignored -> this.values[i];
-            case FormElement.Toggle ignoredx -> this.values[i];
+            case FormElement.Toggle ignored -> this.values[i];
             case FormElement.Slider slider -> slider.valueAt((Integer)this.values[i]);
-            case FormElement.StepSlider ignoredxx -> this.values[i];
-            case FormElement.Dropdown ignoredxxx -> this.values[i];
+            case FormElement.StepSlider ignored -> this.values[i];
+            case FormElement.Dropdown ignored -> this.values[i];
             default -> null;
          });
       }
@@ -478,8 +476,7 @@ public final class FormData extends UiDataMap {
       return FormResponse.custom(out);
    }
 
-   @Nullable
-   public Object value(int index) {
+   public @Nullable Object value(int index) {
       return index >= 0 && index < this.values.length ? this.values[index] : null;
    }
 

@@ -16,8 +16,7 @@ import org.slf4j.LoggerFactory;
 public final class BedrockNative implements ModInitializer {
    public static final String MOD_ID = "bedrocknative";
    public static final Logger LOGGER = FileTeeLogger.wrap(LoggerFactory.getLogger("bedrocknative"));
-   @Nullable
-   static volatile Consumer<String> logObserver;
+   static volatile @Nullable Consumer<String> logObserver;
 
    public static void observeLog(@Nullable Consumer<String> observer) {
       logObserver = observer;

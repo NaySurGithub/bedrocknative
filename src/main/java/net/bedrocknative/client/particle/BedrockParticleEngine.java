@@ -34,8 +34,7 @@ public final class BedrockParticleEngine {
    private static final ParticleSystem SYSTEM = new ParticleSystem(WORLD, 16384, 2048);
    private static final BedrockParticleRenderState STATE = new BedrockParticleRenderState();
    private static final ParticleCamera CAMERA = new ParticleCamera();
-   @Nullable
-   private static volatile ParticleEffects effects;
+   private static volatile @Nullable ParticleEffects effects;
    private static final LoadQueue WAITING = new LoadQueue(32);
    private static int generation;
    private static boolean active;
@@ -50,8 +49,7 @@ public final class BedrockParticleEngine {
       return VANILLA;
    }
 
-   @Nullable
-   public static ParticleEffects effects() {
+   public static @Nullable ParticleEffects effects() {
       return effects;
    }
 
@@ -119,8 +117,7 @@ public final class BedrockParticleEngine {
       WORLD.clear();
    }
 
-   @Nullable
-   public static ParticleEmitter spawn(
+   public static @Nullable ParticleEmitter spawn(
       ParticleEffect effect,
       double x,
       double y,
@@ -131,10 +128,10 @@ public final class BedrockParticleEngine {
    ) {
       if (!active) {
          return null;
-      } else {
-         remember(effect);
-         return SYSTEM.spawn(effect, x, y, z, anchor, preEffect, setup);
       }
+
+      remember(effect);
+      return SYSTEM.spawn(effect, x, y, z, anchor, preEffect, setup);
    }
 
    private static void remember(ParticleEffect effect) {
@@ -152,10 +149,10 @@ public final class BedrockParticleEngine {
    public static boolean emitManual(ParticleEffect effect, double x, double y, double z) {
       if (!active) {
          return false;
-      } else {
-         remember(effect);
-         return SYSTEM.emitManual(effect, x, y, z, 0.0F, 0.0F, 0.0F);
       }
+
+      remember(effect);
+      return SYSTEM.emitManual(effect, x, y, z, 0.0F, 0.0F, 0.0F);
    }
 
    public static void tick() {

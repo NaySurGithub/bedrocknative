@@ -50,8 +50,7 @@ public final class OreThemeVars {
       return parsed == null ? fallback : parsed;
    }
 
-   @Nullable
-   public static Integer parseColor(String text) {
+   public static @Nullable Integer parseColor(String text) {
       String value = text.trim().toLowerCase(Locale.ROOT);
 
       try {
@@ -67,21 +66,23 @@ public final class OreThemeVars {
                }
                default -> null;
             };
-         } else if (!value.startsWith("rgba(") && !value.startsWith("rgb(")) {
-            return null;
          } else {
+            if (!value.startsWith("rgba(") && !value.startsWith("rgb(")) {
+               return null;
+            }
+
             String[] parts = value.substring(value.indexOf(40) + 1, value.lastIndexOf(41)).split(",");
             if (parts.length < 3) {
                return null;
-            } else {
-               int r = Math.clamp((long)Math.round(Float.parseFloat(parts[0].trim())), 0, 255);
-               int g = Math.clamp((long)Math.round(Float.parseFloat(parts[1].trim())), 0, 255);
-               int b = Math.clamp((long)Math.round(Float.parseFloat(parts[2].trim())), 0, 255);
-               float a = parts.length > 3 ? Float.parseFloat(parts[3].trim()) : 1.0F;
-               return Math.clamp((long)Math.round(a * 255.0F), 0, 255) << 24 | r << 16 | g << 8 | b;
             }
+
+            int r = Math.clamp(Math.round(Float.parseFloat(parts[0].trim())), 0, 255);
+            int g = Math.clamp(Math.round(Float.parseFloat(parts[1].trim())), 0, 255);
+            int b = Math.clamp(Math.round(Float.parseFloat(parts[2].trim())), 0, 255);
+            float a = parts.length > 3 ? Float.parseFloat(parts[3].trim()) : 1.0F;
+            return Math.clamp(Math.round(a * 255.0F), 0, 255) << 24 | r << 16 | g << 8 | b;
          }
-      } catch (StringIndexOutOfBoundsException | NumberFormatException var7) {
+      } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
          return null;
       }
    }
@@ -91,51 +92,49 @@ public final class OreThemeVars {
       return v << 4 | v;
    }
 
-   @Nullable
-   public OreBorderImage borderImage(String prefix) {
+   public @Nullable OreBorderImage borderImage(String prefix) {
       String source = this.values.get(prefix + "BorderImageSource");
       String slice = this.values.get(prefix + "BorderImageSlice");
       if (source != null && slice != null) {
          Matcher url = URL.matcher(source);
          if (!url.find()) {
             return null;
-         } else {
-            String name = OreInstall.nameOf(url.group(1));
-            if (name == null) {
-               return null;
-            } else {
-               boolean fill = slice.contains("fill");
-               float[] slices = edges(slice.replace("fill", ""), false);
-               float[] widths = edges(this.values.getOrDefault(prefix + "BorderImageWidth", ""), true);
-               float[] outset = edges(this.values.getOrDefault(prefix + "BorderImageOutset", "0"), true);
-               float[] borders = new float[]{
-                  length(this.values.get(prefix + "BorderTopWidth")),
-                  length(this.values.get(prefix + "BorderRightWidth")),
-                  length(this.values.get(prefix + "BorderBottomWidth")),
-                  length(this.values.get(prefix + "BorderLeftWidth"))
-               };
-               return slices != null && widths != null
-                  ? new OreBorderImage(
-                     name,
-                     Math.round(slices[0]),
-                     Math.round(slices[1]),
-                     Math.round(slices[2]),
-                     Math.round(slices[3]),
-                     fill,
-                     widths,
-                     outset == null ? new float[4] : outset,
-                     borders
-                  )
-                  : null;
-            }
          }
+
+         String name = OreInstall.nameOf(url.group(1));
+         if (name == null) {
+            return null;
+         }
+
+         boolean fill = slice.contains("fill");
+         float[] slices = edges(slice.replace("fill", ""), false);
+         float[] widths = edges(this.values.getOrDefault(prefix + "BorderImageWidth", ""), true);
+         float[] outset = edges(this.values.getOrDefault(prefix + "BorderImageOutset", "0"), true);
+         float[] borders = new float[]{
+            length(this.values.get(prefix + "BorderTopWidth")),
+            length(this.values.get(prefix + "BorderRightWidth")),
+            length(this.values.get(prefix + "BorderBottomWidth")),
+            length(this.values.get(prefix + "BorderLeftWidth"))
+         };
+         return slices != null && widths != null
+            ? new OreBorderImage(
+               name,
+               Math.round(slices[0]),
+               Math.round(slices[1]),
+               Math.round(slices[2]),
+               Math.round(slices[3]),
+               fill,
+               widths,
+               outset == null ? new float[4] : outset,
+               borders
+            )
+            : null;
       } else {
          return null;
       }
    }
 
-   @Nullable
-   static float[] edges(String text, boolean lengths) {
+   static float @Nullable [] edges(String text, boolean lengths) {
       String[] parts = text.trim().split("\\s+");
       if (parts.length != 0 && parts.length <= 4 && !parts[0].isEmpty()) {
          float[] read = new float[parts.length];
@@ -166,9 +165,9 @@ public final class OreThemeVars {
    static float length(@Nullable String text) {
       if (text == null) {
          return 0.0F;
-      } else {
-         Matcher number = NUMBER.matcher(text.trim());
-         return number.matches() ? Float.parseFloat(number.group(1)) : 0.0F;
       }
+
+      Matcher number = NUMBER.matcher(text.trim());
+      return number.matches() ? Float.parseFloat(number.group(1)) : 0.0F;
    }
 }

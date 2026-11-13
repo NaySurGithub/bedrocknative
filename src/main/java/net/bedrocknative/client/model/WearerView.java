@@ -25,10 +25,8 @@ import org.cloudburstmc.protocol.bedrock.data.entity.EntityFlag;
 import org.jspecify.annotations.Nullable;
 
 final class WearerView implements MolangActor {
-   @Nullable
-   private LivingEntity entity;
-   @Nullable
-   private ActorData data;
+   private @Nullable LivingEntity entity;
+   private @Nullable ActorData data;
    private String identifier = "";
    private boolean firstPerson;
    private float partialTick;
@@ -59,14 +57,13 @@ final class WearerView implements MolangActor {
    static String itemIdentifier(ItemStack stack) {
       if (stack.isEmpty()) {
          return "";
-      } else {
-         CustomItem custom = ItemMappings.custom(stack);
-         return custom != null ? custom.identifier() : ITEM_NAMES.computeIfAbsent(stack.getItem(), item -> BuiltInRegistries.ITEM.getKey(item).toString());
       }
+
+      CustomItem custom = ItemMappings.custom(stack);
+      return custom != null ? custom.identifier() : ITEM_NAMES.computeIfAbsent(stack.getItem(), item -> BuiltInRegistries.ITEM.getKey(item).toString());
    }
 
-   @Nullable
-   private static EquipmentSlot equipmentSlot(String slot) {
+   private static @Nullable EquipmentSlot equipmentSlot(String slot) {
       return switch (slot) {
          case "slot.weapon.mainhand", "main_hand" -> EquipmentSlot.MAINHAND;
          case "slot.weapon.offhand", "off_hand" -> EquipmentSlot.OFFHAND;
@@ -104,30 +101,30 @@ final class WearerView implements MolangActor {
       LivingEntity living = this.entity;
       if (living == null) {
          return false;
-      } else {
-         boolean local = living == Minecraft.getInstance().player;
-         if (!local && this.data != null) {
-            return this.data.flag(flag);
-         } else {
-            return switch (flag) {
-               case SNEAKING -> living.isCrouching();
-               case SPRINTING -> living.isSprinting();
-               case SWIMMING -> living.isSwimming();
-               case GLIDING -> living.isFallFlying();
-               case USING_ITEM -> living.isUsingItem();
-               case BLOCKING -> living.isBlocking();
-               case ON_FIRE -> living.isOnFire();
-               case INVISIBLE -> living.isInvisible();
-               case BABY -> living.isBaby();
-               case SLEEPING -> living.isSleeping();
-               case RIDING -> living.isPassenger();
-               case MOVING -> living.getDeltaMovement().horizontalDistanceSqr() > 1.0E-6;
-               case HAS_GRAVITY -> !living.isNoGravity();
-               case BREATHING -> living.getAirSupply() >= living.getMaxAirSupply();
-               default -> this.data != null && this.data.flag(flag);
-            };
-         }
       }
+
+      boolean local = living == Minecraft.getInstance().player;
+      if (!local && this.data != null) {
+         return this.data.flag(flag);
+      }
+
+      return switch (flag) {
+         case SNEAKING -> living.isCrouching();
+         case SPRINTING -> living.isSprinting();
+         case SWIMMING -> living.isSwimming();
+         case GLIDING -> living.isFallFlying();
+         case USING_ITEM -> living.isUsingItem();
+         case BLOCKING -> living.isBlocking();
+         case ON_FIRE -> living.isOnFire();
+         case INVISIBLE -> living.isInvisible();
+         case BABY -> living.isBaby();
+         case SLEEPING -> living.isSleeping();
+         case RIDING -> living.isPassenger();
+         case MOVING -> living.getDeltaMovement().horizontalDistanceSqr() > 1.0E-6;
+         case HAS_GRAVITY -> !living.isNoGravity();
+         case BREATHING -> living.getAirSupply() >= living.getMaxAirSupply();
+         default -> this.data != null && this.data.flag(flag);
+      };
    }
 
    @Override
@@ -135,9 +132,8 @@ final class WearerView implements MolangActor {
       return this.data != null ? this.data.number(type) : 0.0F;
    }
 
-   @Nullable
    @Override
-   public Object property(String name) {
+   public @Nullable Object property(String name) {
       return this.data != null ? this.data.property(name) : null;
    }
 
@@ -162,10 +158,10 @@ final class WearerView implements MolangActor {
       LivingEntity living = this.entity;
       if (living == null) {
          return 0.0F;
-      } else {
-         Vec3 camera = Minecraft.getInstance().gameRenderer.mainCamera().position();
-         return (float)living.getPosition(this.partialTick).distanceTo(camera);
       }
+
+      Vec3 camera = Minecraft.getInstance().gameRenderer.mainCamera().position();
+      return (float)living.getPosition(this.partialTick).distanceTo(camera);
    }
 
    @Override
@@ -208,10 +204,10 @@ final class WearerView implements MolangActor {
       LivingEntity living = this.entity;
       if (living == null) {
          return 0.0F;
-      } else {
-         Vec3 position = living.getPosition(this.partialTick);
-         return (float)(axis == 0 ? position.x : (axis == 1 ? position.y : (axis == 2 ? position.z : 0.0)));
       }
+
+      Vec3 position = living.getPosition(this.partialTick);
+      return (float)(axis == 0 ? position.x : (axis == 1 ? position.y : (axis == 2 ? position.z : 0.0)));
    }
 
    @Override
@@ -219,10 +215,10 @@ final class WearerView implements MolangActor {
       LivingEntity living = this.entity;
       if (living == null) {
          return 0.0F;
-      } else {
-         Vec3 delta = living.getDeltaMovement();
-         return (float)(axis == 0 ? delta.x : (axis == 1 ? delta.y : (axis == 2 ? delta.z : 0.0)));
       }
+
+      Vec3 delta = living.getDeltaMovement();
+      return (float)(axis == 0 ? delta.x : (axis == 1 ? delta.y : (axis == 2 ? delta.z : 0.0)));
    }
 
    @Override
@@ -331,17 +327,17 @@ final class WearerView implements MolangActor {
       LivingEntity living = this.entity;
       if (living == null) {
          return 0.0F;
-      } else {
-         int count = 0;
-
-         for (EquipmentSlot slot : EquipmentSlot.values()) {
-            if (!living.getItemBySlot(slot).isEmpty()) {
-               count++;
-            }
-         }
-
-         return count;
       }
+
+      int count = 0;
+
+      for (EquipmentSlot slot : EquipmentSlot.values()) {
+         if (!living.getItemBySlot(slot).isEmpty()) {
+            count++;
+         }
+      }
+
+      return count;
    }
 
    @Override
@@ -349,16 +345,16 @@ final class WearerView implements MolangActor {
       LivingEntity living = this.entity;
       if (living == null) {
          return false;
-      } else {
-         EquipmentSlot equipment = switch (slot) {
-            case 0 -> EquipmentSlot.HEAD;
-            case 1 -> EquipmentSlot.CHEST;
-            case 2 -> EquipmentSlot.LEGS;
-            case 3 -> EquipmentSlot.FEET;
-            default -> EquipmentSlot.BODY;
-         };
-         return !living.getItemBySlot(equipment).isEmpty();
       }
+
+      EquipmentSlot equipment = switch (slot) {
+         case 0 -> EquipmentSlot.HEAD;
+         case 1 -> EquipmentSlot.CHEST;
+         case 2 -> EquipmentSlot.LEGS;
+         case 3 -> EquipmentSlot.FEET;
+         default -> EquipmentSlot.BODY;
+      };
+      return !living.getItemBySlot(equipment).isEmpty();
    }
 
    @Override

@@ -60,8 +60,7 @@ public final class BedrockExtras {
    private static final long TICKING_AREA_WAIT_LIMIT_MS = 60000L;
    private static final float MAX_HINT_MOTION = 10.0F;
    private static final long TOAST_INTERVAL_MS = 250L;
-   @Nullable
-   private static volatile BedrockExtras active;
+   private static volatile @Nullable BedrockExtras active;
    private final Minecraft minecraft;
    private final BedrockEntities entities;
    private final BedrockInventory inventory;
@@ -99,13 +98,11 @@ public final class BedrockExtras {
       this.waypoints.follow(entities::byUniqueId);
    }
 
-   @Nullable
-   public static BedrockExtras active() {
+   public static @Nullable BedrockExtras active() {
       return active;
    }
 
-   @Nullable
-   public static Entity actor(long uniqueId) {
+   public static @Nullable Entity actor(long uniqueId) {
       BedrockExtras extras = active;
       return extras == null ? null : extras.entities.byUniqueId(uniqueId);
    }

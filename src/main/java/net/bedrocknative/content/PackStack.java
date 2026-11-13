@@ -18,16 +18,12 @@ import org.jspecify.annotations.Nullable;
 public final class PackStack {
    private static final List<String> TEXTURE_EXTENSIONS = List.of(".png", ".tga", ".jpg", ".jpeg");
    private static final String ILLEGAL = "<>\"|?*";
-   @Nullable
-   private static volatile PackStack base;
-   @Nullable
-   private static volatile String baseKey;
-   @Nullable
-   private static volatile String baseSource;
+   private static volatile @Nullable PackStack base;
+   private static volatile @Nullable String baseKey;
+   private static volatile @Nullable String baseSource;
    private static volatile List<PackSource> serverPacks = List.of();
    private static volatile List<String> skippedServerPacks = List.of();
-   @Nullable
-   private static volatile PackStack active;
+   private static volatile @Nullable PackStack active;
    private final List<PackSource> topFirst = new CopyOnWriteArrayList<>();
 
    public static PackStack active() {
@@ -45,23 +41,23 @@ public final class PackStack {
       String key = baseGameVersion + " " + experiments + " " + source + (BaseContent.ownUi() ? " own-menus" : "");
       if (base != null && key.equals(baseKey)) {
          return false;
-      } else {
-         PackStack created = base(baseGameVersion, experiments, base);
-         if (!source.equals(baseSource)) {
-            if (created.topFirst.isEmpty()) {
-               BedrockNative.LOGGER.warn(BaseContent.line());
-            } else {
-               BedrockNative.LOGGER.info("{}: {} packs", BaseContent.line(), created.topFirst.size());
-            }
+      }
 
-            baseSource = source;
+      PackStack created = base(baseGameVersion, experiments, base);
+      if (!source.equals(baseSource)) {
+         if (created.topFirst.isEmpty()) {
+            BedrockNative.LOGGER.warn(BaseContent.line());
+         } else {
+            BedrockNative.LOGGER.info("{}: {} packs", BaseContent.line(), created.topFirst.size());
          }
 
-         baseKey = key;
-         base = created;
-         active = over(serverPacks, created);
-         return true;
+         baseSource = source;
       }
+
+      baseKey = key;
+      base = created;
+      active = over(serverPacks, created);
+      return true;
    }
 
    public static List<String> skippedServerPacks() {
@@ -132,7 +128,7 @@ public final class PackStack {
    private static boolean has(PackSource pack, String path) {
       try {
          return pack.has(path);
-      } catch (IOException var3) {
+      } catch (IOException e) {
          return false;
       }
    }
@@ -170,39 +166,39 @@ public final class PackStack {
       String normalized = normalize(path);
       if (normalized == null) {
          return Optional.empty();
-      } else {
-         for (PackSource pack : this.topFirst) {
-            try {
-               Optional<byte[]> data = pack.read(normalized);
-               if (data.isPresent()) {
-                  return Optional.of(new PackStack.Resource(normalized, data.get()));
-               }
-            } catch (IOException var6) {
-               BedrockNative.LOGGER.warn("Couldn't read {} from {}", new Object[]{normalized, pack, var6});
-            }
-         }
-
-         return Optional.empty();
       }
+
+      for (PackSource pack : this.topFirst) {
+         try {
+            Optional<byte[]> data = pack.read(normalized);
+            if (data.isPresent()) {
+               return Optional.of(new PackStack.Resource(normalized, data.get()));
+            }
+         } catch (IOException e) {
+            BedrockNative.LOGGER.warn("Couldn't read {} from {}", new Object[]{normalized, pack, e});
+         }
+      }
+
+      return Optional.empty();
    }
 
    public List<PackStack.PackFile> readAll(String path) {
       String normalized = normalize(path);
       if (normalized == null) {
          return List.of();
-      } else {
-         List<PackStack.PackFile> files = new ArrayList<>();
-
-         for (PackSource pack : this.topFirst.reversed()) {
-            try {
-               pack.read(normalized).ifPresent(data -> files.add(new PackStack.PackFile(pack, data)));
-            } catch (IOException var7) {
-               BedrockNative.LOGGER.warn("Couldn't read {} from {}", new Object[]{normalized, pack, var7});
-            }
-         }
-
-         return files;
       }
+
+      List<PackStack.PackFile> files = new ArrayList<>();
+
+      for (PackSource pack : this.topFirst.reversed()) {
+         try {
+            pack.read(normalized).ifPresent(data -> files.add(new PackStack.PackFile(pack, data)));
+         } catch (IOException e) {
+            BedrockNative.LOGGER.warn("Couldn't read {} from {}", new Object[]{normalized, pack, e});
+         }
+      }
+
+      return files;
    }
 
    public Optional<PackStack.Resource> texture(String path) {
@@ -234,8 +230,8 @@ public final class PackStack {
                if (data.isPresent()) {
                   return Optional.of(new PackStack.Located(new PackStack.Resource(normalized, data.get()), pack));
                }
-            } catch (IOException var12) {
-               BedrockNative.LOGGER.warn("Couldn't read {} from {}", new Object[]{normalized, pack, var12});
+            } catch (IOException e) {
+               BedrockNative.LOGGER.warn("Couldn't read {} from {}", new Object[]{normalized, pack, e});
             }
          }
       }
@@ -243,8 +239,7 @@ public final class PackStack {
       return Optional.empty();
    }
 
-   @Nullable
-   public static String normalize(String path) {
+   public static @Nullable String normalize(String path) {
       String trimmed = path.trim();
       char[] out = new char[trimmed.length()];
       int length = 0;

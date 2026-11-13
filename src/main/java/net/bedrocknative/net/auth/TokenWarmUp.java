@@ -20,12 +20,10 @@ public final class TokenWarmUp {
    private final TokenWarmUp.Renewal renewal;
    private final Consumer<String> log;
    private final long joinWaitMs;
-   @Nullable
-   private volatile String knownFor;
+   private volatile @Nullable String knownFor;
    private volatile long expiresAt;
    private volatile long failedAt = Long.MIN_VALUE;
-   @Nullable
-   private volatile String failedFor;
+   private volatile @Nullable String failedFor;
    private volatile int warmUps;
 
    public TokenWarmUp(LongSupplier clock, Executor executor, TokenWarmUp.Renewal renewal, Consumer<String> log) {
@@ -45,19 +43,23 @@ public final class TokenWarmUp {
          long now = this.clock.getAsLong();
          if (accountId.equals(this.knownFor) && this.expiresAt > now) {
             return false;
-         } else if (accountId.equals(this.failedFor) && now - this.failedAt < 120000L) {
+         }
+
+         if (accountId.equals(this.failedFor) && now - this.failedAt < 120000L) {
             return false;
-         } else if (!this.running.compareAndSet(false, true)) {
+         }
+
+         if (!this.running.compareAndSet(false, true)) {
             return false;
-         } else {
-            try {
-               this.executor.execute(() -> this.run(accountId, why));
-               return true;
-            } catch (RuntimeException var6) {
-               this.running.set(false);
-               this.log.accept("Xbox account warm-up (" + why + ") could not start: " + var6.getClass().getSimpleName());
-               return false;
-            }
+         }
+
+         try {
+            this.executor.execute(() -> this.run(accountId, why));
+            return true;
+         } catch (RuntimeException e) {
+            this.running.set(false);
+            this.log.accept("Xbox account warm-up (" + why + ") could not start: " + e.getClass().getSimpleName());
+            return false;
          }
       } else {
          return false;
@@ -86,10 +88,10 @@ public final class TokenWarmUp {
                   + left
                   + " more minutes"
             );
-      } catch (Exception var13) {
+      } catch (Exception e) {
          this.failedFor = accountId;
          this.failedAt = this.clock.getAsLong();
-         this.log.accept("Xbox account warm-up (" + why + ") could not renew now (" + describe(var13) + "); the join renews as before");
+         this.log.accept("Xbox account warm-up (" + why + ") could not renew now (" + describe(e) + "); the join renews as before");
       } finally {
          this.lock.unlock();
          this.running.set(false);
@@ -108,13 +110,12 @@ public final class TokenWarmUp {
 
       try {
          locked = this.lock.tryLock(this.joinWaitMs, TimeUnit.MILLISECONDS);
-      } catch (InterruptedException var8) {
+      } catch (InterruptedException e) {
          interrupted = true;
       }
 
-      Object e;
       try {
-         e = work.call();
+         return work.call();
       } finally {
          if (locked) {
             this.lock.unlock();
@@ -124,8 +125,6 @@ public final class TokenWarmUp {
             Thread.currentThread().interrupt();
          }
       }
-
-      return (T)e;
    }
 
    public void known(String accountId, long expiresAtMs) {

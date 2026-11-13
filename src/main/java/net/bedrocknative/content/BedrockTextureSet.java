@@ -70,59 +70,59 @@ public final class BedrockTextureSet {
    public BedrockTextureSet fitTo(long maxPixels, int padding, int granularity) {
       if (this.area(padding, granularity) <= maxPixels) {
          return this;
-      } else {
-         int largest = 16;
-
-         for (BedrockTextureSet.Sprite sprite : this.sprites.values()) {
-            largest = Math.max(largest, sprite.image().width());
-         }
-
-         int cap = Integer.highestOneBit(largest);
-
-         while (cap > 16 && this.cappedArea(cap, padding, granularity) > maxPixels) {
-            cap >>= 1;
-         }
-
-         Map<String, BedrockTextureSet.Sprite> fitted = new LinkedHashMap<>();
-         int downscaled = 0;
-
-         for (BedrockTextureSet.Sprite sprite : this.sprites.values()) {
-            int width = sprite.image().width();
-            if (width > cap) {
-               int factor = (width + cap - 1) / cap;
-               fitted.put(
-                  sprite.name(),
-                  new BedrockTextureSet.Sprite(
-                     sprite.name(),
-                     TextureOps.downscale(sprite.image(), factor),
-                     sprite.animation(),
-                     sprite.keepJavaAlpha(),
-                     sprite.fromServerPack(),
-                     sprite.serverDefined(),
-                     sprite.source()
-                  )
-               );
-               downscaled++;
-            } else {
-               fitted.put(sprite.name(), sprite);
-            }
-         }
-
-         BedrockTextureSet.Stats fittedStats = new BedrockTextureSet.Stats(
-            this.stats.atlas(),
-            this.stats.javaSprites(),
-            this.stats.bedrock(),
-            this.stats.fromServer(),
-            this.stats.serverDefined(),
-            this.stats.animated(),
-            downscaled,
-            this.stats.kept(),
-            this.stats.missing()
-         );
-         BedrockNative.LOGGER
-            .warn("Bedrock textures ({}): {} images shrunk to at most {} px wide to fit the atlas", new Object[]{this.atlas.id(), downscaled, cap});
-         return new BedrockTextureSet(this.atlas, Collections.unmodifiableMap(fitted), fittedStats, this.key + "@" + cap);
       }
+
+      int largest = 16;
+
+      for (BedrockTextureSet.Sprite sprite : this.sprites.values()) {
+         largest = Math.max(largest, sprite.image().width());
+      }
+
+      int cap = Integer.highestOneBit(largest);
+
+      while (cap > 16 && this.cappedArea(cap, padding, granularity) > maxPixels) {
+         cap >>= 1;
+      }
+
+      Map<String, BedrockTextureSet.Sprite> fitted = new LinkedHashMap<>();
+      int downscaled = 0;
+
+      for (BedrockTextureSet.Sprite sprite : this.sprites.values()) {
+         int width = sprite.image().width();
+         if (width > cap) {
+            int factor = (width + cap - 1) / cap;
+            fitted.put(
+               sprite.name(),
+               new BedrockTextureSet.Sprite(
+                  sprite.name(),
+                  TextureOps.downscale(sprite.image(), factor),
+                  sprite.animation(),
+                  sprite.keepJavaAlpha(),
+                  sprite.fromServerPack(),
+                  sprite.serverDefined(),
+                  sprite.source()
+               )
+            );
+            downscaled++;
+         } else {
+            fitted.put(sprite.name(), sprite);
+         }
+      }
+
+      BedrockTextureSet.Stats fittedStats = new BedrockTextureSet.Stats(
+         this.stats.atlas(),
+         this.stats.javaSprites(),
+         this.stats.bedrock(),
+         this.stats.fromServer(),
+         this.stats.serverDefined(),
+         this.stats.animated(),
+         downscaled,
+         this.stats.kept(),
+         this.stats.missing()
+      );
+      BedrockNative.LOGGER
+         .warn("Bedrock textures ({}): {} images shrunk to at most {} px wide to fit the atlas", new Object[]{this.atlas.id(), downscaled, cap});
+      return new BedrockTextureSet(this.atlas, Collections.unmodifiableMap(fitted), fittedStats, this.key + "@" + cap);
    }
 
    private long cappedArea(int cap, int padding, int granularity) {
@@ -141,20 +141,23 @@ public final class BedrockTextureSet {
       return granularity <= 1 ? value : (value + granularity - 1) / granularity * granularity;
    }
 
-   @Nullable
-   public static ArgbImage fitJava(BedrockTextureSet.Sprite sprite, @Nullable ArgbImage java, int javaFrameWidth, int javaFrameHeight, boolean classes) {
+   public static @Nullable ArgbImage fitJava(
+      BedrockTextureSet.Sprite sprite, @Nullable ArgbImage java, int javaFrameWidth, int javaFrameHeight, boolean classes
+   ) {
       ArgbImage image = sprite.image();
       if ((long)image.width() * javaFrameHeight != (long)sprite.frameHeight() * javaFrameWidth) {
          return null;
-      } else if (java == null) {
-         return image;
-      } else {
-         if (sprite.keepJavaAlpha()) {
-            image = TextureOps.copyAlpha(image, sprite.frameHeight(), java, javaFrameWidth, javaFrameHeight);
-         }
-
-         return !classes ? image : TextureOps.applyClass(image, TextureOps.AlphaClass.of(java));
       }
+
+      if (java == null) {
+         return image;
+      }
+
+      if (sprite.keepJavaAlpha()) {
+         image = TextureOps.copyAlpha(image, sprite.frameHeight(), java, javaFrameWidth, javaFrameHeight);
+      }
+
+      return !classes ? image : TextureOps.applyClass(image, TextureOps.AlphaClass.of(java));
    }
 
    public static BedrockTextureSet.Resolved resolve(BedrockTextureMap map, PackStack stack, Predicate<PackSource> fromServer) {
@@ -282,34 +285,34 @@ public final class BedrockTextureSet {
    private static Map<String, Optional<ArgbImage>> decodeAll(Map<String, PackStack.Resource> files, long maxDecodedPixels) {
       if (files.isEmpty()) {
          return new HashMap<>();
-      } else {
-         PackStack.Resource[] resources = files.values().toArray(new PackStack.Resource[0]);
-         Optional<ArgbImage>[] images = new Optional[resources.length];
-         AtomicLong decodedPixels = new AtomicLong();
-         IntStream.range(0, resources.length).parallel().forEach(ix -> {
-            if (decodedPixels.get() < maxDecodedPixels) {
-               Optional<ArgbImage> image = decode(resources[ix]);
-               image.ifPresent(found -> decodedPixels.addAndGet((long)found.width() * found.height()));
-               images[ix] = image;
-            }
-         });
-         Map<String, Optional<ArgbImage>> decoded = new HashMap<>(resources.length * 2);
-
-         for (int i = 0; i < resources.length; i++) {
-            if (images[i] != null) {
-               decoded.put(resources[i].path(), images[i]);
-            }
-         }
-
-         return decoded;
       }
+
+      PackStack.Resource[] resources = files.values().toArray(new PackStack.Resource[0]);
+      Optional<ArgbImage>[] images = new Optional[resources.length];
+      AtomicLong decodedPixels = new AtomicLong();
+      IntStream.range(0, resources.length).parallel().forEach(ix -> {
+         if (decodedPixels.get() < maxDecodedPixels) {
+            Optional<ArgbImage> image = decode(resources[ix]);
+            image.ifPresent(found -> decodedPixels.addAndGet((long)found.width() * found.height()));
+            images[ix] = image;
+         }
+      });
+      Map<String, Optional<ArgbImage>> decoded = new HashMap<>(resources.length * 2);
+
+      for (int i = 0; i < resources.length; i++) {
+         if (images[i] != null) {
+            decoded.put(resources[i].path(), images[i]);
+         }
+      }
+
+      return decoded;
    }
 
    private static Optional<ArgbImage> decode(PackStack.Resource resource) {
       try {
          return Optional.of(BedrockImages.decode(resource.data()));
-      } catch (RuntimeException | IOException var2) {
-         BedrockNative.LOGGER.warn("Couldn't decode Bedrock texture {}: {}", resource.path(), var2.getMessage());
+      } catch (IOException | RuntimeException e) {
+         BedrockNative.LOGGER.warn("Couldn't decode Bedrock texture {}: {}", resource.path(), e.getMessage());
          return Optional.empty();
       }
    }
@@ -386,8 +389,8 @@ public final class BedrockTextureSet {
    private static MessageDigest sha256() {
       try {
          return MessageDigest.getInstance("SHA-256");
-      } catch (NoSuchAlgorithmException var1) {
-         throw new IllegalStateException(var1);
+      } catch (NoSuchAlgorithmException e) {
+         throw new IllegalStateException(e);
       }
    }
 
@@ -398,8 +401,7 @@ public final class BedrockTextureSet {
       private final PackStack stack;
       private final Predicate<PackSource> fromServer;
       private final Map<String, List<String>> names;
-      @Nullable
-      private final FlipbookData flipbooks;
+      private final @Nullable FlipbookData flipbooks;
       private final Function<String, Optional<PackStack.Located>> full;
       private final Map<String, Optional<PackStack.Located>> files = new HashMap<>();
 
@@ -429,44 +431,44 @@ public final class BedrockTextureSet {
       ) {
          if (!BedrockTextureSet.choose(entry, this.names, this.flipbooks, this::locate).equals(choice)) {
             return BedrockTextureSet.Origin.SERVER;
-         } else {
-            for (int i = 0; i < inputs.size(); i++) {
-               PackStack.Located input = inputs.get(i);
-               if (this.fromServer.test(input.pack())) {
-                  Optional<PackStack.Located> copy = this.locate(choice.paths().get(i));
-                  if (copy.isEmpty()) {
+         }
+
+         for (int i = 0; i < inputs.size(); i++) {
+            PackStack.Located input = inputs.get(i);
+            if (this.fromServer.test(input.pack())) {
+               Optional<PackStack.Located> copy = this.locate(choice.paths().get(i));
+               if (copy.isEmpty()) {
+                  return BedrockTextureSet.Origin.SERVER;
+               }
+
+               byte[] server = input.resource().data();
+               byte[] own = copy.get().resource().data();
+               if (!Arrays.equals(server, own)) {
+                  long serverSize = BedrockTextureSet.headerSize(server);
+                  long ownSize = BedrockTextureSet.headerSize(own);
+                  if (serverSize >= 0L && ownSize >= 0L && serverSize != ownSize) {
                      return BedrockTextureSet.Origin.SERVER;
                   }
 
-                  byte[] server = input.resource().data();
-                  byte[] own = copy.get().resource().data();
-                  if (!Arrays.equals(server, own)) {
-                     long serverSize = BedrockTextureSet.headerSize(server);
-                     long ownSize = BedrockTextureSet.headerSize(own);
-                     if (serverSize >= 0L && ownSize >= 0L && serverSize != ownSize) {
-                        return BedrockTextureSet.Origin.SERVER;
-                     }
-
-                     compare.put(input.resource().path(), copy.get());
-                  }
+                  compare.put(input.resource().path(), copy.get());
                }
             }
-
-            return compare.isEmpty() ? BedrockTextureSet.Origin.BASE : BedrockTextureSet.Origin.COMPARE;
          }
+
+         return compare.isEmpty() ? BedrockTextureSet.Origin.BASE : BedrockTextureSet.Origin.COMPARE;
       }
    }
 
-   private record Built(@Nullable ArgbImage image, @Nullable BedrockTextureSet.Animation animation, @Nullable String reason) {
+   private record Built(@Nullable ArgbImage image, BedrockTextureSet.@Nullable Animation animation, @Nullable String reason) {
       static BedrockTextureSet.Built kept(String reason) {
          return new BedrockTextureSet.Built(null, null, reason);
       }
    }
 
-   private record Choice(List<String> paths, @Nullable FlipbookData.Flipbook flipbook) {
+   private record Choice(List<String> paths, FlipbookData.@Nullable Flipbook flipbook) {
    }
 
-   private static enum Origin {
+   private enum Origin {
       BASE,
       SERVER,
       COMPARE;
@@ -475,22 +477,22 @@ public final class BedrockTextureSet {
    private record Pending(
       BedrockTextureMap.Entry entry,
       List<PackStack.Located> inputs,
-      @Nullable FlipbookData.Flipbook flipbook,
+      FlipbookData.@Nullable Flipbook flipbook,
       BedrockTextureSet.Origin origin,
       Map<String, PackStack.Located> compare
    ) {
       String source() {
          if (this.inputs.size() == 1) {
             return this.inputs.getFirst().resource().path();
-         } else {
-            StringBuilder joined = new StringBuilder();
-
-            for (PackStack.Located input : this.inputs) {
-               joined.append(joined.isEmpty() ? "" : "+").append(input.resource().path());
-            }
-
-            return joined.toString();
          }
+
+         StringBuilder joined = new StringBuilder();
+
+         for (PackStack.Located input : this.inputs) {
+            joined.append(joined.isEmpty() ? "" : "+").append(input.resource().path());
+         }
+
+         return joined.toString();
       }
    }
 
@@ -637,7 +639,7 @@ public final class BedrockTextureSet {
    public record Sprite(
       String name,
       ArgbImage image,
-      @Nullable BedrockTextureSet.Animation animation,
+      BedrockTextureSet.@Nullable Animation animation,
       boolean keepJavaAlpha,
       boolean fromServerPack,
       boolean serverDefined,

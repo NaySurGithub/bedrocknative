@@ -24,48 +24,62 @@ public final class ImageSignature {
    static String kind(byte[] data) {
       if (data.length == 0) {
          return "no body";
-      } else if (starts(data, 0, "GIF87a") || starts(data, 0, "GIF89a")) {
+      }
+
+      if (starts(data, 0, "GIF87a") || starts(data, 0, "GIF89a")) {
          return "a GIF image";
-      } else if (starts(data, 0, "RIFF") && starts(data, 8, "WEBP")) {
+      }
+
+      if (starts(data, 0, "RIFF") && starts(data, 8, "WEBP")) {
          return "a WebP image";
-      } else if (data.length >= 12 && starts(data, 4, "ftyp")) {
+      }
+
+      if (data.length >= 12 && starts(data, 4, "ftyp")) {
          return "an ISO media file (" + printable(new String(data, 8, 4, StandardCharsets.ISO_8859_1), 4) + ")";
-      } else if (data.length >= 26 && starts(data, 0, "BM")) {
+      }
+
+      if (data.length >= 26 && starts(data, 0, "BM")) {
          return "a BMP image";
-      } else if (data.length >= 6 && data[0] == 0 && data[1] == 0 && data[2] == 1 && data[3] == 0) {
+      }
+
+      if (data.length >= 6 && data[0] == 0 && data[1] == 0 && data[2] == 1 && data[3] == 0) {
          return "an ICO image";
-      } else {
-         String text = leadingText(data);
-         if (text.startsWith("<svg") || text.startsWith("<?xml")) {
-            return "SVG or XML text";
-         } else if (text.startsWith("<!doctype html") || text.startsWith("<html") || text.startsWith("<head") || text.startsWith("<body")) {
-            return "an HTML page";
-         } else if (!text.startsWith("{") && !text.startsWith("[")) {
-            StringBuilder hex = new StringBuilder("bytes");
+      }
 
-            for (int i = 0; i < Math.min(8, data.length); i++) {
-               hex.append(' ').append(String.format(Locale.ROOT, "%02x", data[i] & 255));
-            }
+      String text = leadingText(data);
+      if (text.startsWith("<svg") || text.startsWith("<?xml")) {
+         return "SVG or XML text";
+      }
 
-            return hex.toString();
-         } else {
-            return "JSON text";
+      if (text.startsWith("<!doctype html") || text.startsWith("<html") || text.startsWith("<head") || text.startsWith("<body")) {
+         return "an HTML page";
+      }
+
+      if (!text.startsWith("{") && !text.startsWith("[")) {
+         StringBuilder hex = new StringBuilder("bytes");
+
+         for (int i = 0; i < Math.min(8, data.length); i++) {
+            hex.append(' ').append(String.format(Locale.ROOT, "%02x", data[i] & 255));
          }
+
+         return hex.toString();
+      } else {
+         return "JSON text";
       }
    }
 
    private static boolean starts(byte[] data, int at, String ascii) {
       if (data.length < at + ascii.length()) {
          return false;
-      } else {
-         for (int i = 0; i < ascii.length(); i++) {
-            if (data[at + i] != (byte)ascii.charAt(i)) {
-               return false;
-            }
-         }
-
-         return true;
       }
+
+      for (int i = 0; i < ascii.length(); i++) {
+         if (data[at + i] != (byte)ascii.charAt(i)) {
+            return false;
+         }
+      }
+
+      return true;
    }
 
    private static String leadingText(byte[] data) {

@@ -59,8 +59,8 @@ final class CommandTree {
          }
       }
 
-      for (CommandTree.Node commandx : commandNodes) {
-         link(commandx, commandx, built, root);
+      for (CommandTree.Node command : commandNodes) {
+         link(command, command, built, root);
       }
 
       return new CommandTree.Built(new CommandDispatcher(root), usage);
@@ -108,13 +108,13 @@ final class CommandTree {
    private static CommandTree.Continue continuation(CommandParamData param) {
       if (param.getEnumData() != null) {
          return CommandTree.Continue.NONE;
-      } else {
-         return switch (type(param)) {
-            case CHAINED_COMMAND -> CommandTree.Continue.SUBCOMMAND;
-            case COMMAND, SLASH_COMMAND, CODE_BUILDER_ARGS -> CommandTree.Continue.COMMAND;
-            default -> CommandTree.Continue.NONE;
-         };
       }
+
+      return switch (type(param)) {
+         case CHAINED_COMMAND -> CommandTree.Continue.SUBCOMMAND;
+         case COMMAND, SLASH_COMMAND, CODE_BUILDER_ARGS -> CommandTree.Continue.COMMAND;
+         default -> CommandTree.Continue.NONE;
+      };
    }
 
    private static CommandParamType type(CommandParamData param) {
@@ -130,18 +130,21 @@ final class CommandTree {
       CommandEnumData data = param.getEnumData();
       if (literal(param)) {
          return data.getValues().keySet().iterator().next();
-      } else if (data != null) {
-         return data.isSoft() ? "<soft " + data.getName() + ">" : "<enum " + enumIds.computeIfAbsent(data, unused -> enumIds.size()) + ">";
-      } else if (param.getPostfix() != null) {
-         return "<postfix " + param.getPostfix().toLowerCase(Locale.ROOT) + ">";
-      } else {
-         BedrockArgument.Kind kind = kind(param);
-         return "<" + (kind == BedrockArgument.Kind.WILDCARD_TARGET ? BedrockArgument.Kind.TARGET : kind) + ">";
       }
+
+      if (data != null) {
+         return data.isSoft() ? "<soft " + data.getName() + ">" : "<enum " + enumIds.computeIfAbsent(data, unused -> enumIds.size()) + ">";
+      }
+
+      if (param.getPostfix() != null) {
+         return "<postfix " + param.getPostfix().toLowerCase(Locale.ROOT) + ">";
+      }
+
+      BedrockArgument.Kind kind = kind(param);
+      return "<" + (kind == BedrockArgument.Kind.WILDCARD_TARGET ? BedrockArgument.Kind.TARGET : kind) + ">";
    }
 
-   @Nullable
-   private static BedrockArgument argument(CommandParamData param, CommandValues values) {
+   private static @Nullable BedrockArgument argument(CommandParamData param, CommandValues values) {
       return literal(param) ? null : new BedrockArgument(kind(param), typeName(param), param.getEnumData(), param.getPostfix(), values);
    }
 
@@ -149,54 +152,58 @@ final class CommandTree {
       CommandEnumData data = param.getEnumData();
       if (data != null) {
          return data.isSoft() ? BedrockArgument.Kind.SOFT_ENUM : BedrockArgument.Kind.ENUM;
-      } else if (param.getPostfix() != null) {
-         return BedrockArgument.Kind.POSTFIX;
-      } else {
-         return switch (type(param)) {
-            case INT -> BedrockArgument.Kind.INT;
-            case FLOAT -> BedrockArgument.Kind.FLOAT;
-            case VALUE, R_VALUE -> BedrockArgument.Kind.VALUE;
-            case WILDCARD_INT -> BedrockArgument.Kind.WILDCARD_INT;
-            case OPERATOR -> BedrockArgument.Kind.OPERATOR;
-            case COMPARE_OPERATOR -> BedrockArgument.Kind.COMPARE_OPERATOR;
-            case TARGET, STANDALONE_TARGET, NON_ID_TARGET -> BedrockArgument.Kind.TARGET;
-            case WILDCARD_TARGET -> BedrockArgument.Kind.WILDCARD_TARGET;
-            case POSITION, COORD_X_FLOAT, COORD_Y_FLOAT, COORD_Z_FLOAT, BLOCK_POSITION, COORD_X_INT, COORD_Y_INT, COORD_Z_INT -> BedrockArgument.Kind.POSITION;
-            case MESSAGE, MESSAGE_ROOT, MESSAGE_XP, TEXT, TEXT_CONT, CODE_BUILDER_ARG -> BedrockArgument.Kind.MESSAGE;
-            case JSON, JSON_VALUE, JSON_FIELD, JSON_OBJECT_FIELDS, JSON_OBJECT_CONT, JSON_ARRAY, JSON_ARRAY_VALUES, JSON_ARRAY_CONT -> BedrockArgument.Kind.JSON;
-            case BLOCK_STATE, BLOCK_STATE_KEY, BLOCK_STATE_VALUE, BLOCK_STATE_VALUES, BLOCK_STATES, BLOCK_STATES_CONT -> BedrockArgument.Kind.BLOCK_STATES;
-            default -> BedrockArgument.Kind.STRING;
-         };
       }
+
+      if (param.getPostfix() != null) {
+         return BedrockArgument.Kind.POSTFIX;
+      }
+
+      return switch (type(param)) {
+         case INT -> BedrockArgument.Kind.INT;
+         case FLOAT -> BedrockArgument.Kind.FLOAT;
+         case VALUE, R_VALUE -> BedrockArgument.Kind.VALUE;
+         case WILDCARD_INT -> BedrockArgument.Kind.WILDCARD_INT;
+         case OPERATOR -> BedrockArgument.Kind.OPERATOR;
+         case COMPARE_OPERATOR -> BedrockArgument.Kind.COMPARE_OPERATOR;
+         case TARGET, STANDALONE_TARGET, NON_ID_TARGET -> BedrockArgument.Kind.TARGET;
+         case WILDCARD_TARGET -> BedrockArgument.Kind.WILDCARD_TARGET;
+         case POSITION, COORD_X_FLOAT, COORD_Y_FLOAT, COORD_Z_FLOAT, BLOCK_POSITION, COORD_X_INT, COORD_Y_INT, COORD_Z_INT -> BedrockArgument.Kind.POSITION;
+         case MESSAGE, MESSAGE_ROOT, MESSAGE_XP, TEXT, TEXT_CONT, CODE_BUILDER_ARG -> BedrockArgument.Kind.MESSAGE;
+         case JSON, JSON_VALUE, JSON_FIELD, JSON_OBJECT_FIELDS, JSON_OBJECT_CONT, JSON_ARRAY, JSON_ARRAY_VALUES, JSON_ARRAY_CONT -> BedrockArgument.Kind.JSON;
+         case BLOCK_STATE, BLOCK_STATE_KEY, BLOCK_STATE_VALUE, BLOCK_STATE_VALUES, BLOCK_STATES, BLOCK_STATES_CONT -> BedrockArgument.Kind.BLOCK_STATES;
+         default -> BedrockArgument.Kind.STRING;
+      };
    }
 
    private static String typeName(CommandParamData param) {
       if (param.getEnumData() != null) {
          return param.getEnumData().isSoft() ? "string" : param.getEnumData().getName();
-      } else if (param.getPostfix() != null) {
-         return "int";
-      } else {
-         return switch (type(param)) {
-            case COMMAND, SLASH_COMMAND, CODE_BUILDER_ARGS -> "command";
-            case INT -> "int";
-            case FLOAT -> "float";
-            case VALUE, R_VALUE -> "value";
-            case WILDCARD_INT -> "wildcard int";
-            case OPERATOR -> "operator";
-            case COMPARE_OPERATOR -> "compare operator";
-            case TARGET, STANDALONE_TARGET, NON_ID_TARGET, WILDCARD_TARGET -> "target";
-            case POSITION, BLOCK_POSITION -> "x y z";
-            default -> type(param).name().toLowerCase(Locale.ROOT).replace('_', ' ');
-            case MESSAGE, MESSAGE_ROOT, MESSAGE_XP -> "message";
-            case TEXT, TEXT_CONT -> "text";
-            case JSON -> "json";
-            case BLOCK_STATES -> "block states";
-            case STRING -> "string";
-            case FILE_PATH -> "filepath";
-            case INT_RANGE, INT_RANGE_FULL -> "integer range";
-            case EQUIPMENT_SLOTS -> "equipment slots";
-         };
       }
+
+      if (param.getPostfix() != null) {
+         return "int";
+      }
+
+      return switch (type(param)) {
+         case COMMAND, SLASH_COMMAND, CODE_BUILDER_ARGS -> "command";
+         case INT -> "int";
+         case FLOAT -> "float";
+         case VALUE, R_VALUE -> "value";
+         case WILDCARD_INT -> "wildcard int";
+         case OPERATOR -> "operator";
+         case COMPARE_OPERATOR -> "compare operator";
+         case TARGET, STANDALONE_TARGET, NON_ID_TARGET, WILDCARD_TARGET -> "target";
+         case POSITION, BLOCK_POSITION -> "x y z";
+         default -> type(param).name().toLowerCase(Locale.ROOT).replace('_', ' ');
+         case MESSAGE, MESSAGE_ROOT, MESSAGE_XP -> "message";
+         case TEXT, TEXT_CONT -> "text";
+         case JSON -> "json";
+         case BLOCK_STATES -> "block states";
+         case STRING -> "string";
+         case FILE_PATH -> "filepath";
+         case INT_RANGE, INT_RANGE_FULL -> "integer range";
+         case EQUIPMENT_SLOTS -> "equipment slots";
+      };
    }
 
    static String parameters(CommandParamData[] params, String chained) {
@@ -233,20 +240,20 @@ final class CommandTree {
       CommandNode<ClientSuggestionProvider> existing = built.get(node);
       if (existing != null) {
          return existing;
-      } else {
-         Command<ClientSuggestionProvider> command = node.executable ? RUNS : null;
-         CommandNode<ClientSuggestionProvider> result = (CommandNode<ClientSuggestionProvider>)(node.argument == null
-            ? new CommandTree.Literal(node.name, command)
-            : new CommandTree.Argument(node.name, node.argument, command));
-         built.put(node, result);
-         usage.put(result, List.copyOf(node.usage));
-
-         for (CommandTree.Node child : node.children.values()) {
-            result.addChild(brigadier(child, built, usage));
-         }
-
-         return result;
       }
+
+      Command<ClientSuggestionProvider> command = node.executable ? RUNS : null;
+      CommandNode<ClientSuggestionProvider> result = (CommandNode<ClientSuggestionProvider>)(node.argument == null
+         ? new CommandTree.Literal(node.name, command)
+         : new CommandTree.Argument(node.name, node.argument, command));
+      built.put(node, result);
+      usage.put(result, List.copyOf(node.usage));
+
+      for (CommandTree.Node child : node.children.values()) {
+         result.addChild(brigadier(child, built, usage));
+      }
+
+      return result;
    }
 
    private static void link(
@@ -270,8 +277,8 @@ final class CommandTree {
          }
       }
 
-      for (CommandTree.Node childx : node.children.values()) {
-         link(childx, command, built, root);
+      for (CommandTree.Node child : node.children.values()) {
+         link(child, command, built, root);
       }
    }
 
@@ -292,7 +299,7 @@ final class CommandTree {
    record Built(CommandDispatcher<ClientSuggestionProvider> dispatcher, Map<CommandNode<ClientSuggestionProvider>, List<CommandTree.Usage>> usage) {
    }
 
-   private static enum Continue {
+   private enum Continue {
       NONE,
       SUBCOMMAND,
       COMMAND;
@@ -314,8 +321,7 @@ final class CommandTree {
 
    private static final class Node {
       final String name;
-      @Nullable
-      BedrockArgument argument;
+      @Nullable BedrockArgument argument;
       final Map<String, CommandTree.Node> children = new LinkedHashMap<>();
       final Set<CommandTree.Usage> usage = new LinkedHashSet<>();
       boolean executable;

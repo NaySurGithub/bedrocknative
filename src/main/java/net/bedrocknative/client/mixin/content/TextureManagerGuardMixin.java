@@ -14,17 +14,13 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin({TextureManager.class})
+@Mixin(TextureManager.class)
 public abstract class TextureManagerGuardMixin {
    @Shadow
    @Final
    private Map<Identifier, AbstractTexture> byPath;
 
-   @Inject(
-      method = {"getTexture"},
-      at = {@At("HEAD")},
-      cancellable = true
-   )
+   @Inject(method = "getTexture", at = @At("HEAD"), cancellable = true)
    private void bedrocknative$noLoadOfReleasedBedrockTexture(Identifier location, CallbackInfoReturnable<AbstractTexture> cir) {
       if (LunarCompat.active() && !this.byPath.containsKey(location) && BedrockTextures.isMadeHere(location)) {
          AbstractTexture missing = this.byPath.get(MissingTextureAtlasSprite.getLocation());

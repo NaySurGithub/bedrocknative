@@ -12,7 +12,7 @@ public final class AtlasComposer {
       if (width > 0 && height > 0 && pad >= 0 && x >= 0 && y >= 0 && x + holderWidth <= atlasWidth && y + holderHeight <= atlasHeight) {
          if (sprite.limit() >= width * height && atlas.limit() >= atlasWidth * atlasHeight) {
             for (int row = 0; row < holderHeight; row++) {
-               int source = Math.clamp((long)(row - pad), 0, height - 1) * width;
+               int source = Math.clamp(row - pad, 0, height - 1) * width;
                int target = (y + row) * atlasWidth + x;
                if (pad > 0) {
                   int left = sprite.get(source);

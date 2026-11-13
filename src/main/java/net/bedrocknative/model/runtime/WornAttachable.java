@@ -56,8 +56,7 @@ public final class WornAttachable {
       context(this.instance.context(), itemSlot, firstPerson, MolangActor.NONE);
    }
 
-   @Nullable
-   public static ClientEntityDef resolve(
+   public static @Nullable ClientEntityDef resolve(
       ModelRegistry registry, String itemId, String itemSlot, boolean firstPerson, MolangActor wearer, MolangEnv env, VariableStore scratch
    ) {
       scratch.clear();

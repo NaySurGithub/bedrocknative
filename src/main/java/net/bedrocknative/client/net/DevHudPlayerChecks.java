@@ -24,7 +24,6 @@ import net.minecraft.commands.arguments.EntityAnchorArgument.Anchor;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityTypes;
@@ -148,19 +147,19 @@ final class DevHudPlayerChecks {
       UiScreenInstance hud = JsonUiHud.instance();
       if (hud == null) {
          return List.of();
-      } else {
-         UiTextures textures = JsonUi.environment(hud.definitions()).textures();
-         HudValues values = JsonUiHud.data().values();
-         List<UiDrawCommand> all = new ArrayList<>();
-
-         for (UiDrawCommand command : hud.drawList().commands()) {
-            if (command instanceof UiDrawCommand.Custom custom && HudRenderers.handles(custom.renderer()) && command.control().visible()) {
-               all.addAll(HudRenderers.expand(custom, values, textures));
-            }
-         }
-
-         return all;
       }
+
+      UiTextures textures = JsonUi.environment(hud.definitions()).textures();
+      HudValues values = JsonUiHud.data().values();
+      List<UiDrawCommand> all = new ArrayList<>();
+
+      for (UiDrawCommand command : hud.drawList().commands()) {
+         if (command instanceof UiDrawCommand.Custom custom && HudRenderers.handles(custom.renderer()) && command.control().visible()) {
+            all.addAll(HudRenderers.expand(custom, values, textures));
+         }
+      }
+
+      return all;
    }
 
    private static List<UiControl> visible(String name) {
@@ -175,30 +174,30 @@ final class DevHudPlayerChecks {
       String java = "selected " + selected + ", slot 3 count " + count + " " + player.getInventory().getItem(2).getItem();
       if (!jsonUi) {
          return new DevHudPlayerChecks.Result(selected == 2 && count == 7, java);
-      } else {
-         List<UiControl> grids = visible("hotbar_grid");
-         if (grids.size() != 1) {
-            return new DevHudPlayerChecks.Result(false, java + "; visible hotbar grids " + grids.size());
-         } else {
-            UiControl grid = grids.getFirst();
-            List<Integer> marked = new ArrayList<>();
+      }
 
-            for (int i = 0; i < grid.generated().size(); i++) {
-               UiControl image = grid.generated().get(i).find("hotbar_slot_selected_image");
-               if (image != null && image.visible()) {
-                  marked.add(i);
-               }
-            }
+      List<UiControl> grids = visible("hotbar_grid");
+      if (grids.size() != 1) {
+         return new DevHudPlayerChecks.Result(false, java + "; visible hotbar grids " + grids.size());
+      }
 
-            UiControl label = grid.generated().size() > 2 ? grid.generated().get(2).find("item_count") : null;
-            String shown = label == null ? "none" : label.text();
-            long slots = HudRenderers.textures(this.drawn()).stream().filter(path -> path.contains("/hotbar_")).count();
-            return new DevHudPlayerChecks.Result(
-               marked.equals(List.of(selected)) && Integer.toString(count).equals(shown) && slots == 9L,
-               java + "; JSON UI selection " + marked + ", count '" + shown + "', slot images " + slots
-            );
+      UiControl grid = grids.getFirst();
+      List<Integer> marked = new ArrayList<>();
+
+      for (int i = 0; i < grid.generated().size(); i++) {
+         UiControl image = grid.generated().get(i).find("hotbar_slot_selected_image");
+         if (image != null && image.visible()) {
+            marked.add(i);
          }
       }
+
+      UiControl label = grid.generated().size() > 2 ? grid.generated().get(2).find("item_count") : null;
+      String shown = label == null ? "none" : label.text();
+      long slots = HudRenderers.textures(this.drawn()).stream().filter(path -> path.contains("/hotbar_")).count();
+      return new DevHudPlayerChecks.Result(
+         marked.equals(List.of(selected)) && Integer.toString(count).equals(shown) && slots == 9L,
+         java + "; JSON UI selection " + marked + ", count '" + shown + "', slot images " + slots
+      );
    }
 
    private DevHudPlayerChecks.Result health(boolean jsonUi) {
@@ -208,14 +207,14 @@ final class DevHudPlayerChecks {
       boolean same = Math.ceil(server) == health;
       if (!jsonUi) {
          return new DevHudPlayerChecks.Result(same && health < 20, java);
-      } else {
-         List<UiDrawCommand> drawn = this.drawn();
-         long halves = HudRenderers.count(drawn, "heart") * 2L + HudRenderers.count(drawn, "heart_half");
-         HudValues values = JsonUiHud.data().values();
-         return new DevHudPlayerChecks.Result(
-            same && values.health() == health && halves == health, java + "; JSON UI hearts " + halves + " halves, value " + values.health()
-         );
       }
+
+      List<UiDrawCommand> drawn = this.drawn();
+      long halves = HudRenderers.count(drawn, "heart") * 2L + HudRenderers.count(drawn, "heart_half");
+      HudValues values = JsonUiHud.data().values();
+      return new DevHudPlayerChecks.Result(
+         same && values.health() == health && halves == health, java + "; JSON UI hearts " + halves + " halves, value " + values.health()
+      );
    }
 
    private DevHudPlayerChecks.Result food(boolean jsonUi) {
@@ -225,13 +224,13 @@ final class DevHudPlayerChecks {
       boolean same = (int)server == food;
       if (!jsonUi) {
          return new DevHudPlayerChecks.Result(same, java);
-      } else {
-         List<UiDrawCommand> drawn = this.drawn();
-         long halves = (HudRenderers.count(drawn, "hunger_full") + HudRenderers.count(drawn, "hunger_effect_full")) * 2L
-            + HudRenderers.count(drawn, "hunger_half")
-            + HudRenderers.count(drawn, "hunger_effect_half");
-         return new DevHudPlayerChecks.Result(same && halves == food, java + "; JSON UI " + halves + " halves");
       }
+
+      List<UiDrawCommand> drawn = this.drawn();
+      long halves = (HudRenderers.count(drawn, "hunger_full") + HudRenderers.count(drawn, "hunger_effect_full")) * 2L
+         + HudRenderers.count(drawn, "hunger_half")
+         + HudRenderers.count(drawn, "hunger_effect_half");
+      return new DevHudPlayerChecks.Result(same && halves == food, java + "; JSON UI " + halves + " halves");
    }
 
    private DevHudPlayerChecks.Result armor(boolean jsonUi) {
@@ -239,11 +238,11 @@ final class DevHudPlayerChecks {
       String java = "Java (client-computed) " + armor;
       if (!jsonUi) {
          return new DevHudPlayerChecks.Result(armor == 6, java);
-      } else {
-         List<UiDrawCommand> drawn = this.drawn();
-         long halves = HudRenderers.count(drawn, "armor_full") * 2L + HudRenderers.count(drawn, "armor_half");
-         return new DevHudPlayerChecks.Result(armor == 6 && halves == armor, java + "; JSON UI " + halves + " halves");
       }
+
+      List<UiDrawCommand> drawn = this.drawn();
+      long halves = HudRenderers.count(drawn, "armor_full") * 2L + HudRenderers.count(drawn, "armor_half");
+      return new DevHudPlayerChecks.Result(armor == 6 && halves == armor, java + "; JSON UI " + halves + " halves");
    }
 
    private DevHudPlayerChecks.Result experience(boolean jsonUi) {
@@ -252,57 +251,57 @@ final class DevHudPlayerChecks {
       String java = "server level " + server + ", Java " + level + " progress " + this.player().experienceProgress;
       if (!jsonUi) {
          return new DevHudPlayerChecks.Result(level == 7 && (int)server == 7, java);
-      } else {
-         List<UiControl> labels = visible("progress_text_label");
-         String shown = labels.size() == 1 ? labels.getFirst().text() : labels.toString();
-         return new DevHudPlayerChecks.Result(level == 7 && (int)server == 7 && "7".equals(shown), java + "; JSON UI level '" + shown + "'");
       }
+
+      List<UiControl> labels = visible("progress_text_label");
+      String shown = labels.size() == 1 ? labels.getFirst().text() : labels.toString();
+      return new DevHudPlayerChecks.Result(level == 7 && (int)server == 7 && "7".equals(shown), java + "; JSON UI level '" + shown + "'");
    }
 
    private DevHudPlayerChecks.Result effects(boolean jsonUi) {
       List<String> active = new ArrayList<>();
 
       for (MobEffectInstance effect : this.player().getActiveEffects()) {
-         active.add(BuiltInRegistries.MOB_EFFECT.getKey((MobEffect)effect.getEffect().value()).getPath());
+         active.add(BuiltInRegistries.MOB_EFFECT.getKey(effect.getEffect().value()).getPath());
       }
 
       boolean java = active.contains("speed") && active.contains("weakness");
       if (!jsonUi) {
          return new DevHudPlayerChecks.Result(java, "Java " + active);
-      } else {
-         List<UiDrawCommand> drawn = this.drawn();
-         boolean icons = HudRenderers.count(drawn, "speed_effect") == 1L && HudRenderers.count(drawn, "weakness_effect") == 1L;
-         return new DevHudPlayerChecks.Result(
-            java && icons,
-            "Java "
-               + active
-               + "; JSON UI icons "
-               + HudRenderers.textures(drawn).stream().filter(path -> path.endsWith("_effect.png") || path.endsWith("_effect")).toList()
-         );
       }
+
+      List<UiDrawCommand> drawn = this.drawn();
+      boolean icons = HudRenderers.count(drawn, "speed_effect") == 1L && HudRenderers.count(drawn, "weakness_effect") == 1L;
+      return new DevHudPlayerChecks.Result(
+         java && icons,
+         "Java "
+            + active
+            + "; JSON UI icons "
+            + HudRenderers.textures(drawn).stream().filter(path -> path.endsWith("_effect.png") || path.endsWith("_effect")).toList()
+      );
    }
 
    private DevHudPlayerChecks.Result itemName(boolean jsonUi) {
       String hand = this.player().getInventory().getSelectedItem().getHoverName().getString();
       if (!jsonUi) {
          return new DevHudPlayerChecks.Result(hand.contains("Apple"), "Java hand '" + hand + "'");
-      } else {
-         List<UiControl> names = visible("item_name_text");
-         String shown = names.isEmpty() ? "none" : names.getLast().find("item_text_label").text();
-         return new DevHudPlayerChecks.Result(shown.contains(hand), "Java hand '" + hand + "'; JSON UI '" + shown + "'");
       }
+
+      List<UiControl> names = visible("item_name_text");
+      String shown = names.isEmpty() ? "none" : names.getLast().find("item_text_label").text();
+      return new DevHudPlayerChecks.Result(shown.contains(hand), "Java hand '" + hand + "'; JSON UI '" + shown + "'");
    }
 
    private DevHudPlayerChecks.Result chat(boolean jsonUi) {
       String last = JsonUiHud.lastChat();
       if (!jsonUi) {
          return new DevHudPlayerChecks.Result(last.contains("hello hud"), "Java '" + last + "'");
-      } else {
-         UiScreenInstance hud = JsonUiHud.instance();
-         UiControl panel = hud == null ? null : hud.find("chat_panel");
-         List<String> lines = panel == null ? List.of() : panel.findAll("chat_text").stream().map(UiControl::text).toList();
-         return new DevHudPlayerChecks.Result(!lines.isEmpty() && lines.getLast().contains("hello hud"), "Java '" + last + "'; JSON UI lines " + lines);
       }
+
+      UiScreenInstance hud = JsonUiHud.instance();
+      UiControl panel = hud == null ? null : hud.find("chat_panel");
+      List<String> lines = panel == null ? List.of() : panel.findAll("chat_text").stream().map(UiControl::text).toList();
+      return new DevHudPlayerChecks.Result(!lines.isEmpty() && lines.getLast().contains("hello hud"), "Java '" + last + "'; JSON UI lines " + lines);
    }
 
    private DevHudPlayerChecks.Result air(boolean jsonUi) {
@@ -311,12 +310,12 @@ final class DevHudPlayerChecks {
       String java = "Java air " + air + "/" + this.player().getMaxAirSupply() + ", eyes in water " + underwater;
       if (!jsonUi) {
          return new DevHudPlayerChecks.Result(underwater && air < this.player().getMaxAirSupply(), java);
-      } else {
-         List<UiDrawCommand> drawn = this.drawn();
-         long full = HudRenderers.count(drawn, "bubble");
-         long expected = (long)Math.ceil((float)((Math.max(0, air) - 2) * 10) / this.player().getMaxAirSupply());
-         return new DevHudPlayerChecks.Result(underwater && full == expected, java + "; JSON UI " + full + " full bubbles, expected " + expected);
       }
+
+      List<UiDrawCommand> drawn = this.drawn();
+      long full = HudRenderers.count(drawn, "bubble");
+      long expected = (long)Math.ceil((float)((Math.max(0, air) - 2) * 10) / this.player().getMaxAirSupply());
+      return new DevHudPlayerChecks.Result(underwater && full == expected, java + "; JSON UI " + full + " full bubbles, expected " + expected);
    }
 
    private DevHudPlayerChecks.Result mount(boolean jsonUi) {
@@ -325,10 +324,10 @@ final class DevHudPlayerChecks {
          String java = "Java mount " + vehicle.getType() + " health " + vehicle.getHealth() + "/" + vehicle.getMaxHealth();
          if (!jsonUi) {
             return new DevHudPlayerChecks.Result(var7 == 5, java);
-         } else {
-            long drawn = HudRenderers.count(this.drawn(), "horse_heart") + HudRenderers.count(this.drawn(), "horse_heart_half");
-            return new DevHudPlayerChecks.Result(var7 == 5 && drawn == Math.ceil(vehicle.getHealth() / 2.0F), java + "; JSON UI " + drawn + " mount hearts");
          }
+
+         long drawn = HudRenderers.count(this.drawn(), "horse_heart") + HudRenderers.count(this.drawn(), "horse_heart_half");
+         return new DevHudPlayerChecks.Result(var7 == 5 && drawn == Math.ceil(vehicle.getHealth() / 2.0F), java + "; JSON UI " + drawn + " mount hearts");
       } else {
          return new DevHudPlayerChecks.Result(false, "not riding");
       }
@@ -338,10 +337,10 @@ final class DevHudPlayerChecks {
       boolean hidden = BedrockHud.hiddenElements().contains(HudElement.HOTBAR);
       if (!jsonUi) {
          return new DevHudPlayerChecks.Result(hidden, "SetHud hotbar hidden " + hidden);
-      } else {
-         long slots = HudRenderers.textures(this.drawn()).stream().filter(path -> path.contains("/hotbar_")).count();
-         return new DevHudPlayerChecks.Result(hidden && slots == 0L, "SetHud hotbar hidden " + hidden + "; JSON UI slot images " + slots);
       }
+
+      long slots = HudRenderers.textures(this.drawn()).stream().filter(path -> path.contains("/hotbar_")).count();
+      return new DevHudPlayerChecks.Result(hidden && slots == 0L, "SetHud hotbar hidden " + hidden + "; JSON UI slot images " + slots);
    }
 
    private void check(String what, DevHudPlayerChecks.Result result) {
@@ -389,7 +388,7 @@ final class DevHudPlayerChecks {
    private static void sleep(long millis) {
       try {
          Thread.sleep(millis);
-      } catch (InterruptedException var3) {
+      } catch (InterruptedException e) {
          Thread.currentThread().interrupt();
       }
    }

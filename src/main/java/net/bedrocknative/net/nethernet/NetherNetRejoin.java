@@ -35,15 +35,15 @@ public final class NetherNetRejoin {
       String set = System.getProperty(property, "").trim();
       if (set.isEmpty()) {
          return fallback;
-      } else {
-         try {
-            long value = Long.parseLong(set);
-            BedrockNative.LOGGER.info("NetherNet wait set to {} ms (-D{})", value, property);
-            return value;
-         } catch (NumberFormatException var6) {
-            BedrockNative.LOGGER.warn("NetherNet wait: -D{}={} is not a number of milliseconds, {} ms kept", new Object[]{property, set, fallback});
-            return fallback;
-         }
+      }
+
+      try {
+         long value = Long.parseLong(set);
+         BedrockNative.LOGGER.info("NetherNet wait set to {} ms (-D{})", value, property);
+         return value;
+      } catch (NumberFormatException e) {
+         BedrockNative.LOGGER.warn("NetherNet wait: -D{}={} is not a number of milliseconds, {} ms kept", new Object[]{property, set, fallback});
+         return fallback;
       }
    }
 

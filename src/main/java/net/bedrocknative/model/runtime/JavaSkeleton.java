@@ -62,8 +62,7 @@ public final class JavaSkeleton implements WearerBones {
       return Map.entry(name, new JavaSkeleton.Bone(part, x, y, z));
    }
 
-   @Nullable
-   public static JavaSkeleton.Bone humanoidBone(String name) {
+   public static JavaSkeleton.@Nullable Bone humanoidBone(String name) {
       return BONES.get(name.toLowerCase(Locale.ROOT));
    }
 
@@ -148,9 +147,8 @@ public final class JavaSkeleton implements WearerBones {
       return this.answer(name).bone != null;
    }
 
-   @Nullable
    @Override
-   public float[] pivot(String name) {
+   public float @Nullable [] pivot(String name) {
       return this.answer(name).pivot;
    }
 
@@ -173,15 +171,13 @@ public final class JavaSkeleton implements WearerBones {
    }
 
    private static final class Answer {
-      @Nullable
-      final JavaSkeleton.Bone bone;
+      final JavaSkeleton.@Nullable Bone bone;
       final JavaSkeleton.Bone frame;
-      @Nullable
-      final float[] pivot;
+      final float @Nullable [] pivot;
       final Matrix4f matrix = new Matrix4f();
       long generation = -1L;
 
-      Answer(@Nullable JavaSkeleton.Bone bone) {
+      Answer(JavaSkeleton.@Nullable Bone bone) {
          this.bone = bone;
          this.frame = bone != null ? bone : JavaSkeleton.BONES.get("root");
          this.pivot = bone != null ? bone.pivotJ() : null;
@@ -198,7 +194,7 @@ public final class JavaSkeleton implements WearerBones {
       }
    }
 
-   public static enum Part {
+   public enum Part {
       ROOT(null),
       HEAD(ROOT),
       HAT(HEAD),
@@ -213,15 +209,13 @@ public final class JavaSkeleton implements WearerBones {
       LEFT_LEG(ROOT),
       LEFT_PANTS(LEFT_LEG);
 
-      @Nullable
-      private final JavaSkeleton.Part parent;
+      private final JavaSkeleton.@Nullable Part parent;
 
-      private Part(@Nullable JavaSkeleton.Part parent) {
+      Part(JavaSkeleton.@Nullable Part parent) {
          this.parent = parent;
       }
 
-      @Nullable
-      public JavaSkeleton.Part parent() {
+      public JavaSkeleton.@Nullable Part parent() {
          return this.parent;
       }
    }

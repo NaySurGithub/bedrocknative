@@ -17,33 +17,33 @@ public sealed interface FormElement
       return false;
    }
 
-   public record Button(String text, @Nullable FormImage image) implements FormElement {
+   record Button(String text, @Nullable FormImage image) implements FormElement {
    }
 
-   public record Divider() implements FormElement {
+   record Divider() implements FormElement {
    }
 
-   public record Dropdown(String text, List<String> options, int defaultIndex, String tooltip) implements FormElement {
+   record Dropdown(String text, List<String> options, int defaultIndex, String tooltip) implements FormElement {
       @Override
       public boolean hasValue() {
          return true;
       }
    }
 
-   public record Header(String text) implements FormElement {
+   record Header(String text) implements FormElement {
    }
 
-   public record Input(String text, String placeholder, String defaultText, String tooltip) implements FormElement {
+   record Input(String text, String placeholder, String defaultText, String tooltip) implements FormElement {
       @Override
       public boolean hasValue() {
          return true;
       }
    }
 
-   public record Label(String text) implements FormElement {
+   record Label(String text) implements FormElement {
    }
 
-   public record Slider(String text, float min, float max, float step, float defaultValue, String tooltip) implements FormElement {
+   record Slider(String text, float min, float max, float step, float defaultValue, String tooltip) implements FormElement {
       @Override
       public boolean hasValue() {
          return true;
@@ -54,7 +54,7 @@ public sealed interface FormElement
       }
 
       public float valueAt(int stepIndex) {
-         return (float)(this.min + (double)Math.clamp((long)stepIndex, 0, this.stepCount()) * this.step);
+         return (float)(this.min + (double)Math.clamp(stepIndex, 0, this.stepCount()) * this.step);
       }
 
       public int nearestStep(double value) {
@@ -62,14 +62,14 @@ public sealed interface FormElement
       }
    }
 
-   public record StepSlider(String text, List<String> steps, int defaultIndex, String tooltip) implements FormElement {
+   record StepSlider(String text, List<String> steps, int defaultIndex, String tooltip) implements FormElement {
       @Override
       public boolean hasValue() {
          return true;
       }
    }
 
-   public record Toggle(String text, boolean defaultValue, String tooltip) implements FormElement {
+   record Toggle(String text, boolean defaultValue, String tooltip) implements FormElement {
       @Override
       public boolean hasValue() {
          return true;

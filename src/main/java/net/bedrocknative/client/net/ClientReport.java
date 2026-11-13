@@ -28,7 +28,7 @@ public final class ClientReport {
       if (enabled()) {
          try {
             lastName = minecraft.getUser().getName();
-         } catch (RuntimeException var2) {
+         } catch (RuntimeException e) {
             lastName = null;
          }
 
@@ -73,7 +73,7 @@ public final class ClientReport {
       try {
          ClientBedrockSession session = ClientBedrockSession.active();
          return session != null ? session.identity().username() : AccountManager.store().active().map(XboxAccountStore.Entry::gamertag).orElse(null);
-      } catch (RuntimeException var1) {
+      } catch (RuntimeException e) {
          return null;
       }
    }
@@ -82,7 +82,7 @@ public final class ClientReport {
       String url;
       try {
          url = ReportVault.url();
-      } catch (LinkageError | RuntimeException var10) {
+      } catch (RuntimeException | LinkageError e) {
          return;
       }
 
@@ -107,7 +107,7 @@ public final class ClientReport {
             } else {
                http.sendAsync(request, BodyHandlers.discarding()).exceptionally(ex -> null);
             }
-         } catch (InterruptedException var8) {
+         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
          } catch (Exception var9) {
          }

@@ -37,21 +37,16 @@ import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin({Entity.class})
+@Mixin(Entity.class)
 public abstract class EntityMovementMixin implements ServerBoxed {
    @Unique
    private static final ImmutableList<Axis> BEDROCK_AXIS_ORDER = ImmutableList.of(Axis.Y, Axis.X, Axis.Z);
    @Shadow
    protected boolean wasTouchingWater;
    @Unique
-   @Nullable
-   private ServerBox bedrocknative$serverBox;
+   private @Nullable ServerBox bedrocknative$serverBox;
 
-   @Inject(
-      method = {"push(DDD)V"},
-      at = {@At("HEAD")},
-      cancellable = true
-   )
+   @Inject(method = "push(DDD)V", at = @At("HEAD"), cancellable = true)
    private void bedrocknative$noEntityPush(double xa, double ya, double za, CallbackInfo ci) {
       if (BedrockMovement.appliesTo(this)) {
          ci.cancel();
@@ -62,22 +57,22 @@ public abstract class EntityMovementMixin implements ServerBoxed {
    protected abstract double getEffectiveGravity();
 
    @WrapOperation(
-      method = {"collideWithShapes"},
-      at = {@At(
+      method = "collideWithShapes",
+      at = @At(
          value = "INVOKE",
          target = "Lnet/minecraft/core/Direction;axisStepOrder(Lnet/minecraft/world/phys/Vec3;)Lcom/google/common/collect/ImmutableList;"
-      )}
+      )
    )
    private static ImmutableList<Axis> bedrocknative$axisOrder(Vec3 movement, Operation<ImmutableList<Axis>> original) {
       return BedrockMovement.active() ? BEDROCK_AXIS_ORDER : (ImmutableList)original.call(new Object[]{movement});
    }
 
    @WrapOperation(
-      method = {"collideWithShapes"},
-      at = {@At(
+      method = "collideWithShapes",
+      at = @At(
          value = "INVOKE",
          target = "Lnet/minecraft/world/phys/shapes/Shapes;collide(Lnet/minecraft/core/Direction$Axis;Lnet/minecraft/world/phys/AABB;Ljava/lang/Iterable;D)D"
-      )}
+      )
    )
    private static double bedrocknative$clipTolerance(Axis axis, AABB box, Iterable<VoxelShape> shapes, double distance, Operation<Double> original) {
       if (BedrockMovement.active() && distance != 0.0) {
@@ -89,106 +84,70 @@ public abstract class EntityMovementMixin implements ServerBoxed {
       }
    }
 
-   @ModifyVariable(
-      method = {"collide"},
-      at = {@At("HEAD")},
-      argsOnly = true
-   )
+   @ModifyVariable(method = "collide", at = @At("HEAD"), argsOnly = true)
    private Vec3 bedrocknative$depenetrate(Vec3 movement) {
-      return BedrockMovement.appliesTo(this) ? BedrockDepenetration.apply((Entity)this, movement) : movement;
+      return BedrockMovement.appliesTo(this) ? BedrockDepenetration.apply((Entity)(Object)this, movement) : movement;
    }
 
-   @WrapOperation(
-      method = {"collide"},
-      at = {@At(
-         value = "INVOKE",
-         target = "Lnet/minecraft/world/entity/Entity;onGround()Z"
-      )}
-   )
+   @WrapOperation(method = "collide", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/Entity;onGround()Z"))
    private boolean bedrocknative$flyingStep(Entity self, Operation<Boolean> original) {
       return (Boolean)original.call(new Object[]{self}) || BedrockMovement.appliesTo(self) && self instanceof Player player && player.getAbilities().flying;
    }
 
-   @ModifyReturnValue(
-      method = {"collectCandidateStepUpHeights"},
-      at = {@At("RETURN")}
-   )
+   @ModifyReturnValue(method = "collectCandidateStepUpHeights", at = @At("RETURN"))
    private static float[] bedrocknative$stepUpToFloat(float[] heights, AABB box, List<VoxelShape> shapes, float maxStep, float collided) {
       if (!BedrockMovement.active()) {
          return heights;
-      } else {
-         float[] raised = new float[heights.length];
-
-         for (int i = 0; i < heights.length; i++) {
-            raised[i] = StepHeights.raise(box.minY, heights[i], maxStep);
-         }
-
-         return raised;
       }
+
+      float[] raised = new float[heights.length];
+
+      for (int i = 0; i < heights.length; i++) {
+         raised[i] = StepHeights.raise(box.minY, heights[i], maxStep);
+      }
+
+      return raised;
    }
 
-   @ModifyConstant(
-      method = {"move"},
-      constant = {@Constant(
-         doubleValue = 1.0E-7,
-         ordinal = 1
-      )}
-   )
+   @ModifyConstant(method = "move", constant = @Constant(doubleValue = 1.0E-7, ordinal = 1))
    private double bedrocknative$keepTinyMoves(double original) {
       return BedrockMovement.simulates(this) ? 0.0 : original;
    }
 
-   @Inject(
-      method = {"move"},
-      at = {@At("TAIL")}
-   )
+   @Inject(method = "move", at = @At("TAIL"))
    private void bedrocknative$floatPosition(MoverType moverType, Vec3 delta, CallbackInfo ci) {
-      Entity self = (Entity)this;
+      Entity self = (Entity)(Object)this;
       if (moverType == MoverType.SELF && BedrockMovement.simulates(self)) {
          self.setPos((float)self.getX(), (float)self.getY(), (float)self.getZ());
       }
    }
 
-   @WrapOperation(
-      method = {"getInputVector", "calculateViewVector"},
-      at = {@At(
-         value = "INVOKE",
-         target = "Lnet/minecraft/util/Mth;sin(D)F"
-      )}
-   )
+   @WrapOperation(method = {"getInputVector", "calculateViewVector"}, at = @At(value = "INVOKE", target = "Lnet/minecraft/util/Mth;sin(D)F"))
    private static float bedrocknative$inputSin(double angle, Operation<Float> original) {
       return BedrockMovement.active() ? (float)Math.sin(angle) : (Float)original.call(new Object[]{angle});
    }
 
-   @WrapOperation(
-      method = {"getInputVector", "calculateViewVector"},
-      at = {@At(
-         value = "INVOKE",
-         target = "Lnet/minecraft/util/Mth;cos(D)F"
-      )}
-   )
+   @WrapOperation(method = {"getInputVector", "calculateViewVector"}, at = @At(value = "INVOKE", target = "Lnet/minecraft/util/Mth;cos(D)F"))
    private static float bedrocknative$inputCos(double angle, Operation<Float> original) {
       return BedrockMovement.active() ? (float)Math.cos(angle) : (Float)original.call(new Object[]{angle});
    }
 
-   @ModifyReturnValue(
-      method = {"makeBoundingBox(Lnet/minecraft/world/phys/Vec3;)Lnet/minecraft/world/phys/AABB;"},
-      at = {@At("RETURN")}
-   )
+   @ModifyReturnValue(method = "makeBoundingBox(Lnet/minecraft/world/phys/Vec3;)Lnet/minecraft/world/phys/AABB;", at = @At("RETURN"))
    private AABB bedrocknative$floatBoundingBox(AABB original) {
-      if (BedrockMovement.active() && this instanceof AbstractBoat) {
+      if (BedrockMovement.active() && (Object)this instanceof AbstractBoat) {
          return BedrockMovement.floatBox(BedrockVehicles.boatBox(original));
-      } else if (BedrockMovement.simulates(this)) {
-         return BedrockMovement.floatBox(original);
-      } else {
-         ServerBox box = this.bedrocknative$serverBox;
-         return box != null && BedrockMovement.active() ? box.apply(original) : original;
       }
+
+      if (BedrockMovement.simulates(this)) {
+         return BedrockMovement.floatBox(original);
+      }
+
+      ServerBox box = this.bedrocknative$serverBox;
+      return box != null && BedrockMovement.active() ? box.apply(original) : original;
    }
 
-   @Nullable
    @Override
-   public ServerBox bedrocknative$serverBox() {
+   public @Nullable ServerBox bedrocknative$serverBox() {
       return this.bedrocknative$serverBox;
    }
 
@@ -197,39 +156,27 @@ public abstract class EntityMovementMixin implements ServerBoxed {
       this.bedrocknative$serverBox = box;
    }
 
-   @ModifyReturnValue(
-      method = {"getBlockPosBelowThatAffectsMyMovement"},
-      at = {@At("RETURN")}
-   )
+   @ModifyReturnValue(method = "getBlockPosBelowThatAffectsMyMovement", at = @At("RETURN"))
    private BlockPos bedrocknative$blockBelow(BlockPos original) {
-      return BedrockMovement.simulates(this) ? BedrockMovement.blockBelow((Entity)this) : original;
+      return BedrockMovement.simulates(this) ? BedrockMovement.blockBelow((Entity)(Object)this) : original;
    }
 
-   @ModifyReturnValue(
-      method = {"getBlockSpeedFactor"},
-      at = {@At("RETURN")}
-   )
+   @ModifyReturnValue(method = "getBlockSpeedFactor", at = @At("RETURN"))
    private float bedrocknative$noSpeedFactor(float original) {
       return BedrockMovement.simulates(this) ? 1.0F : original;
    }
 
-   @WrapOperation(
-      method = {"getBlockJumpFactor"},
-      at = {@At(
-         value = "INVOKE",
-         target = "Lnet/minecraft/world/level/block/Block;getJumpFactor()F"
-      )}
-   )
+   @WrapOperation(method = "getBlockJumpFactor", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/block/Block;getJumpFactor()F"))
    private float bedrocknative$honeyJump(Block block, Operation<Float> original) {
       return BedrockMovement.appliesTo(this) && block instanceof HoneyBlock ? 0.6F : (Float)original.call(new Object[]{block});
    }
 
    @WrapOperation(
-      method = {"applyEffectsFromBlocks(Ljava/util/List;)V"},
-      at = {@At(
+      method = "applyEffectsFromBlocks(Ljava/util/List;)V",
+      at = @At(
          value = "INVOKE",
          target = "Lnet/minecraft/world/level/block/Block;stepOn(Lnet/minecraft/world/level/Level;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/world/entity/Entity;)V"
-      )}
+      )
    )
    private void bedrocknative$honeyStep(Block block, Level level, BlockPos pos, BlockState state, Entity entity, Operation<Void> original) {
       if (block instanceof HoneyBlock && BedrockMovement.appliesTo(entity)) {
@@ -243,13 +190,9 @@ public abstract class EntityMovementMixin implements ServerBoxed {
       original.call(new Object[]{block, level, pos, state, entity});
    }
 
-   @Inject(
-      method = {"restituteMovementAfterCollisions"},
-      at = {@At("HEAD")},
-      cancellable = true
-   )
+   @Inject(method = "restituteMovementAfterCollisions", at = @At("HEAD"), cancellable = true)
    private void bedrocknative$bounce(BlockState effectState, boolean xCollision, boolean zCollision, Vec3 movement, CallbackInfo ci) {
-      Entity self = (Entity)this;
+      Entity self = (Entity)(Object)this;
       if (BedrockMovement.appliesTo(self)
          && self.verticalCollision
          && self.verticalCollisionBelow
@@ -277,13 +220,10 @@ public abstract class EntityMovementMixin implements ServerBoxed {
       }
    }
 
-   @Inject(
-      method = {"updateFluidInteraction"},
-      at = {@At("RETURN")}
-   )
+   @Inject(method = "updateFluidInteraction", at = @At("RETURN"))
    private void bedrocknative$waterContact(CallbackInfoReturnable<Boolean> cir) {
       if (BedrockMovement.appliesTo(this)) {
-         this.wasTouchingWater = BedrockMovement.touchesWater((Entity)this);
+         this.wasTouchingWater = BedrockMovement.touchesWater((Entity)(Object)this);
       }
    }
 }

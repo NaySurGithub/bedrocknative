@@ -7,8 +7,7 @@ import java.util.Set;
 import org.jspecify.annotations.Nullable;
 
 public final class UiScope {
-   @Nullable
-   private final UiScope parent;
+   private final @Nullable UiScope parent;
    private final Map<String, UiValue> own;
    private final Set<String> weak;
 
@@ -44,8 +43,7 @@ public final class UiScope {
       return values == null ? this : new UiScope(this, values, Set.copyOf(values.keySet()));
    }
 
-   @Nullable
-   public UiValue get(String name) {
+   public @Nullable UiValue get(String name) {
       for (UiScope scope = this; scope != null; scope = scope.parent) {
          UiValue value = scope.own.get(name);
          if (value != null) {
@@ -83,8 +81,7 @@ public final class UiScope {
          this.parent = parent;
       }
 
-      @Nullable
-      public UiValue get(String name) {
+      public @Nullable UiValue get(String name) {
          UiValue value = this.own.get(name);
          return value != null ? value : this.parent.get(name);
       }

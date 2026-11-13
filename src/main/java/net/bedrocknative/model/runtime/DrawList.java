@@ -46,14 +46,11 @@ public final class DrawList {
    public static final class DrawCall {
       private String controller = "";
       private String geometry = "";
-      @Nullable
-      private MeshedGeometry mesh;
-      @Nullable
-      private Skeleton skeleton;
-      @Nullable
-      private String[] bindings;
+      private @Nullable MeshedGeometry mesh;
+      private @Nullable Skeleton skeleton;
+      private String @Nullable [] bindings;
       private final List<String> textures = new ArrayList<>(2);
-      private MaterialTable.MaterialInfo[] boneMaterials = new MaterialTable.MaterialInfo[0];
+      private MaterialTable.@Nullable MaterialInfo[] boneMaterials = new MaterialTable.MaterialInfo[0];
       private boolean[] boneVisible = new boolean[0];
       private final float[] color = new float[4];
       private final float[] overlayColor = new float[4];
@@ -70,7 +67,7 @@ public final class DrawList {
       private int changeColor = -1;
       private int secondColor = -1;
 
-      void reset(String controller, String geometry, MeshedGeometry mesh, Skeleton skeleton, @Nullable String[] bindings) {
+      void reset(String controller, String geometry, MeshedGeometry mesh, Skeleton skeleton, String @Nullable [] bindings) {
          this.controller = controller;
          this.geometry = geometry;
          this.mesh = mesh;
@@ -156,8 +153,7 @@ public final class DrawList {
          return this.skeleton;
       }
 
-      @Nullable
-      public String binding(int bone) {
+      public @Nullable String binding(int bone) {
          return this.bindings != null ? this.bindings[bone] : null;
       }
 
@@ -165,7 +161,7 @@ public final class DrawList {
          return this.textures;
       }
 
-      public MaterialTable.MaterialInfo[] boneMaterials() {
+      public MaterialTable.@Nullable MaterialInfo[] boneMaterials() {
          return this.boneMaterials;
       }
 
@@ -173,23 +169,19 @@ public final class DrawList {
          return this.boneVisible;
       }
 
-      @Nullable
-      public float[] color() {
+      public float @Nullable [] color() {
          return this.hasColor ? this.color : null;
       }
 
-      @Nullable
-      public float[] overlayColor() {
+      public float @Nullable [] overlayColor() {
          return this.hasOverlayColor ? this.overlayColor : null;
       }
 
-      @Nullable
-      public float[] hurtColor() {
+      public float @Nullable [] hurtColor() {
          return this.hasHurtColor ? this.hurtColor : null;
       }
 
-      @Nullable
-      public float[] fireColor() {
+      public float @Nullable [] fireColor() {
          return this.hasFireColor ? this.fireColor : null;
       }
 
@@ -201,8 +193,7 @@ public final class DrawList {
          return this.lightMultiplier;
       }
 
-      @Nullable
-      public float[] uvAnimation() {
+      public float @Nullable [] uvAnimation() {
          return this.hasUvAnimation ? this.uvAnimation : null;
       }
 

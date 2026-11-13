@@ -9,7 +9,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin({TextureAtlas.class})
+@Mixin(TextureAtlas.class)
 public abstract class TextureAtlasUploadMixin {
    @Shadow
    private int maxMipLevel;
@@ -17,40 +17,27 @@ public abstract class TextureAtlasUploadMixin {
    @Shadow
    protected abstract void uploadAnimationFrames();
 
-   @Inject(
-      method = {"upload"},
-      at = {@At("HEAD")}
-   )
+   @Inject(method = "upload", at = @At("HEAD"))
    private void bedrocknative$uploadStarts(Preparations preparations, CallbackInfo ci) {
       ComposedAtlasUpload.uploadStarts(preparations);
    }
 
-   @Inject(
-      method = {"uploadInitialContents"},
-      at = {@At("HEAD")},
-      cancellable = true
-   )
+   @Inject(method = "uploadInitialContents", at = @At("HEAD"), cancellable = true)
    private void bedrocknative$composedStatics(CallbackInfo ci) {
-      if (ComposedAtlasUpload.writeComposed((TextureAtlas)this, this.maxMipLevel)) {
+      if (ComposedAtlasUpload.writeComposed((TextureAtlas)(Object)this, this.maxMipLevel)) {
          this.uploadAnimationFrames();
          ComposedAtlasUpload.initialContentsDone();
          ci.cancel();
       }
    }
 
-   @Inject(
-      method = {"uploadInitialContents"},
-      at = {@At("RETURN")}
-   )
+   @Inject(method = "uploadInitialContents", at = @At("RETURN"))
    private void bedrocknative$javaStaticsDone(CallbackInfo ci) {
       ComposedAtlasUpload.initialContentsDone();
    }
 
-   @Inject(
-      method = {"upload"},
-      at = {@At("RETURN")}
-   )
+   @Inject(method = "upload", at = @At("RETURN"))
    private void bedrocknative$uploadDone(Preparations preparations, CallbackInfo ci) {
-      ComposedAtlasUpload.uploadDone((TextureAtlas)this);
+      ComposedAtlasUpload.uploadDone((TextureAtlas)(Object)this);
    }
 }

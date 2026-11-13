@@ -69,11 +69,11 @@ public final class DiskBlobStore implements BlobStore, Closeable {
       List<DiskBlobStore.Segment> found = new ArrayList<>();
 
       try (Stream<Path> files = Files.list(folder)) {
-         for (Path file : files.filter(f -> f.getFileName().toString().endsWith(".seg"))::iterator) {
+         for (Path file : (Iterable<Path>) files.filter(f -> f.getFileName().toString().endsWith(".seg"))::iterator) {
             try {
                found.add(new DiskBlobStore.Segment(file, Files.getLastModifiedTime(file).toMillis()));
-            } catch (IOException var11) {
-               BedrockNative.LOGGER.warn("Blob cache: cannot read {}: {}", file.getFileName(), var11.toString());
+            } catch (IOException e) {
+               BedrockNative.LOGGER.warn("Blob cache: cannot read {}: {}", file.getFileName(), e.toString());
             }
          }
       }
@@ -88,59 +88,56 @@ public final class DiskBlobStore implements BlobStore, Closeable {
    }
 
    private void scan(DiskBlobStore.Segment segment) {
-      try {
-         try (FileChannel channel = FileChannel.open(segment.path, StandardOpenOption.READ)) {
-            long size = channel.size();
-            ByteBuffer head = ByteBuffer.allocate(8);
-            if (size >= 8L && readFully(channel, head, 0L) && head.getInt(0) == 1112425027 && head.getInt(4) == 1) {
-               ByteBuffer window = ByteBuffer.allocate((int)Math.min(1048576L, size));
-               long windowStart = 0L;
-               long windowEnd = 0L;
-               long position = 8L;
+      try (FileChannel channel = FileChannel.open(segment.path, StandardOpenOption.READ)) {
+         long size = channel.size();
+         ByteBuffer head = ByteBuffer.allocate(8);
+         if (size >= 8L && readFully(channel, head, 0L) && head.getInt(0) == 1112425027 && head.getInt(4) == 1) {
+            ByteBuffer window = ByteBuffer.allocate((int)Math.min(1048576L, size));
+            long windowStart = 0L;
+            long windowEnd = 0L;
+            long position = 8L;
 
-               int records;
-               for (records = 0; position + 12L <= size; records++) {
-                  if (position < windowStart || position + 12L > windowEnd) {
-                     window.clear();
-                     window.limit((int)Math.min((long)window.capacity(), size - position));
-                     if (!readFully(channel, window, position)) {
-                        break;
-                     }
-
-                     windowStart = position;
-                     windowEnd = position + window.limit();
-                  }
-
-                  int at = (int)(position - windowStart);
-                  long hash = window.getLong(at);
-                  int length = window.getInt(at + 8);
-                  if (length < 0 || length > 16777216 || position + 12L + length > size) {
+            int records;
+            for (records = 0; position + 12L <= size; records++) {
+               if (position < windowStart || position + 12L > windowEnd) {
+                  window.clear();
+                  window.limit((int)Math.min(window.capacity(), size - position));
+                  if (!readFully(channel, window, position)) {
                      break;
                   }
 
-                  this.index.put(hash, new DiskBlobStore.Location(segment, position + 12L, length));
-                  position += 12 + length;
+                  windowStart = position;
+                  windowEnd = position + window.limit();
                }
 
-               if (position < size) {
-                  BedrockNative.LOGGER
-                     .warn(
-                        "Blob cache: {} ends with {} unreadable bytes after {} blobs; they are ignored",
-                        new Object[]{segment.path.getFileName(), size - position, records}
-                     );
+               int at = (int)(position - windowStart);
+               long hash = window.getLong(at);
+               int length = window.getInt(at + 8);
+               if (length < 0 || length > 16777216 || position + 12L + length > size) {
+                  break;
                }
 
-               segment.size = size;
-               segment.validEnd = position;
-               this.totalBytes += size;
-               this.segments.add(segment);
-               return;
+               this.index.put(hash, new DiskBlobStore.Location(segment, position + 12L, length));
+               position += 12 + length;
             }
 
+            if (position < size) {
+               BedrockNative.LOGGER
+                  .warn(
+                     "Blob cache: {} ends with {} unreadable bytes after {} blobs; they are ignored",
+                     new Object[]{segment.path.getFileName(), size - position, records}
+                  );
+            }
+
+            segment.size = size;
+            segment.validEnd = position;
+            this.totalBytes += size;
+            this.segments.add(segment);
+         } else {
             BedrockNative.LOGGER.warn("Blob cache: {} is not a segment of this version; ignored", segment.path.getFileName());
          }
-      } catch (IOException var20) {
-         BedrockNative.LOGGER.warn("Blob cache: cannot scan {}: {}", segment.path.getFileName(), var20.toString());
+      } catch (IOException e) {
+         BedrockNative.LOGGER.warn("Blob cache: cannot scan {}: {}", segment.path.getFileName(), e.toString());
       }
    }
 
@@ -165,14 +162,16 @@ public final class DiskBlobStore implements BlobStore, Closeable {
          }
 
          return cached;
-      } else if (location == null) {
-         return null;
       } else {
+         if (location == null) {
+            return null;
+         }
+
          byte[] data;
          try {
             data = this.read(location);
-         } catch (IOException var7) {
-            BedrockNative.LOGGER.warn("Blob cache: cannot read {}: {}; its blobs are dropped", location.segment.path.getFileName(), var7.toString());
+         } catch (IOException e) {
+            BedrockNative.LOGGER.warn("Blob cache: cannot read {}: {}; its blobs are dropped", location.segment.path.getFileName(), e.toString());
             this.dropEntries(location.segment);
             return null;
          }
@@ -249,9 +248,9 @@ public final class DiskBlobStore implements BlobStore, Closeable {
                this.active.validEnd = this.active.size;
                this.active.lastUsed = this.clockMillis.getAsLong();
                this.totalBytes = this.totalBytes + record.capacity();
-            } catch (IOException var6) {
+            } catch (IOException e) {
                this.writeFailed = true;
-               BedrockNative.LOGGER.warn("Blob cache: cannot write to {}: {}; blobs are kept in memory only from now on", this.folder, var6.toString());
+               BedrockNative.LOGGER.warn("Blob cache: cannot write to {}: {}; blobs are kept in memory only from now on", this.folder, e.toString());
                return;
             }
 
@@ -271,7 +270,7 @@ public final class DiskBlobStore implements BlobStore, Closeable {
 
       for (DiskBlobStore.Segment candidate : this.segments) {
          if (candidate != previous
-            && candidate.validEnd + Math.max(65536L, (long)needed) <= this.segmentBytes
+            && candidate.validEnd + Math.max(65536L, needed) <= this.segmentBytes
             && (adopt == null || candidate.lastUsed > adopt.lastUsed)) {
             adopt = candidate;
          }
@@ -308,18 +307,15 @@ public final class DiskBlobStore implements BlobStore, Closeable {
       Path claim = segment.path.toAbsolutePath().normalize();
       if (!WRITING.add(claim)) {
          return false;
-      } else {
-         boolean adopted = false;
-         FileChannel channel = null;
+      }
 
-         boolean e;
-         try {
-            closeQuietly(this.readers.remove(segment));
-            channel = FileChannel.open(segment.path, StandardOpenOption.READ, StandardOpenOption.WRITE);
-            if (lockOrNull(channel) == null || channel.size() != segment.size) {
-               return false;
-            }
+      boolean adopted = false;
+      FileChannel channel = null;
 
+      try {
+         closeQuietly(this.readers.remove(segment));
+         channel = FileChannel.open(segment.path, StandardOpenOption.READ, StandardOpenOption.WRITE);
+         if (lockOrNull(channel) != null && channel.size() == segment.size) {
             if (segment.validEnd < segment.size) {
                channel.truncate(segment.validEnd);
                this.totalBytes = this.totalBytes - (segment.size - segment.validEnd);
@@ -329,24 +325,24 @@ public final class DiskBlobStore implements BlobStore, Closeable {
             segment.channel = channel;
             segment.lastUsed = this.clockMillis.getAsLong();
             adopted = true;
-            e = true;
-         } catch (RuntimeException | IOException var10) {
+            return true;
+         } else {
             return false;
-         } finally {
-            if (!adopted) {
-               closeQuietly(channel);
-               WRITING.remove(claim);
-            }
          }
-
-         return e;
+      } catch (IOException | RuntimeException e) {
+         return false;
+      } finally {
+         if (!adopted) {
+            closeQuietly(channel);
+            WRITING.remove(claim);
+         }
       }
    }
 
    private static FileLock lockOrNull(FileChannel channel) {
       try {
          return channel.tryLock(1125899906842624L, 1L, false);
-      } catch (RuntimeException | IOException var2) {
+      } catch (IOException | RuntimeException e) {
          return null;
       }
    }
@@ -395,7 +391,7 @@ public final class DiskBlobStore implements BlobStore, Closeable {
 
       try {
          Files.deleteIfExists(victim.path);
-      } catch (IOException var3) {
+      } catch (IOException e) {
          victim.lastUsed = this.clockMillis.getAsLong();
          return false;
       }

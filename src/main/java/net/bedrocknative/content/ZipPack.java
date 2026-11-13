@@ -40,8 +40,7 @@ public final class ZipPack implements PackSource {
    private final PackManifest manifest;
    private final Map<String, ZipEntry> entries;
    private final Map<String, String> keys;
-   @Nullable
-   private final String subpack;
+   private final @Nullable String subpack;
    private final Map<String, String> subpackKeys;
 
    private ZipPack(
@@ -63,12 +62,9 @@ public final class ZipPack implements PackSource {
    }
 
    public static PackManifest readManifest(Path file) throws IOException {
-      PackManifest var2;
       try (ZipPack pack = open(file, null, "")) {
-         var2 = pack.manifest();
+         return pack.manifest();
       }
-
-      return var2;
    }
 
    public static ZipPack open(Path file, @Nullable String contentKey, String subpackName) throws IOException {
@@ -77,74 +73,74 @@ public final class ZipPack implements PackSource {
       ZipFile zip;
       try {
          zip = new ZipFile(file.toFile());
-      } catch (RuntimeException var6) {
-         throw new IOException("Not a zip: " + var6.getMessage(), var6);
+      } catch (RuntimeException e) {
+         throw new IOException("Not a zip: " + e.getMessage(), e);
       }
 
       try {
          return open(zip, file.getFileName().toString(), contentKey, subpackName);
-      } catch (RuntimeException | IOException var7) {
+      } catch (IOException | RuntimeException e) {
          zip.close();
-         throw var7 instanceof IOException io ? io : new IOException("Invalid pack: " + var7.getMessage(), var7);
+         throw e instanceof IOException io ? io : new IOException("Invalid pack: " + e.getMessage(), e);
       }
    }
 
    private static ZipPack open(ZipFile zip, String name, @Nullable String contentKey, String subpackName) throws IOException {
       if (zip.size() > 100000) {
          throw new IOException("Too many zip entries: " + zip.size());
-      } else {
-         Map<String, ZipEntry> all = new HashMap<>();
-         Enumeration<? extends ZipEntry> enumeration = zip.entries();
-         long declared = 0L;
-         long totalJson = 0L;
+      }
 
-         while (enumeration.hasMoreElements()) {
-            ZipEntry entry = enumeration.nextElement();
-            if (!entry.isDirectory() && entry.getName().length() <= 1024) {
-               declared += Math.max(entry.getSize(), 0L);
-               if (declared > 1073741824L) {
-                  throw new IOException("Pack inflates to more than 1073741824 bytes");
-               }
+      Map<String, ZipEntry> all = new HashMap<>();
+      Enumeration<? extends ZipEntry> enumeration = zip.entries();
+      long declared = 0L;
+      long totalJson = 0L;
 
-               String normalized = PackStack.normalize(entry.getName());
-               if (normalized != null) {
-                  String key = normalized.toLowerCase(Locale.ROOT);
-                  if (all.putIfAbsent(key, entry) == null && isJson(key)) {
-                     totalJson += Math.max(0L, entry.getSize());
-                     if (totalJson > 67108864L) {
-                        throw new IOException("Pack inflates to more than 67108864 bytes of JSON");
-                     }
+      while (enumeration.hasMoreElements()) {
+         ZipEntry entry = enumeration.nextElement();
+         if (!entry.isDirectory() && entry.getName().length() <= 1024) {
+            declared += Math.max(entry.getSize(), 0L);
+            if (declared > 1073741824L) {
+               throw new IOException("Pack inflates to more than 1073741824 bytes");
+            }
+
+            String normalized = PackStack.normalize(entry.getName());
+            if (normalized != null) {
+               String key = normalized.toLowerCase(Locale.ROOT);
+               if (all.putIfAbsent(key, entry) == null && isJson(key)) {
+                  totalJson += Math.max(0L, entry.getSize());
+                  if (totalJson > 67108864L) {
+                     throw new IOException("Pack inflates to more than 67108864 bytes of JSON");
                   }
                }
             }
          }
+      }
 
-         String root = root(all);
-         if (root == null) {
-            throw new IOException("No manifest.json");
-         } else {
-            Map<String, ZipEntry> entries = new HashMap<>();
-            all.forEach((path, entry) -> {
-               if (path.startsWith(root)) {
-                  entries.put(path.substring(root.length()), entry);
-               }
-            });
-            PackManifest manifest = PackManifest.parse(read(zip, entries.get("manifest.json")));
-            Map<String, String> keys = keys(zip, entries.get("contents.json"), contentKey);
-            String subpack = null;
-            Map<String, String> subpackKeys = Map.of();
-            if (!subpackName.isBlank()) {
-               String folder = manifest.subpackFolder(subpackName);
-               String prefix = ("subpacks/" + (folder != null ? folder : subpackName) + "/").toLowerCase(Locale.ROOT);
-               if (PackStack.normalize(prefix + "x") != null && entries.keySet().stream().anyMatch(path -> path.startsWith(prefix))) {
-                  subpack = prefix;
-                  subpackKeys = keys(zip, entries.get(prefix + "contents.json"), contentKey);
-               }
-            }
+      String root = root(all);
+      if (root == null) {
+         throw new IOException("No manifest.json");
+      }
 
-            return new ZipPack(zip, name, manifest, entries, keys, subpack, subpackKeys);
+      Map<String, ZipEntry> entries = new HashMap<>();
+      all.forEach((path, entry) -> {
+         if (path.startsWith(root)) {
+            entries.put(path.substring(root.length()), entry);
+         }
+      });
+      PackManifest manifest = PackManifest.parse(read(zip, entries.get("manifest.json")));
+      Map<String, String> keys = keys(zip, entries.get("contents.json"), contentKey);
+      String subpack = null;
+      Map<String, String> subpackKeys = Map.of();
+      if (!subpackName.isBlank()) {
+         String folder = manifest.subpackFolder(subpackName);
+         String prefix = ("subpacks/" + (folder != null ? folder : subpackName) + "/").toLowerCase(Locale.ROOT);
+         if (PackStack.normalize(prefix + "x") != null && entries.keySet().stream().anyMatch(path -> path.startsWith(prefix))) {
+            subpack = prefix;
+            subpackKeys = keys(zip, entries.get(prefix + "contents.json"), contentKey);
          }
       }
+
+      return new ZipPack(zip, name, manifest, entries, keys, subpack, subpackKeys);
    }
 
    static void checkDirectory(Path file) throws IOException {
@@ -160,7 +156,7 @@ public final class ZipPack implements PackSource {
 
          for (int at = tail - 22; at >= 0; at--) {
             if (buffer.getInt(at) == 101010256 && at + 22 + (buffer.getShort(at + 20) & '\uffff') == tail) {
-               long entries = buffer.getShort(at + 10) & '\uffff';
+               long entries = buffer.getShort(at + 10) & 65535;
                long directory = buffer.getInt(at + 12) & 4294967295L;
                if ((entries == 65535L || directory == 4294967295L) && at >= 20 && buffer.getInt(at - 20) == 117853008) {
                   long zip64 = buffer.getLong(at - 20 + 8);
@@ -199,8 +195,7 @@ public final class ZipPack implements PackSource {
       }
    }
 
-   @Nullable
-   private static String root(Map<String, ZipEntry> entries) {
+   private static @Nullable String root(Map<String, ZipEntry> entries) {
       return entries.containsKey("manifest.json")
          ? ""
          : entries.keySet()
@@ -217,18 +212,20 @@ public final class ZipPack implements PackSource {
          byte[] data = read(zip, contents);
          if (!PackCrypto.isEncryptedContents(data)) {
             return Map.of();
-         } else if (contentKey.isEmpty()) {
-            throw new IOException("Encrypted pack without a content key");
-         } else {
-            Map<String, String> keys = new HashMap<>();
-            PackCrypto.readContents(data, contentKey).forEach((path, key) -> {
-               String normalized = PackStack.normalize(path);
-               if (normalized != null) {
-                  keys.put(normalized.toLowerCase(Locale.ROOT), key);
-               }
-            });
-            return keys;
          }
+
+         if (contentKey.isEmpty()) {
+            throw new IOException("Encrypted pack without a content key");
+         }
+
+         Map<String, String> keys = new HashMap<>();
+         PackCrypto.readContents(data, contentKey).forEach((path, key) -> {
+            String normalized = PackStack.normalize(path);
+            if (normalized != null) {
+               keys.put(normalized.toLowerCase(Locale.ROOT), key);
+            }
+         });
+         return keys;
       } else {
          return Map.of();
       }
@@ -242,8 +239,7 @@ public final class ZipPack implements PackSource {
       return !this.keys.isEmpty() || !this.subpackKeys.isEmpty();
    }
 
-   @Nullable
-   public String subpack() {
+   public @Nullable String subpack() {
       return this.subpack;
    }
 
@@ -357,30 +353,25 @@ public final class ZipPack implements PackSource {
    private static byte[] read(ZipFile zip, @Nullable ZipEntry entry) throws IOException {
       if (entry == null) {
          throw new IOException("Missing zip entry");
-      } else {
-         long limit = limit(entry.getName());
-         if (entry.getSize() > limit) {
+      }
+
+      long limit = limit(entry.getName());
+      if (entry.getSize() > limit) {
+         throw new IOException("Zip entry too large: " + entry.getName());
+      }
+
+      long allowed = entry.getSize() >= 0L ? entry.getSize() : limit;
+
+      try (InputStream in = zip.getInputStream(entry)) {
+         byte[] data = in.readNBytes((int)allowed + 1);
+         if (data.length > allowed) {
             throw new IOException("Zip entry too large: " + entry.getName());
-         } else {
-            long allowed = entry.getSize() >= 0L ? entry.getSize() : limit;
-
-            try {
-               byte[] var8;
-               try (InputStream in = zip.getInputStream(entry)) {
-                  byte[] data = in.readNBytes((int)allowed + 1);
-                  if (data.length > allowed) {
-                     throw new IOException("Zip entry too large: " + entry.getName());
-                  }
-
-                  checkJson(entry.getName(), data);
-                  var8 = data;
-               }
-
-               return var8;
-            } catch (RuntimeException var11) {
-               throw new IOException("Corrupt zip entry " + entry.getName(), var11);
-            }
          }
+
+         checkJson(entry.getName(), data);
+         return data;
+      } catch (RuntimeException e) {
+         throw new IOException("Corrupt zip entry " + entry.getName(), e);
       }
    }
 

@@ -6,7 +6,7 @@ import net.minecraft.client.multiplayer.ClientSuggestionProvider;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 
-@Mixin({ClientPacketListener.class})
+@Mixin(ClientPacketListener.class)
 public interface ClientPacketListenerAccessor {
    @Accessor("commands")
    void bedrocknative$setCommands(CommandDispatcher<ClientSuggestionProvider> var1);

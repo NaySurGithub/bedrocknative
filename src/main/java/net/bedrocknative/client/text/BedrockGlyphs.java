@@ -15,7 +15,6 @@ import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import net.bedrocknative.BedrockNative;
@@ -39,8 +38,7 @@ public final class BedrockGlyphs {
    private static final int MAX_CELL = 128;
    private static final boolean TRACE = Boolean.getBoolean("bedrocknative.glyphTrace");
    private static final Set<String> TRACED = ConcurrentHashMap.newKeySet();
-   @Nullable
-   private static volatile BedrockGlyphs.State state;
+   private static volatile BedrockGlyphs.@Nullable State state;
    private static volatile boolean session;
    private static volatile int generation;
    private static volatile boolean bakedPagesLeft;
@@ -141,13 +139,13 @@ public final class BedrockGlyphs {
          replace(
             new BedrockGlyphs.State(GlyphPages.collect(stack, PackStack.serverPackCount()), GlyphPages.serverLatinFont(stack, PackStack.serverPackCount()))
          );
-      } catch (RuntimeException var1) {
-         BedrockNative.LOGGER.warn("Couldn't read Bedrock's glyph pages", var1);
+      } catch (RuntimeException e) {
+         BedrockNative.LOGGER.warn("Couldn't read Bedrock's glyph pages", e);
          replace(null);
       }
    }
 
-   private static void replace(@Nullable BedrockGlyphs.State next) {
+   private static void replace(BedrockGlyphs.@Nullable State next) {
       BedrockGlyphs.State previous = state;
       state = next;
       generation++;
@@ -181,12 +179,13 @@ public final class BedrockGlyphs {
    }
 
    private static final class LatinProvider implements GlyphProvider {
-      @Nullable
-      public UnbakedGlyph getGlyph(int codePoint) {
+      @Override
+      public @Nullable UnbakedGlyph getGlyph(int codePoint) {
          BedrockGlyphs.State current = BedrockGlyphs.state;
          return current == null ? null : current.latinGlyph(codePoint);
       }
 
+      @Override
       public IntSet getSupportedGlyphs() {
          BedrockGlyphs.State current = BedrockGlyphs.state;
          IntSet supported = new IntOpenHashSet();
@@ -205,10 +204,12 @@ public final class BedrockGlyphs {
    }
 
    private record PageGlyph(BedrockGlyphs.State owner, BitmapFontMetrics.Page page, BitmapFontMetrics.Glyph glyph) implements UnbakedGlyph {
+      @Override
       public GlyphInfo info() {
          return GlyphInfo.simple(this.glyph.advance());
       }
 
+      @Override
       public BakedGlyph bake(Stitcher stitcher) {
          int cell = this.glyph.v() / this.page.cellHeight() * 16 + this.glyph.u() / this.page.cellWidth();
          int[] range = this.page.opaqueRows(cell);
@@ -220,30 +221,32 @@ public final class BedrockGlyphs {
          final float oversample = height / (rows * this.glyph.scale());
          final float bearingTop = 7.0F - (this.glyph.top() + firstRow * this.glyph.scale());
          return stitcher.stitch(this.info(), new GlyphBitmap() {
-            {
-               Objects.requireNonNull(PageGlyph.this);
-            }
-
+            @Override
             public int getPixelWidth() {
                return width;
             }
 
+            @Override
             public int getPixelHeight() {
                return height;
             }
 
+            @Override
             public float getOversample() {
                return oversample;
             }
 
+            @Override
             public float getBearingTop() {
                return bearingTop;
             }
 
+            @Override
             public boolean isColored() {
                return true;
             }
 
+            @Override
             public void upload(int x, int y, GpuTexture texture) {
                NativeImage image = PageGlyph.this.owner.image(width, height);
 
@@ -262,12 +265,13 @@ public final class BedrockGlyphs {
    }
 
    private static final class Provider implements GlyphProvider {
-      @Nullable
-      public UnbakedGlyph getGlyph(int codePoint) {
+      @Override
+      public @Nullable UnbakedGlyph getGlyph(int codePoint) {
          BedrockGlyphs.State current = BedrockGlyphs.state;
          return current == null ? null : current.glyph(codePoint);
       }
 
+      @Override
       public IntSet getSupportedGlyphs() {
          BedrockGlyphs.State current = BedrockGlyphs.state;
          IntSet supported = new IntOpenHashSet();
@@ -329,40 +333,38 @@ public final class BedrockGlyphs {
       private String latinSummary() {
          if (!this.latin) {
             return "Java's";
-         } else {
-            synchronized (this.glyphs) {
-               BitmapFontMetrics.Page page = this.metrics.page(0);
-               if (page == null) {
-                  return "Java's (the server's font/default8.png could not be read)";
-               } else {
-                  long drawn = BitmapFontMetrics.default8CodePoints().stream().filter(codePoint -> this.metrics.latinGlyph(codePoint) != null).count();
-                  return "the server's font/default8.png (" + page.width() + "x" + page.height() + ", " + drawn + " characters)";
-               }
+         }
+
+         synchronized (this.glyphs) {
+            BitmapFontMetrics.Page page = this.metrics.page(0);
+            if (page == null) {
+               return "Java's (the server's font/default8.png could not be read)";
             }
+
+            long drawn = BitmapFontMetrics.default8CodePoints().stream().filter(codePoint -> this.metrics.latinGlyph(codePoint) != null).count();
+            return "the server's font/default8.png (" + page.width() + "x" + page.height() + ", " + drawn + " characters)";
          }
       }
 
-      @Nullable
-      private UnbakedGlyph latinGlyph(int codePoint) {
+      private @Nullable UnbakedGlyph latinGlyph(int codePoint) {
          if (!this.latin) {
             return null;
-         } else {
-            synchronized (this.glyphs) {
-               if (this.latinGlyphs.containsKey(codePoint)) {
-                  return (UnbakedGlyph)this.latinGlyphs.get(codePoint);
-               } else {
-                  BitmapFontMetrics.Glyph glyph = this.metrics.latinGlyph(codePoint);
-                  BitmapFontMetrics.Page page = glyph == null ? null : this.metrics.page(0);
-                  UnbakedGlyph made = page == null ? null : new BedrockGlyphs.PageGlyph(this, page, glyph);
-                  this.latinGlyphs.put(codePoint, made);
-                  return made;
-               }
+         }
+
+         synchronized (this.glyphs) {
+            if (this.latinGlyphs.containsKey(codePoint)) {
+               return (UnbakedGlyph)this.latinGlyphs.get(codePoint);
             }
+
+            BitmapFontMetrics.Glyph glyph = this.metrics.latinGlyph(codePoint);
+            BitmapFontMetrics.Page page = glyph == null ? null : this.metrics.page(0);
+            UnbakedGlyph made = page == null ? null : new BedrockGlyphs.PageGlyph(this, page, glyph);
+            this.latinGlyphs.put(codePoint, made);
+            return made;
          }
       }
 
-      @Nullable
-      private UnbakedGlyph glyph(int codePoint) {
+      private @Nullable UnbakedGlyph glyph(int codePoint) {
          if (codePoint != 10 && codePoint != 13) {
             int page = codePoint >> 8;
             if (page != 0 && !this.pages.contains(page) && GlyphPages.blankWithoutPage(codePoint)) {
@@ -376,11 +378,11 @@ public final class BedrockGlyphs {
                synchronized (this.glyphs) {
                   if (this.glyphs.containsKey(codePoint)) {
                      return (UnbakedGlyph)this.glyphs.get(codePoint);
-                  } else {
-                     UnbakedGlyph glyph = this.make(codePoint, page);
-                     this.glyphs.put(codePoint, glyph);
-                     return glyph;
                   }
+
+                  UnbakedGlyph glyph = this.make(codePoint, page);
+                  this.glyphs.put(codePoint, glyph);
+                  return glyph;
                }
             } else {
                return null;
@@ -390,8 +392,7 @@ public final class BedrockGlyphs {
          }
       }
 
-      @Nullable
-      private UnbakedGlyph make(int codePoint, int pageIndex) {
+      private @Nullable UnbakedGlyph make(int codePoint, int pageIndex) {
          BitmapFontMetrics.Glyph glyph = this.metrics.pageGlyph(codePoint);
          BitmapFontMetrics.Page page = glyph == null ? null : this.metrics.page(glyph.page());
          if (glyph != null && page != null) {

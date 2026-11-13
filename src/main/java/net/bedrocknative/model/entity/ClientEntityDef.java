@@ -28,34 +28,28 @@ public record ClientEntityDef(
    Map<String, String> particleEffects,
    Map<String, String> soundEffects
 ) {
-   @Nullable
-   public String geometry(String shortName) {
+   public @Nullable String geometry(String shortName) {
       return lookup(this.geometries, shortName);
    }
 
-   @Nullable
-   public String texture(String shortName) {
+   public @Nullable String texture(String shortName) {
       return lookup(this.textures, shortName);
    }
 
-   @Nullable
-   public String material(String shortName) {
+   public @Nullable String material(String shortName) {
       return lookup(this.materials, shortName);
    }
 
-   @Nullable
-   public String animation(String shortName) {
+   public @Nullable String animation(String shortName) {
       String id = lookup(this.animations, shortName);
       return id != null ? id : lookup(this.legacyControllers, shortName);
    }
 
-   @Nullable
-   public String particleEffect(String shortName) {
+   public @Nullable String particleEffect(String shortName) {
       return lookup(this.particleEffects, shortName);
    }
 
-   @Nullable
-   public String soundEffect(String shortName) {
+   public @Nullable String soundEffect(String shortName) {
       return lookup(this.soundEffects, shortName);
    }
 
@@ -63,20 +57,19 @@ public record ClientEntityDef(
       return this.scripts.animate().isEmpty() && !this.legacyControllers.isEmpty();
    }
 
-   @Nullable
-   private static String lookup(Map<String, String> map, String key) {
+   private static @Nullable String lookup(Map<String, String> map, String key) {
       String value = map.get(key);
       if (value != null) {
          return value;
-      } else {
-         for (Entry<String, String> entry : map.entrySet()) {
-            if (entry.getKey().equalsIgnoreCase(key)) {
-               return entry.getValue();
-            }
-         }
-
-         return null;
       }
+
+      for (Entry<String, String> entry : map.entrySet()) {
+         if (entry.getKey().equalsIgnoreCase(key)) {
+            return entry.getValue();
+         }
+      }
+
+      return null;
    }
 
    public record AnimateEntry(String name, @Nullable MolangProgram weight) {

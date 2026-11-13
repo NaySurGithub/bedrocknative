@@ -32,13 +32,11 @@ public interface MolangActor {
       return 0.0F;
    }
 
-   @Nullable
-   default Object property(String name) {
+   default @Nullable Object property(String name) {
       return null;
    }
 
-   @Nullable
-   default VariableStore publicVariables() {
+   default @Nullable VariableStore publicVariables() {
       return null;
    }
 

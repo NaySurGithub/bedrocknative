@@ -19,21 +19,16 @@ public final class BedrockVanillaTextures {
    private static final long PREPARE_TIMEOUT_MILLIS = 120000L;
    private static final long RELOAD_TIMEOUT_MILLIS = 120000L;
    private static final Object UNCHANGED = new Object();
-   @Nullable
-   private static volatile BedrockVanillaTextures.Armed armed;
-   @Nullable
-   private static BedrockTextureMap blockMap;
-   @Nullable
-   private static BedrockTextureMap itemMap;
+   private static volatile BedrockVanillaTextures.@Nullable Armed armed;
+   private static @Nullable BedrockTextureMap blockMap;
+   private static @Nullable BedrockTextureMap itemMap;
    private static boolean session;
    private static boolean restorePending;
    private static boolean enabled = !Boolean.getBoolean("bedrocknative.javaTextures");
    private static int generation;
-   @Nullable
-   private static CompletableFuture<?> preparing;
+   private static @Nullable CompletableFuture<?> preparing;
    private static long preparingSince;
-   @Nullable
-   private static CompletableFuture<Void> reloading;
+   private static @Nullable CompletableFuture<Void> reloading;
    private static long reloadRequestedAt;
    private static long overlaySeenAt;
    private static volatile BedrockVanillaTextures.Timings timings = new BedrockVanillaTextures.Timings(0L, 0L, false);
@@ -41,8 +36,7 @@ public final class BedrockVanillaTextures {
    private BedrockVanillaTextures() {
    }
 
-   @Nullable
-   public static BedrockTextureSet armed(BedrockTextureMap.Atlas atlas) {
+   public static @Nullable BedrockTextureSet armed(BedrockTextureMap.Atlas atlas) {
       BedrockVanillaTextures.Armed current = armed;
       return current == null ? null : (atlas == BedrockTextureMap.Atlas.BLOCKS ? current.blocks() : current.items());
    }
@@ -112,19 +106,19 @@ public final class BedrockVanillaTextures {
       CompletableFuture<?> prepare = preparing;
       if (session && prepare != null && !prepare.isDone()) {
          return Util.getMillis() - preparingSince < 120000L;
-      } else {
-         CompletableFuture<Void> reload = reloading;
-         if (reload != null && !reload.isDone()) {
-            long now = Util.getMillis();
-            if (Minecraft.getInstance().gui.overlay() instanceof LoadingOverlay) {
-               overlaySeenAt = now;
-               return true;
-            } else {
-               return AtlasReload.running() ? now - reloadRequestedAt < 120000L : now - Math.max(overlaySeenAt, reloadRequestedAt) < 1000L;
-            }
+      }
+
+      CompletableFuture<Void> reload = reloading;
+      if (reload != null && !reload.isDone()) {
+         long now = Util.getMillis();
+         if (Minecraft.getInstance().gui.overlay() instanceof LoadingOverlay) {
+            overlaySeenAt = now;
+            return true;
          } else {
-            return false;
+            return AtlasReload.running() ? now - reloadRequestedAt < 120000L : now - Math.max(overlaySeenAt, reloadRequestedAt) < 1000L;
          }
+      } else {
+         return false;
       }
    }
 
@@ -181,17 +175,17 @@ public final class BedrockVanillaTextures {
       String key = blocks.key() + "/" + items.key() + "/" + blockPacking + "/" + itemPacking;
       if (key.equals(previousKey)) {
          return UNCHANGED;
-      } else {
-         long resolved = System.nanoTime();
-         BedrockTextureSet blockSet = blocks.build().fitTo(blockPacking.maxPixels(), blockPacking.padding(), blockPacking.granularity());
-         BedrockTextureSet itemSet = items.build().fitTo(itemPacking.maxPixels(), itemPacking.padding(), itemPacking.granularity());
-         BedrockNative.LOGGER
-            .info(
-               "Bedrock textures {}; {} (files read in {} ms, decoded in {} ms)",
-               new Object[]{blockSet.stats(), itemSet.stats(), (resolved - started) / 1000000L, (System.nanoTime() - resolved) / 1000000L}
-            );
-         return new BedrockVanillaTextures.Armed(blockSet, itemSet, key);
       }
+
+      long resolved = System.nanoTime();
+      BedrockTextureSet blockSet = blocks.build().fitTo(blockPacking.maxPixels(), blockPacking.padding(), blockPacking.granularity());
+      BedrockTextureSet itemSet = items.build().fitTo(itemPacking.maxPixels(), itemPacking.padding(), itemPacking.granularity());
+      BedrockNative.LOGGER
+         .info(
+            "Bedrock textures {}; {} (files read in {} ms, decoded in {} ms)",
+            new Object[]{blockSet.stats(), itemSet.stats(), (resolved - started) / 1000000L, (System.nanoTime() - resolved) / 1000000L}
+         );
+      return new BedrockVanillaTextures.Armed(blockSet, itemSet, key);
    }
 
    private static synchronized BedrockTextureMap map(BedrockTextureMap.Atlas atlas) {

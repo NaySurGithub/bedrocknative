@@ -19,7 +19,7 @@ public final class MojanglesFont implements UiVectorFont {
    private static final int MAX_SIDE = 1024;
    private static final float UNIT = 8.0F;
    private static final float BASELINE = 1.0F;
-   private final MojanglesFont.Cell[] cells = new MojanglesFont.Cell[256];
+   private final MojanglesFont.@Nullable Cell[] cells = new MojanglesFont.Cell[256];
    private final int texels;
    private final float baselineRow;
 
@@ -28,49 +28,47 @@ public final class MojanglesFont implements UiVectorFont {
       this.baselineRow = baselineRow;
    }
 
-   @Nullable
-   static MojanglesFont load(PackStack stack) {
+   static @Nullable MojanglesFont load(PackStack stack) {
       List<PackStack.PackFile> json = stack.readAll("font/default8.json");
       if (json.isEmpty()) {
          return null;
-      } else {
-         PackStack.PackFile top = json.get(json.size() - 1);
-         List<ArgbImage> pages = new ArrayList<>();
-
-         for (String path : PAGES) {
-            ArgbImage image = null;
-
-            for (PackStack.PackFile copy : stack.readAll(path)) {
-               if (copy.pack() == top.pack() && copy.data().length > 0) {
-                  image = decode(copy.data());
-               }
-            }
-
-            if (image == null) {
-               break;
-            }
-
-            pages.add(image);
-         }
-
-         MojanglesFont font = of(top.data(), pages);
-         if (font == null) {
-            BedrockNative.LOGGER.info("JSON UI: {} found but its {} page(s) give no font; MinecraftTen stands in", "font/default8.json", pages.size());
-         }
-
-         return font;
       }
+
+      PackStack.PackFile top = json.get(json.size() - 1);
+      List<ArgbImage> pages = new ArrayList<>();
+
+      for (String path : PAGES) {
+         ArgbImage image = null;
+
+         for (PackStack.PackFile copy : stack.readAll(path)) {
+            if (copy.pack() == top.pack() && copy.data().length > 0) {
+               image = decode(copy.data());
+            }
+         }
+
+         if (image == null) {
+            break;
+         }
+
+         pages.add(image);
+      }
+
+      MojanglesFont font = of(top.data(), pages);
+      if (font == null) {
+         BedrockNative.LOGGER.info("JSON UI: {} found but its {} page(s) give no font; MinecraftTen stands in", "font/default8.json", pages.size());
+      }
+
+      return font;
    }
 
-   @Nullable
-   static MojanglesFont of(byte[] json, List<ArgbImage> pages) {
+   static @Nullable MojanglesFont of(byte[] json, List<ArgbImage> pages) {
       int cellHeight;
       int yOffset;
       try {
          JsonObject root = UiJson.parseObject(json);
          cellHeight = number(root.get("ascii_character_height"));
          yOffset = number(root.get("ascii_character_y_offset"));
-      } catch (RuntimeException | UiJson.Error var12) {
+      } catch (UiJson.Error | RuntimeException e) {
          return null;
       }
 
@@ -107,18 +105,16 @@ public final class MojanglesFont implements UiVectorFont {
       return value instanceof JsonPrimitive primitive && primitive.isNumber() ? primitive.getAsInt() : 0;
    }
 
-   @Nullable
-   private static ArgbImage decode(byte[] png) {
+   private static @Nullable ArgbImage decode(byte[] png) {
       try {
          ArgbImage image = BedrockImages.decode(png);
          return image.width() >= 128 && image.width() <= 2048 && image.height() <= 2048 ? image : null;
-      } catch (RuntimeException | IOException var2) {
+      } catch (IOException | RuntimeException e) {
          return null;
       }
    }
 
-   @Nullable
-   private static MojanglesFont.Cell cell(ArgbImage page, int u, int v, int width, int height) {
+   private static MojanglesFont.@Nullable Cell cell(ArgbImage page, int u, int v, int width, int height) {
       int left = width;
       int right = -1;
       int top = height;
@@ -138,8 +134,7 @@ public final class MojanglesFont implements UiVectorFont {
       return right < 0 ? null : new MojanglesFont.Cell(page, u + left, v + top, right - left + 1, bottom - top + 1, top);
    }
 
-   @Nullable
-   private MojanglesFont.Cell cell(int codePoint) {
+   private MojanglesFont.@Nullable Cell cell(int codePoint) {
       int index = BitmapFontMetrics.default8Cell(codePoint);
       return index < 0 ? null : this.cells[index];
    }
@@ -162,10 +157,10 @@ public final class MojanglesFont implements UiVectorFont {
    public float advance(int codePoint) {
       if (blank(codePoint)) {
          return 0.5F;
-      } else {
-         MojanglesFont.Cell cell = this.cell(codePoint);
-         return cell == null ? 0.0F : ((float)cell.width() / this.texels + 1.0F) / 8.0F;
       }
+
+      MojanglesFont.Cell cell = this.cell(codePoint);
+      return cell == null ? 0.0F : ((float)cell.width() / this.texels + 1.0F) / 8.0F;
    }
 
    @Override

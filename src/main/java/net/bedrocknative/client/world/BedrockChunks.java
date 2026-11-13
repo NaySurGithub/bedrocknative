@@ -11,7 +11,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Queue;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
@@ -92,8 +91,7 @@ public final class BedrockChunks {
    private String lastStats = "";
    private String lastCacheStats = "";
    private volatile CachedChunkTransformer blobCache;
-   @Nullable
-   private volatile BlockIdCheck blockIdCheck;
+   private volatile @Nullable BlockIdCheck blockIdCheck;
    private final ChunkDiagnostics diagnostics = new ChunkDiagnostics();
    private volatile String serverLabel = "?";
    private boolean formatsLogged;
@@ -324,10 +322,6 @@ public final class BedrockChunks {
             cached = this.blobCache;
             if (cached == null) {
                cached = new CachedChunkTransformer(BlobCaches.shared(), System::nanoTime, new CachedChunkTransformer.Output() {
-                  {
-                     Objects.requireNonNull(BedrockChunks.this);
-                  }
-
                   @Override
                   public void levelChunk(LevelChunkPacket packet) {
                      BedrockChunks.this.applyLevelChunk(packet);
@@ -408,8 +402,8 @@ public final class BedrockChunks {
                   BedrockChunkLoader.applyBiomes(this.minecraft.level, chunkX, chunkZ, biomes);
                }
             });
-         } catch (RuntimeException var5) {
-            this.warnBadData("biome update", var5);
+         } catch (RuntimeException e) {
+            this.warnBadData("biome update", e);
          }
       }
    }
@@ -432,8 +426,8 @@ public final class BedrockChunks {
 
             try {
                this.columnBiomes.put(key(chunkX, chunkZ), this.biomeContainers(BedrockChunkCodec.readLevelChunk(packet.getData(), 0, count).biomes()));
-            } catch (RuntimeException var10) {
-               this.warnBadData("chunk biomes", var10);
+            } catch (RuntimeException e) {
+               this.warnBadData("chunk biomes", e);
             }
          } else {
             ColumnDecoder.Dimension decoding = this.view;
@@ -471,9 +465,9 @@ public final class BedrockChunks {
                      } else {
                         this.stream.queue().fill(ticket, column);
                      }
-                  } catch (RuntimeException var11x) {
+                  } catch (RuntimeException e) {
                      this.stream.queue().fail(ticket);
-                     throw var11x;
+                     throw e;
                   } finally {
                      ReferenceCountUtil.release(packet);
                   }
@@ -483,9 +477,8 @@ public final class BedrockChunks {
       }
    }
 
-   @Nullable
-   private PreparedColumn decodeLevelChunk(
-      ByteBuf payload, ChunkDiagnostics.Column column, ColumnDecoder.Dimension decoding, boolean precompute, @Nullable ColumnDecoder.LayerSink ids
+   private @Nullable PreparedColumn decodeLevelChunk(
+      ByteBuf payload, ChunkDiagnostics.Column column, ColumnDecoder.Dimension decoding, boolean precompute, ColumnDecoder.@Nullable LayerSink ids
    ) {
       int subChunkCount = column.subChunkCount();
       int payloadStart = payload.readerIndex();
@@ -494,10 +487,10 @@ public final class BedrockChunks {
       ColumnDecoder.Decoded decoded;
       try {
          decoded = ColumnDecoder.levelChunk(payload, subChunkCount, decoding, precompute, ids);
-      } catch (RuntimeException var11) {
+      } catch (RuntimeException e) {
          this.stats.incrementAndGet(3);
-         this.warnBadData("a full chunk (" + subChunkCount + " sub-chunks)", var11);
-         this.unreadableColumn(column, payload, payloadStart, payloadLength, var11);
+         this.warnBadData("a full chunk (" + subChunkCount + " sub-chunks)", e);
+         this.unreadableColumn(column, payload, payloadStart, payloadLength, e);
          return null;
       }
 
@@ -572,8 +565,8 @@ public final class BedrockChunks {
          } else {
             Map<Long, ColumnQueue.Ticket> tickets = new LinkedHashMap<>();
 
-            for (long keyx : keys) {
-               tickets.put(keyx, this.stream.queue().reserve((int)(keyx >> 32), (int)keyx));
+            for (long key : keys) {
+               tickets.put(key, this.stream.queue().reserve((int)(key >> 32), (int)key));
             }
 
             ReferenceCountUtil.retain(packet);
@@ -589,9 +582,9 @@ public final class BedrockChunks {
                         this.stream.queue().fill(ticket, column);
                      }
                   });
-               } catch (RuntimeException var10x) {
+               } catch (RuntimeException e) {
                   tickets.values().forEach(this.stream.queue()::fail);
-                  this.warnBadData("a SubChunk answer", var10x);
+                  this.warnBadData("a SubChunk answer", e);
                } finally {
                   ReferenceCountUtil.release(packet);
                }
@@ -628,9 +621,8 @@ public final class BedrockChunks {
             return air;
          }
 
-         @Nullable
          @Override
-         public String name(int id) {
+         public @Nullable String name(int id) {
             return mappings.bedrockName(id);
          }
 
@@ -641,13 +633,12 @@ public final class BedrockChunks {
       };
    }
 
-   @Nullable
-   private ColumnDecoder.LayerSink blockIdSink() {
+   private ColumnDecoder.@Nullable LayerSink blockIdSink() {
       BlockIdCheck check = this.blockIdCheck;
       return check != null && check.wants() ? layers -> logBlockIds(check.column(layers)) : null;
    }
 
-   private static void logBlockIds(@Nullable BlockIdCheck.Report report) {
+   private static void logBlockIds(BlockIdCheck.@Nullable Report report) {
       if (report != null) {
          if (report.suspicious()) {
             BedrockNative.LOGGER

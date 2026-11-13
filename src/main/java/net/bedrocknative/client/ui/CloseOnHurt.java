@@ -64,49 +64,50 @@ public final class CloseOnHurt {
       } else {
          boolean bedrockCloses = switch (screen) {
             case InventoryScreen ignored -> false;
-            case CreativeModeInventoryScreen ignoredx -> false;
-            case AbstractMountInventoryScreen<?> ignoredxx -> false;
-            case InBedChatScreen ignoredxxx -> false;
-            case AbstractContainerScreen<?> ignoredxxxx -> true;
-            case ChatScreen ignoredxxxxx -> true;
-            case AbstractSignEditScreen ignoredxxxxxx -> true;
-            case BookViewScreen ignoredxxxxxxx -> true;
-            case BookEditScreen ignoredxxxxxxxx -> true;
+            case CreativeModeInventoryScreen ignored -> false;
+            case AbstractMountInventoryScreen<?> ignored -> false;
+            case InBedChatScreen ignored -> false;
+            case AbstractContainerScreen<?> ignored -> true;
+            case ChatScreen ignored -> true;
+            case AbstractSignEditScreen ignored -> true;
+            case BookViewScreen ignored -> true;
+            case BookEditScreen ignored -> true;
             default -> false;
          };
          if (!bedrockCloses) {
             return false;
-         } else {
-            String key = key(screen);
-            return key == null ? JsonUi.mode() != JsonUi.Mode.OFF : JsonUi.drawn(key);
          }
+
+         String key = key(screen);
+         return key == null ? JsonUi.mode() != JsonUi.Mode.OFF : JsonUi.drawn(key);
       }
    }
 
-   @Nullable
-   private static String key(Screen screen) {
+   private static @Nullable String key(Screen screen) {
       if (screen instanceof ChatScreen) {
          return "chat";
-      } else if (screen instanceof AbstractContainerScreen<?> container) {
+      }
+
+      if (screen instanceof AbstractContainerScreen<?> container) {
          AbstractContainerMenu menu = container.getMenu();
 
          return switch (menu) {
             case ChestMenu ignored -> "chest";
-            case ShulkerBoxMenu ignoredx -> "chest";
-            case HopperMenu ignoredxx -> "redstone";
-            case DispenserMenu ignoredxxx -> "redstone";
-            case CraftingMenu ignoredxxxx -> "inventory";
-            case AbstractFurnaceMenu ignoredxxxxx -> "furnace";
-            case BrewingStandMenu ignoredxxxxxx -> "brewing_stand";
-            case AnvilMenu ignoredxxxxxxx -> "anvil";
-            case EnchantmentMenu ignoredxxxxxxxx -> "enchanting";
-            case GrindstoneMenu ignoredxxxxxxxxx -> "grindstone";
-            case StonecutterMenu ignoredxxxxxxxxxx -> "stonecutter";
-            case LoomMenu ignoredxxxxxxxxxxx -> "loom";
-            case SmithingMenu ignoredxxxxxxxxxxxx -> "smithing_table";
-            case CartographyTableMenu ignoredxxxxxxxxxxxxx -> "cartography";
-            case BeaconMenu ignoredxxxxxxxxxxxxxx -> "beacon";
-            case MerchantMenu ignoredxxxxxxxxxxxxxxx -> "trading";
+            case ShulkerBoxMenu ignored -> "chest";
+            case HopperMenu ignored -> "redstone";
+            case DispenserMenu ignored -> "redstone";
+            case CraftingMenu ignored -> "inventory";
+            case AbstractFurnaceMenu ignored -> "furnace";
+            case BrewingStandMenu ignored -> "brewing_stand";
+            case AnvilMenu ignored -> "anvil";
+            case EnchantmentMenu ignored -> "enchanting";
+            case GrindstoneMenu ignored -> "grindstone";
+            case StonecutterMenu ignored -> "stonecutter";
+            case LoomMenu ignored -> "loom";
+            case SmithingMenu ignored -> "smithing_table";
+            case CartographyTableMenu ignored -> "cartography";
+            case BeaconMenu ignored -> "beacon";
+            case MerchantMenu ignored -> "trading";
             default -> null;
          };
       } else {

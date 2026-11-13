@@ -187,31 +187,31 @@ public final class ItemWorldData {
    private byte pack(int abgr) {
       if (abgr >>> 24 == 0) {
          return 0;
-      } else {
-         int rgb = ARGB.color(abgr & 0xFF, abgr >> 8 & 0xFF, abgr >> 16 & 0xFF) & 16777215;
-         if (this.packedColors.containsKey(rgb)) {
-            return this.packedColors.get(rgb);
-         } else {
-            byte best = 0;
-            long bestDistance = Long.MAX_VALUE;
+      }
 
-            for (int packedId = 4; packedId < 256; packedId++) {
-               if (MapColor.byId(packedId >> 2) != MapColor.NONE) {
-                  int candidate = MapColor.getColorFromPackedId(packedId);
-                  long dr = ARGB.red(candidate) - ARGB.red(rgb);
-                  long dg = ARGB.green(candidate) - ARGB.green(rgb);
-                  long db = ARGB.blue(candidate) - ARGB.blue(rgb);
-                  long distance = dr * dr + dg * dg + db * db;
-                  if (distance < bestDistance) {
-                     bestDistance = distance;
-                     best = (byte)packedId;
-                  }
-               }
+      int rgb = ARGB.color(abgr & 0xFF, abgr >> 8 & 0xFF, abgr >> 16 & 0xFF) & 16777215;
+      if (this.packedColors.containsKey(rgb)) {
+         return this.packedColors.get(rgb);
+      }
+
+      byte best = 0;
+      long bestDistance = Long.MAX_VALUE;
+
+      for (int packedId = 4; packedId < 256; packedId++) {
+         if (MapColor.byId(packedId >> 2) != MapColor.NONE) {
+            int candidate = MapColor.getColorFromPackedId(packedId);
+            long dr = ARGB.red(candidate) - ARGB.red(rgb);
+            long dg = ARGB.green(candidate) - ARGB.green(rgb);
+            long db = ARGB.blue(candidate) - ARGB.blue(rgb);
+            long distance = dr * dr + dg * dg + db * db;
+            if (distance < bestDistance) {
+               bestDistance = distance;
+               best = (byte)packedId;
             }
-
-            this.packedColors.put(rgb, best);
-            return best;
          }
       }
+
+      this.packedColors.put(rgb, best);
+      return best;
    }
 }

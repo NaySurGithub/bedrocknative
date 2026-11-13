@@ -34,15 +34,15 @@ public final class RenderControllerParser {
       JsonObject root = ModelJson.object(file, "render_controllers");
       if (root == null) {
          return controllers;
-      } else {
-         for (Entry<String, JsonElement> entry : root.entrySet()) {
-            if (entry.getValue() instanceof JsonObject json) {
-               controllers.put(entry.getKey(), this.controller(entry.getKey(), json));
-            }
-         }
-
-         return controllers;
       }
+
+      for (Entry<String, JsonElement> entry : root.entrySet()) {
+         if (entry.getValue() instanceof JsonObject json) {
+            controllers.put(entry.getKey(), this.controller(entry.getKey(), json));
+         }
+      }
+
+      return controllers;
    }
 
    public RenderControllerDef controller(String name, JsonObject json) {
@@ -147,8 +147,7 @@ public final class RenderControllerParser {
       return List.copyOf(textures);
    }
 
-   @Nullable
-   private RenderControllerDef.Color color(@Nullable JsonObject json, String fill) {
+   private RenderControllerDef.@Nullable Color color(@Nullable JsonObject json, String fill) {
       return json == null
          ? null
          : new RenderControllerDef.Color(
@@ -156,25 +155,23 @@ public final class RenderControllerParser {
          );
    }
 
-   @Nullable
-   private RenderControllerDef.UvAnimation uvAnimation(@Nullable JsonObject json) {
+   private RenderControllerDef.@Nullable UvAnimation uvAnimation(@Nullable JsonObject json) {
       if (json == null) {
          return null;
-      } else {
-         JsonArray offset = ModelJson.array(json, "offset");
-         JsonArray scale = ModelJson.array(json, "scale");
-         return new RenderControllerDef.UvAnimation(
-            this.element(offset, 0, "0"), this.element(offset, 1, "0"), this.element(scale, 0, "1"), this.element(scale, 1, "1")
-         );
       }
+
+      JsonArray offset = ModelJson.array(json, "offset");
+      JsonArray scale = ModelJson.array(json, "scale");
+      return new RenderControllerDef.UvAnimation(
+         this.element(offset, 0, "0"), this.element(offset, 1, "0"), this.element(scale, 0, "1"), this.element(scale, 1, "1")
+      );
    }
 
    private MolangProgram element(@Nullable JsonArray array, int index, String fallback) {
       return this.program(array != null && array.size() > index ? array.get(index) : null, fallback);
    }
 
-   @Nullable
-   private MolangProgram optional(@Nullable JsonElement json) {
+   private @Nullable MolangProgram optional(@Nullable JsonElement json) {
       return json instanceof JsonPrimitive ? this.program(json, "0") : null;
    }
 

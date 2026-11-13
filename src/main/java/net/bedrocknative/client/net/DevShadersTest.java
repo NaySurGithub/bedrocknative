@@ -175,8 +175,8 @@ final class DevShadersTest {
             Object instance = api.getMethod("getInstance").invoke(null);
             Object config = api.getMethod("getConfig").invoke(instance);
             Class.forName("net.irisshaders.iris.api.v0.IrisApiConfig").getMethod("setShadersEnabledAndApply", boolean.class).invoke(config, on);
-         } catch (LinkageError | ReflectiveOperationException var4) {
-            log("switching shaders {} failed: {}", on ? "on" : "off", var4.toString());
+         } catch (ReflectiveOperationException | LinkageError e) {
+            log("switching shaders {} failed: {}", on ? "on" : "off", e.toString());
          }
       });
       log("shaders switched {} (in use now {})", on ? "on" : "off", packInUse());
@@ -209,7 +209,7 @@ final class DevShadersTest {
          Class<?> api = Class.forName("net.irisshaders.iris.api.v0.IrisApi");
          Object instance = api.getMethod("getInstance").invoke(null);
          return (Boolean)api.getMethod("isShaderPackInUse").invoke(instance);
-      } catch (LinkageError | ReflectiveOperationException var2) {
+      } catch (ReflectiveOperationException | LinkageError absent) {
          return null;
       }
    }
@@ -263,7 +263,7 @@ final class DevShadersTest {
    private static void sleep(long millis) {
       try {
          Thread.sleep(millis);
-      } catch (InterruptedException var3) {
+      } catch (InterruptedException e) {
          Thread.currentThread().interrupt();
       }
    }

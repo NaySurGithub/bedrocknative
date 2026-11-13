@@ -39,7 +39,6 @@ import net.minecraft.client.gui.screens.inventory.SignEditScreen;
 import net.minecraft.commands.arguments.EntityAnchorArgument.Anchor;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ServerboundContainerSlotStateChangedPacket;
 import net.minecraft.network.protocol.game.ServerboundPlayerCommandPacket;
 import net.minecraft.network.protocol.game.ServerboundPlayerCommandPacket.Action;
@@ -188,9 +187,9 @@ final class DevCompletionTest {
             case "ddui":
                this.ddui();
          }
-      } catch (RuntimeException | ReflectiveOperationException var4) {
+      } catch (ReflectiveOperationException | RuntimeException e) {
          this.failed++;
-         BedrockNative.LOGGER.error("Dev completion test FAIL {}: step threw", name, var4);
+         BedrockNative.LOGGER.error("Dev completion test FAIL {}: step threw", name, e);
       }
    }
 
@@ -268,7 +267,7 @@ final class DevCompletionTest {
 
       try {
          return at < 0 ? -1 : (int)Double.parseDouble(line.substring(at + 5).trim());
-      } catch (NumberFormatException var3) {
+      } catch (NumberFormatException e) {
          return -1;
       }
    }
@@ -295,7 +294,7 @@ final class DevCompletionTest {
          this.check("signs: the server keeps the text", line.contains("BedrockNative") && line.contains("sign test"), line);
          String shown = this.supply(
             () -> this.minecraft.level.getBlockEntity(sign) instanceof SignBlockEntity entity
-               ? ((Component)entity.getText(SignTextSlot.FRONT).getMessages(false).get(0)).getString()
+               ? entity.getText(SignTextSlot.FRONT).getMessages(false).get(0).getString()
                : "no sign"
          );
          this.check("signs: the sign shows it again from the server's data", shown.equals("BedrockNative"), shown);
@@ -323,8 +322,8 @@ final class DevCompletionTest {
 
             try {
                save.invoke(screen);
-            } catch (ReflectiveOperationException var4x) {
-               BedrockNative.LOGGER.error("Dev completion test: saveChanges failed", var4x);
+            } catch (ReflectiveOperationException e) {
+               BedrockNative.LOGGER.error("Dev completion test: saveChanges failed", e);
             }
          });
          sleep(1500L);
@@ -410,7 +409,7 @@ final class DevCompletionTest {
             && !this.supply(() -> this.minecraft.getConnection().getWaypointManager().hasWaypoints()),
          "waypoints " + this.supply(() -> this.extras.waypoints().serverCount())
       );
-      int old = this.supply(() -> (Integer)this.minecraft.options.renderDistance().get());
+      int old = this.supply(() -> this.minecraft.options.renderDistance().get());
       int updates = ClientBedrockSession.radiusUpdates();
       this.minecraft.execute(() -> this.minecraft.options.renderDistance().set(Math.max(4, old - 2)));
       this.check(
@@ -538,7 +537,7 @@ final class DevCompletionTest {
       Entity pig = this.supply(() -> this.first(EntityTypes.PIG));
       Entity wolf = this.supply(() -> this.first(EntityTypes.WOLF));
       if (pig instanceof AgeableMob baby) {
-         boolean wasBaby = this.<Boolean>supply(baby::isBaby);
+         boolean wasBaby = this.supply(baby::isBaby);
          this.actor(pig, EntityEventType.ENTITY_GROW_UP, 0);
          sleep(300L);
          this.check(
@@ -853,7 +852,7 @@ final class DevCompletionTest {
    private static void sleep(long millis) {
       try {
          Thread.sleep(millis);
-      } catch (InterruptedException var3) {
+      } catch (InterruptedException e) {
          Thread.currentThread().interrupt();
       }
    }

@@ -44,29 +44,29 @@ final class RecipeBookCrafts {
          if (placed == 0 && !returnGrid(request, grid, maxStack)) {
             BedrockNative.LOGGER.info("Recipe book: no room in the inventory for the grid's items; recipe {} not placed", recipe.id());
             return 0;
-         } else {
-            List<ItemData> inGrid = grid.stream().map(request::get).filter(item -> !item.isNull()).toList();
-            ItemMatcher fits = placed == 0
-               ? matcher
-               : (descriptor, item) -> matcher.matches(descriptor, item) && inGrid.stream().anyMatch(there -> StackRequests.sameKind(there, item));
-            List<BedrockSlot> slots = playerSlots();
-            List<ItemData> items = slots.stream().map(request::get).toList();
-            CraftPlanner.Snapshot snapshot = CraftPlanner.snapshot(items, fits);
-
-            for (int sets = snapshot.maxTimes(recipe, Math.min(wanted, 64)); sets > 0; sets--) {
-               List<CraftPlanner.Move> moves = snapshot.fill(recipe, sets, gridSize);
-               if (moves != null && fitsCells(request, moves, grid, items, maxStack)) {
-                  for (CraftPlanner.Move move : moves) {
-                     request.move(move.count(), slots.get(move.source()), grid.get(move.cell()));
-                  }
-
-                  request.submit();
-                  return sets;
-               }
-            }
-
-            return 0;
          }
+
+         List<ItemData> inGrid = grid.stream().map(request::get).filter(item -> !item.isNull()).toList();
+         ItemMatcher fits = placed == 0
+            ? matcher
+            : (descriptor, item) -> matcher.matches(descriptor, item) && inGrid.stream().anyMatch(there -> StackRequests.sameKind(there, item));
+         List<BedrockSlot> slots = playerSlots();
+         List<ItemData> items = slots.stream().map(request::get).toList();
+         CraftPlanner.Snapshot snapshot = CraftPlanner.snapshot(items, fits);
+
+         for (int sets = snapshot.maxTimes(recipe, Math.min(wanted, 64)); sets > 0; sets--) {
+            List<CraftPlanner.Move> moves = snapshot.fill(recipe, sets, gridSize);
+            if (moves != null && fitsCells(request, moves, grid, items, maxStack)) {
+               for (CraftPlanner.Move move : moves) {
+                  request.move(move.count(), slots.get(move.source()), grid.get(move.cell()));
+               }
+
+               request.submit();
+               return sets;
+            }
+         }
+
+         return 0;
       } else {
          return 0;
       }

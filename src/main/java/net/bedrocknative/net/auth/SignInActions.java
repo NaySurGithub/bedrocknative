@@ -22,8 +22,7 @@ public interface SignInActions {
       return "Sign In";
    }
 
-   @Nullable
-   default String languageTag() {
+   default @Nullable String languageTag() {
       return null;
    }
 }

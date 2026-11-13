@@ -78,8 +78,8 @@ public final class BedrockNativeClient implements ClientModInitializer {
       try {
          Path config = FabricLoader.getInstance().getConfigDir().resolve("bedrocknative");
          TransportRegistry.useNetherNet(NetherNetTransport.create(config), new SignalingProbe());
-      } catch (LinkageError | RuntimeException var1) {
-         BedrockNative.LOGGER.warn("NetherNet is not available in this game ({}): RakNet and Java servers only", var1.toString());
+      } catch (RuntimeException | LinkageError e) {
+         BedrockNative.LOGGER.warn("NetherNet is not available in this game ({}): RakNet and Java servers only", e.toString());
       }
    }
 

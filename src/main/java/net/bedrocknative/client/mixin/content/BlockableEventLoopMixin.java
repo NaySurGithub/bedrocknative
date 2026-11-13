@@ -8,14 +8,11 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin({BlockableEventLoop.class})
+@Mixin(BlockableEventLoop.class)
 public abstract class BlockableEventLoopMixin {
-   @Inject(
-      method = {"dropAllTasks"},
-      at = {@At("TAIL")}
-   )
+   @Inject(method = "dropAllTasks", at = @At("TAIL"))
    private void bedrocknative$keepReloadSteps(CallbackInfo ci) {
-      if (this instanceof Minecraft minecraft) {
+      if ((Object)this instanceof Minecraft minecraft) {
          ReloadTasks.tasksDropped(minecraft);
       }
    }

@@ -63,9 +63,8 @@ public final class BedrockDebugShapes {
       if (this.shapes.size() != 0 && this.minecraft.level != null) {
          this.lines = 0;
          Vec3 eye = this.minecraft.player == null ? Vec3.ZERO : this.minecraft.player.position();
-         TemporaryCollection ignored = this.minecraft.collectPerTickGizmos();
 
-         try {
+         try (TemporaryCollection ignored = this.minecraft.collectPerTickGizmos()) {
             for (DebugShape shape : this.shapes.live(System.currentTimeMillis(), dimension(this.minecraft.level.dimension()))) {
                try {
                   this.draw(shape, eye);
@@ -76,20 +75,6 @@ public final class BedrockDebugShapes {
                   break;
                }
             }
-         } catch (Throwable var8) {
-            if (ignored != null) {
-               try {
-                  ignored.close();
-               } catch (Throwable var6) {
-                  var8.addSuppressed(var6);
-               }
-            }
-
-            throw var8;
-         }
-
-         if (ignored != null) {
-            ignored.close();
          }
       }
    }
@@ -182,14 +167,13 @@ public final class BedrockDebugShapes {
       }
    }
 
-   @Nullable
-   private Vec3 anchor(DebugShape shape) {
+   private @Nullable Vec3 anchor(DebugShape shape) {
       if (shape.getAttachedToEntityId() == null) {
          return Vec3.ZERO;
-      } else {
-         Entity entity = this.entityByRuntimeId.apply(shape.getAttachedToEntityId());
-         return entity == null ? null : entity.position();
       }
+
+      Entity entity = this.entityByRuntimeId.apply(shape.getAttachedToEntityId());
+      return entity == null ? null : entity.position();
    }
 
    private static Vec3 vec(@Nullable Vector3f v) {
@@ -293,7 +277,7 @@ public final class BedrockDebugShapes {
       return this.minecraft.level == null ? List.of() : this.shapes.live(System.currentTimeMillis(), dimension(this.minecraft.level.dimension()));
    }
 
-   private static enum Axis {
+   private enum Axis {
       X,
       Y,
       Z;

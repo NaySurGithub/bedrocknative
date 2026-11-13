@@ -8,8 +8,7 @@ public final class OreKeys {
    private OreKeys() {
    }
 
-   @Nullable
-   public static OreKey of(KeyEvent event) {
+   public static @Nullable OreKey of(KeyEvent event) {
       if (event.isEscape()) {
          return OreKey.ESCAPE;
       } else if (event.isSelectAll()) {

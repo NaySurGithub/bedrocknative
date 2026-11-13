@@ -39,7 +39,7 @@ public final class ColumnDecoder {
    }
 
    public static ColumnDecoder.Decoded levelChunk(
-      ByteBuf payload, int subChunkCount, ColumnDecoder.Dimension dimension, boolean precompute, @Nullable ColumnDecoder.LayerSink ids
+      ByteBuf payload, int subChunkCount, ColumnDecoder.Dimension dimension, boolean precompute, ColumnDecoder.@Nullable LayerSink ids
    ) {
       BedrockChunkCodec.LevelChunkData data = BedrockChunkCodec.readLevelChunk(payload, subChunkCount, dimension.sectionCount());
       PalettedContainerFactory containers = dimension.containers();
@@ -95,7 +95,7 @@ public final class ColumnDecoder {
       Map<Long, List<PalettedContainer<Holder<Biome>>>> columnBiomes,
       boolean precompute,
       BiConsumer<String, RuntimeException> badData,
-      @Nullable ColumnDecoder.LayerSink ids
+      ColumnDecoder.@Nullable LayerSink ids
    ) {
       Vector3i center = packet.getCenterPosition();
       Map<Long, Map<Integer, LevelChunkSection>> byChunk = new LinkedHashMap<>();
@@ -129,8 +129,8 @@ public final class ColumnDecoder {
             if (data.isReadable()) {
                try {
                   blockEntities.computeIfAbsent(key, k -> new ArrayList<>()).addAll(BedrockChunkCodec.readBlockEntities(data));
-               } catch (RuntimeException var25) {
-                  badData.accept("sub-chunk block entities", var25);
+               } catch (RuntimeException e) {
+                  badData.accept("sub-chunk block entities", e);
                }
             }
          }
@@ -172,8 +172,7 @@ public final class ColumnDecoder {
       return keys;
    }
 
-   @Nullable
-   static LevelChunkSection[] fullColumn(ColumnDecoder.Dimension dimension, Map<Integer, LevelChunkSection> sections, boolean replaceAll) {
+   static LevelChunkSection @Nullable [] fullColumn(ColumnDecoder.Dimension dimension, Map<Integer, LevelChunkSection> sections, boolean replaceAll) {
       int count = dimension.sectionCount();
       LevelChunkSection[] full = new LevelChunkSection[count];
 
@@ -193,28 +192,27 @@ public final class ColumnDecoder {
       return full;
    }
 
-   @Nullable
-   public static long[][] heightmaps(ColumnDecoder.Dimension dimension, @Nullable LevelChunkSection[] sections) {
+   public static long @Nullable [][] heightmaps(ColumnDecoder.Dimension dimension, LevelChunkSection @Nullable [] sections) {
       if (sections == null) {
          return null;
-      } else {
-         ProtoChunk chunk = new ProtoChunk(ChunkPos.ZERO, UpgradeData.EMPTY, dimension.heights(), dimension.containers(), null);
-         LevelChunkSection[] target = chunk.getSections();
-         if (target.length != sections.length) {
-            return null;
-         } else {
-            System.arraycopy(sections, 0, target, 0, sections.length);
-            Heightmap.primeHeightmaps(chunk, BedrockChunkLoader.CLIENT_HEIGHTMAPS);
-            long[][] result = new long[BedrockChunkLoader.CLIENT_HEIGHTMAPS.size()][];
-            int i = 0;
-
-            for (Types type : BedrockChunkLoader.CLIENT_HEIGHTMAPS) {
-               result[i++] = (long[])chunk.getOrCreateHeightmapUnprimed(type).getRawData().clone();
-            }
-
-            return result;
-         }
       }
+
+      ProtoChunk chunk = new ProtoChunk(ChunkPos.ZERO, UpgradeData.EMPTY, dimension.heights(), dimension.containers(), null);
+      LevelChunkSection[] target = chunk.getSections();
+      if (target.length != sections.length) {
+         return null;
+      }
+
+      System.arraycopy(sections, 0, target, 0, sections.length);
+      Heightmap.primeHeightmaps(chunk, BedrockChunkLoader.CLIENT_HEIGHTMAPS);
+      long[][] result = new long[BedrockChunkLoader.CLIENT_HEIGHTMAPS.size()][];
+      int i = 0;
+
+      for (Types type : BedrockChunkLoader.CLIENT_HEIGHTMAPS) {
+         result[i++] = (long[])chunk.getOrCreateHeightmapUnprimed(type).getRawData().clone();
+      }
+
+      return result;
    }
 
    public static int[] blockEntityBlocks(Map<Integer, LevelChunkSection> sections, int sectionCount) {
@@ -254,8 +252,7 @@ public final class ColumnDecoder {
       return result;
    }
 
-   @Nullable
-   static PalettedContainer<Holder<Biome>> biome(@Nullable List<PalettedContainer<Holder<Biome>>> column, int index) {
+   static @Nullable PalettedContainer<Holder<Biome>> biome(@Nullable List<PalettedContainer<Holder<Biome>>> column, int index) {
       return column != null && index >= 0 && index < column.size() ? column.get(index).copy() : null;
    }
 
@@ -267,6 +264,6 @@ public final class ColumnDecoder {
 
    @FunctionalInterface
    public interface LayerSink {
-      void column(List<int[]> var1);
+      void column(List<int @Nullable []> var1);
    }
 }

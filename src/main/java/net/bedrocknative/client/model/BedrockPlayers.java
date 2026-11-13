@@ -33,10 +33,8 @@ public final class BedrockPlayers {
    private static final float HAND_Z = -3.0F;
    private static final FirstPersonRig RIG = new FirstPersonRig();
    private static volatile boolean enabled = !Boolean.getBoolean("bedrocknative.javaPlayers");
-   @Nullable
-   private static ModelRegistry decided;
-   @Nullable
-   private static VanillaMobs.Support support;
+   private static @Nullable ModelRegistry decided;
+   private static VanillaMobs.@Nullable Support support;
    private static boolean paperdoll;
    private static int submitted;
    private static int firstPersonSubmitted;
@@ -78,8 +76,8 @@ public final class BedrockPlayers {
       if (current == null || decided != registry) {
          try {
             current = SkinModel.support(registry);
-         } catch (RuntimeException var3) {
-            current = new VanillaMobs.Support("minecraft:player", false, List.of("unreadable definition: " + var3), List.of());
+         } catch (RuntimeException e) {
+            current = new VanillaMobs.Support("minecraft:player", false, List.of("unreadable definition: " + e), List.of());
          }
 
          support = current;
@@ -129,38 +127,38 @@ public final class BedrockPlayers {
       ActorSnapshot snapshot = (ActorSnapshot)state.getData(FRAME);
       if (snapshot == null) {
          return false;
-      } else {
-         boolean watched = state.id == scaleWatchId;
-         float base = watched ? yScale(poseStack.last().pose()) : 0.0F;
-         poseStack.pushPose();
-         float scale = snapshot.actorScale();
-         if (state.isCrouching) {
-            poseStack.translate(0.0F, scale * 2.0F / 16.0F, 0.0F);
-         }
-
-         rotations(state, poseStack, flipDegrees, snapshot.glide());
-         float model = scale / 16.0F;
-         poseStack.scale(snapshot.draw().scale(0) * model, snapshot.draw().scale(1) * model, snapshot.draw().scale(2) * model);
-         if (watched && base > 0.0F && snapshot.draw().scale(1) != 0.0F) {
-            watchedScale = yScale(poseStack.last().pose()) / base * 16.0F / snapshot.draw().scale(1);
-         }
-
-         snapshot.submit(
-            poseStack,
-            collector,
-            state.lightCoords,
-            LivingEntityRenderer.getOverlayCoords(state, 0.0F),
-            state.outlineColor,
-            !state.isInvisible,
-            0.0F,
-            state.hasRedOverlay
-         );
-         heldItem(snapshot, 0, state.rightHandItemState, state, poseStack, collector);
-         heldItem(snapshot, 1, state.leftHandItemState, state, poseStack, collector);
-         poseStack.popPose();
-         submitted++;
-         return true;
       }
+
+      boolean watched = state.id == scaleWatchId;
+      float base = watched ? yScale(poseStack.last().pose()) : 0.0F;
+      poseStack.pushPose();
+      float scale = snapshot.actorScale();
+      if (state.isCrouching) {
+         poseStack.translate(0.0F, scale * 2.0F / 16.0F, 0.0F);
+      }
+
+      rotations(state, poseStack, flipDegrees, snapshot.glide());
+      float model = scale / 16.0F;
+      poseStack.scale(snapshot.draw().scale(0) * model, snapshot.draw().scale(1) * model, snapshot.draw().scale(2) * model);
+      if (watched && base > 0.0F && snapshot.draw().scale(1) != 0.0F) {
+         watchedScale = yScale(poseStack.last().pose()) / base * 16.0F / snapshot.draw().scale(1);
+      }
+
+      snapshot.submit(
+         poseStack,
+         collector,
+         state.lightCoords,
+         LivingEntityRenderer.getOverlayCoords(state, 0.0F),
+         state.outlineColor,
+         !state.isInvisible,
+         0.0F,
+         state.hasRedOverlay
+      );
+      heldItem(snapshot, 0, state.rightHandItemState, state, poseStack, collector);
+      heldItem(snapshot, 1, state.leftHandItemState, state, poseStack, collector);
+      poseStack.popPose();
+      submitted++;
+      return true;
    }
 
    private static void rotations(AvatarRenderState state, PoseStack poseStack, float flipDegrees, float remoteGlide) {
@@ -230,14 +228,14 @@ public final class BedrockPlayers {
             right ? "rightArm" : "leftArm", right ? -5.0F : 5.0F, state.skin.model() == PlayerModelType.SLIM ? 2.5F : 2.0F, right ? 0.1F : -0.1F, ANCHOR
          )) {
             return false;
-         } else {
-            poseStack.pushPose();
-            poseStack.mulPose(ANCHOR);
-            snapshot.submitSubtree(poseStack, collector, light, right ? "rightArm" : "leftArm");
-            poseStack.popPose();
-            mapArmsSubmitted++;
-            return true;
          }
+
+         poseStack.pushPose();
+         poseStack.mulPose(ANCHOR);
+         snapshot.submitSubtree(poseStack, collector, light, right ? "rightArm" : "leftArm");
+         poseStack.popPose();
+         mapArmsSubmitted++;
+         return true;
       } else {
          return false;
       }
@@ -288,8 +286,7 @@ public final class BedrockPlayers {
       mapArmsSubmitted = 0;
    }
 
-   @Nullable
-   public static String describe(Player player) {
+   public static @Nullable String describe(Player player) {
       ActorState state = BedrockActors.state(player);
       PlayerRuntime runtime = state != null ? state.player() : null;
       SkinModel model = runtime != null ? runtime.boundModel() : null;
@@ -307,15 +304,13 @@ public final class BedrockPlayers {
             + (runtime.emoting() ? ", emoting" : "");
    }
 
-   @Nullable
-   public static SkinModel model(Player player) {
+   public static @Nullable SkinModel model(Player player) {
       ActorState state = BedrockActors.state(player);
       PlayerRuntime runtime = state != null ? state.player() : null;
       return runtime != null ? runtime.boundModel() : null;
    }
 
-   @Nullable
-   public static ActorSnapshot lastFrame(Player player) {
+   public static @Nullable ActorSnapshot lastFrame(Player player) {
       ActorState state = BedrockActors.state(player);
       PlayerRuntime runtime = state != null ? state.player() : null;
       return runtime != null ? runtime.lastSnapshot() : null;

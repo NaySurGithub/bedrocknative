@@ -22,6 +22,7 @@ public final class BaseNoticeScreen extends Screen {
       this.seen = seen;
    }
 
+   @Override
    protected void init() {
       int y = Math.min(this.height - 28, this.height / 2 + 70);
       this.addRenderableWidget(
@@ -38,10 +39,12 @@ public final class BaseNoticeScreen extends Screen {
       }
    }
 
+   @Override
    public void onClose() {
       this.dismiss();
    }
 
+   @Override
    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
       super.extractRenderState(graphics, mouseX, mouseY, a);
       int wrap = Math.max(1, Math.min(this.width - 40, 380));

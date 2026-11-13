@@ -50,8 +50,9 @@ public final class ModelFileCache {
          }
 
          if (kept != null) {
+            T value = (T)kept;
             return CompletableFuture.supplyAsync(() -> {
-               T own = copy.apply((T)kept);
+               T own = copy.apply(value);
                this.phases.accept(kind.shown + " reused");
                return own;
             }, executor);
@@ -85,14 +86,14 @@ public final class ModelFileCache {
       }
    }
 
-   public static enum Kind {
+   public enum Kind {
       BLOCK_MODELS("block models"),
       BLOCK_STATES("block states"),
       ITEMS("item definitions");
 
       private final String shown;
 
-      private Kind(String shown) {
+      Kind(String shown) {
          this.shown = shown;
       }
    }

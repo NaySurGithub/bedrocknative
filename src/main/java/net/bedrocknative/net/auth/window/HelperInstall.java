@@ -34,7 +34,7 @@ public final class HelperInstall {
       this.roots = List.copyOf(roots);
    }
 
-   public static HelperInstall standard(Function<String, String> environment, Path tempRoot) {
+   public static HelperInstall standard(Function<String, @Nullable String> environment, Path tempRoot) {
       List<Path> roots = new ArrayList<>();
       String local = environment.apply("LOCALAPPDATA");
       if (local != null && !local.isBlank()) {
@@ -52,67 +52,66 @@ public final class HelperInstall {
    public synchronized HelperInstall.Result install() {
       if (!this.built()) {
          return new HelperInstall.Result(null, "this build has no sign-in window (./gradlew buildWebViewHelper)");
-      } else {
-         for (String name : this.files.keySet()) {
-            if (!safeName(name)) {
-               return new HelperInstall.Result(null, "the helper's file list names an unusable path");
-            }
-         }
-
-         String version = this.version();
-         List<String> problems = new ArrayList<>();
-
-         for (Path root : this.roots) {
-            Path folder = root.resolve(version);
-            String problem = this.installInto(folder);
-            if (problem == null) {
-               removeOtherVersions(root, version);
-               return new HelperInstall.Result(folder.resolve("AuthWebView.exe"), null);
-            }
-
-            problems.add(problem);
-         }
-
-         return new HelperInstall.Result(null, String.join("; ", problems));
       }
+
+      for (String name : this.files.keySet()) {
+         if (!safeName(name)) {
+            return new HelperInstall.Result(null, "the helper's file list names an unusable path");
+         }
+      }
+
+      String version = this.version();
+      List<String> problems = new ArrayList<>();
+
+      for (Path root : this.roots) {
+         Path folder = root.resolve(version);
+         String problem = this.installInto(folder);
+         if (problem == null) {
+            removeOtherVersions(root, version);
+            return new HelperInstall.Result(folder.resolve("AuthWebView.exe"), null);
+         }
+
+         problems.add(problem);
+      }
+
+      return new HelperInstall.Result(null, String.join("; ", problems));
    }
 
-   @Nullable
-   private String installInto(Path folder) {
+   private @Nullable String installInto(Path folder) {
       int longest = this.files.keySet().stream().mapToInt(String::length).max().orElse(0);
       if (folder.toAbsolutePath().toString().length() + 1 + longest > 240) {
          return "the path of " + folder + " is too long for Windows";
-      } else {
-         try {
-            Files.createDirectories(folder);
+      }
 
-            for (Entry<String, String> file : this.files.entrySet()) {
-               Path target = folder.resolve(file.getKey());
+      try {
+         Files.createDirectories(folder);
+
+         for (Entry<String, String> file : this.files.entrySet()) {
+            Path target = folder.resolve(file.getKey());
+            if (!file.getValue().equals(hash(target))) {
+               byte[] bytes;
+               try (InputStream in = this.resources.open(file.getKey())) {
+                  if (in == null) {
+                     return "the jar lacks " + file.getKey();
+                  }
+
+                  bytes = in.readAllBytes();
+               }
+
+               if (!file.getValue().equals(sha256(bytes))) {
+                  return "the jar's " + file.getKey() + " is not the one built";
+               }
+
+               write(target, bytes);
                if (!file.getValue().equals(hash(target))) {
-                  byte[] bytes;
-                  try (InputStream in = this.resources.open(file.getKey())) {
-                     if (in == null) {
-                        return "the jar lacks " + file.getKey();
-                     }
-
-                     bytes = in.readAllBytes();
-                  }
-
-                  if (!file.getValue().equals(sha256(bytes))) {
-                     return "the jar's " + file.getKey() + " is not the one built";
-                  }
-
-                  write(target, bytes);
-                  if (!file.getValue().equals(hash(target))) {
-                     return "the copy of " + file.getKey() + " in " + folder + " is not the one built";
-                  }
+                  return "the copy of " + file.getKey() + " in " + folder + " is not the one built";
                }
             }
-
-            return null;
-         } catch (RuntimeException | IOException var12) {
-            return "can't write " + folder + " (" + var12.getClass().getSimpleName() + ")";
          }
+
+         return null;
+      } catch (IOException | RuntimeException e) {
+         return "can't write " + folder + " (" + e.getClass().getSimpleName() + ")";
       }
    }
 
@@ -125,7 +124,7 @@ public final class HelperInstall {
 
          try {
             Files.move(temporary, target, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-         } catch (AtomicMoveNotSupportedException var7) {
+         } catch (AtomicMoveNotSupportedException e) {
             Files.move(temporary, target, StandardCopyOption.REPLACE_EXISTING);
          }
       } finally {
@@ -140,7 +139,7 @@ public final class HelperInstall {
                SignInFolder.delete(other);
             }
          }
-      } catch (RuntimeException | IOException var7) {
+      } catch (IOException | RuntimeException var7) {
       }
    }
 
@@ -171,11 +170,10 @@ public final class HelperInstall {
       }
    }
 
-   @Nullable
-   private static String hash(Path file) {
+   private static @Nullable String hash(Path file) {
       try {
          return Files.isRegularFile(file, LinkOption.NOFOLLOW_LINKS) ? sha256(Files.readAllBytes(file)) : null;
-      } catch (RuntimeException | IOException var2) {
+      } catch (IOException | RuntimeException e) {
          return null;
       }
    }
@@ -183,15 +181,14 @@ public final class HelperInstall {
    static String sha256(byte[] bytes) {
       try {
          return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes));
-      } catch (NoSuchAlgorithmException var2) {
-         throw new IllegalStateException(var2);
+      } catch (NoSuchAlgorithmException e) {
+         throw new IllegalStateException(e);
       }
    }
 
    @FunctionalInterface
    interface Resources {
-      @Nullable
-      InputStream open(String var1) throws IOException;
+      @Nullable InputStream open(String var1) throws IOException;
    }
 
    public record Result(@Nullable Path exe, @Nullable String problem) {

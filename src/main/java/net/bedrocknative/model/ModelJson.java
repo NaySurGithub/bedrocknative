@@ -32,8 +32,7 @@ public final class ModelJson {
    private ModelJson() {
    }
 
-   @Nullable
-   public static JsonObject parse(byte[] data, String what) {
+   public static @Nullable JsonObject parse(byte[] data, String what) {
       String text = new String(data, StandardCharsets.UTF_8);
       if (text.startsWith("\ufeff")) {
          text = text.substring(1);
@@ -59,8 +58,8 @@ public final class ModelJson {
 
          reader.close();
          return var5;
-      } catch (Exception var8) {
-         BedrockNative.LOGGER.warn("Unreadable Bedrock JSON {}: {}", what, var8.getMessage());
+      } catch (Exception e) {
+         BedrockNative.LOGGER.warn("Unreadable Bedrock JSON {}: {}", what, e.getMessage());
          return null;
       }
    }
@@ -71,8 +70,8 @@ public final class ModelJson {
 
       try (Writer writer = new OutputStreamWriter(new DeflaterOutputStream(bytes, deflater), StandardCharsets.UTF_8)) {
          PACKER.toJson(json, writer);
-      } catch (IOException var13) {
-         throw new UncheckedIOException(var13);
+      } catch (IOException e) {
+         throw new UncheckedIOException(e);
       } finally {
          deflater.end();
       }
@@ -101,8 +100,8 @@ public final class ModelJson {
          }
 
          reader.close();
-      } catch (IOException var12) {
-         throw new UncheckedIOException(var12);
+      } catch (IOException e) {
+         throw new UncheckedIOException(e);
       } finally {
          inflater.end();
       }
@@ -110,18 +109,15 @@ public final class ModelJson {
       return var3;
    }
 
-   @Nullable
-   public static JsonObject object(@Nullable JsonObject parent, String key) {
+   public static @Nullable JsonObject object(@Nullable JsonObject parent, String key) {
       return parent != null && parent.get(key) instanceof JsonObject object ? object : null;
    }
 
-   @Nullable
-   public static JsonArray array(@Nullable JsonObject parent, String key) {
+   public static @Nullable JsonArray array(@Nullable JsonObject parent, String key) {
       return parent != null && parent.get(key) instanceof JsonArray array ? array : null;
    }
 
-   @Nullable
-   public static String string(@Nullable JsonObject parent, String key) {
+   public static @Nullable String string(@Nullable JsonObject parent, String key) {
       return parent != null && parent.get(key) instanceof JsonPrimitive primitive ? primitive.getAsString() : null;
    }
 
@@ -144,7 +140,7 @@ public final class ModelJson {
          if (primitive.isString()) {
             try {
                return Float.parseFloat(primitive.getAsString().trim());
-            } catch (NumberFormatException var4) {
+            } catch (NumberFormatException ignored) {
                return fallback;
             }
          }
@@ -187,8 +183,7 @@ public final class ModelJson {
       return parent != null ? vec(parent.get(key), fallback) : (float[])fallback.clone();
    }
 
-   @Nullable
-   public static float[] vecOrNull(@Nullable JsonObject parent, String key, int size) {
+   public static float @Nullable [] vecOrNull(@Nullable JsonObject parent, String key, int size) {
       return parent != null && parent.has(key) && !parent.get(key).isJsonNull() ? vec(parent.get(key), new float[size]) : null;
    }
 }

@@ -12,23 +12,18 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin({Minecraft.class})
+@Mixin(Minecraft.class)
 public abstract class MinecraftBridgingMixin {
    @Shadow
-   @Nullable
-   public HitResult hitResult;
+   public @Nullable HitResult hitResult;
    @Unique
-   @Nullable
-   private HitResult bedrocknative$crosshair;
+   private @Nullable HitResult bedrocknative$crosshair;
    @Unique
    private boolean bedrocknative$bridging;
 
-   @Inject(
-      method = {"startUseItem"},
-      at = {@At("HEAD")}
-   )
+   @Inject(method = "startUseItem", at = @At("HEAD"))
    private void bedrocknative$bridge(CallbackInfo ci) {
-      BlockHitResult target = BedrockBridging.target((Minecraft)this);
+      BlockHitResult target = BedrockBridging.target((Minecraft)(Object)this);
       if (target != null) {
          this.bedrocknative$crosshair = this.hitResult;
          this.bedrocknative$bridging = true;
@@ -36,10 +31,7 @@ public abstract class MinecraftBridgingMixin {
       }
    }
 
-   @Inject(
-      method = {"startUseItem"},
-      at = {@At("RETURN")}
-   )
+   @Inject(method = "startUseItem", at = @At("RETURN"))
    private void bedrocknative$restore(CallbackInfo ci) {
       if (this.bedrocknative$bridging) {
          this.bedrocknative$bridging = false;

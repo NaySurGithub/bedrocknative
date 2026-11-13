@@ -84,8 +84,7 @@ public final class SoundDefinitions {
       );
    }
 
-   @Nullable
-   private static SoundDefinitions.Variant variant(JsonElement element) {
+   private static SoundDefinitions.@Nullable Variant variant(JsonElement element) {
       if (element instanceof JsonPrimitive primitive && primitive.isString()) {
          return primitive.getAsString().isBlank() ? null : new SoundDefinitions.Variant(primitive.getAsString(), 1.0F, 1.0F, 1, false, true, true, false);
       } else if (element instanceof JsonObject object) {
@@ -111,8 +110,7 @@ public final class SoundDefinitions {
       return element != null && !element.isJsonNull() ? ModelJson.number(element, Float.NaN) : Float.NaN;
    }
 
-   @Nullable
-   public SoundDefinitions.Definition get(String name) {
+   public SoundDefinitions.@Nullable Definition get(String name) {
       SoundDefinitions.Definition definition = this.byName.get(name);
       return definition != null ? definition : this.byName.get(name.toLowerCase(Locale.ROOT));
    }
@@ -148,32 +146,31 @@ public final class SoundDefinitions {
       int pack,
       boolean serverPack
    ) {
-      @Nullable
-      public SoundDefinitions.Variant pick(RandomGenerator random) {
+      public SoundDefinitions.@Nullable Variant pick(RandomGenerator random) {
          if (this.variants.isEmpty()) {
             return null;
-         } else {
-            int total = 0;
+         }
 
-            for (SoundDefinitions.Variant variant : this.variants) {
-               total += variant.weight();
-            }
+         int total = 0;
 
-            if (total <= 0) {
-               return this.variants.get(random.nextInt(this.variants.size()));
-            } else {
-               int roll = random.nextInt(total);
+         for (SoundDefinitions.Variant variant : this.variants) {
+            total += variant.weight();
+         }
 
-               for (SoundDefinitions.Variant variant : this.variants) {
-                  roll -= variant.weight();
-                  if (roll < 0) {
-                     return variant;
-                  }
-               }
+         if (total <= 0) {
+            return this.variants.get(random.nextInt(this.variants.size()));
+         }
 
-               return this.variants.getLast();
+         int roll = random.nextInt(total);
+
+         for (SoundDefinitions.Variant variant : this.variants) {
+            roll -= variant.weight();
+            if (roll < 0) {
+               return variant;
             }
          }
+
+         return this.variants.getLast();
       }
    }
 

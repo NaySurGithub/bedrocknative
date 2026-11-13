@@ -13,8 +13,7 @@ final class DevCpuSampler {
    private final OperatingSystemMXBean os = ManagementFactory.getPlatformMXBean(OperatingSystemMXBean.class);
    private final int cores = Runtime.getRuntime().availableProcessors();
    private final long self = ProcessHandle.current().pid();
-   @Nullable
-   private final ProcessHandle server = ProcessHandle.allProcesses()
+   private final @Nullable ProcessHandle server = ProcessHandle.allProcesses()
       .filter(process -> process.info().command().map(command -> command.toLowerCase(Locale.ROOT).endsWith("bedrock_server.exe")).orElse(false))
       .findFirst()
       .orElse(null);
@@ -28,8 +27,7 @@ final class DevCpuSampler {
    private double systemMax;
    private double oursSum;
    private int samples;
-   @Nullable
-   private volatile Thread thread;
+   private volatile @Nullable Thread thread;
 
    DevCpuSampler() {
       this.os.getCpuLoad();
@@ -41,7 +39,7 @@ final class DevCpuSampler {
          while (this.thread == Thread.currentThread()) {
             try {
                Thread.sleep(500L);
-            } catch (InterruptedException var2) {
+            } catch (InterruptedException e) {
                return;
             }
 

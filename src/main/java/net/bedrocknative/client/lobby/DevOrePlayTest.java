@@ -62,9 +62,9 @@ public final class DevOrePlayTest {
       while ((instance = Minecraft.getInstance()) == null || instance.getWindow() == null) {
          try {
             Thread.sleep(200L);
-         } catch (InterruptedException var2) {
+         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new IllegalStateException(var2);
+            throw new IllegalStateException(e);
          }
       }
 
@@ -82,14 +82,14 @@ public final class DevOrePlayTest {
                byte[] datBefore = read(serversDat);
                byte[] oldBefore = read(serversOld);
                Window window = test.minecraft.getWindow();
-               int guiScale = onClient(test.minecraft, () -> (Integer)test.minecraft.options.guiScale().get());
+               int guiScale = onClient(test.minecraft, () -> test.minecraft.options.guiScale().get());
                int width = onClient(test.minecraft, window::getScreenWidth);
                int height = onClient(test.minecraft, window::getScreenHeight);
 
                try {
                   test.run(serversDat);
-               } catch (Throwable var13) {
-                  BedrockNative.LOGGER.error("Dev oreplay test: FAIL crashed", var13);
+               } catch (Throwable e) {
+                  BedrockNative.LOGGER.error("Dev oreplay test: FAIL crashed", e);
                   test.failed++;
                } finally {
                   sleep(1500L);
@@ -115,10 +115,6 @@ public final class DevOrePlayTest {
 
    private DevOrePlayTest.Reporter reporter() {
       return new DevOrePlayTest.Reporter() {
-         {
-            Objects.requireNonNull(DevOrePlayTest.this);
-         }
-
          @Override
          public void check(String what, boolean ok) {
             DevOrePlayTest.this.check(what, ok);
@@ -194,8 +190,7 @@ public final class DevOrePlayTest {
       sleep(400L);
    }
 
-   @Nullable
-   static OrePlayScreen open(Minecraft minecraft, int tab, DevOrePlayTest.Reporter reporter) {
+   static @Nullable OrePlayScreen open(Minecraft minecraft, int tab, DevOrePlayTest.Reporter reporter) {
       onClient(minecraft, () -> {
          BedrockLobby.lastTab(tab);
          minecraft.gui.setScreen(new JoinMultiplayerScreen(minecraft.gui.screen()));
@@ -424,8 +419,7 @@ public final class DevOrePlayTest {
       }
    }
 
-   @Nullable
-   private static OreServerFormScreen rename(
+   private static @Nullable OreServerFormScreen rename(
       Minecraft minecraft, OrePlayScreen play, OreServerFormScreen edit, int index, Path serversDat, DevOrePlayTest.Reporter reporter, String prefix
    ) {
       OrePlayUi ui = play.ui();
@@ -563,7 +557,7 @@ public final class DevOrePlayTest {
       BufferedImage shot;
       try {
          shot = Files.isRegularFile(file) ? ImageIO.read(file.toFile()) : null;
-      } catch (IOException var19) {
+      } catch (IOException e) {
          shot = null;
       }
 
@@ -599,8 +593,8 @@ public final class DevOrePlayTest {
 
          try {
             ImageIO.write(offline, "png", file.resolveSibling(picture + "-offline.png").toFile());
-         } catch (IOException var18) {
-            reporter.log("couldn't save the offline render: {}", var18.getMessage());
+         } catch (IOException e) {
+            reporter.log("couldn't save the offline render: {}", e.getMessage());
          }
       } else {
          reporter.check("the screenshot " + picture + " can be read for the comparison", false);
@@ -613,8 +607,7 @@ public final class DevOrePlayTest {
       reporter.check("tab " + tab + " opens on a click", onClient(minecraft, () -> play.ui().tab() == tab));
    }
 
-   @Nullable
-   static OreServerFormScreen openAdd(Minecraft minecraft, OrePlayScreen play, DevOrePlayTest.Reporter reporter) {
+   static @Nullable OreServerFormScreen openAdd(Minecraft minecraft, OrePlayScreen play, DevOrePlayTest.Reporter reporter) {
       if (play.ui().tab() != 2) {
          tab(minecraft, play, 2, reporter);
       }
@@ -715,32 +708,30 @@ public final class DevOrePlayTest {
       sleep(200L);
    }
 
-   @Nullable
-   static byte[] read(Path file) {
+   static byte @Nullable [] read(Path file) {
       try {
          return Files.isRegularFile(file) ? Files.readAllBytes(file) : null;
-      } catch (IOException var2) {
+      } catch (IOException e) {
          return null;
       }
    }
 
-   static void restore(Path file, @Nullable byte[] bytes) {
+   static void restore(Path file, byte @Nullable [] bytes) {
       try {
          if (bytes == null) {
             Files.deleteIfExists(file);
          } else {
             Files.write(file, bytes);
          }
-      } catch (IOException var3) {
-         BedrockNative.LOGGER.error("Dev oreplay test: FAIL couldn't put {} back", file, var3);
+      } catch (IOException e) {
+         BedrockNative.LOGGER.error("Dev oreplay test: FAIL couldn't put {} back", file, e);
       }
    }
 
-   @Nullable
-   static CompoundTag nbt(Path file) {
+   static @Nullable CompoundTag nbt(Path file) {
       try {
          return Files.isRegularFile(file) ? NbtIo.read(file) : null;
-      } catch (IOException var2) {
+      } catch (IOException e) {
          return null;
       }
    }
@@ -759,8 +750,7 @@ public final class DevOrePlayTest {
       return screen == null ? "nothing" : screen.getClass().getSimpleName();
    }
 
-   @Nullable
-   static Screen screen(Minecraft minecraft) {
+   static @Nullable Screen screen(Minecraft minecraft) {
       return onClient(minecraft, () -> minecraft.gui.screen());
    }
 
@@ -826,7 +816,7 @@ public final class DevOrePlayTest {
    static void sleep(long millis) {
       try {
          Thread.sleep(millis);
-      } catch (InterruptedException var3) {
+      } catch (InterruptedException e) {
          Thread.currentThread().interrupt();
       }
    }

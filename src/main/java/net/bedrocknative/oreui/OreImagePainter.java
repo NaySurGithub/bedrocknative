@@ -77,9 +77,8 @@ public final class OreImagePainter implements OrePainter {
       }
    }
 
-   @Nullable
    @Override
-   public int[] spriteSize(String sprite) {
+   public int @Nullable [] spriteSize(String sprite) {
       return this.install.sprite(sprite).map(found -> new int[]{found.width(), found.height()}).orElse(null);
    }
 
@@ -140,11 +139,11 @@ public final class OreImagePainter implements OrePainter {
 
          for (int y = Math.max(dy0, clip[1]); y < Math.min(dy1, clip[3]); y++) {
             int sy = (int)Math.floor(v + (y - dy0 + 0.5F) * vh / (dy1 - dy0));
-            sy = Math.clamp((long)sy, 0, source.getHeight() - 1);
+            sy = Math.clamp(sy, 0, source.getHeight() - 1);
 
             for (int x = Math.max(dx0, clip[0]); x < Math.min(dx1, clip[2]); x++) {
                int sx = (int)Math.floor(u + (x - dx0 + 0.5F) * uw / (dx1 - dx0));
-               sx = Math.clamp((long)sx, 0, source.getWidth() - 1);
+               sx = Math.clamp(sx, 0, source.getWidth() - 1);
                int texel = source.getRGB(sx, sy);
                if (mask) {
                   texel = texel & 0xFF000000 | 16777215;
@@ -214,7 +213,7 @@ public final class OreImagePainter implements OrePainter {
                   return painted.isPresent()
                      ? Optional.ofNullable(ImageIO.read(new ByteArrayInputStream(painted.get())))
                      : Optional.ofNullable(ImageIO.read(key.toFile()));
-               } catch (IOException var3) {
+               } catch (IOException e) {
                   return Optional.empty();
                }
             }

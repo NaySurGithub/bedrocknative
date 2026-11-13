@@ -65,27 +65,27 @@ final class RawFiles {
             run.bytes.addAndGet(data.length);
             run.answered();
             return;
-         } catch (RawFiles.Stop var8) {
-            run.stop(var8.getMessage());
+         } catch (RawFiles.Stop stop) {
+            run.stop(stop.getMessage());
             return;
-         } catch (BaseStore.Mismatch | RawFiles.Refused var9) {
-            last = var9.getMessage();
+         } catch (RawFiles.Refused | BaseStore.Mismatch refused) {
+            last = refused.getMessage();
             run.answered();
             break;
-         } catch (IOException var10) {
-            last = var10.getMessage() == null ? var10.getClass().getSimpleName() : var10.getMessage();
+         } catch (IOException e) {
+            last = e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage();
             run.noAnswer(last);
 
             try {
                Thread.sleep(attempt * 1000L);
-            } catch (InterruptedException var7) {
+            } catch (InterruptedException ex) {
                Thread.currentThread().interrupt();
                run.stop("interrupted");
                return;
             }
 
             attempt++;
-         } catch (InterruptedException var11) {
+         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             run.stop("interrupted");
             return;
@@ -102,15 +102,14 @@ final class RawFiles {
 
       try {
          this.hosts.check(uri);
-      } catch (IOException var14) {
-         throw new RawFiles.Stop(var14.getMessage());
+      } catch (IOException e) {
+         throw new RawFiles.Stop(e.getMessage());
       }
 
       HttpRequest request = HttpRequest.newBuilder(uri).timeout(REQUEST_TIMEOUT).header("Accept-Encoding", "gzip").GET().build();
       run.requests.incrementAndGet();
       HttpResponse<InputStream> response = this.client.send(request, BodyHandlers.ofInputStream());
 
-      byte[] var10;
       try (InputStream body = response.body()) {
          int status = response.statusCode();
          if (status == 429 || status == 403 && rateLimited(response)) {
@@ -127,35 +126,33 @@ final class RawFiles {
 
          boolean gzip = response.headers().firstValue("content-encoding").map(value -> value.trim().equalsIgnoreCase("gzip")).orElse(false);
 
-         try (InputStream in = (InputStream)(gzip ? new GZIPInputStream(body) : body)) {
-            var10 = readCapped(in, entry.size());
+         try (InputStream in = gzip ? new GZIPInputStream(body) : body) {
+            return readCapped(in, entry.size());
          }
       }
-
-      return var10;
    }
 
    static byte[] readCapped(InputStream in, long size) throws IOException {
       if (size > 67108864L) {
          throw new IOException("file too large");
+      }
+
+      byte[] data = new byte[(int)size];
+      int total = 0;
+
+      while (total < data.length) {
+         int read = in.read(data, total, data.length - total);
+         if (read < 0) {
+            throw new IOException("truncated: " + total + " of " + size + " bytes");
+         }
+
+         total += read;
+      }
+
+      if (in.read() >= 0) {
+         throw new IOException("longer than the table's " + size + " bytes");
       } else {
-         byte[] data = new byte[(int)size];
-         int total = 0;
-
-         while (total < data.length) {
-            int read = in.read(data, total, data.length - total);
-            if (read < 0) {
-               throw new IOException("truncated: " + total + " of " + size + " bytes");
-            }
-
-            total += read;
-         }
-
-         if (in.read() >= 0) {
-            throw new IOException("longer than the table's " + size + " bytes");
-         } else {
-            return data;
-         }
+         return data;
       }
    }
 

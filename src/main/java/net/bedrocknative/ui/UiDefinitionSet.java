@@ -115,8 +115,7 @@ public final class UiDefinitionSet {
       return this.namespaces.values().stream().mapToInt(Map::size).sum();
    }
 
-   @Nullable
-   public UiElementDef element(String reference, @Nullable String contextNamespace) {
+   public @Nullable UiElementDef element(String reference, @Nullable String contextNamespace) {
       String ref = reference.startsWith("@") ? reference.substring(1) : reference;
       int dot = ref.indexOf(46);
       if (dot > 0) {
@@ -151,13 +150,11 @@ public final class UiDefinitionSet {
       return cached;
    }
 
-   @Nullable
-   public UiTemplate template(UiElementDef def, Function<String, UiValue> scope) {
+   public @Nullable UiTemplate template(UiElementDef def, Function<String, @Nullable UiValue> scope) {
       return this.template(def, scope, 0, new LinkedHashSet<>());
    }
 
-   @Nullable
-   private UiTemplate template(UiElementDef def, Function<String, UiValue> scope, int depth, Set<UiElementDef> visiting) {
+   private @Nullable UiTemplate template(UiElementDef def, Function<String, @Nullable UiValue> scope, int depth, Set<UiElementDef> visiting) {
       String base = def.base;
       boolean dynamic = false;
       if (base != null && base.startsWith("$")) {
@@ -176,7 +173,9 @@ public final class UiDefinitionSet {
       UiTemplate cached = this.templates.get(key);
       if (cached != null) {
          return cached;
-      } else if (depth <= 64 && visiting.add(def)) {
+      }
+
+      if (depth <= 64 && visiting.add(def)) {
          try {
             BitSet contributing = (BitSet)def.packs.clone();
             boolean deeperDynamic = false;
@@ -298,8 +297,8 @@ public final class UiDefinitionSet {
                   } else {
                      try {
                         perPack.get(pack).add(new UiDefinitionSet.Loader.Layer(file, UiJson.parseObject(copy.data())));
-                     } catch (UiJson.Error var10) {
-                        this.problems.add("parse", copy.pack() + " " + file + ": " + var10.getMessage());
+                     } catch (UiJson.Error e) {
+                        this.problems.add("parse", copy.pack() + " " + file + ": " + e.getMessage());
                      }
                   }
                }
@@ -372,8 +371,8 @@ public final class UiDefinitionSet {
                      }
                   }
                }
-            } catch (UiJson.Error var10) {
-               this.problems.add("parse", copy.pack() + " ui/_ui_defs.json: " + var10.getMessage());
+            } catch (UiJson.Error e) {
+               this.problems.add("parse", copy.pack() + " ui/_ui_defs.json: " + e.getMessage());
             }
          }
 
@@ -390,8 +389,8 @@ public final class UiDefinitionSet {
                      globals.put(entry.getKey(), UiValue.of(entry.getValue()));
                   }
                }
-            } catch (UiJson.Error var6) {
-               this.problems.add("parse", copy.pack() + " ui/_global_variables.json: " + var6.getMessage());
+            } catch (UiJson.Error e) {
+               this.problems.add("parse", copy.pack() + " ui/_global_variables.json: " + e.getMessage());
             }
          }
 
@@ -476,14 +475,14 @@ public final class UiDefinitionSet {
             this.mergeInto(later.target, later.higher, later.where, false, true);
          }
 
-         for (Entry<String, JsonElement> entryx : pathKeys) {
-            if (!late.contains(entryx)) {
-               this.applyPathKey(table, namespace, entryx.getKey(), entryx.getValue().getAsJsonObject(), pack, file, false, true);
+         for (Entry<String, JsonElement> entry : pathKeys) {
+            if (!late.contains(entry)) {
+               this.applyPathKey(table, namespace, entry.getKey(), entry.getValue().getAsJsonObject(), pack, file, false, true);
             }
          }
 
-         for (Entry<String, JsonElement> entryxx : late) {
-            this.applyPathKey(table, namespace, entryxx.getKey(), entryxx.getValue().getAsJsonObject(), pack, file, true, true);
+         for (Entry<String, JsonElement> entry : late) {
+            this.applyPathKey(table, namespace, entry.getKey(), entry.getValue().getAsJsonObject(), pack, file, true, true);
          }
       }
 

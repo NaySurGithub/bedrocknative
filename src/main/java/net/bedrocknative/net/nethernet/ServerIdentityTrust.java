@@ -21,8 +21,7 @@ public final class ServerIdentityTrust implements TokenTrust {
    private final boolean https;
    private final String target;
    private final Clock clock;
-   @Nullable
-   private volatile ServerIdentityTrust.Verified verified;
+   private volatile ServerIdentityTrust.@Nullable Verified verified;
 
    public ServerIdentityTrust(NetherNetTrustStore store, boolean https, String target) {
       this(store, https, target, Clock.systemUTC());
@@ -42,22 +41,22 @@ public final class ServerIdentityTrust implements TokenTrust {
          jws.setCompactSerialization(identity.assertion().token());
          if (!"ES384".equals(jws.getAlgorithmHeaderValue())) {
             throw new JoseException("The server's token is not signed with ES384");
-         } else {
-            JwtClaims claims = JwtClaims.parse(jws.getUnverifiedPayload());
-            ECPublicKey key = CpkKeys.parse(claims.getClaimValue("cpk"));
-            jws.setKey(key);
-            jws.setAlgorithmConstraints(new AlgorithmConstraints(ConstraintType.PERMIT, "ES384"));
-            if (!jws.verifySignature()) {
-               throw new JoseException("The server's token is not signed by the key it names");
-            } else {
-               this.checkExpiry(claims);
-               claims.setClaim("cpk", IdentityUtils.encodePublicKey(key));
-               String digest = CpkKeys.digest(key);
-               String domain = identity.idp() != null && identity.idp().domain() != null ? identity.idp().domain() : "";
-               this.verified = new ServerIdentityTrust.Verified(key, digest, domain, issuer(claims), this.store.known(digest));
-               return claims;
-            }
          }
+
+         JwtClaims claims = JwtClaims.parse(jws.getUnverifiedPayload());
+         ECPublicKey key = CpkKeys.parse(claims.getClaimValue("cpk"));
+         jws.setKey(key);
+         jws.setAlgorithmConstraints(new AlgorithmConstraints(ConstraintType.PERMIT, "ES384"));
+         if (!jws.verifySignature()) {
+            throw new JoseException("The server's token is not signed by the key it names");
+         }
+
+         this.checkExpiry(claims);
+         claims.setClaim("cpk", IdentityUtils.encodePublicKey(key));
+         String digest = CpkKeys.digest(key);
+         String domain = identity.idp() != null && identity.idp().domain() != null ? identity.idp().domain() : "";
+         this.verified = new ServerIdentityTrust.Verified(key, digest, domain, issuer(claims), this.store.known(digest));
+         return claims;
       } else {
          throw new JoseException("The server's identity has no token");
       }
@@ -67,8 +66,8 @@ public final class ServerIdentityTrust implements TokenTrust {
       NumericDate expiry;
       try {
          expiry = claims.getExpirationTime();
-      } catch (MalformedClaimException var4) {
-         throw new JoseException("The server's token has a bad expiry", var4);
+      } catch (MalformedClaimException e) {
+         throw new JoseException("The server's token has a bad expiry", e);
       }
 
       if (expiry != null && expiry.getValue() < this.clock.instant().minus(CLEARLY_EXPIRED).getEpochSecond()) {
@@ -76,11 +75,10 @@ public final class ServerIdentityTrust implements TokenTrust {
       }
    }
 
-   @Nullable
-   private static String issuer(JwtClaims claims) {
+   private static @Nullable String issuer(JwtClaims claims) {
       try {
          return claims.getIssuer();
-      } catch (MalformedClaimException var2) {
+      } catch (MalformedClaimException e) {
          return null;
       }
    }
@@ -91,18 +89,20 @@ public final class ServerIdentityTrust implements TokenTrust {
       ServerIdentityTrust.Verified server = this.verified;
       if (server == null) {
          throw new JoseException("The server's identity was not checked");
-      } else if (!this.https && !server.known()) {
+      }
+
+      if (!this.https && !server.known()) {
          String before = this.store.trustedAt(this.target);
          throw new UntrustedServerException(
             server.digest(), this.target, server.domain(), server.issuer(), this.store, before != null && !before.equals(server.digest()) ? before : null
          );
-      } else {
-         if (server.known()) {
-            this.store.joined(server.digest(), this.target);
-         }
-
-         return server;
       }
+
+      if (server.known()) {
+         this.store.joined(server.digest(), this.target);
+      }
+
+      return server;
    }
 
    public record Verified(ECPublicKey key, String digest, String domain, @Nullable String issuer, boolean known) {

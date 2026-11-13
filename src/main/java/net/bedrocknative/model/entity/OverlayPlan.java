@@ -25,8 +25,7 @@ public record OverlayPlan(ClientEntityDef definition, Set<String> controllers, b
    private static final Pattern SHORT_TEMP = Pattern.compile("(?<![a-z0-9_.])t\\.");
    private static final int MAX_NESTING = 8;
 
-   @Nullable
-   public static OverlayPlan of(ModelRegistry registry, String identifier) {
+   public static @Nullable OverlayPlan of(ModelRegistry registry, String identifier) {
       ClientEntityDef winning = registry.entity(identifier);
       ClientEntityDef base = registry.baseEntity(identifier);
       if (winning != null && base != null && winning.serverPack()) {
@@ -61,8 +60,7 @@ public record OverlayPlan(ClientEntityDef definition, Set<String> controllers, b
       }
    }
 
-   @Nullable
-   public static OverlayPlan.Replacement replacement(ModelRegistry registry, String identifier) {
+   public static OverlayPlan.@Nullable Replacement replacement(ModelRegistry registry, String identifier) {
       ClientEntityDef winning = registry.entity(identifier);
       ClientEntityDef base = registry.baseEntity(identifier);
       return winning != null && base != null && winning.serverPack() ? replacement(registry, base, winning, added(base, winning)) : null;
@@ -80,39 +78,38 @@ public record OverlayPlan(ClientEntityDef definition, Set<String> controllers, b
       return added;
    }
 
-   @Nullable
-   private static OverlayPlan.Replacement replacement(
+   private static OverlayPlan.@Nullable Replacement replacement(
       ModelRegistry registry, ClientEntityDef base, ClientEntityDef winning, List<ClientEntityDef.RenderControllerRef> added
    ) {
       if (added.isEmpty()) {
          return null;
-      } else {
-         for (ClientEntityDef.RenderControllerRef reference : base.renderControllers()) {
-            ClientEntityDef.RenderControllerRef kept = find(winning, reference.name());
-            if (kept == null || !condition(kept.condition()).equals(condition(reference.condition()))) {
-               RenderControllerDef replaced = registry.renderController(reference.name());
-               if (replaced != null) {
-                  Set<String> slots = new HashSet<>();
-                  Set<String> bones = new HashSet<>();
-                  drawn(registry, base, replaced, slots, bones);
+      }
 
-                  for (ClientEntityDef.RenderControllerRef candidate : added) {
-                     RenderControllerDef controller = registry.renderController(candidate.name());
-                     if (controller != null) {
-                        Set<String> candidateSlots = new HashSet<>();
-                        Set<String> candidateBones = new HashSet<>();
-                        drawn(registry, winning, controller, candidateSlots, candidateBones);
-                        if (sameModel(slots, bones, candidateSlots, candidateBones)) {
-                           return new OverlayPlan.Replacement(reference.name(), candidate.name());
-                        }
+      for (ClientEntityDef.RenderControllerRef reference : base.renderControllers()) {
+         ClientEntityDef.RenderControllerRef kept = find(winning, reference.name());
+         if (kept == null || !condition(kept.condition()).equals(condition(reference.condition()))) {
+            RenderControllerDef replaced = registry.renderController(reference.name());
+            if (replaced != null) {
+               Set<String> slots = new HashSet<>();
+               Set<String> bones = new HashSet<>();
+               drawn(registry, base, replaced, slots, bones);
+
+               for (ClientEntityDef.RenderControllerRef candidate : added) {
+                  RenderControllerDef controller = registry.renderController(candidate.name());
+                  if (controller != null) {
+                     Set<String> candidateSlots = new HashSet<>();
+                     Set<String> candidateBones = new HashSet<>();
+                     drawn(registry, winning, controller, candidateSlots, candidateBones);
+                     if (sameModel(slots, bones, candidateSlots, candidateBones)) {
+                        return new OverlayPlan.Replacement(reference.name(), candidate.name());
                      }
                   }
                }
             }
          }
-
-         return null;
       }
+
+      return null;
    }
 
    private static boolean sameModel(Set<String> slots, Set<String> bones, Set<String> otherSlots, Set<String> otherBones) {
@@ -133,8 +130,7 @@ public record OverlayPlan(ClientEntityDef definition, Set<String> controllers, b
       return !bones.isEmpty() && shared * 2 >= bones.size();
    }
 
-   @Nullable
-   private static ClientEntityDef.RenderControllerRef find(ClientEntityDef definition, String name) {
+   private static ClientEntityDef.@Nullable RenderControllerRef find(ClientEntityDef definition, String name) {
       for (ClientEntityDef.RenderControllerRef reference : definition.renderControllers()) {
          if (reference.name().equalsIgnoreCase(name)) {
             return reference;
@@ -147,19 +143,19 @@ public record OverlayPlan(ClientEntityDef definition, Set<String> controllers, b
    private static String condition(@Nullable MolangProgram program) {
       if (program == null) {
          return "1";
-      } else {
-         String text = WHITESPACE.matcher(program.source()).replaceAll("").toLowerCase(Locale.ROOT);
-
-         while (text.endsWith(";")) {
-            text = text.substring(0, text.length() - 1);
-         }
-
-         text = SHORT_QUERY.matcher(text).replaceAll("query.");
-         text = SHORT_VARIABLE.matcher(text).replaceAll("variable.");
-         text = SHORT_CONTEXT.matcher(text).replaceAll("context.");
-         text = SHORT_TEMP.matcher(text).replaceAll("temp.");
-         return !text.isEmpty() && !text.equals("1.0") && !text.equals("true") ? text : "1";
       }
+
+      String text = WHITESPACE.matcher(program.source()).replaceAll("").toLowerCase(Locale.ROOT);
+
+      while (text.endsWith(";")) {
+         text = text.substring(0, text.length() - 1);
+      }
+
+      text = SHORT_QUERY.matcher(text).replaceAll("query.");
+      text = SHORT_VARIABLE.matcher(text).replaceAll("variable.");
+      text = SHORT_CONTEXT.matcher(text).replaceAll("context.");
+      text = SHORT_TEMP.matcher(text).replaceAll("temp.");
+      return !text.isEmpty() && !text.equals("1.0") && !text.equals("true") ? text : "1";
    }
 
    public boolean draws(String controller) {

@@ -33,14 +33,14 @@ public final class LoadQueue {
    public boolean offer(String key, Runnable task) {
       if (!this.loading) {
          return false;
-      } else {
-         if (this.waiting.size() >= this.capacity) {
-            this.waiting.pollFirst();
-         }
-
-         this.waiting.addLast(new LoadQueue.Entry(key, task));
-         return true;
       }
+
+      if (this.waiting.size() >= this.capacity) {
+         this.waiting.pollFirst();
+      }
+
+      this.waiting.addLast(new LoadQueue.Entry(key, task));
+      return true;
    }
 
    public void remove(String key) {
@@ -59,8 +59,8 @@ public final class LoadQueue {
       for (LoadQueue.Entry entry : tasks) {
          try {
             entry.task().run();
-         } catch (RuntimeException var6) {
-            onError.accept(var6);
+         } catch (RuntimeException e) {
+            onError.accept(e);
          }
       }
    }

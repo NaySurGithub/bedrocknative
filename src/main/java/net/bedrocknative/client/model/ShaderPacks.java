@@ -30,7 +30,7 @@ final class ShaderPacks {
       Class<?> apiClass;
       try {
          apiClass = Class.forName(api, true, ShaderPacks.class.getClassLoader());
-      } catch (LinkageError | ClassNotFoundException var12) {
+      } catch (ClassNotFoundException | LinkageError absent) {
          return false;
       }
 
@@ -45,11 +45,11 @@ final class ShaderPacks {
          BedrockNative.LOGGER
             .info("Shader packs: {} drawn with Iris's {} program ({} in the shadow pass)", new Object[]{pipeline.getLocation(), programName, shadowName});
          return true;
-      } catch (RuntimeException | LinkageError | ReflectiveOperationException var13) {
+      } catch (ReflectiveOperationException | RuntimeException | LinkageError failed) {
          if (!warned) {
             warned = true;
             BedrockNative.LOGGER
-               .warn("Shader packs: Iris's pipeline API refused {} ({}); it draws unshaded under a shader pack", pipeline.getLocation(), var13.toString());
+               .warn("Shader packs: Iris's pipeline API refused {} ({}); it draws unshaded under a shader pack", pipeline.getLocation(), failed.toString());
          }
 
          return false;

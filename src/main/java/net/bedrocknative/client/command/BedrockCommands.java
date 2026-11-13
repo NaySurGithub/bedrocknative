@@ -9,7 +9,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.Map.Entry;
 import net.bedrocknative.BedrockNative;
@@ -35,8 +34,7 @@ import org.cloudburstmc.protocol.bedrock.packet.UpdateSoftEnumPacket;
 import org.jspecify.annotations.Nullable;
 
 public final class BedrockCommands implements CommandValues {
-   @Nullable
-   private static volatile BedrockCommands active;
+   private static volatile @Nullable BedrockCommands active;
    private final Minecraft minecraft;
    private List<CommandData> commands = List.of();
    private final Map<String, String> descriptions = new HashMap<>();
@@ -52,8 +50,7 @@ public final class BedrockCommands implements CommandValues {
       this.minecraft = minecraft;
    }
 
-   @Nullable
-   public static BedrockCommands active() {
+   public static @Nullable BedrockCommands active() {
       return active;
    }
 
@@ -78,12 +75,11 @@ public final class BedrockCommands implements CommandValues {
    }
 
    public void apply(BedrockPacket packet) {
-      Objects.requireNonNull(packet);
       BedrockPacket var2 = packet;
       byte var3 = 0;
 
       while (true) {
-         switch (SwitchBootstraps.typeSwitch<"typeSwitch",AvailableCommandsPacket,UpdateSoftEnumPacket,SetCommandsEnabledPacket,SimpleEventPacket>(var2, var3)) {
+         switch (net.bedrocknative.TypeSwitchHelper.index(new Class<?>[]{AvailableCommandsPacket.class, UpdateSoftEnumPacket.class, SetCommandsEnabledPacket.class, SimpleEventPacket.class}, var2, var3)) {
             case 0:
                AvailableCommandsPacket available = (AvailableCommandsPacket)var2;
                this.commands = List.copyOf(available.getCommands());
@@ -160,18 +156,17 @@ public final class BedrockCommands implements CommandValues {
       }
    }
 
-   @Nullable
-   public String description(String name) {
+   public @Nullable String description(String name) {
       if (name == null) {
          return null;
-      } else {
-         String key = name.toLowerCase(Locale.ROOT);
-         if (key.startsWith("/")) {
-            key = key.substring(1);
-         }
-
-         return this.descriptions.get(key);
       }
+
+      String key = name.toLowerCase(Locale.ROOT);
+      if (key.startsWith("/")) {
+         key = key.substring(1);
+      }
+
+      return this.descriptions.get(key);
    }
 
    private void collectEnums() {
@@ -219,17 +214,17 @@ public final class BedrockCommands implements CommandValues {
       List<CommandTree.Usage> lines = this.usage.get(node);
       if (lines == null) {
          return List.of();
-      } else {
-         String name = typed.toLowerCase(Locale.ROOT);
-         return lines.stream().map(line -> line.line(name)).distinct().sorted().toList();
       }
+
+      String name = typed.toLowerCase(Locale.ROOT);
+      return lines.stream().map(line -> line.line(name)).distinct().sorted().toList();
    }
 
    @Override
    public Collection<String> values(CommandEnumData data) {
-      return (Collection<String>)(data.isSoft()
+      return data.isSoft()
          ? this.softEnums.getOrDefault(data.getName(), data.getValues().keySet())
-         : data.getValues().entrySet().stream().filter(value -> this.allowed(value.getValue())).map(Entry::getKey).toList());
+         : data.getValues().entrySet().stream().filter(value -> this.allowed(value.getValue())).map(Entry::getKey).toList();
    }
 
    @Override
@@ -244,10 +239,10 @@ public final class BedrockCommands implements CommandValues {
       Collection<String> soft = this.softEnums.get(enumName);
       if (soft != null) {
          return soft;
-      } else {
-         CommandEnumData data = this.namedEnums.get(enumName);
-         return (Collection<String>)(data != null ? this.values(data) : List.of());
       }
+
+      CommandEnumData data = this.namedEnums.get(enumName);
+      return data != null ? this.values(data) : List.of();
    }
 
    private static Map<String, Set<CommandEnumConstraint>> lowerCase(CommandEnumData data) {

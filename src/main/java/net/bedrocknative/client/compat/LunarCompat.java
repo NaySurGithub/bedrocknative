@@ -40,7 +40,7 @@ public final class LunarCompat {
    private static boolean modLoaded(String id) {
       try {
          return FabricLoader.getInstance().isModLoaded(id);
-      } catch (LinkageError | RuntimeException var2) {
+      } catch (RuntimeException | LinkageError e) {
          return false;
       }
    }
@@ -49,7 +49,7 @@ public final class LunarCompat {
       try {
          Class.forName(name, false, LunarCompat.class.getClassLoader());
          return true;
-      } catch (LinkageError | ClassNotFoundException var2) {
+      } catch (ClassNotFoundException | LinkageError e) {
          return false;
       }
    }

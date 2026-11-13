@@ -48,7 +48,7 @@ public final class ActorPropertyTypes {
       return value instanceof Number number ? number.floatValue() : 0.0F;
    }
 
-   public static enum Kind {
+   public enum Kind {
       INT,
       FLOAT,
       BOOL,
@@ -133,8 +133,7 @@ public final class ActorPropertyTypes {
          return this.overrides.size();
       }
 
-      @Nullable
-      public Object get(String name) {
+      public @Nullable Object get(String name) {
          List<ActorPropertyTypes.Property> properties = this.types.properties(this.type);
 
          for (int i = 0; i < properties.size(); i++) {

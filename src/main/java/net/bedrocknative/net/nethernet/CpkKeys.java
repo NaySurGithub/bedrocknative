@@ -26,8 +26,8 @@ public final class CpkKeys {
             }
 
             key = ec.getECPublicKey();
-         } catch (RuntimeException | JoseException var7) {
-            throw new GeneralSecurityException("cpk is not a readable JSON Web Key", var7);
+         } catch (JoseException | RuntimeException e) {
+            throw new GeneralSecurityException("cpk is not a readable JSON Web Key", e);
          }
       } else {
          if (!(claim instanceof String base64)) {
@@ -36,8 +36,8 @@ public final class CpkKeys {
 
          try {
             key = KeyFactory.getInstance("EC").generatePublic(new X509EncodedKeySpec(Base64.getDecoder().decode(base64.trim())));
-         } catch (IllegalArgumentException var6) {
-            throw new GeneralSecurityException("cpk is not base64", var6);
+         } catch (IllegalArgumentException e) {
+            throw new GeneralSecurityException("cpk is not base64", e);
          }
       }
 
@@ -51,8 +51,8 @@ public final class CpkKeys {
    public static String digest(PublicKey key) {
       try {
          return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(key.getEncoded()));
-      } catch (GeneralSecurityException var2) {
-         throw new IllegalStateException(var2);
+      } catch (GeneralSecurityException e) {
+         throw new IllegalStateException(e);
       }
    }
 }

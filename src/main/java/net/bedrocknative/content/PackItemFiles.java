@@ -47,7 +47,7 @@ public final class PackItemFiles {
          List<String> paths;
          try {
             paths = pack.list("items");
-         } catch (RuntimeException var14) {
+         } catch (RuntimeException e) {
             unreadable++;
             continue;
          }
@@ -69,7 +69,7 @@ public final class PackItemFiles {
                         }
                      }
                   }
-               } catch (RuntimeException | IOException var13) {
+               } catch (IOException | RuntimeException e) {
                   unreadable++;
                }
             }
@@ -81,14 +81,12 @@ public final class PackItemFiles {
       return new PackItemFiles(Map.copyOf(found), files, unreadable);
    }
 
-   @Nullable
-   public PackItemFiles.Icon icon(String identifier) {
+   public PackItemFiles.@Nullable Icon icon(String identifier) {
       PackItemFiles.ItemFile file = this.item(identifier);
       return file == null ? null : file.icon();
    }
 
-   @Nullable
-   public PackItemFiles.ItemFile item(String identifier) {
+   public PackItemFiles.@Nullable ItemFile item(String identifier) {
       return this.byIdentifier.get(identifier.toLowerCase(Locale.ROOT));
    }
 
@@ -108,8 +106,7 @@ public final class PackItemFiles {
       return this.unreadable;
    }
 
-   @Nullable
-   private static PackItemFiles.Definition definition(JsonObject root) {
+   private static PackItemFiles.@Nullable Definition definition(JsonObject root) {
       JsonObject item = object(root, "minecraft:item");
       String identifier = string(object(item, "description"), "identifier");
       JsonObject components = object(item, "components");
@@ -127,55 +124,50 @@ public final class PackItemFiles {
       }
    }
 
-   @Nullable
-   private static PackItemFiles.Icon icon(@Nullable JsonElement icon) {
+   private static PackItemFiles.@Nullable Icon icon(@Nullable JsonElement icon) {
       if (icon == null) {
          return null;
-      } else {
-         int frame = 0;
-         String name;
-         if (icon instanceof JsonObject map) {
-            JsonElement textures = map.get("textures");
-            name = textures instanceof JsonObject byKind ? text(byKind.get("default")) : text(textures);
-            if (name == null) {
-               name = text(map.get("texture"));
-            }
+      }
 
-            if (map.get("frame") instanceof JsonPrimitive number && number.isNumber()) {
-               frame = (int)Math.min(Math.max(number.getAsDouble(), 0.0), 2.147483647E9);
-            }
-         } else {
-            name = text(icon);
+      int frame = 0;
+      String name;
+      if (icon instanceof JsonObject map) {
+         JsonElement textures = map.get("textures");
+         name = textures instanceof JsonObject byKind ? text(byKind.get("default")) : text(textures);
+         if (name == null) {
+            name = text(map.get("texture"));
          }
 
-         return name == null ? null : new PackItemFiles.Icon(name, frame);
+         if (map.get("frame") instanceof JsonPrimitive number && number.isNumber()) {
+            frame = (int)Math.min(Math.max(number.getAsDouble(), 0.0), 2.147483647E9);
+         }
+      } else {
+         name = text(icon);
       }
+
+      return name == null ? null : new PackItemFiles.Icon(name, frame);
    }
 
-   @Nullable
-   private static Boolean handEquipped(JsonObject components) {
+   private static @Nullable Boolean handEquipped(JsonObject components) {
       Boolean flag = bool(value(components.get("minecraft:hand_equipped")));
       if (flag != null) {
          return flag;
-      } else {
-         String offsets = text(components.get("minecraft:render_offsets"));
-         return offsets != null && offsets.equalsIgnoreCase("tools") ? Boolean.TRUE : null;
       }
+
+      String offsets = text(components.get("minecraft:render_offsets"));
+      return offsets != null && offsets.equalsIgnoreCase("tools") ? Boolean.TRUE : null;
    }
 
-   @Nullable
-   private static Boolean glint(JsonObject components) {
+   private static @Nullable Boolean glint(JsonObject components) {
       Boolean glint = bool(value(components.get("minecraft:glint")));
       return glint != null ? glint : bool(value(components.get("minecraft:foil")));
    }
 
-   @Nullable
-   private static JsonElement value(@Nullable JsonElement element) {
+   private static @Nullable JsonElement value(@Nullable JsonElement element) {
       return element instanceof JsonObject object ? object.get("value") : element;
    }
 
-   @Nullable
-   private static Boolean bool(@Nullable JsonElement element) {
+   private static @Nullable Boolean bool(@Nullable JsonElement element) {
       if (element instanceof JsonPrimitive primitive) {
          if (primitive.isBoolean()) {
             return primitive.getAsBoolean();
@@ -189,8 +181,7 @@ public final class PackItemFiles {
       return null;
    }
 
-   @Nullable
-   private static Integer integer(@Nullable JsonElement element) {
+   private static @Nullable Integer integer(@Nullable JsonElement element) {
       if (element instanceof JsonPrimitive primitive && primitive.isNumber()) {
          double number = primitive.getAsDouble();
          return number >= 1.0 && number <= 2.147483647E9 ? (int)number : null;
@@ -199,21 +190,18 @@ public final class PackItemFiles {
       }
    }
 
-   @Nullable
-   static Entry<String, PackItemFiles.Icon> parseFile(byte[] data) {
+   static @Nullable Entry<String, PackItemFiles.Icon> parseFile(byte[] data) {
       Entry<String, PackItemFiles.ItemFile> item = parseItem(data);
       return item != null && item.getValue().icon() != null ? Map.entry(item.getKey(), item.getValue().icon()) : null;
    }
 
-   @Nullable
-   static Entry<String, PackItemFiles.ItemFile> parseItem(byte[] data) {
+   static @Nullable Entry<String, PackItemFiles.ItemFile> parseItem(byte[] data) {
       JsonObject root = data.length > 262144 ? null : parseJson(data);
       PackItemFiles.Definition definition = root == null ? null : definition(root);
       return definition == null ? null : Map.entry(definition.identifier(), definition.file());
    }
 
-   @Nullable
-   private static JsonObject parseJson(byte[] data) {
+   private static @Nullable JsonObject parseJson(byte[] data) {
       String text = new String(data, StandardCharsets.UTF_8);
       if (!text.isEmpty() && text.charAt(0) == '\ufeff') {
          text = text.substring(1);
@@ -238,23 +226,20 @@ public final class PackItemFiles {
 
          reader.close();
          return var8;
-      } catch (RuntimeException | IOException var7) {
+      } catch (IOException | RuntimeException e) {
          return null;
       }
    }
 
-   @Nullable
-   private static JsonObject object(@Nullable JsonObject parent, String key) {
+   private static @Nullable JsonObject object(@Nullable JsonObject parent, String key) {
       return parent != null && parent.get(key) instanceof JsonObject child ? child : null;
    }
 
-   @Nullable
-   private static String string(@Nullable JsonObject parent, String key) {
+   private static @Nullable String string(@Nullable JsonObject parent, String key) {
       return parent == null ? null : text(parent.get(key));
    }
 
-   @Nullable
-   private static String text(@Nullable JsonElement element) {
+   private static @Nullable String text(@Nullable JsonElement element) {
       if (element instanceof JsonPrimitive primitive && primitive.isString() && !primitive.getAsString().isBlank()) {
          return primitive.getAsString().trim();
       } else {
@@ -269,7 +254,7 @@ public final class PackItemFiles {
    }
 
    public record ItemFile(
-      @Nullable PackItemFiles.Icon icon,
+      PackItemFiles.@Nullable Icon icon,
       @Nullable String hoverTextColor,
       @Nullable Boolean handEquipped,
       @Nullable Integer maxStackSize,

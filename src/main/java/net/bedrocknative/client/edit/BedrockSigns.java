@@ -47,8 +47,7 @@ public final class BedrockSigns {
       return sent;
    }
 
-   @Nullable
-   public static NbtMap last(ClientLevel level, BlockPos pos) {
+   public static @Nullable NbtMap last(ClientLevel level, BlockPos pos) {
       return level.getBlockEntity(pos) instanceof SignBlockEntity sign ? LAST.get(sign) : null;
    }
 

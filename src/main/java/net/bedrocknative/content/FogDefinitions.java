@@ -34,8 +34,8 @@ public final class FogDefinitions {
                   }
                }
             }
-         } catch (IOException var8) {
-            BedrockNative.LOGGER.warn("Couldn't read the fogs of {}", pack, var8);
+         } catch (IOException e) {
+            BedrockNative.LOGGER.warn("Couldn't read the fogs of {}", pack, e);
          }
       }
 
@@ -46,8 +46,7 @@ public final class FogDefinitions {
       return new FogDefinitions(Map.copyOf(byIdentifier));
    }
 
-   @Nullable
-   public FogDefinition get(String identifier) {
+   public @Nullable FogDefinition get(String identifier) {
       return this.byIdentifier.get(identifier.toLowerCase(Locale.ROOT));
    }
 

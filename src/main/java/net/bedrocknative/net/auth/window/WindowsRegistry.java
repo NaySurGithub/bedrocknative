@@ -11,14 +11,13 @@ public final class WindowsRegistry implements Registry {
    public boolean keyExists(String key) throws IOException {
       try {
          return Advapi32Util.registryKeyExists(WinReg.HKEY_CURRENT_USER, key);
-      } catch (LinkageError | RuntimeException var3) {
-         throw failure(var3);
+      } catch (RuntimeException | LinkageError e) {
+         throw failure(e);
       }
    }
 
-   @Nullable
    @Override
-   public String get(String key, String name) throws IOException {
+   public @Nullable String get(String key, String name) throws IOException {
       return read(WinReg.HKEY_CURRENT_USER, key, name);
    }
 
@@ -27,8 +26,8 @@ public final class WindowsRegistry implements Registry {
       try {
          Advapi32Util.registryCreateKey(WinReg.HKEY_CURRENT_USER, key);
          Advapi32Util.registrySetStringValue(WinReg.HKEY_CURRENT_USER, key, name, value);
-      } catch (LinkageError | RuntimeException var5) {
-         throw failure(var5);
+      } catch (RuntimeException | LinkageError e) {
+         throw failure(e);
       }
    }
 
@@ -36,25 +35,23 @@ public final class WindowsRegistry implements Registry {
    public void deleteKey(String key) throws IOException {
       try {
          Advapi32Util.registryDeleteKey(WinReg.HKEY_CURRENT_USER, key);
-      } catch (LinkageError | RuntimeException var3) {
-         throw failure(var3);
+      } catch (RuntimeException | LinkageError e) {
+         throw failure(e);
       }
    }
 
-   @Nullable
    @Override
-   public String getMachine(String key, String name) throws IOException {
+   public @Nullable String getMachine(String key, String name) throws IOException {
       return read(WinReg.HKEY_LOCAL_MACHINE, key, name);
    }
 
-   @Nullable
-   private static String read(HKEY root, String key, String name) throws IOException {
+   private static @Nullable String read(HKEY root, String key, String name) throws IOException {
       try {
          return Advapi32Util.registryKeyExists(root, key) && Advapi32Util.registryValueExists(root, key, name)
             ? Advapi32Util.registryGetStringValue(root, key, name)
             : null;
-      } catch (LinkageError | RuntimeException var4) {
-         throw failure(var4);
+      } catch (RuntimeException | LinkageError e) {
+         throw failure(e);
       }
    }
 

@@ -8,14 +8,9 @@ import org.cloudburstmc.protocol.bedrock.packet.PlayStatusPacket.Status;
 import org.jspecify.annotations.Nullable;
 
 public record SessionEnd(SessionEnd.Source source, DisconnectFailReason reason, String message, boolean skipScreen, String detail) {
-   public SessionEnd(SessionEnd.Source source, DisconnectFailReason reason, String message, boolean skipScreen, String detail) {
+   public SessionEnd {
       message = message == null ? "" : message;
       detail = detail == null ? "" : detail;
-      this.source = source;
-      this.reason = reason;
-      this.message = message;
-      this.skipScreen = skipScreen;
-      this.detail = detail;
    }
 
    public static SessionEnd disconnectPacket(@Nullable DisconnectFailReason reason, boolean skipped, @Nullable CharSequence message) {
@@ -109,7 +104,7 @@ public record SessionEnd(SessionEnd.Source source, DisconnectFailReason reason, 
       return text.toString();
    }
 
-   public static enum Source {
+   public enum Source {
       SERVER,
       LOGIN,
       CONNECTION,

@@ -8,7 +8,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 import org.spongepowered.asm.mixin.gen.Invoker;
 
-@Mixin({Hud.class})
+@Mixin(Hud.class)
 public interface HudStateAccessor {
    @Accessor("contextualInfoBar")
    Pair<?, ContextualBar> bedrocknative$contextualInfoBar();

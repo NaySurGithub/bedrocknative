@@ -22,23 +22,23 @@ public final class TransportTexts {
       boolean askedNetherNet = netherNet != null && !netherNet.supported() && netherNet.reason() != ProbeResult.Reason.UNAVAILABLE;
       if (!askedJava && !askedNetherNet) {
          return "";
-      } else {
-         boolean javaSilent = !askedJava || java.problem().equals("refused") || java.problem().startsWith("no answer");
-         boolean netherNetSilent = !askedNetherNet || netherNet.nothingListens();
-         if (!javaSilent || !netherNetSilent || askedJava && askedNetherNet && javaPort != netherNetPort) {
-            List<String> found = new ArrayList<>();
-            if (askedJava) {
-               found.add("no Java server on TCP port " + javaPort + " (" + java.problem() + ")");
-            }
+      }
 
-            if (askedNetherNet) {
-               found.add("no NetherNet on TCP port " + netherNetPort + " (" + reason(netherNet) + ")");
-            }
-
-            return "; " + String.join(", ", found);
-         } else {
-            return "; nothing answers on TCP port " + (askedJava ? javaPort : netherNetPort) + " either";
+      boolean javaSilent = !askedJava || java.problem().equals("refused") || java.problem().startsWith("no answer");
+      boolean netherNetSilent = !askedNetherNet || netherNet.nothingListens();
+      if (!javaSilent || !netherNetSilent || askedJava && askedNetherNet && javaPort != netherNetPort) {
+         List<String> found = new ArrayList<>();
+         if (askedJava) {
+            found.add("no Java server on TCP port " + javaPort + " (" + java.problem() + ")");
          }
+
+         if (askedNetherNet) {
+            found.add("no NetherNet on TCP port " + netherNetPort + " (" + reason(netherNet) + ")");
+         }
+
+         return "; " + String.join(", ", found);
+      } else {
+         return "; nothing answers on TCP port " + (askedJava ? javaPort : netherNetPort) + " either";
       }
    }
 

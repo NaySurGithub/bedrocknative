@@ -23,8 +23,7 @@ public final class BedrockBridging {
    private BedrockBridging() {
    }
 
-   @Nullable
-   public static BlockHitResult target(Minecraft minecraft) {
+   public static @Nullable BlockHitResult target(Minecraft minecraft) {
       LocalPlayer player = minecraft.player;
       ClientLevel level = minecraft.level;
       if (ENABLED
@@ -64,8 +63,7 @@ public final class BedrockBridging {
       }
    }
 
-   @Nullable
-   private static BlockHitResult click(ClientLevel level, LocalPlayer player, BlockPos below, Direction facing) {
+   private static @Nullable BlockHitResult click(ClientLevel level, LocalPlayer player, BlockPos below, Direction facing) {
       BlockState state = level.getBlockState(below);
       if (state.isCollisionShapeFullBlock(level, below)
          && !state.hasBlockEntity()
@@ -75,10 +73,10 @@ public final class BedrockBridging {
          double ahead = (below.getX() + 0.5 - player.getX()) * -Math.sin(yaw) + (below.getZ() + 0.5 - player.getZ()) * Math.cos(yaw);
          if (ahead < -0.4) {
             return null;
-         } else {
-            Vec3 face = Vec3.atCenterOf(below).add(facing.getStepX() * 0.5, 0.0, facing.getStepZ() * 0.5);
-            return new BlockHitResult(face, facing, below, false);
          }
+
+         Vec3 face = Vec3.atCenterOf(below).add(facing.getStepX() * 0.5, 0.0, facing.getStepZ() * 0.5);
+         return new BlockHitResult(face, facing, below, false);
       } else {
          return null;
       }

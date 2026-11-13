@@ -52,13 +52,13 @@ public final class AccountWarmUp {
       XboxAccountStore store = AccountManager.store();
       if (!store.active().map(entry -> entry.id().equals(accountId)).orElse(false)) {
          throw new IllegalStateException("another account is in use now");
-      } else {
-         BedrockAuthManager account = store.load(accountId);
-         Holder<MinecraftMultiplayerToken> token = account.getMinecraftMultiplayerToken();
-         boolean expired = !token.hasValue() || token.isExpired();
-         XboxAccountStore.Prepared prepared = store.prepare(accountId);
-         return new TokenWarmUp.Result(expiryOf(prepared.account()), expired);
       }
+
+      BedrockAuthManager account = store.load(accountId);
+      Holder<MinecraftMultiplayerToken> token = account.getMinecraftMultiplayerToken();
+      boolean expired = !token.hasValue() || token.isExpired();
+      XboxAccountStore.Prepared prepared = store.prepare(accountId);
+      return new TokenWarmUp.Result(expiryOf(prepared.account()), expired);
    }
 
    static long expiryOf(BedrockAuthManager account) {

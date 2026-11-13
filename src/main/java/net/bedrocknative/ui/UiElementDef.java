@@ -8,8 +8,7 @@ public final class UiElementDef {
    private final String namespace;
    private final String name;
    final JsonObject props;
-   @Nullable
-   String base;
+   @Nullable String base;
    private final String file;
    final BitSet packs = new BitSet();
 
@@ -37,8 +36,7 @@ public final class UiElementDef {
       return this.props;
    }
 
-   @Nullable
-   public String base() {
+   public @Nullable String base() {
       return this.base;
    }
 

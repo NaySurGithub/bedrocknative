@@ -16,8 +16,7 @@ public final class BedrockCredits {
    private final Minecraft minecraft;
    private final Consumer<BedrockPacket> send;
    private final LongSupplier runtimeEntityId;
-   @Nullable
-   private WinScreen screen;
+   private @Nullable WinScreen screen;
 
    public BedrockCredits(Minecraft minecraft, Consumer<BedrockPacket> send, LongSupplier runtimeEntityId) {
       this.minecraft = minecraft;

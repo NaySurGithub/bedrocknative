@@ -19,7 +19,7 @@ public final class FirstPersonAttachableRenderer implements SpecialModelRenderer
    }
 
    public void submit(
-      @Nullable WornAttachables.Frame frame, PoseStack poseStack, SubmitNodeCollector collector, int light, int overlay, boolean hasFoil, int outlineColor
+      WornAttachables.@Nullable Frame frame, PoseStack poseStack, SubmitNodeCollector collector, int light, int overlay, boolean hasFoil, int outlineColor
    ) {
       ActorSnapshot snapshot = frame != null ? frame.snapshot() : null;
       if (snapshot != null && snapshot.draw().calls() != 0) {
@@ -35,11 +35,11 @@ public final class FirstPersonAttachableRenderer implements SpecialModelRenderer
       }
    }
 
+   @Override
    public void getExtents(Consumer<Vector3fc> output) {
    }
 
-   @Nullable
-   public WornAttachables.Frame extractArgument(ItemStack stack) {
+   public WornAttachables.@Nullable Frame extractArgument(ItemStack stack) {
       return null;
    }
 }

@@ -21,14 +21,12 @@ public final class EntityPick {
       return Math.max(0.1, javaPickRadius);
    }
 
-   @Nullable
-   public static Vec3 hit(AABB box, Vec3 eye, Vec3 look, double reach) {
+   public static @Nullable Vec3 hit(AABB box, Vec3 eye, Vec3 look, double reach) {
       EntityPick.Choice choice = choose(List.of(new EntityPick.Candidate(box, 0.0, false, false)), eye, eye.add(look.scale(reach)), reach * reach);
       return choice == null ? null : choice.point();
    }
 
-   @Nullable
-   public static EntityPick.Choice choose(List<EntityPick.Candidate> candidates, Vec3 from, Vec3 to, double maxDistanceSqr) {
+   public static EntityPick.@Nullable Choice choose(List<EntityPick.Candidate> candidates, Vec3 from, Vec3 to, double maxDistanceSqr) {
       int best = -1;
       Vec3 bestPoint = null;
       double bestDistance = maxDistanceSqr;

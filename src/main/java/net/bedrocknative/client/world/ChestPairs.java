@@ -19,8 +19,7 @@ public final class ChestPairs {
    private ChestPairs() {
    }
 
-   @Nullable
-   public static BlockPos partnerOf(BlockPos pos, NbtMap tag) {
+   public static @Nullable BlockPos partnerOf(BlockPos pos, NbtMap tag) {
       return tag.containsKey("pairx", NbtType.INT) && tag.containsKey("pairz", NbtType.INT)
          ? new BlockPos(tag.getInt("pairx"), pos.getY(), tag.getInt("pairz"))
          : null;
@@ -55,27 +54,27 @@ public final class ChestPairs {
          int dz = partner.getZ() - pos.getZ();
          if (Math.abs(dx) + Math.abs(dz) != 1) {
             return ChestType.SINGLE;
-         } else {
-            Object partnerOwner = blocks.owner(partner);
-            if (partnerOwner != null && pos.equals(CLAIMS.get(partnerOwner))) {
-               BlockState other = blocks.state(partner);
-               if (state.getBlock() instanceof ChestBlock chest
-                  && chest.chestCanConnectTo(other)
-                  && other.hasProperty(ChestBlock.FACING)
-                  && other.getValue(ChestBlock.FACING) == state.getValue(ChestBlock.FACING)) {
-                  Direction facing = (Direction)state.getValue(ChestBlock.FACING);
-                  Direction towards = Direction.getNearest(dx, 0, dz, null);
-                  if (towards == facing.getClockWise()) {
-                     return ChestType.LEFT;
-                  } else {
-                     return towards == facing.getCounterClockWise() ? ChestType.RIGHT : ChestType.SINGLE;
-                  }
+         }
+
+         Object partnerOwner = blocks.owner(partner);
+         if (partnerOwner != null && pos.equals(CLAIMS.get(partnerOwner))) {
+            BlockState other = blocks.state(partner);
+            if (state.getBlock() instanceof ChestBlock chest
+               && chest.chestCanConnectTo(other)
+               && other.hasProperty(ChestBlock.FACING)
+               && other.getValue(ChestBlock.FACING) == state.getValue(ChestBlock.FACING)) {
+               Direction facing = state.getValue(ChestBlock.FACING);
+               Direction towards = Direction.getNearest(dx, 0, dz, null);
+               if (towards == facing.getClockWise()) {
+                  return ChestType.LEFT;
                } else {
-                  return ChestType.SINGLE;
+                  return towards == facing.getCounterClockWise() ? ChestType.RIGHT : ChestType.SINGLE;
                }
             } else {
                return ChestType.SINGLE;
             }
+         } else {
+            return ChestType.SINGLE;
          }
       } else {
          return ChestType.SINGLE;
@@ -87,7 +86,7 @@ public final class ChestPairs {
       if (state.getBlock() instanceof ChestBlock && state.hasProperty(ChestBlock.TYPE)) {
          ChestType type = type(blocks, pos, state);
          if (state.getValue(ChestBlock.TYPE) != type) {
-            blocks.set(pos, (BlockState)state.setValue(ChestBlock.TYPE, type));
+            blocks.set(pos, state.setValue(ChestBlock.TYPE, type));
          }
       }
    }
@@ -95,8 +94,7 @@ public final class ChestPairs {
    public interface Blocks {
       BlockState state(BlockPos var1);
 
-      @Nullable
-      Object owner(BlockPos var1);
+      @Nullable Object owner(BlockPos var1);
 
       void set(BlockPos var1, BlockState var2);
    }

@@ -27,15 +27,12 @@ public final class MusicDefinitions {
 
       for (SoundDefinitions.PackJson pack : bottomFirst) {
          for (Entry<String, JsonElement> entry : pack.json().entrySet()) {
-            if (entry.getValue() instanceof JsonObject object) {
-               String var9 = ModelJson.string(object, "event_name");
-               if (var9 instanceof String) {
-                  float min = ModelJson.number(object, "min_delay", 0.0F);
-                  merged.put(
-                     entry.getKey().toLowerCase(Locale.ROOT),
-                     new MusicDefinitions.Music(var9.toLowerCase(Locale.ROOT), min, Math.max(min, ModelJson.number(object, "max_delay", min)))
-                  );
-               }
+            if (entry.getValue() instanceof JsonObject object && ModelJson.string(object, "event_name") instanceof String event) {
+               float min = ModelJson.number(object, "min_delay", 0.0F);
+               merged.put(
+                  entry.getKey().toLowerCase(Locale.ROOT),
+                  new MusicDefinitions.Music(event.toLowerCase(Locale.ROOT), min, Math.max(min, ModelJson.number(object, "max_delay", min)))
+               );
             }
          }
       }
@@ -43,8 +40,7 @@ public final class MusicDefinitions {
       return new MusicDefinitions(Map.copyOf(merged));
    }
 
-   @Nullable
-   public MusicDefinitions.Music get(String key) {
+   public MusicDefinitions.@Nullable Music get(String key) {
       return this.byKey.get(key.toLowerCase(Locale.ROOT));
    }
 

@@ -8,28 +8,13 @@ public record ProbeResult(
    boolean supported,
    @Nullable SignalingScheme scheme,
    int httpStatus,
-   @Nullable ProbeResult.Status status,
+   ProbeResult.@Nullable Status status,
    List<SignalingScheme> tried,
    ProbeResult.Reason reason,
    long rttMillis
 ) {
-   public ProbeResult(
-      boolean supported,
-      @Nullable SignalingScheme scheme,
-      int httpStatus,
-      @Nullable ProbeResult.Status status,
-      List<SignalingScheme> tried,
-      ProbeResult.Reason reason,
-      long rttMillis
-   ) {
+   public ProbeResult {
       tried = List.copyOf(tried);
-      this.supported = supported;
-      this.scheme = scheme;
-      this.httpStatus = httpStatus;
-      this.status = status;
-      this.tried = tried;
-      this.reason = reason;
-      this.rttMillis = rttMillis;
    }
 
    public static ProbeResult unavailable() {
@@ -40,7 +25,7 @@ public record ProbeResult(
       return new ProbeResult(false, null, 0, null, tried, reason, millis);
    }
 
-   public static ProbeResult answered(SignalingScheme scheme, int httpStatus, @Nullable ProbeResult.Status status, List<SignalingScheme> tried, long millis) {
+   public static ProbeResult answered(SignalingScheme scheme, int httpStatus, ProbeResult.@Nullable Status status, List<SignalingScheme> tried, long millis) {
       boolean ok = httpStatus >= 200 && httpStatus <= 299;
       return new ProbeResult(
          ok,
@@ -68,28 +53,28 @@ public record ProbeResult(
             + this.rttMillis
             + " ms, tried "
             + schemes;
-      } else {
-         String body = this.status != null && !this.status.empty()
-            ? "\""
-               + this.status.name()
-               + "\" protocol "
-               + this.status.protocol()
-               + (this.status.countsKnown() ? ", " + this.status.players() + "/" + this.status.maxPlayers() + " players" : "")
-            : "empty status";
-         return "NetherNet probe: "
-            + (this.scheme == null ? "?" : this.scheme.id())
-            + " "
-            + this.httpStatus
-            + " ("
-            + body
-            + ") in "
-            + this.rttMillis
-            + " ms, tried "
-            + schemes;
       }
+
+      String body = this.status != null && !this.status.empty()
+         ? "\""
+            + this.status.name()
+            + "\" protocol "
+            + this.status.protocol()
+            + (this.status.countsKnown() ? ", " + this.status.players() + "/" + this.status.maxPlayers() + " players" : "")
+         : "empty status";
+      return "NetherNet probe: "
+         + (this.scheme == null ? "?" : this.scheme.id())
+         + " "
+         + this.httpStatus
+         + " ("
+         + body
+         + ") in "
+         + this.rttMillis
+         + " ms, tried "
+         + schemes;
    }
 
-   public static enum Reason {
+   public enum Reason {
       OK,
       REFUSED,
       TIMEOUT,

@@ -44,7 +44,7 @@ public final class PartnerGuard {
       InetAddress[] addresses;
       try {
          addresses = InetAddress.getAllByName(uri.getHost());
-      } catch (UnknownHostException var7) {
+      } catch (UnknownHostException e) {
          throw new IOException("unknown host " + uri.getHost());
       }
 

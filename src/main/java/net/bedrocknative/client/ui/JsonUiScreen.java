@@ -1,7 +1,6 @@
 package net.bedrocknative.client.ui;
 
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
 import net.bedrocknative.BedrockNative;
@@ -35,14 +34,10 @@ public final class JsonUiScreen {
    private final Minecraft minecraft = Minecraft.getInstance();
    private final String name;
    private Runnable fallback = () -> {};
-   @Nullable
-   private ItemSource items;
-   @Nullable
-   private EditBox editor;
-   @Nullable
-   private EditBox external;
-   @Nullable
-   private UiControl editing;
+   private @Nullable ItemSource items;
+   private @Nullable EditBox editor;
+   private @Nullable EditBox external;
+   private @Nullable UiControl editing;
    private long editingSince;
    private double clock;
    private long lastFrame;
@@ -55,10 +50,6 @@ public final class JsonUiScreen {
       this.diagnostics = new JsonUiDiagnostics(name, name, 0L);
       this.input = UiInput.attach(instance);
       this.input.editor(new UiInput.TextEditor() {
-         {
-            Objects.requireNonNull(JsonUiScreen.this);
-         }
-
          @Override
          public void begin(UiControl editBox, String text, int maxLength) {
             EditBox own = JsonUiScreen.this.external;
@@ -96,17 +87,16 @@ public final class JsonUiScreen {
       });
    }
 
-   @Nullable
-   public static JsonUiScreen create(UiDefinitionSet definitions, String screen, Map<String, UiValue> variables, UiDataSource data) {
+   public static @Nullable JsonUiScreen create(UiDefinitionSet definitions, String screen, Map<String, UiValue> variables, UiDataSource data) {
       UiScreenInstance instance = UiScreenInstance.create(
          definitions, screen, UiPlatform.desktop(variables), data, JsonUi.environment(definitions), Set.of(), JsonUi.uiWidth(), JsonUi.uiHeight()
       );
       if (instance.root() == null) {
          return null;
-      } else {
-         instance.update(0.0);
-         return new JsonUiScreen(instance, screen);
       }
+
+      instance.update(0.0);
+      return new JsonUiScreen(instance, screen);
    }
 
    public UiScreenInstance instance() {
@@ -181,8 +171,8 @@ public final class JsonUiScreen {
 
             this.caret(graphics);
             this.diagnostics.frame(this.instance, () -> JsonUi.environment(this.instance.definitions()).textures());
-         } catch (RuntimeException var10) {
-            this.fail(var10);
+         } catch (RuntimeException e) {
+            this.fail(e);
          } finally {
             PerfProbe.end(PerfProbe.Part.SCREENS, perf);
          }
@@ -224,17 +214,16 @@ public final class JsonUiScreen {
       this.run(() -> this.input.mouseMoved(ui(x), ui(y)));
    }
 
-   @Nullable
-   public UiControl topmost(double x, double y) {
+   public @Nullable UiControl topmost(double x, double y) {
       if (this.failed) {
          return null;
-      } else {
-         try {
-            return this.input.topmost(ui(x), ui(y));
-         } catch (RuntimeException var6) {
-            this.fail(var6);
-            return null;
-         }
+      }
+
+      try {
+         return this.input.topmost(ui(x), ui(y));
+      } catch (RuntimeException e) {
+         this.fail(e);
+         return null;
       }
    }
 
@@ -297,8 +286,8 @@ public final class JsonUiScreen {
       if (!this.failed) {
          try {
             action.run();
-         } catch (RuntimeException var3) {
-            this.fail(var3);
+         } catch (RuntimeException e) {
+            this.fail(e);
          }
       }
    }
@@ -306,13 +295,13 @@ public final class JsonUiScreen {
    private boolean call(BooleanSupplier action) {
       if (this.failed) {
          return false;
-      } else {
-         try {
-            return action.getAsBoolean();
-         } catch (RuntimeException var3) {
-            this.fail(var3);
-            return false;
-         }
+      }
+
+      try {
+         return action.getAsBoolean();
+      } catch (RuntimeException e) {
+         this.fail(e);
+         return false;
       }
    }
 

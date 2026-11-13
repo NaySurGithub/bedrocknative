@@ -24,33 +24,12 @@ public record BookRecipe(
 ) {
    public static final String CRAFTING_TABLE = "crafting_table";
 
-   public BookRecipe(
-      int netId,
-      String id,
-      boolean shaped,
-      String tag,
-      int width,
-      int height,
-      List<ItemDescriptorWithCount> ingredients,
-      List<ItemData> results,
-      int priority,
-      UnlockingContext unlocking
-   ) {
+   public BookRecipe {
       id = id == null ? "" : id;
       tag = tag == null ? "" : tag;
       ingredients = List.copyOf(ingredients);
       results = List.copyOf(results);
       unlocking = unlocking == null ? UnlockingContext.NONE : unlocking;
-      this.netId = netId;
-      this.id = id;
-      this.shaped = shaped;
-      this.tag = tag;
-      this.width = width;
-      this.height = height;
-      this.ingredients = ingredients;
-      this.results = results;
-      this.priority = priority;
-      this.unlocking = unlocking;
    }
 
    public static BookRecipe of(ShapedRecipeData recipe) {
@@ -119,15 +98,15 @@ public record BookRecipe(
    public boolean fits(int gridSize) {
       if (this.shaped) {
          return this.width <= gridSize && this.height <= gridSize;
-      } else {
-         int cells = 0;
-
-         for (BookRecipe.Unit unit : this.units()) {
-            cells += unit.perCraft();
-         }
-
-         return cells <= gridSize * gridSize;
       }
+
+      int cells = 0;
+
+      for (BookRecipe.Unit unit : this.units()) {
+         cells += unit.perCraft();
+      }
+
+      return cells <= gridSize * gridSize;
    }
 
    public static boolean empty(ItemDescriptorWithCount ingredient) {

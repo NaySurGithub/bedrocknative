@@ -32,8 +32,7 @@ final class LobbyServers {
    private final LanGames lan = new LanGames();
    private final AtomicInteger generation = new AtomicInteger();
    private volatile boolean discovering;
-   @Nullable
-   private Thread discovery;
+   private @Nullable Thread discovery;
 
    LobbyServers(Minecraft minecraft) {
       this.minecraft = minecraft;
@@ -69,7 +68,7 @@ final class LobbyServers {
                PlayData.Status status;
                try {
                   status = LobbyStatusProbe.savedServer(address, 2500);
-               } catch (RuntimeException var5) {
+               } catch (RuntimeException e) {
                   status = PlayData.Status.OFFLINE;
                }
 
@@ -119,8 +118,8 @@ final class LobbyServers {
             while (this.discovering && this.generation.get() == round) {
                try {
                   BedrockPing.discover(BedrockPing.lanTargets(19132), 1500, pong -> this.lan.heard(pong, System.currentTimeMillis()));
-               } catch (RuntimeException | IOException var8) {
-                  BedrockNative.LOGGER.debug("Bedrock lobby: LAN discovery round failed", var8);
+               } catch (IOException | RuntimeException e) {
+                  BedrockNative.LOGGER.debug("Bedrock lobby: LAN discovery round failed", e);
                }
 
                long now = System.currentTimeMillis();
@@ -132,7 +131,7 @@ final class LobbyServers {
 
                try {
                   Thread.sleep(1500L);
-               } catch (InterruptedException var7) {
+               } catch (InterruptedException e) {
                   return;
                }
             }

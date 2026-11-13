@@ -92,11 +92,11 @@ public final class TrustPrompt {
 
          this.cancel();
          return false;
-      } catch (InterruptedException var9) {
+      } catch (InterruptedException e) {
          Thread.currentThread().interrupt();
          this.cancel();
          return false;
-      } catch (ExecutionException var10) {
+      } catch (ExecutionException e) {
          return false;
       }
    }

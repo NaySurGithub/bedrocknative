@@ -47,19 +47,19 @@ public final class BlobTracker {
             this.acks.add(hash);
             this.hits++;
             return data;
-         } else {
-            BlobTracker.Outstanding pending = this.outstanding.get(hash);
-            if (pending == null) {
-               pending = new BlobTracker.Outstanding();
-               pending.sentAt = this.nanos.getAsLong();
-               this.outstanding.put(hash, pending);
-               this.naks.add(hash);
-               this.misses++;
-            }
-
-            pending.waiters.add(waiter);
-            return null;
          }
+
+         BlobTracker.Outstanding pending = this.outstanding.get(hash);
+         if (pending == null) {
+            pending = new BlobTracker.Outstanding();
+            pending.sentAt = this.nanos.getAsLong();
+            this.outstanding.put(hash, pending);
+            this.naks.add(hash);
+            this.misses++;
+         }
+
+         pending.waiters.add(waiter);
+         return null;
       }
    }
 
@@ -145,33 +145,33 @@ public final class BlobTracker {
       synchronized (this.lock) {
          if (this.naks.isEmpty() && this.acks.isEmpty()) {
             return List.of();
-         } else {
-            List<ClientCacheBlobStatusPacket> packets = new ArrayList<>();
-            int nakAt = 0;
-            int ackAt = 0;
+         }
 
-            while (nakAt < this.naks.size() || ackAt < this.acks.size()) {
-               ClientCacheBlobStatusPacket packet = new ClientCacheBlobStatusPacket();
-               int nakTo = Math.min(this.naks.size(), nakAt + 1024);
-               int ackTo = Math.min(this.acks.size(), ackAt + 1024);
+         List<ClientCacheBlobStatusPacket> packets = new ArrayList<>();
+         int nakAt = 0;
+         int ackAt = 0;
 
-               for (int i = nakAt; i < nakTo; i++) {
-                  packet.getNaks().add(this.naks.getLong(i));
-               }
+         while (nakAt < this.naks.size() || ackAt < this.acks.size()) {
+            ClientCacheBlobStatusPacket packet = new ClientCacheBlobStatusPacket();
+            int nakTo = Math.min(this.naks.size(), nakAt + 1024);
+            int ackTo = Math.min(this.acks.size(), ackAt + 1024);
 
-               for (int i = ackAt; i < ackTo; i++) {
-                  packet.getAcks().add(this.acks.getLong(i));
-               }
-
-               nakAt = nakTo;
-               ackAt = ackTo;
-               packets.add(packet);
+            for (int i = nakAt; i < nakTo; i++) {
+               packet.getNaks().add(this.naks.getLong(i));
             }
 
-            this.naks.clear();
-            this.acks.clear();
-            return packets;
+            for (int i = ackAt; i < ackTo; i++) {
+               packet.getAcks().add(this.acks.getLong(i));
+            }
+
+            nakAt = nakTo;
+            ackAt = ackTo;
+            packets.add(packet);
          }
+
+         this.naks.clear();
+         this.acks.clear();
+         return packets;
       }
    }
 

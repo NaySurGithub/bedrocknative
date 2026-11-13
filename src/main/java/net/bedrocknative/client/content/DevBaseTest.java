@@ -35,9 +35,9 @@ public final class DevBaseTest {
       while ((instance = Minecraft.getInstance()) == null || instance.getWindow() == null) {
          try {
             Thread.sleep(200L);
-         } catch (InterruptedException var2) {
+         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new IllegalStateException(var2);
+            throw new IllegalStateException(e);
          }
       }
 
@@ -54,8 +54,8 @@ public final class DevBaseTest {
 
          try {
             test.run();
-         } catch (Throwable var9) {
-            BedrockNative.LOGGER.error("Dev base test: FAIL crashed", var9);
+         } catch (Throwable e) {
+            BedrockNative.LOGGER.error("Dev base test: FAIL crashed", e);
             test.failed++;
          } finally {
             restore(answerFile, answerBefore);
@@ -179,24 +179,23 @@ public final class DevBaseTest {
       }
    }
 
-   @Nullable
-   private static byte[] read(Path file) {
+   private static byte @Nullable [] read(Path file) {
       try {
          return Files.isRegularFile(file) ? Files.readAllBytes(file) : null;
-      } catch (IOException var2) {
+      } catch (IOException e) {
          return null;
       }
    }
 
-   private static void restore(Path file, @Nullable byte[] before) {
+   private static void restore(Path file, byte @Nullable [] before) {
       try {
          if (before == null) {
             Files.deleteIfExists(file);
          } else {
             Files.write(file, before);
          }
-      } catch (IOException var3) {
-         BedrockNative.LOGGER.warn("Dev base test: couldn't put {} back: {}", file, var3.getMessage());
+      } catch (IOException e) {
+         BedrockNative.LOGGER.warn("Dev base test: couldn't put {} back: {}", file, e.getMessage());
       }
    }
 
@@ -243,7 +242,7 @@ public final class DevBaseTest {
    private void sleep(long millis) {
       try {
          Thread.sleep(millis);
-      } catch (InterruptedException var4) {
+      } catch (InterruptedException e) {
          Thread.currentThread().interrupt();
       }
    }

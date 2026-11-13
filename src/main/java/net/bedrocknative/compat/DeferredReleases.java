@@ -29,23 +29,23 @@ public final class DeferredReleases<K> {
    public List<K> tick() {
       if (this.left.isEmpty()) {
          return List.of();
-      } else {
-         List<K> due = new ArrayList<>();
-         Iterator<Entry<K, Integer>> entries = this.left.entrySet().iterator();
-
-         while (entries.hasNext()) {
-            Entry<K, Integer> entry = entries.next();
-            int remaining = entry.getValue() - 1;
-            if (remaining <= 0) {
-               due.add(entry.getKey());
-               entries.remove();
-            } else {
-               entry.setValue(remaining);
-            }
-         }
-
-         return due;
       }
+
+      List<K> due = new ArrayList<>();
+      Iterator<Entry<K, Integer>> entries = this.left.entrySet().iterator();
+
+      while (entries.hasNext()) {
+         Entry<K, Integer> entry = entries.next();
+         int remaining = entry.getValue() - 1;
+         if (remaining <= 0) {
+            due.add(entry.getKey());
+            entries.remove();
+         } else {
+            entry.setValue(remaining);
+         }
+      }
+
+      return due;
    }
 
    public List<K> drain() {

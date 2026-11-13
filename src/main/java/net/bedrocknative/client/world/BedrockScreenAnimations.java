@@ -22,8 +22,7 @@ public final class BedrockScreenAnimations {
    private static final int DURATION_TICKS = 30;
    private static final int MAX_ANIMATIONS = 8;
    private static final int ICON_SIZE = 48;
-   @Nullable
-   private static volatile BedrockScreenAnimations active;
+   private static volatile @Nullable BedrockScreenAnimations active;
    private final Minecraft minecraft;
    private final List<BedrockScreenAnimations.Animation> animations = new ArrayList<>();
    private int played;

@@ -5,22 +5,21 @@ import org.jspecify.annotations.Nullable;
 public record UiGradient(int from, int to, boolean horizontal) {
    public static final String RENDERER = "gradient_renderer";
 
-   @Nullable
-   public static UiGradient of(UiDrawCommand.Custom command) {
+   public static @Nullable UiGradient of(UiDrawCommand.Custom command) {
       if (!"gradient_renderer".equals(command.renderer())) {
          return null;
-      } else {
-         UiControl control = command.control();
-         float alpha = (command.argb() >>> 24) / 255.0F;
-         int from = color(control.prop("color1"), alpha);
-         int to = color(control.prop("color2"), alpha);
-         if (from >>> 24 == 0 && to >>> 24 == 0) {
-            return null;
-         } else {
-            UiValue direction = control.prop("gradient_direction");
-            return new UiGradient(from, to, direction != null && "horizontal".equals(direction.stringOrNull()));
-         }
       }
+
+      UiControl control = command.control();
+      float alpha = (command.argb() >>> 24) / 255.0F;
+      int from = color(control.prop("color1"), alpha);
+      int to = color(control.prop("color2"), alpha);
+      if (from >>> 24 == 0 && to >>> 24 == 0) {
+         return null;
+      }
+
+      UiValue direction = control.prop("gradient_direction");
+      return new UiGradient(from, to, direction != null && "horizontal".equals(direction.stringOrNull()));
    }
 
    static int color(@Nullable UiValue value, float alpha) {

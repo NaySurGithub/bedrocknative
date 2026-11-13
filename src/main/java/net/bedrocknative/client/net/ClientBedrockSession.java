@@ -6,7 +6,6 @@ import io.netty.util.ReferenceCountUtil;
 import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -230,8 +229,7 @@ import org.cloudburstmc.protocol.bedrock.packet.ServerboundCursorItemDragPacket.
 import org.jspecify.annotations.Nullable;
 
 public final class ClientBedrockSession implements BedrockGameListener {
-   @Nullable
-   private static volatile ClientBedrockSession active;
+   private static volatile @Nullable ClientBedrockSession active;
    public static final float PLAYER_EYE_HEIGHT = 1.62001F;
    private static final int JOIN_INPUTS_BEFORE_AIM_ASSIST_CLEAR = 2;
    private static final int MAX_CHUNK_RADIUS = 28;
@@ -250,10 +248,8 @@ public final class ClientBedrockSession implements BedrockGameListener {
    private volatile long runtimeEntityId;
    private volatile long uniqueEntityId;
    private volatile long seed;
-   @Nullable
-   private volatile Frozen access;
-   @Nullable
-   private volatile ClientBedrockSession.LoadingScreen loadingScreen;
+   private volatile @Nullable Frozen access;
+   private volatile ClientBedrockSession.@Nullable LoadingScreen loadingScreen;
    private volatile boolean serverDimensionReady;
    private int loadingScreenEndIn;
    private int noChunksCheckIn;
@@ -273,15 +269,13 @@ public final class ClientBedrockSession implements BedrockGameListener {
    private int aimAssistClearIn = -1;
    private boolean wasRiding;
    private boolean wasAlive = true;
-   @Nullable
-   private volatile Vector3f dimensionTarget;
+   private volatile @Nullable Vector3f dimensionTarget;
    private static volatile int radiusUpdates;
    private final MovementStats movementStats = new MovementStats();
    private final MovementReplay replay = new MovementReplay();
    private final CorrectionLog corrections = new CorrectionLog();
    private final BelowWorldWatch belowWorld = new BelowWorldWatch();
-   @Nullable
-   private ClientLevel belowWorldLevel;
+   private @Nullable ClientLevel belowWorldLevel;
    private static final int DEV_LATENCY_MS = Integer.getInteger("bedrocknative.devLatency", 0);
    private static final boolean DEV_TEST = System.getProperty("bedrocknative.devTest") != null;
    private static final long DIMENSION_ACK_TIMEOUT_MS = 60000L;
@@ -318,21 +312,16 @@ public final class ClientBedrockSession implements BedrockGameListener {
    private final BedrockExtras extras;
    private final BedrockRecipeBook recipeBook;
    private final ServerPacks packs;
-   @Nullable
-   private volatile Channel channel;
-   @Nullable
-   private volatile Runnable loginSuccess;
+   private volatile @Nullable Channel channel;
+   private volatile @Nullable Runnable loginSuccess;
    private volatile PrivilegeCheck privileges = PrivilegeCheck.none();
-   @Nullable
-   private volatile XboxAccountStore.AccountException refusal;
+   private volatile XboxAccountStore.@Nullable AccountException refusal;
    private final AtomicBoolean refusalEnded = new AtomicBoolean();
    private long privilegesHeldSince;
    private boolean privilegesHoldLogged;
-   @Nullable
-   static volatile Consumer<BedrockPacket> devTap;
+   static volatile @Nullable Consumer<BedrockPacket> devTap;
 
-   @Nullable
-   public static ClientBedrockSession active() {
+   public static @Nullable ClientBedrockSession active() {
       return active;
    }
 
@@ -433,8 +422,8 @@ public final class ClientBedrockSession implements BedrockGameListener {
       if (this.channel != null) {
          try {
             this.endRefused();
-         } catch (RuntimeException var3) {
-            BedrockNative.LOGGER.error("Couldn't end the session over the Xbox multiplayer check's refusal", var3);
+         } catch (RuntimeException e) {
+            BedrockNative.LOGGER.error("Couldn't end the session over the Xbox multiplayer check's refusal", e);
          }
       }
    }
@@ -463,14 +452,16 @@ public final class ClientBedrockSession implements BedrockGameListener {
 
    private Screen screenAfterEnd() {
       XboxAccountStore.AccountException failure = this.refusal;
-      return (Screen)(failure != null && this.refusalEnded.get() ? AccountsScreen.forFailure(this.parent, failure) : this.parent);
+      return failure != null && this.refusalEnded.get() ? AccountsScreen.forFailure(this.parent, failure) : this.parent;
    }
 
    private boolean heldForPrivileges() {
       PrivilegeCheck check = this.privileges;
       if (check.refuses() || this.refusal != null) {
          return true;
-      } else if (check.holdsJoin()) {
+      }
+
+      if (check.holdsJoin()) {
          if (this.privilegesHeldSince == 0L) {
             this.privilegesHeldSince = Util.getMillis();
          }
@@ -572,7 +563,7 @@ public final class ClientBedrockSession implements BedrockGameListener {
             } finally {
                ReferenceCountUtil.release(packet);
             }
-         }, (long)DEV_LATENCY_MS, TimeUnit.MILLISECONDS);
+         }, DEV_LATENCY_MS, TimeUnit.MILLISECONDS);
       } else {
          this.handleSafely(packet);
       }
@@ -590,15 +581,15 @@ public final class ClientBedrockSession implements BedrockGameListener {
          if (CorrectionLog.TRACE) {
             CorrectionLog.traceServer(packet, this.runtimeEntityId);
          }
-      } catch (RuntimeException var10) {
-         BedrockNative.LOGGER.debug("Movement log could not read {}", packet.getPacketType(), var10);
+      } catch (RuntimeException e) {
+         BedrockNative.LOGGER.debug("Movement log could not read {}", packet.getPacketType(), e);
       }
 
       try {
          this.handleGamePacket(packet);
-      } catch (RuntimeException var11) {
+      } catch (RuntimeException e) {
          if (this.failedPacketTypes.add(packet.getPacketType())) {
-            BedrockNative.LOGGER.error("Could not apply {}; later ones of this type are skipped silently when they fail too", packet.getPacketType(), var11);
+            BedrockNative.LOGGER.error("Could not apply {}; later ones of this type are skipped silently when they fail too", packet.getPacketType(), e);
          }
       } finally {
          PerfProbe.end(PerfProbe.Part.PACKETS, perf);
@@ -606,7 +597,6 @@ public final class ClientBedrockSession implements BedrockGameListener {
    }
 
    private void handleGamePacket(BedrockPacket packet) {
-      Objects.requireNonNull(packet);
       switch (packet) {
          case StartGamePacket startGame:
             this.onStartGame(startGame);
@@ -740,7 +730,7 @@ public final class ClientBedrockSession implements BedrockGameListener {
                   }
                );
             break;
-         case CorrectPlayerMovePredictionPacket correctionx:
+         case CorrectPlayerMovePredictionPacket correction:
             this.minecraft
                .execute(
                   () -> {
@@ -778,7 +768,7 @@ public final class ClientBedrockSession implements BedrockGameListener {
          case MovementEffectPacket effect when effect.getEntityRuntimeId() == this.runtimeEntityId && effect.getEffectType() != MovementEffectType.GLIDE_BOOST:
             BedrockNative.LOGGER.debug("Movement effect {} for {} ticks: not predicted", effect.getEffectType(), effect.getDuration());
             break;
-         case MobEffectPacket effectx when effectx.getRuntimeEntityId() == this.runtimeEntityId:
+         case MobEffectPacket effect when effect.getRuntimeEntityId() == this.runtimeEntityId:
             this.minecraft.execute(() -> {
                FreezeDiagnostics.effect(effect);
                LocalPlayer player = this.minecraft.player;
@@ -787,8 +777,7 @@ public final class ClientBedrockSession implements BedrockGameListener {
                }
             });
             break;
-         case MovementEffectPacket effectxx when effectxx.getEntityRuntimeId() == this.runtimeEntityId
-   && effectxx.getEffectType() == MovementEffectType.GLIDE_BOOST:
+         case MovementEffectPacket effect when effect.getEntityRuntimeId() == this.runtimeEntityId && effect.getEffectType() == MovementEffectType.GLIDE_BOOST:
             this.minecraft.execute(() -> {
                BedrockNative.LOGGER.debug("Glide boost for {} ticks from input tick {}", effect.getDuration(), effect.getTick());
                if (this.minecraft.player != null && !this.replay.startGlideBoost(this.minecraft.player, effect.getTick(), effect.getDuration())) {
@@ -869,7 +858,7 @@ public final class ClientBedrockSession implements BedrockGameListener {
          case SetDifficultyPacket difficulty:
             this.minecraft.execute(() -> this.levelRules.onDifficulty(difficulty));
             break;
-         case LevelEventGenericPacket eventx:
+         case LevelEventGenericPacket event:
             this.minecraft.execute(() -> {
                if (!this.completion.onGeneric(event)) {
                   this.levelRules.onGenericEvent(event);
@@ -900,11 +889,11 @@ public final class ClientBedrockSession implements BedrockGameListener {
          case CameraAimAssistPacket aim:
             BedrockCamera.aimAssist(aim);
             break;
-         case CameraAimAssistPresetsPacket aimx:
-            BedrockCamera.aimAssist(aimx);
+         case CameraAimAssistPresetsPacket aim:
+            BedrockCamera.aimAssist(aim);
             break;
-         case CameraAimAssistActorPriorityPacket aimxx:
-            BedrockCamera.aimAssist(aimxx);
+         case CameraAimAssistActorPriorityPacket aim:
+            BedrockCamera.aimAssist(aim);
             break;
          case ShowCreditsPacket showCredits:
             this.minecraft.execute(() -> this.credits.apply(showCredits));
@@ -994,9 +983,9 @@ public final class ClientBedrockSession implements BedrockGameListener {
          BedrockItemTags.useRegistries(access);
          ResourceKey<Level> levelKey = levelKey(start.getDimensionId());
          Holder<DimensionType> dimensionType = this.dimensions.typeOf(access, start.getDimensionId());
-         DimensionRange range = this.dimensions.rangeOf((DimensionType)dimensionType.value(), start.getDimensionId());
-         BedrockNative.LOGGER.info("StartGame world: {}", SpawnCheck.startGameLine(start, (DimensionType)dimensionType.value(), range));
-         int chunkGeneration = this.chunks.start(access, (DimensionType)dimensionType.value(), start.getDimensionId(), range);
+         DimensionRange range = this.dimensions.rangeOf(dimensionType.value(), start.getDimensionId());
+         BedrockNative.LOGGER.info("StartGame world: {}", SpawnCheck.startGameLine(start, dimensionType.value(), range));
+         int chunkGeneration = this.chunks.start(access, dimensionType.value(), start.getDimensionId(), range);
          this.runtimeEntityId = start.getRuntimeEntityId();
          long uniqueEntityId = start.getUniqueEntityId();
          this.uniqueEntityId = uniqueEntityId;
@@ -1053,7 +1042,7 @@ public final class ClientBedrockSession implements BedrockGameListener {
                      ClientPacketListener listener = new ClientPacketListener(this.minecraft, this.connection, cookie);
                      this.connection.setupInboundProtocol(GameProtocols.CLIENTBOUND_TEMPLATE.bind(RegistryFriendlyByteBuf.decorator(access)), listener);
                      part(parts, clock, "Java protocol");
-                     int radius = (Integer)this.minecraft.options.renderDistance().get();
+                     int radius = this.minecraft.options.renderDistance().get();
                      ThreadedLight.arm();
                      listener.handleLogin(
                         new ClientboundLoginPacket(
@@ -1141,7 +1130,7 @@ public final class ClientBedrockSession implements BedrockGameListener {
    }
 
    private void resendChunkRadius() {
-      int distance = (Integer)this.minecraft.options.renderDistance().get();
+      int distance = this.minecraft.options.renderDistance().get();
       if (this.spawned && this.chunkRadiusSent >= 0 && distance != this.chunkRadiusSent) {
          RequestChunkRadiusPacket request = chunkRadiusRequest(distance);
          this.chunkRadiusAsked = request.getRadius();
@@ -1169,8 +1158,7 @@ public final class ClientBedrockSession implements BedrockGameListener {
          BedrockNative.LOGGER
             .info("Changing dimension to {} at {}{}", new Object[]{change.getDimension(), change.getPosition(), change.isRespawn() ? " (respawn)" : ""});
          Holder<DimensionType> type = this.dimensions.typeOf(access, change.getDimension());
-         int chunkGeneration = this.chunks
-            .start(access, (DimensionType)type.value(), change.getDimension(), this.dimensions.rangeOf((DimensionType)type.value(), change.getDimension()));
+         int chunkGeneration = this.chunks.start(access, type.value(), change.getDimension(), this.dimensions.rangeOf(type.value(), change.getDimension()));
          this.serverDimensionReady = false;
          this.dimensionTarget = change.getPosition();
          this.sendLoadingScreen(ServerboundLoadingScreenPacketType.START_LOADING_SCREEN, change.getLoadingScreenId());
@@ -1267,7 +1255,7 @@ public final class ClientBedrockSession implements BedrockGameListener {
 
    private void tickNoChunksCheck() {
       if (this.noChunksCheckIn > 0 && --this.noChunksCheckIn == 0 && !this.closed && (this.chunks.chunkPacketsReceived() == 0 || FORCE_NO_CHUNKS_CHECK)) {
-         int distance = (Integer)this.minecraft.options.renderDistance().get();
+         int distance = this.minecraft.options.renderDistance().get();
          RequestChunkRadiusPacket request = chunkRadiusRequest(distance);
          this.chunkRadiusAsked = request.getRadius();
          this.bedrock.sendPacket(request);
@@ -1409,7 +1397,6 @@ public final class ClientBedrockSession implements BedrockGameListener {
    }
 
    private void onJavaPacketOut(Packet<?> packet) {
-      Objects.requireNonNull(packet);
       switch (packet) {
          case ServerboundClientTickEndPacket ignored:
             this.chunks.tickRequests(this.bedrock::sendPacket);
@@ -1514,7 +1501,7 @@ public final class ClientBedrockSession implements BedrockGameListener {
          case ServerboundPlayerAbilitiesPacket abilities:
             this.input.flightToggled(abilities.isFlying());
             return;
-         case ServerboundSetCarriedItemPacket ignoredx:
+         case ServerboundSetCarriedItemPacket ignored:
             return;
          case ServerboundContainerClickPacket click:
             this.requests.onClick(click);
@@ -1524,8 +1511,8 @@ public final class ClientBedrockSession implements BedrockGameListener {
             return;
          case ServerboundContainerClosePacket close when this.inventory.lecterns().onJavaClose(close.getContainerId()):
             return;
-         case ServerboundContainerClosePacket closex:
-            this.requests.onJavaClose(closex.getContainerId());
+         case ServerboundContainerClosePacket close:
+            this.requests.onJavaClose(close.getContainerId());
             return;
          case ServerboundContainerButtonClickPacket button when this.inventory.lecterns().isOpen(button.containerId()):
             this.inventory.lecterns().onButton(button.buttonId());
@@ -1533,7 +1520,7 @@ public final class ClientBedrockSession implements BedrockGameListener {
          case ServerboundSetJigsawBlockPacket jigsaw:
             this.bedrock.sendPacket(BedrockJigsawBlocks.toBedrock(jigsaw));
             return;
-         case ServerboundJigsawGeneratePacket ignoredxx:
+         case ServerboundJigsawGeneratePacket ignored:
             BedrockNative.LOGGER.info("Jigsaw Generate not sent: Bedrock's jigsaw editor has no such button");
             return;
          case ServerboundChatPacket message:
@@ -1542,10 +1529,10 @@ public final class ClientBedrockSession implements BedrockGameListener {
          case ServerboundChatCommandPacket command:
             this.bedrock.sendPacket(this.chat.command(command.command()));
             return;
-         case ServerboundChatCommandSignedPacket commandx:
-            this.bedrock.sendPacket(this.chat.command(commandx.command()));
+         case ServerboundChatCommandSignedPacket command:
+            this.bedrock.sendPacket(this.chat.command(command.command()));
             return;
-         case ServerboundClientCommandPacket commandxx when commandxx.getAction()
+         case ServerboundClientCommandPacket command when command.getAction()
    == net.minecraft.network.protocol.game.ServerboundClientCommandPacket.Action.PERFORM_RESPAWN:
             this.localPlayer.requestRespawn();
             return;
@@ -1561,11 +1548,11 @@ public final class ClientBedrockSession implements BedrockGameListener {
          case ServerboundEditBookPacket book:
             BedrockBooks.toBedrock(book, this.identity).forEach(this.bedrock::sendPacket);
             return;
-         case ServerboundPlayerCommandPacket commandxxx when commandxxx.getAction()
+         case ServerboundPlayerCommandPacket command when command.getAction()
    == net.minecraft.network.protocol.game.ServerboundPlayerCommandPacket.Action.OPEN_INVENTORY:
             this.extras.openMountInventory();
             return;
-         case ServerboundPlayerCommandPacket commandxxxx when commandxxxx.getAction()
+         case ServerboundPlayerCommandPacket command when command.getAction()
    == net.minecraft.network.protocol.game.ServerboundPlayerCommandPacket.Action.STOP_SLEEPING:
             this.sleeping.leaveBed();
             return;
@@ -1650,15 +1637,15 @@ public final class ClientBedrockSession implements BedrockGameListener {
    private static Component javaMessage(SessionEnd end) {
       if (!end.message().isBlank()) {
          return BedrockText.ui(end.message());
-      } else {
-         String said = end.detail().isBlank() ? null : BedrockText.lookupKey(end.detail().strip());
-         if (said != null) {
-            return BedrockText.format(said);
-         } else {
-            String body = BedrockText.lookupKey(OreDisconnect.entry(end.reason()).body());
-            return body != null ? BedrockText.format(body) : Component.literal(end.logText());
-         }
       }
+
+      String said = end.detail().isBlank() ? null : BedrockText.lookupKey(end.detail().strip());
+      if (said != null) {
+         return BedrockText.format(said);
+      }
+
+      String body = BedrockText.lookupKey(OreDisconnect.entry(end.reason()).body());
+      return body != null ? BedrockText.format(body) : Component.literal(end.logText());
    }
 
    private void resetRules() {

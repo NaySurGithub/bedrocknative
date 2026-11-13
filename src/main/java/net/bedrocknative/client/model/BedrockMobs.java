@@ -74,9 +74,9 @@ public final class BedrockMobs {
       if (support == null) {
          try {
             support = VanillaMobs.decide(registry, identifier);
-         } catch (RuntimeException var4) {
-            BedrockNative.LOGGER.warn("Bedrock look: couldn't read what {} needs", identifier, var4);
-            support = new VanillaMobs.Support(identifier, false, List.of("unreadable definition: " + var4), List.of());
+         } catch (RuntimeException e) {
+            BedrockNative.LOGGER.warn("Bedrock look: couldn't read what {} needs", identifier, e);
+            support = new VanillaMobs.Support(identifier, false, List.of("unreadable definition: " + e), List.of());
          }
 
          SUPPORT.put(identifier, support);
@@ -129,56 +129,56 @@ public final class BedrockMobs {
       ActorSnapshot snapshot = (ActorSnapshot)state.getData(FRAME);
       if (snapshot == null) {
          return false;
-      } else {
-         poseStack.pushPose();
-         float scale = state.scale;
-         poseStack.scale(scale, scale, scale);
-         rotations(state, poseStack, scale, flipDegrees, shaking);
-         if (state instanceof EndermanRenderState enderman) {
-            carriedBlock(enderman, poseStack, collector);
-         }
-
-         DrawSnapshot draw = snapshot.draw();
-         float model = snapshot.actorScale() / 16.0F;
-         poseStack.scale(draw.scale(0) * model, draw.scale(1) * model, draw.scale(2) * model);
-         snapshot.submit(
-            poseStack,
-            collector,
-            state.lightCoords,
-            LivingEntityRenderer.getOverlayCoords(state, whiteOverlay),
-            state.outlineColor,
-            !state.isInvisible,
-            whiteOverlay,
-            state.hasRedOverlay
-         );
-         if (state instanceof ArmedEntityRenderState armed) {
-            heldItem(snapshot, 0, armed.rightHandItemState, armed, poseStack, collector);
-            heldItem(snapshot, 1, armed.leftHandItemState, armed, poseStack, collector);
-         }
-
-         poseStack.popPose();
-         SUBMITTED.addTo(snapshot.identifier(), 1);
-         return true;
       }
+
+      poseStack.pushPose();
+      float scale = state.scale;
+      poseStack.scale(scale, scale, scale);
+      rotations(state, poseStack, scale, flipDegrees, shaking);
+      if (state instanceof EndermanRenderState enderman) {
+         carriedBlock(enderman, poseStack, collector);
+      }
+
+      DrawSnapshot draw = snapshot.draw();
+      float model = snapshot.actorScale() / 16.0F;
+      poseStack.scale(draw.scale(0) * model, draw.scale(1) * model, draw.scale(2) * model);
+      snapshot.submit(
+         poseStack,
+         collector,
+         state.lightCoords,
+         LivingEntityRenderer.getOverlayCoords(state, whiteOverlay),
+         state.outlineColor,
+         !state.isInvisible,
+         whiteOverlay,
+         state.hasRedOverlay
+      );
+      if (state instanceof ArmedEntityRenderState armed) {
+         heldItem(snapshot, 0, armed.rightHandItemState, armed, poseStack, collector);
+         heldItem(snapshot, 1, armed.leftHandItemState, armed, poseStack, collector);
+      }
+
+      poseStack.popPose();
+      SUBMITTED.addTo(snapshot.identifier(), 1);
+      return true;
    }
 
    public static boolean submitActor(EntityRenderState state, PoseStack poseStack, SubmitNodeCollector collector) {
       ActorSnapshot snapshot = (ActorSnapshot)state.getData(FRAME);
       if (snapshot == null) {
          return false;
-      } else {
-         poseStack.pushPose();
-         poseStack.rotateDegrees(Axis.YP, 180.0F - snapshot.bodyYaw());
-         DrawSnapshot draw = snapshot.draw();
-         float model = snapshot.actorScale() / 16.0F;
-         poseStack.scale(draw.scale(0) * model, draw.scale(1) * model, draw.scale(2) * model);
-         boolean red = state instanceof EnderDragonRenderState dragon && dragon.hasRedOverlay;
-         int overlay = red ? OverlayTexture.pack(0.0F, true) : OverlayTexture.NO_OVERLAY;
-         snapshot.submit(poseStack, collector, state.lightCoords, overlay, state.outlineColor, true, 0.0F, red);
-         poseStack.popPose();
-         SUBMITTED.addTo(snapshot.identifier(), 1);
-         return true;
       }
+
+      poseStack.pushPose();
+      poseStack.rotateDegrees(Axis.YP, 180.0F - snapshot.bodyYaw());
+      DrawSnapshot draw = snapshot.draw();
+      float model = snapshot.actorScale() / 16.0F;
+      poseStack.scale(draw.scale(0) * model, draw.scale(1) * model, draw.scale(2) * model);
+      boolean red = state instanceof EnderDragonRenderState dragon && dragon.hasRedOverlay;
+      int overlay = red ? OverlayTexture.pack(0.0F, true) : OverlayTexture.NO_OVERLAY;
+      snapshot.submit(poseStack, collector, state.lightCoords, overlay, state.outlineColor, true, 0.0F, red);
+      poseStack.popPose();
+      SUBMITTED.addTo(snapshot.identifier(), 1);
+      return true;
    }
 
    private static void rotations(LivingEntityRenderState state, PoseStack poseStack, float scale, float flipDegrees, boolean shaking) {

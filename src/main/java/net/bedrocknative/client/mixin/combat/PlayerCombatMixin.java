@@ -7,29 +7,20 @@ import net.minecraft.world.entity.player.Player;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 
-@Mixin({Player.class})
+@Mixin(Player.class)
 public abstract class PlayerCombatMixin {
-   @ModifyReturnValue(
-      method = {"getAttackStrengthScale"},
-      at = {@At("RETURN")}
-   )
+   @ModifyReturnValue(method = "getAttackStrengthScale", at = @At("RETURN"))
    private float bedrocknative$noCooldown(float original) {
       return BedrockMovement.appliesTo(this) ? 1.0F : original;
    }
 
-   @ModifyReturnValue(
-      method = {"blockInteractionRange"},
-      at = {@At("RETURN")}
-   )
+   @ModifyReturnValue(method = "blockInteractionRange", at = @At("RETURN"))
    private double bedrocknative$blockReach(double original) {
       return BedrockMovement.appliesTo(this) ? Math.max(original, 5.0) : original;
    }
 
-   @ModifyReturnValue(
-      method = {"entityInteractionRange"},
-      at = {@At("RETURN")}
-   )
+   @ModifyReturnValue(method = "entityInteractionRange", at = @At("RETURN"))
    private double bedrocknative$entityReach(double original) {
-      return BedrockMovement.appliesTo(this) ? EntityPick.reach(original, ((Player)this).isCreative()) : original;
+      return BedrockMovement.appliesTo(this) ? EntityPick.reach(original, ((Player)(Object)this).isCreative()) : original;
    }
 }

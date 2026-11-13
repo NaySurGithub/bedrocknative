@@ -9,19 +9,21 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import org.jspecify.annotations.Nullable;
 
 public final class PackDownloadScreen extends Screen {
    private static final int BAR_WIDTH = 200;
    private static final int BAR_HEIGHT = 6;
-   private final Supplier<PackProgress> progress;
+   private final Supplier<@Nullable PackProgress> progress;
    private final Runnable cancel;
 
-   public PackDownloadScreen(Supplier<PackProgress> progress, Runnable cancel) {
+   public PackDownloadScreen(Supplier<@Nullable PackProgress> progress, Runnable cancel) {
       super(Component.literal(BedrockText.translate("progressScreen.title.applyingPacks", List.of())));
       this.progress = progress;
       this.cancel = cancel;
    }
 
+   @Override
    protected void init() {
       this.addRenderableWidget(
          Button.builder(Component.literal(BedrockText.translate("gui.cancel", List.of())), button -> this.cancel.run())
@@ -30,6 +32,7 @@ public final class PackDownloadScreen extends Screen {
       );
    }
 
+   @Override
    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
       super.extractRenderState(graphics, mouseX, mouseY, a);
       PackProgress current = this.progress.get();
@@ -52,10 +55,12 @@ public final class PackDownloadScreen extends Screen {
       return String.format(Locale.ROOT, "%.1f MB", bytes / 1048576.0);
    }
 
+   @Override
    public boolean shouldCloseOnEsc() {
       return false;
    }
 
+   @Override
    public boolean isPauseScreen() {
       return false;
    }

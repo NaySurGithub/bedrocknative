@@ -192,7 +192,7 @@ final class DevEffectsTest {
    }
 
    private <T> T onClient(Supplier<T> supplier) {
-      return (T)this.minecraft.submit(supplier).join();
+      return this.minecraft.submit(supplier).join();
    }
 
    private static void sleep(long millis) {

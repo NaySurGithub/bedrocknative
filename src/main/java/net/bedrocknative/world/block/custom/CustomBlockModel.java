@@ -42,23 +42,23 @@ public final class CustomBlockModel {
 
       if (state.transform().isIdentity()) {
          return quads;
-      } else {
-         Matrix4f matrix = state.transform().matrix();
-         List<CustomBlockModel.ModelQuad> transformed = new ArrayList<>(quads.size());
+      }
 
-         for (CustomBlockModel.ModelQuad quad : quads) {
-            Vector3f[] positions = new Vector3f[4];
+      Matrix4f matrix = state.transform().matrix();
+      List<CustomBlockModel.ModelQuad> transformed = new ArrayList<>(quads.size());
 
-            for (int i = 0; i < 4; i++) {
-               positions[i] = matrix.transformPosition(new Vector3f(quad.positions()[i]));
-            }
+      for (CustomBlockModel.ModelQuad quad : quads) {
+         Vector3f[] positions = new Vector3f[4];
 
-            Direction cull = quad.cullFace() != null && state.transform().keepsCell() ? rotate(matrix, quad.cullFace()) : null;
-            transformed.add(finish(positions, (float[])quad.uvs().clone(), cull, quad.face(), quad.material(), quad.bone(), quad.cube(), quad.back()));
+         for (int i = 0; i < 4; i++) {
+            positions[i] = matrix.transformPosition(new Vector3f(quad.positions()[i]));
          }
 
-         return transformed;
+         Direction cull = quad.cullFace() != null && state.transform().keepsCell() ? rotate(matrix, quad.cullFace()) : null;
+         transformed.add(finish(positions, (float[])quad.uvs().clone(), cull, quad.face(), quad.material(), quad.bone(), quad.cube(), quad.back()));
       }
+
+      return transformed;
    }
 
    public static Direction worldDirection(CustomBlockState state, Direction direction) {
@@ -136,13 +136,13 @@ public final class CustomBlockModel {
       Matrix4f cached = cache.get(key);
       if (cached != null) {
          return cached;
-      } else {
-         BlockGeometry.Bone parent = bone.parent() == null ? null : byName.get(bone.parent().toLowerCase(Locale.ROOT));
-         Matrix4f matrix = parent != null && parent != bone && depth < 64 ? new Matrix4f(boneMatrix(parent, byName, cache, depth + 1)) : new Matrix4f();
-         rotateAbout(matrix, javaPoint(bone.pivot()), bone.rotation());
-         cache.put(key, matrix);
-         return matrix;
       }
+
+      BlockGeometry.Bone parent = bone.parent() == null ? null : byName.get(bone.parent().toLowerCase(Locale.ROOT));
+      Matrix4f matrix = parent != null && parent != bone && depth < 64 ? new Matrix4f(boneMatrix(parent, byName, cache, depth + 1)) : new Matrix4f();
+      rotateAbout(matrix, javaPoint(bone.pivot()), bone.rotation());
+      cache.put(key, matrix);
+      return matrix;
    }
 
    private static void rotateAbout(Matrix4f matrix, Vector3f pivot, float[] rotation) {
@@ -267,7 +267,6 @@ public final class CustomBlockModel {
          case X -> size[1] == 0.0F || size[2] == 0.0F;
          case Y -> size[0] == 0.0F || size[2] == 0.0F;
          case Z -> size[0] == 0.0F || size[1] == 0.0F;
-         default -> throw new MatchException(null, null);
       };
    }
 
@@ -276,7 +275,6 @@ public final class CustomBlockModel {
          case X -> size[0] == 0.0F;
          case Y -> size[1] == 0.0F;
          case Z -> size[2] == 0.0F;
-         default -> throw new MatchException(null, null);
       };
    }
 
@@ -331,17 +329,16 @@ public final class CustomBlockModel {
       Direction direction = closest(normal);
       if (direction == null) {
          return new CustomBlockModel.ModelQuad(positions, uvs, Direction.UP, cull, face, material, bone, cube, back);
-      } else {
-         if (axisAligned(positions, direction)) {
-            reorder(positions, uvs, direction);
-         }
-
-         return new CustomBlockModel.ModelQuad(positions, uvs, direction, cull, face, material, bone, cube, back);
       }
+
+      if (axisAligned(positions, direction)) {
+         reorder(positions, uvs, direction);
+      }
+
+      return new CustomBlockModel.ModelQuad(positions, uvs, direction, cull, face, material, bone, cube, back);
    }
 
-   @Nullable
-   private static Direction closest(Vector3f normal) {
+   private static @Nullable Direction closest(Vector3f normal) {
       if (!(normal.lengthSquared() < 1.0E-12F) && normal.isFinite()) {
          normal.normalize();
          Direction best = null;

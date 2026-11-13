@@ -242,11 +242,11 @@ public final class BedrockMovement {
    public static boolean takeGlideAfterFlight() {
       if (replaying) {
          return false;
-      } else {
-         boolean value = glideAfterFlight;
-         glideAfterFlight = false;
-         return value;
       }
+
+      boolean value = glideAfterFlight;
+      glideAfterFlight = false;
+      return value;
    }
 
    public static void setScaffoldDescend(boolean value) {

@@ -74,8 +74,7 @@ public final class ItemDisplayTransforms {
       return this.transforms.get(context);
    }
 
-   @Nullable
-   public static ItemDisplayTransforms.Context context(String key) {
+   public static ItemDisplayTransforms.@Nullable Context context(String key) {
       for (ItemDisplayTransforms.Context context : ItemDisplayTransforms.Context.values()) {
          if (context.key.equals(key.toLowerCase(Locale.ROOT))) {
             return context;
@@ -85,7 +84,7 @@ public final class ItemDisplayTransforms {
       return null;
    }
 
-   public static enum Context {
+   public enum Context {
       GUI("gui"),
       FIRST_PERSON_RIGHT_HAND("firstperson_righthand"),
       FIRST_PERSON_LEFT_HAND("firstperson_lefthand"),
@@ -99,7 +98,7 @@ public final class ItemDisplayTransforms {
 
       private final String key;
 
-      private Context(String key) {
+      Context(String key) {
          this.key = key;
       }
 

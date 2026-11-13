@@ -18,26 +18,26 @@ public final class FormParser {
          JsonElement root = JsonParser.parseString(json);
          if (!root.isJsonObject()) {
             throw new FormParser.FormParseException("form JSON is not an object");
-         } else {
-            JsonObject form = root.getAsJsonObject();
-            String type = string(form, "type").toLowerCase(Locale.ROOT);
-
-            return (BedrockForm)(switch (type) {
-               case "form" -> new BedrockForm.Simple(text(form, "title"), text(form, "content"), simpleElements(form));
-               case "modal" -> new BedrockForm.Modal(text(form, "title"), text(form, "content"), text(form, "button1"), text(form, "button2"));
-               case "custom_form" -> new BedrockForm.Custom(
-                  text(form, "title"),
-                  customElements(form),
-                  form.has("submit") && !form.get("submit").isJsonNull() ? text(form, "submit") : null,
-                  image(form.get("icon"))
-               );
-               default -> throw new FormParser.FormParseException("unknown form type '" + type + "'");
-            });
          }
-      } catch (FormParser.FormParseException var6) {
-         throw var6;
-      } catch (RuntimeException var7) {
-         throw new FormParser.FormParseException(var7.getMessage() != null ? var7.getMessage() : var7.toString());
+
+         JsonObject form = root.getAsJsonObject();
+         String type = string(form, "type").toLowerCase(Locale.ROOT);
+
+         return switch (type) {
+            case "form" -> new BedrockForm.Simple(text(form, "title"), text(form, "content"), simpleElements(form));
+            case "modal" -> new BedrockForm.Modal(text(form, "title"), text(form, "content"), text(form, "button1"), text(form, "button2"));
+            case "custom_form" -> new BedrockForm.Custom(
+               text(form, "title"),
+               customElements(form),
+               form.has("submit") && !form.get("submit").isJsonNull() ? text(form, "submit") : null,
+               image(form.get("icon"))
+            );
+            default -> throw new FormParser.FormParseException("unknown form type '" + type + "'");
+         };
+      } catch (FormParser.FormParseException e) {
+         throw e;
+      } catch (RuntimeException e) {
+         throw new FormParser.FormParseException(e.getMessage() != null ? e.getMessage() : e.toString());
       }
    }
 
@@ -49,13 +49,13 @@ public final class FormParser {
             JsonObject element = entry.getAsJsonObject();
             String type = element.has("type") ? string(element, "type") : "button";
 
-            elements.add((FormElement)(switch (type) {
+            elements.add(switch (type) {
                case "button" -> new FormElement.Button(text(element, "text"), image(element.get("image")));
                case "header" -> new FormElement.Header(text(element, "text"));
                case "label" -> new FormElement.Label(text(element, "text"));
                case "divider" -> new FormElement.Divider();
                default -> throw new FormParser.FormParseException("unknown simple form element '" + type + "'");
-            }));
+            });
          }
 
          return elements;
@@ -75,7 +75,7 @@ public final class FormParser {
             String tooltip = text(element, "tooltip");
 
             elements.add(
-               (FormElement)(switch (type) {
+               switch (type) {
                   case "label" -> new FormElement.Label(text);
                   case "header" -> new FormElement.Header(text);
                   case "divider" -> new FormElement.Divider();
@@ -93,7 +93,7 @@ public final class FormParser {
                      yield new FormElement.Dropdown(text, options, index(element, options.size()), tooltip);
                   }
                   default -> throw new FormParser.FormParseException("unknown custom form element '" + type + "'");
-               })
+               }
             );
          }
 
@@ -113,7 +113,7 @@ public final class FormParser {
 
    private static int index(JsonObject element, int size) {
       int index = element.has("default") && !element.get("default").isJsonNull() ? element.get("default").getAsInt() : 0;
-      return size == 0 ? 0 : Math.clamp((long)index, 0, size - 1);
+      return size == 0 ? 0 : Math.clamp(index, 0, size - 1);
    }
 
    private static float number(JsonObject element, String key, float fallback) throws FormParser.FormParseException {
@@ -126,8 +126,7 @@ public final class FormParser {
       }
    }
 
-   @Nullable
-   private static FormImage image(@Nullable JsonElement element) {
+   private static @Nullable FormImage image(@Nullable JsonElement element) {
       if (element != null && element.isJsonObject()) {
          JsonObject image = element.getAsJsonObject();
          String data = string(image, "data");

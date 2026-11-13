@@ -59,8 +59,8 @@ public final class GlyphPages {
    private static boolean has(PackSource pack, String path) {
       try {
          return pack.read(path).isPresent();
-      } catch (IOException var3) {
-         BedrockNative.LOGGER.debug("Couldn't read {} from {}", new Object[]{path, pack, var3});
+      } catch (IOException e) {
+         BedrockNative.LOGGER.debug("Couldn't read {} from {}", new Object[]{path, pack, e});
          return false;
       }
    }

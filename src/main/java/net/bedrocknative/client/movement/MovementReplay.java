@@ -38,69 +38,69 @@ public final class MovementReplay {
    public boolean rewind(LocalPlayer player, long tick, Vec3 position, Vec3 velocity, boolean onGround) {
       if (!this.known(tick)) {
          return false;
-      } else {
-         player.setPos(position);
-         player.setDeltaMovement(velocity);
-         player.setOnGround(onGround);
-         BedrockMovement.setGlideBoostTicks(this.glideBoosts[index(tick)]);
-         BedrockDepenetration.restore(this.penetrations[index(tick)]);
-         this.store(index(tick), player);
-         this.replayAfter(player, tick);
-         return true;
       }
+
+      player.setPos(position);
+      player.setDeltaMovement(velocity);
+      player.setOnGround(onGround);
+      BedrockMovement.setGlideBoostTicks(this.glideBoosts[index(tick)]);
+      BedrockDepenetration.restore(this.penetrations[index(tick)]);
+      this.store(index(tick), player);
+      this.replayAfter(player, tick);
+      return true;
    }
 
    public boolean setMotion(LocalPlayer player, long tick, Vec3 motion) {
       if (!this.known(tick)) {
          return false;
-      } else {
-         int index = index(tick);
-         return this.rewind(player, tick, this.positions[index], motion, this.grounds[index]);
       }
+
+      int index = index(tick);
+      return this.rewind(player, tick, this.positions[index], motion, this.grounds[index]);
    }
 
    public boolean startGlideBoost(LocalPlayer player, long tick, int duration) {
       if (!this.known(tick)) {
          return false;
-      } else {
-         int index = index(tick);
-         BedrockMovement.setGlideBoostTicks(this.glideBoosts[index]);
-         BedrockMovement.startGlideBoost(duration);
-         this.glideBoosts[index] = BedrockMovement.glideBoostTicks();
-         this.rewind(player, tick, this.positions[index], this.velocities[index], this.grounds[index]);
-         return true;
       }
+
+      int index = index(tick);
+      BedrockMovement.setGlideBoostTicks(this.glideBoosts[index]);
+      BedrockMovement.startGlideBoost(duration);
+      this.glideBoosts[index] = BedrockMovement.glideBoostTicks();
+      this.rewind(player, tick, this.positions[index], this.velocities[index], this.grounds[index]);
+      return true;
    }
 
    public boolean setFlyingAfter(LocalPlayer player, long tick, boolean flying) {
       if (!this.known(tick)) {
          return false;
-      } else {
-         for (long t = tick + 1L; t <= this.lastTick; t++) {
-            MovementReplay.Frame frame = this.frames[index(t)];
-            if (frame == null || frame.tick() != t) {
-               break;
-            }
+      }
 
-            this.frames[index(t)] = new MovementReplay.Frame(
-               t,
-               frame.input(),
-               frame.jumping(),
-               frame.jumped(),
-               frame.sprinting(),
-               frame.sneaking(),
-               flying,
-               false,
-               frame.gliding(),
-               frame.yRot(),
-               frame.xRot(),
-               frame.held()
-            );
+      for (long t = tick + 1L; t <= this.lastTick; t++) {
+         MovementReplay.Frame frame = this.frames[index(t)];
+         if (frame == null || frame.tick() != t) {
+            break;
          }
 
-         this.resimulateAfter(player, tick);
-         return true;
+         this.frames[index(t)] = new MovementReplay.Frame(
+            t,
+            frame.input(),
+            frame.jumping(),
+            frame.jumped(),
+            frame.sprinting(),
+            frame.sneaking(),
+            flying,
+            false,
+            frame.gliding(),
+            frame.yRot(),
+            frame.xRot(),
+            frame.held()
+         );
       }
+
+      this.resimulateAfter(player, tick);
+      return true;
    }
 
    public void resimulateAfter(LocalPlayer player, long tick) {

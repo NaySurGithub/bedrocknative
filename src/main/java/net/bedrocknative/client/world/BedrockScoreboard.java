@@ -39,8 +39,7 @@ public final class BedrockScoreboard {
    private final Map<Long, BedrockScoreboard.Entry> entries = new HashMap<>();
    private final Set<String> ascending = new HashSet<>();
    private final ScoreboardIdentities identities = new ScoreboardIdentities();
-   @Nullable
-   private String sidebarObjective;
+   private @Nullable String sidebarObjective;
    private String sidebarTitle = "";
 
    public BedrockScoreboard(Minecraft minecraft, BedrockEntities entities) {
@@ -118,16 +117,14 @@ public final class BedrockScoreboard {
    }
 
    private void onDisplay(Scoreboard scoreboard, SetDisplayObjectivePacket packet) {
-      String id = packet.getDisplaySlot();
-
-      DisplaySlot slot = switch (id) {
+      DisplaySlot slot = switch (packet.getDisplaySlot()) {
          case "sidebar" -> DisplaySlot.SIDEBAR;
          case "list" -> DisplaySlot.LIST;
          case "belowname" -> DisplaySlot.BELOW_NAME;
          default -> null;
       };
       if (slot != null) {
-         id = packet.getObjectiveId();
+         String id = packet.getObjectiveId();
          if (slot == DisplaySlot.SIDEBAR) {
             this.sidebarObjective = id != null && !id.isEmpty() ? id : null;
             this.sidebarTitle = packet.getDisplayName() == null ? "" : packet.getDisplayName();
@@ -181,14 +178,14 @@ public final class BedrockScoreboard {
             long identified = this.identities.playerOf(info.getScoreboardId());
             if (entity == null && identified != Long.MIN_VALUE) {
                entityId = identified;
-               entity = this.entities.byUniqueId(identified);
+               entity = this.entities.byUniqueId(entityId);
             }
 
             owner = entity == null ? fakeOwner(info.getScoreboardId()) : entity.getScoreboardName();
             String listed = entity == null ? this.entities.playerName(entityId) : null;
-            display = (Component)(entity instanceof Player player
+            display = entity instanceof Player player
                ? BedrockText.format(player.getGameProfile().name())
-               : (entity != null ? entity.getName() : BedrockText.format(listed != null ? listed : Long.toString(entityId))));
+               : (entity != null ? entity.getName() : BedrockText.format(listed != null ? listed : Long.toString(entityId)));
             text = display.getString();
          }
 

@@ -18,8 +18,8 @@ public final class MoreCullingCompat {
             CustomBlocks.CARRIER.getClass().getMethod("moreculling$setCanCull", boolean.class).invoke(CustomBlocks.CARRIER, false);
             BedrockNative.LOGGER.info("MoreCulling: custom block culling disabled for {}", CustomBlocks.KEY.identifier());
          } catch (ClassNotFoundException var1) {
-         } catch (RuntimeException | ReflectiveOperationException var2) {
-            BedrockNative.LOGGER.warn("MoreCulling: could not disable custom block culling ({})", var2.toString());
+         } catch (ReflectiveOperationException | RuntimeException e) {
+            BedrockNative.LOGGER.warn("MoreCulling: could not disable custom block culling ({})", e.toString());
          }
       }
    }

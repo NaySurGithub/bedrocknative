@@ -20,8 +20,7 @@ final class JavaResourcePacks {
       return pack.location().source() == PackSource.DEFAULT;
    }
 
-   @Nullable
-   static Resource below(ResourceManager manager, Identifier file) {
+   static @Nullable Resource below(ResourceManager manager, Identifier file) {
       List<Resource> stack = manager.getResourceStack(file);
 
       for (int i = stack.size() - 1; i >= 0; i--) {

@@ -25,32 +25,32 @@ public final class TlsFallbackRule {
    public static TlsFallbackRule.PeerReply classify(byte[] first, int count) {
       if (count <= 0) {
          return TlsFallbackRule.PeerReply.NOTHING;
-      } else {
-         int type = first[0] & 255;
-         if (type >= 20 && type <= 24 && (count <= 1 || (first[1] & 255) == 3)) {
-            if (type == 21 && count >= 7) {
-               int level = first[5] & 255;
-               int description = first[6] & 255;
-               if (level == 2 && (description == 40 || description == 70)) {
-                  return TlsFallbackRule.PeerReply.REFUSAL_ALERT;
-               }
-            }
+      }
 
-            return TlsFallbackRule.PeerReply.OTHER_TLS;
-         } else {
-            return TlsFallbackRule.PeerReply.NOT_TLS;
+      int type = first[0] & 255;
+      if (type >= 20 && type <= 24 && (count <= 1 || (first[1] & 255) == 3)) {
+         if (type == 21 && count >= 7) {
+            int level = first[5] & 255;
+            int description = first[6] & 255;
+            if (level == 2 && (description == 40 || description == 70)) {
+               return TlsFallbackRule.PeerReply.REFUSAL_ALERT;
+            }
          }
+
+         return TlsFallbackRule.PeerReply.OTHER_TLS;
+      } else {
+         return TlsFallbackRule.PeerReply.NOT_TLS;
       }
    }
 
-   public static enum Decision {
+   public enum Decision {
       PLAIN_HTTP,
       CERTIFICATE_REFUSED,
       DOWNGRADE_REFUSED,
       TLS_FAILED;
    }
 
-   public static enum PeerReply {
+   public enum PeerReply {
       NOTHING,
       NOT_TLS,
       REFUSAL_ALERT,

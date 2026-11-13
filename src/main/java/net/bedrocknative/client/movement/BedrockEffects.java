@@ -57,31 +57,30 @@ public final class BedrockEffects {
       Holder<MobEffect> effect = byId(packet.getEffectId());
       if (effect == null) {
          return false;
-      } else {
-         switch (packet.getEvent()) {
-            case ADD:
-            case MODIFY:
-               player.forceAddEffect(
-                  new MobEffectInstance(effect, packet.getDuration(), packet.getAmplifier(), packet.isAmbient(), packet.isParticles(), true), null
-               );
-               break;
-            case REMOVE:
-               player.removeEffectNoUpdate(effect);
-               break;
-            default:
-               return false;
-         }
-
-         return effect == MobEffects.JUMP_BOOST || effect == MobEffects.LEVITATION || effect == MobEffects.SLOW_FALLING;
       }
+
+      switch (packet.getEvent()) {
+         case ADD:
+         case MODIFY:
+            player.forceAddEffect(
+               new MobEffectInstance(effect, packet.getDuration(), packet.getAmplifier(), packet.isAmbient(), packet.isParticles(), true), null
+            );
+            break;
+         case REMOVE:
+            player.removeEffectNoUpdate(effect);
+            break;
+         default:
+            return false;
+      }
+
+      return effect == MobEffects.JUMP_BOOST || effect == MobEffects.LEVITATION || effect == MobEffects.SLOW_FALLING;
    }
 
    public static int idOf(@Nullable Holder<MobEffect> effect) {
       return effect == null ? 0 : BY_ID.indexOf(effect) + 1;
    }
 
-   @Nullable
-   public static Holder<MobEffect> byId(int id) {
+   public static @Nullable Holder<MobEffect> byId(int id) {
       return id >= 1 && id <= BY_ID.size() ? BY_ID.get(id - 1) : null;
    }
 }

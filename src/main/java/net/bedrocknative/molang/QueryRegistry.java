@@ -20,8 +20,7 @@ public final class QueryRegistry {
    private QueryRegistry() {
    }
 
-   @Nullable
-   public static QueryRegistry.Entry get(String name) {
+   public static QueryRegistry.@Nullable Entry get(String name) {
       return ENTRIES.get(name);
    }
 
@@ -52,8 +51,8 @@ public final class QueryRegistry {
                entries.put(parts[0], new QueryRegistry.Entry(parts[0], 0, -1, zero, true));
             }
          }
-      } catch (IOException var8) {
-         BedrockNative.LOGGER.warn("Couldn't read the Molang query list: {}", var8.getMessage());
+      } catch (IOException e) {
+         BedrockNative.LOGGER.warn("Couldn't read the Molang query list: {}", e.getMessage());
       }
 
       Queries.register((name, min, max, function) -> entries.put(name, new QueryRegistry.Entry(name, min, max, function, false)));

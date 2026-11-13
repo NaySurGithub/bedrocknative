@@ -62,65 +62,64 @@ public final class McbParticles {
       return hash;
    }
 
-   @Nullable
-   public static JsonObject toJson(byte[] data) {
+   public static @Nullable JsonObject toJson(byte[] data) {
       if (!isMcb(data)) {
          return null;
-      } else {
-         try {
-            McbParticles.Reader reader = new McbParticles.Reader(data);
-            reader.position = 4;
-            int major = reader.u16();
-            int minor = reader.u16();
-            long patch = reader.u32() & 4294967295L;
-            reader.string();
-            String identifier = reader.string();
-            String material = reader.string();
-            String texture = reader.string();
-            JsonObject components = new JsonObject();
-            long count = reader.u32() & 4294967295L;
+      }
 
-            for (long i = 0L; i < count; i++) {
-               String name = BY_HASH.get(reader.u32());
-               if (name == null) {
-                  return null;
-               }
+      try {
+         McbParticles.Reader reader = new McbParticles.Reader(data);
+         reader.position = 4;
+         int major = reader.u16();
+         int minor = reader.u16();
+         long patch = reader.u32() & 4294967295L;
+         reader.string();
+         String identifier = reader.string();
+         String material = reader.string();
+         String texture = reader.string();
+         JsonObject components = new JsonObject();
+         long count = reader.u32() & 4294967295L;
 
-               components.add("minecraft:" + name, component(name, reader));
+         for (long i = 0L; i < count; i++) {
+            String name = BY_HASH.get(reader.u32());
+            if (name == null) {
+               return null;
             }
 
-            JsonObject effect = new JsonObject();
-            JsonObject description = new JsonObject();
-            description.addProperty("identifier", identifier);
-            JsonObject render = new JsonObject();
-            render.addProperty("material", material);
-            render.addProperty("texture", texture);
-            description.add("basic_render_parameters", render);
-            effect.add("description", description);
-            int tail = reader.position;
-
-            try {
-               JsonObject curves = curves(reader);
-               JsonObject events = events(reader);
-               if (curves != null) {
-                  effect.add("curves", curves);
-               }
-
-               if (events != null) {
-                  effect.add("events", events);
-               }
-            } catch (RuntimeException var18) {
-               reader.position = tail;
-            }
-
-            effect.add("components", components);
-            JsonObject root = new JsonObject();
-            root.addProperty("format_version", major + "." + minor + "." + patch);
-            root.add("particle_effect", effect);
-            return root;
-         } catch (RuntimeException var19) {
-            return null;
+            components.add("minecraft:" + name, component(name, reader));
          }
+
+         JsonObject effect = new JsonObject();
+         JsonObject description = new JsonObject();
+         description.addProperty("identifier", identifier);
+         JsonObject render = new JsonObject();
+         render.addProperty("material", material);
+         render.addProperty("texture", texture);
+         description.add("basic_render_parameters", render);
+         effect.add("description", description);
+         int tail = reader.position;
+
+         try {
+            JsonObject curves = curves(reader);
+            JsonObject events = events(reader);
+            if (curves != null) {
+               effect.add("curves", curves);
+            }
+
+            if (events != null) {
+               effect.add("events", events);
+            }
+         } catch (RuntimeException e) {
+            reader.position = tail;
+         }
+
+         effect.add("components", components);
+         JsonObject root = new JsonObject();
+         root.addProperty("format_version", major + "." + minor + "." + patch);
+         root.add("particle_effect", effect);
+         return root;
+      } catch (RuntimeException e) {
+         return null;
       }
    }
 
@@ -272,12 +271,12 @@ public final class McbParticles {
             billboard(r, out);
             break;
          case "particle_appearance_tinting":
-            int kindx = r.u8();
-            if (kindx == 0) {
+            int kind2 = r.u8();
+            if (kind2 == 0) {
                out.add("color", r.molang(4));
             } else {
-               if (kindx != 1) {
-                  throw new IllegalStateException("tint kind " + kindx);
+               if (kind2 != 1) {
+                  throw new IllegalStateException("tint kind2 " + kind2);
                }
 
                JsonObject color = new JsonObject();
@@ -408,97 +407,95 @@ public final class McbParticles {
       return array;
    }
 
-   @Nullable
-   private static JsonObject curves(McbParticles.Reader r) {
+   private static @Nullable JsonObject curves(McbParticles.Reader r) {
       if (!r.present()) {
          return null;
-      } else {
-         JsonObject curves = new JsonObject();
-         long count = r.varint();
+      }
 
-         for (long i = 0L; i < count; i++) {
-            String name = r.string();
-            if (r.u8() != 0) {
-               throw new IllegalStateException("curve node layout");
-            }
+      JsonObject curves = new JsonObject();
+      long count = r.varint();
 
-            JsonObject curve = new JsonObject();
-            curve.addProperty("type", r.string());
-            JsonArray nodes = new JsonArray();
-            long nodeCount = r.varint();
-
-            for (long n = 0L; n < nodeCount; n++) {
-               nodes.add(r.molang());
-            }
-
-            curve.add("nodes", nodes);
-            curve.add("input", r.molang());
-            curve.add("horizontal_range", r.molang());
-            curves.add(name, curve);
+      for (long i = 0L; i < count; i++) {
+         String name = r.string();
+         if (r.u8() != 0) {
+            throw new IllegalStateException("curve node layout");
          }
 
-         return curves;
+         JsonObject curve = new JsonObject();
+         curve.addProperty("type", r.string());
+         JsonArray nodes = new JsonArray();
+         long nodeCount = r.varint();
+
+         for (long n = 0L; n < nodeCount; n++) {
+            nodes.add(r.molang());
+         }
+
+         curve.add("nodes", nodes);
+         curve.add("input", r.molang());
+         curve.add("horizontal_range", r.molang());
+         curves.add(name, curve);
       }
+
+      return curves;
    }
 
-   @Nullable
-   private static JsonObject events(McbParticles.Reader r) {
+   private static @Nullable JsonObject events(McbParticles.Reader r) {
       if (!r.present()) {
          return null;
-      } else {
-         JsonObject events = new JsonObject();
-         long count = r.varint();
-
-         for (long i = 0L; i < count; i++) {
-            String name = r.string();
-            events.add(name, event(r, 0));
-         }
-
-         return events;
       }
+
+      JsonObject events = new JsonObject();
+      long count = r.varint();
+
+      for (long i = 0L; i < count; i++) {
+         String name = r.string();
+         events.add(name, event(r, 0));
+      }
+
+      return events;
    }
 
    private static JsonObject event(McbParticles.Reader r, int depth) {
       if (depth > 16) {
          throw new IllegalStateException("event nesting");
-      } else {
-         JsonObject node = new JsonObject();
-         if (r.present()) {
-            r.u32();
-            JsonObject effect = new JsonObject();
-            effect.addProperty("effect", r.string());
-            effect.addProperty("type", r.string());
-            effect.add("pre_effect_expression", r.molang());
-            node.add("particle_effect", effect);
-         }
-
-         if (r.present()) {
-            JsonObject sound = new JsonObject();
-            sound.addProperty("event_name", r.string());
-            node.add("sound_effect", sound);
-         }
-
-         if (r.present()) {
-            node.add("expression", r.molang());
-         }
-
-         if (r.present()) {
-            node.addProperty("log", r.string());
-         }
-
-         long sequence = r.varint();
-         if (sequence > 0L) {
-            JsonArray children = new JsonArray();
-
-            for (long i = 0L; i < sequence; i++) {
-               children.add(event(r, depth + 1));
-            }
-
-            node.add("sequence", children);
-         }
-
-         return node;
       }
+
+      JsonObject node = new JsonObject();
+      if (r.present()) {
+         r.u32();
+         JsonObject effect = new JsonObject();
+         effect.addProperty("effect", r.string());
+         effect.addProperty("type", r.string());
+         effect.add("pre_effect_expression", r.molang());
+         node.add("particle_effect", effect);
+      }
+
+      if (r.present()) {
+         JsonObject sound = new JsonObject();
+         sound.addProperty("event_name", r.string());
+         node.add("sound_effect", sound);
+      }
+
+      if (r.present()) {
+         node.add("expression", r.molang());
+      }
+
+      if (r.present()) {
+         node.addProperty("log", r.string());
+      }
+
+      long sequence = r.varint();
+      if (sequence > 0L) {
+         JsonArray children = new JsonArray();
+
+         for (long i = 0L; i < sequence; i++) {
+            children.add(event(r, depth + 1));
+         }
+
+         node.add("sequence", children);
+      }
+
+      return node;
    }
 
    static {

@@ -35,30 +35,28 @@ public record NpcDialogue(long entityUniqueId, String npcName, String text, Stri
             JsonElement root = JsonParser.parseString(json);
             if (!root.isJsonArray()) {
                return actions;
-            } else {
-               JsonArray array = root.getAsJsonArray();
+            }
 
-               for (int i = 0; i < array.size() && actions.size() < 64; i++) {
-                  if (array.get(i).isJsonObject()) {
-                     JsonObject object = array.get(i).getAsJsonObject();
-                     List<String> commands = new ArrayList<>();
-                     if (object.has("data") && object.get("data").isJsonArray()) {
-                        for (JsonElement entry : object.getAsJsonArray("data")) {
-                           if (entry.isJsonObject() && entry.getAsJsonObject().has("cmd_line") && entry.getAsJsonObject().get("cmd_line").isJsonPrimitive()) {
-                              commands.add(entry.getAsJsonObject().get("cmd_line").getAsString());
-                           }
+            JsonArray array = root.getAsJsonArray();
+
+            for (int i = 0; i < array.size() && actions.size() < 64; i++) {
+               if (array.get(i).isJsonObject()) {
+                  JsonObject object = array.get(i).getAsJsonObject();
+                  List<String> commands = new ArrayList<>();
+                  if (object.has("data") && object.get("data").isJsonArray()) {
+                     for (JsonElement entry : object.getAsJsonArray("data")) {
+                        if (entry.isJsonObject() && entry.getAsJsonObject().has("cmd_line") && entry.getAsJsonObject().get("cmd_line").isJsonPrimitive()) {
+                           commands.add(entry.getAsJsonObject().get("cmd_line").getAsString());
                         }
                      }
-
-                     actions.add(
-                        new NpcDialogue.Action(i, string(object, "button_name"), integer(object, "mode"), integer(object, "type"), List.copyOf(commands))
-                     );
                   }
-               }
 
-               return actions;
+                  actions.add(new NpcDialogue.Action(i, string(object, "button_name"), integer(object, "mode"), integer(object, "type"), List.copyOf(commands)));
+               }
             }
-         } catch (RuntimeException var9) {
+
+            return actions;
+         } catch (RuntimeException e) {
             return new ArrayList<>(actions);
          }
       } else {
@@ -98,7 +96,7 @@ public record NpcDialogue(long entityUniqueId, String npcName, String text, Stri
 
       try {
          return element != null && element.isJsonPrimitive() ? element.getAsInt() : 0;
-      } catch (NumberFormatException var4) {
+      } catch (NumberFormatException e) {
          return 0;
       }
    }

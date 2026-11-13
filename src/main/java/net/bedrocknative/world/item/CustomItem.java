@@ -49,40 +49,31 @@ public final class CustomItem {
    private static final Pattern QUOTED = Pattern.compile("'([^']*)'|\"([^\"]*)\"");
    private static final float BEDROCK_EAT_SECONDS = 1.6F;
    private final String identifier;
-   @Nullable
-   private final String displayName;
-   @Nullable
-   private final String icon;
+   private final @Nullable String displayName;
+   private final @Nullable String icon;
    private final int iconFrame;
    private final int maxStackSize;
    private final int maxDurability;
-   @Nullable
-   private final EquipmentSlot wearSlot;
+   private final @Nullable EquipmentSlot wearSlot;
    private final int protection;
    private final boolean handEquipped;
    private final boolean allowOffhand;
    private final boolean glint;
-   @Nullable
-   private final CustomItem.Food food;
+   private final CustomItem.@Nullable Food food;
    private final float useSeconds;
    private final int useAnimation;
    private final int holdTicks;
    private final ItemUseAnimation holdAnimation;
-   @Nullable
-   private final String cooldownCategory;
+   private final @Nullable String cooldownCategory;
    private final float cooldownSeconds;
    private final int enchantability;
    private final List<CustomItem.Digger> digger;
    private final boolean canDestroyInCreative;
-   @Nullable
-   private final String rarity;
-   @Nullable
-   private final String hoverColor;
-   @Nullable
-   private final String block;
+   private final @Nullable String rarity;
+   private final @Nullable String hoverColor;
+   private final @Nullable String block;
    private final List<String> tags;
-   @Nullable
-   private volatile CustomItem.Built built;
+   private volatile CustomItem.@Nullable Built built;
 
    private CustomItem(String identifier, NbtMap components, boolean componentBased) {
       this.identifier = identifier;
@@ -103,7 +94,7 @@ public final class CustomItem {
          ? number(stackComponent, 64)
          : (components.containsKey("minecraft:wearable") ? 1 : number(properties.get("max_stack_size"), 64));
       this.maxDurability = number(components.getCompound("minecraft:durability").get("max_durability"), 0);
-      this.maxStackSize = this.maxDurability > 0 ? 1 : Math.clamp((long)stack, 1, 99);
+      this.maxStackSize = this.maxDurability > 0 ? 1 : Math.clamp(stack, 1, 99);
       NbtMap wearable = components.getCompound("minecraft:wearable");
       this.wearSlot = slot(wearable.getString("slot", ""));
       this.protection = number(wearable.get("protection"), number(components.getCompound("minecraft:armor").get("protection"), 0));
@@ -167,8 +158,8 @@ public final class CustomItem {
       this.enchantability = number(value(components.get("minecraft:enchantable")), number(properties.get("enchantable_value"), 0));
       this.digger = diggers(components.getCompound("minecraft:digger"));
       this.canDestroyInCreative = flag(value(components.get("minecraft:can_destroy_in_creative")), flag(properties.get("can_destroy_in_creative"), true));
-      this.rarity = value(components.get("minecraft:rarity")) instanceof String namex ? namex : null;
-      this.hoverColor = value(components.get("minecraft:hover_text_color")) instanceof String namexx ? namexx : null;
+      this.rarity = value(components.get("minecraft:rarity")) instanceof String name ? name : null;
+      this.hoverColor = value(components.get("minecraft:hover_text_color")) instanceof String name ? name : null;
       NbtMap placer = components.getCompound("minecraft:block_placer");
       String placed = placer.getString("block", "");
       this.block = !placed.isEmpty() ? placed : (componentBased ? null : identifier);
@@ -176,13 +167,11 @@ public final class CustomItem {
       this.tags = List.copyOf(!itemTags.isEmpty() ? itemTags : components.getCompound("minecraft:tags").getList("tags", NbtType.STRING, List.of()));
    }
 
-   @Nullable
-   public static CustomItem read(String identifier, @Nullable NbtMap componentData, boolean componentBased) {
+   public static @Nullable CustomItem read(String identifier, @Nullable NbtMap componentData, boolean componentBased) {
       return read(identifier, componentData, componentBased, null);
    }
 
-   @Nullable
-   public static CustomItem read(String identifier, @Nullable NbtMap componentData, boolean componentBased, @Nullable PackItemFiles.ItemFile file) {
+   public static @Nullable CustomItem read(String identifier, @Nullable NbtMap componentData, boolean componentBased, PackItemFiles.@Nullable ItemFile file) {
       if (!identifier.startsWith("minecraft:") && identifier.indexOf(58) >= 0) {
          NbtMap components = componentData == null ? NbtMap.EMPTY : componentData.getCompound("components");
          if (components.isEmpty() && file != null) {
@@ -191,8 +180,8 @@ public final class CustomItem {
 
          try {
             return new CustomItem(identifier, components, componentBased && !components.isEmpty());
-         } catch (RuntimeException var6) {
-            BedrockNative.LOGGER.warn("Unreadable components for custom item {}: {}", new Object[]{identifier, components, var6});
+         } catch (RuntimeException e) {
+            BedrockNative.LOGGER.warn("Unreadable components for custom item {}: {}", new Object[]{identifier, components, e});
             return new CustomItem(identifier, NbtMap.EMPTY, false);
          }
       } else {
@@ -225,8 +214,7 @@ public final class CustomItem {
       return this.identifier;
    }
 
-   @Nullable
-   public String icon() {
+   public @Nullable String icon() {
       return this.icon;
    }
 
@@ -246,13 +234,11 @@ public final class CustomItem {
       return this.allowOffhand;
    }
 
-   @Nullable
-   public EquipmentSlot wearSlot() {
+   public @Nullable EquipmentSlot wearSlot() {
       return this.wearSlot;
    }
 
-   @Nullable
-   public String block() {
+   public @Nullable String block() {
       return this.block;
    }
 
@@ -323,8 +309,7 @@ public final class CustomItem {
       if (this.rarity == null) {
          var10000 = null;
       } else {
-         String var4 = this.rarity.toLowerCase(Locale.ROOT);
-         switch (var4) {
+         switch (this.rarity.toLowerCase(Locale.ROOT)) {
             case "uncommon":
                var10000 = Rarity.UNCOMMON;
                break;
@@ -429,7 +414,7 @@ public final class CustomItem {
                .map(CustomItem::javaTag)
                .filter(tag -> tag != null)
                .distinct()
-               .forEach(tag -> rules.add(Rule.overrideSpeed(BuiltInRegistries.BLOCK.getOrThrow(tag), entry.speed())));
+               .forEach(tag -> rules.add(Rule.overrideSpeed(BuiltInRegistries.BLOCK.getOrThrow((TagKey<Block>)tag), entry.speed())));
          }
 
          tool = new Tool(rules, 1.0F, 0, this.canDestroyInCreative);
@@ -438,8 +423,7 @@ public final class CustomItem {
       return new CustomItem.Built(modelData, equippable, armor, foodProperties, consumable, cooldown, tool);
    }
 
-   @Nullable
-   private static TagKey<Block> javaTag(String bedrockTag) {
+   private static @Nullable TagKey<Block> javaTag(String bedrockTag) {
       String tag = bedrockTag.startsWith("minecraft:") ? bedrockTag.substring("minecraft:".length()) : bedrockTag;
 
       return switch (tag) {
@@ -462,8 +446,7 @@ public final class CustomItem {
       };
    }
 
-   @Nullable
-   private static EquipmentSlot slot(String bedrockSlot) {
+   private static @Nullable EquipmentSlot slot(String bedrockSlot) {
       return switch (bedrockSlot) {
          case "slot.armor.head" -> EquipmentSlot.HEAD;
          case "slot.armor.chest" -> EquipmentSlot.CHEST;
@@ -520,13 +503,11 @@ public final class CustomItem {
       return List.copyOf(result);
    }
 
-   @Nullable
-   private static Object value(@Nullable Object component) {
+   private static @Nullable Object value(@Nullable Object component) {
       return component instanceof NbtMap map ? map.get("value") : component;
    }
 
-   @Nullable
-   private static String text(@Nullable Object component) {
+   private static @Nullable String text(@Nullable Object component) {
       return value(component) instanceof String text && !text.isEmpty() ? text : null;
    }
 

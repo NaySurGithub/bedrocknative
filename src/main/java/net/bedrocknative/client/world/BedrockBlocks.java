@@ -35,7 +35,6 @@ import net.minecraft.world.level.block.entity.SignTextSlot;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.BlockBehaviour.BlockStateBase;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
-import net.minecraft.world.level.block.state.properties.ChestType;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.LevelChunkSection;
 import net.minecraft.world.level.chunk.LevelChunk.EntityCreationType;
@@ -61,8 +60,7 @@ public final class BedrockBlocks {
    private static volatile int synced;
    private int blockEvents;
    private final BlockUpdateLog updateLog = new BlockUpdateLog();
-   @Nullable
-   private BlockUpdateLog.Names updateNames;
+   private BlockUpdateLog.@Nullable Names updateNames;
    private String numbering = "";
    private static final Map<BlockPos, Long> RECENT_BREAKS;
    private static volatile boolean serverAnswered;
@@ -92,9 +90,9 @@ public final class BedrockBlocks {
          case UpdateBlockPacket update -> update.getBlockPosition();
          case BlockEntityDataPacket data -> data.getBlockPosition();
          case BlockEventPacket event -> event.getBlockPosition();
-         case UpdateSubChunkBlocksPacket updatex -> !updatex.getStandardBlocks().isEmpty()
-            ? updatex.getStandardBlocks().getFirst().getPosition()
-            : (!updatex.getExtraBlocks().isEmpty() ? updatex.getExtraBlocks().getFirst().getPosition() : null);
+         case UpdateSubChunkBlocksPacket update -> !update.getStandardBlocks().isEmpty()
+            ? update.getStandardBlocks().getFirst().getPosition()
+            : (!update.getExtraBlocks().isEmpty() ? update.getExtraBlocks().getFirst().getPosition() : null);
          default -> null;
       };
       return position == null ? null : new int[]{position.getX() >> 4, position.getZ() >> 4};
@@ -116,13 +114,13 @@ public final class BedrockBlocks {
                   this.logUpdate(update.getDefinition().getRuntimeId(), update.getDataLayer());
                   setBlock(level, toPos(update.getBlockPosition()), update.getDataLayer(), update.getDefinition().getRuntimeId());
                   break;
-               case UpdateSubChunkBlocksPacket updatex:
-                  for (BlockChangeEntry entry : updatex.getStandardBlocks()) {
+               case UpdateSubChunkBlocksPacket update:
+                  for (BlockChangeEntry entry : update.getStandardBlocks()) {
                      this.logUpdate(entry.getDefinition().getRuntimeId(), 0);
                      setBlock(level, toPos(entry.getPosition()), 0, entry.getDefinition().getRuntimeId());
                   }
 
-                  for (BlockChangeEntry entry : updatex.getExtraBlocks()) {
+                  for (BlockChangeEntry entry : update.getExtraBlocks()) {
                      this.logUpdate(entry.getDefinition().getRuntimeId(), 1);
                      setBlock(level, toPos(entry.getPosition()), 1, entry.getDefinition().getRuntimeId());
                   }
@@ -190,10 +188,10 @@ public final class BedrockBlocks {
 
       if (at == null) {
          return -1L;
-      } else {
-         long ago = System.currentTimeMillis() - at;
-         return ago >= 0L && ago < 5000L ? ago : -1L;
       }
+
+      long ago = System.currentTimeMillis() - at;
+      return ago >= 0L && ago < 5000L ? ago : -1L;
    }
 
    private static void setBlock(ClientLevel level, BlockPos pos, int layer, int bedrockHash) {
@@ -203,12 +201,12 @@ public final class BedrockBlocks {
       BlockState state;
       if (layer == 0) {
          state = mapped;
-         if (isWaterlogged(current) && mapped.hasProperty(BlockStateProperties.WATERLOGGED)) {
-            state = (BlockState)mapped.setValue(BlockStateProperties.WATERLOGGED, true);
+         if (isWaterlogged(current) && state.hasProperty(BlockStateProperties.WATERLOGGED)) {
+            state = state.setValue(BlockStateProperties.WATERLOGGED, true);
          }
 
          if (state.getBlock() instanceof ChestBlock && current.getBlock() == state.getBlock()) {
-            state = (BlockState)state.setValue(ChestBlock.TYPE, (ChestType)current.getValue(ChestBlock.TYPE));
+            state = state.setValue(ChestBlock.TYPE, current.getValue(ChestBlock.TYPE));
          }
 
          state = BedrockJukeboxDiscs.adjust(pos, BedrockLecterns.adjust(pos, state));
@@ -217,7 +215,7 @@ public final class BedrockBlocks {
             return;
          }
 
-         state = (BlockState)current.setValue(BlockStateProperties.WATERLOGGED, mapped.is(Blocks.WATER));
+         state = current.setValue(BlockStateProperties.WATERLOGGED, mapped.is(Blocks.WATER));
       }
 
       long ago = breakAgo(pos);
@@ -237,14 +235,14 @@ public final class BedrockBlocks {
    }
 
    private static boolean isWaterlogged(BlockState state) {
-      return state.hasProperty(BlockStateProperties.WATERLOGGED) && (Boolean)state.getValue(BlockStateProperties.WATERLOGGED);
+      return state.hasProperty(BlockStateProperties.WATERLOGGED) && state.getValue(BlockStateProperties.WATERLOGGED);
    }
 
    public static void createBlockEntities(ClientLevel level, LevelChunk chunk, Collection<Integer> sectionIndices, List<NbtMap> tags) {
       createBlockEntities(level, chunk, sectionIndices, tags, null);
    }
 
-   public static void createBlockEntities(ClientLevel level, LevelChunk chunk, Collection<Integer> sectionIndices, List<NbtMap> tags, @Nullable int[] blocks) {
+   public static void createBlockEntities(ClientLevel level, LevelChunk chunk, Collection<Integer> sectionIndices, List<NbtMap> tags, int @Nullable [] blocks) {
       LevelChunkSection[] sections = chunk.getSections();
       int minX = chunk.getPos().getMinBlockX();
       int minZ = chunk.getPos().getMinBlockZ();
@@ -304,8 +302,7 @@ public final class BedrockBlocks {
 
    public static void loadBlockEntity(ClientLevel level, BlockPos pos, NbtMap tag) {
       BlockState state = level.getBlockState(pos);
-      String var4 = tag.getString("id", "");
-      switch (var4) {
+      switch (tag.getString("id", "")) {
          case "Sign":
          case "HangingSign":
             if (level.getBlockEntity(pos) instanceof SignBlockEntity sign) {
@@ -356,7 +353,7 @@ public final class BedrockBlocks {
          case "Skull":
             if (state.hasProperty(BlockStateProperties.ROTATION_16)) {
                int rotation = Math.floorMod(Math.round(tag.getFloat("Rotation", 0.0F) / 22.5F), 16);
-               setIfChanged(level, pos, state, (BlockState)state.setValue(BlockStateProperties.ROTATION_16, rotation));
+               setIfChanged(level, pos, state, state.setValue(BlockStateProperties.ROTATION_16, rotation));
             }
       }
 
@@ -428,9 +425,8 @@ public final class BedrockBlocks {
          return this.level.getBlockState(pos);
       }
 
-      @Nullable
       @Override
-      public Object owner(BlockPos pos) {
+      public @Nullable Object owner(BlockPos pos) {
          return this.level.getBlockEntity(pos);
       }
 

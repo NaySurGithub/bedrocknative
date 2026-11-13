@@ -9,13 +9,9 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin({Options.class})
+@Mixin(Options.class)
 public abstract class CameraTypeMixin {
-   @Inject(
-      method = {"getCameraType"},
-      at = {@At("HEAD")},
-      cancellable = true
-   )
+   @Inject(method = "getCameraType", at = @At("HEAD"), cancellable = true)
    private void bedrocknative$forced(CallbackInfoReturnable<CameraType> cir) {
       CameraType forced = BedrockCamera.forcedCameraType();
       if (forced != null) {
@@ -23,11 +19,7 @@ public abstract class CameraTypeMixin {
       }
    }
 
-   @Inject(
-      method = {"setCameraType"},
-      at = {@At("HEAD")},
-      cancellable = true
-   )
+   @Inject(method = "setCameraType", at = @At("HEAD"), cancellable = true)
    private void bedrocknative$locked(CameraType cameraType, CallbackInfo ci) {
       if (BedrockCamera.forcedCameraType() != null) {
          ci.cancel();
