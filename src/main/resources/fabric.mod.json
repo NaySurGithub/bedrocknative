@@ -1,0 +1,33 @@
+{
+	"schemaVersion": 1,
+	"id": "bedrocknative",
+	"version": "${version}",
+	"name": "BedrockNative",
+	"description": "Makes Minecraft Java speak the Bedrock protocol natively (RakNet) and play with Bedrock mechanics.",
+	"license": "All-Rights-Reserved",
+	"environment": "*",
+	"entrypoints": {
+		"main": ["net.bedrocknative.BedrockNative"],
+		"client": ["net.bedrocknative.client.BedrockNativeClient"]
+	},
+	"accessWidener": "bedrocknative.accesswidener",
+	"mixins": [
+		"bedrocknative.mixins.json",
+		{
+			"config": "bedrocknative.client.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.19.5",
+		"minecraft": "~26.3",
+		"java": ">=25",
+		"fabric-api": "*"
+	},
+	"custom": {
+		"lithium:options": {
+			"mixin.entity.collisions.movement": false,
+			"mixin.entity.collisions.intersection": false
+		}
+	}
+}

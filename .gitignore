@@ -1,0 +1,21 @@
+# build output
+build/
+.gradle/
+run/
+
+# Mojang assets are fetched at build time, never committed
+src/main/resources/bedrocknative/base-pack/
+samples-*.zip
+samples-*.json
+
+# binaries / native helpers (not source)
+*.so
+*.dll
+*.exe
+*.dylib
+
+# bundled Mojang textures/sounds
+bedrock-samples-*.zip
+
+# keep the gradle wrapper jar despite the rule above
+!gradle/wrapper/gradle-wrapper.jar

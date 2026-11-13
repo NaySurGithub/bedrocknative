@@ -1,0 +1,76 @@
+accessWidener v1 official
+
+# Native chunk insertion into the client chunk cache (no Java chunk packet).
+accessible class net/minecraft/client/multiplayer/ClientChunkCache$Storage
+accessible field net/minecraft/client/multiplayer/ClientChunkCache storage Lnet/minecraft/client/multiplayer/ClientChunkCache$Storage;
+accessible field net/minecraft/client/multiplayer/ClientChunkCache$Storage chunks Ljava/util/concurrent/atomic/AtomicReferenceArray;
+accessible method net/minecraft/client/multiplayer/ClientChunkCache$Storage getIndex (II)I
+accessible method net/minecraft/client/multiplayer/ClientChunkCache$Storage replace (ILnet/minecraft/world/level/chunk/LevelChunk;)V
+accessible method net/minecraft/client/multiplayer/ClientChunkCache$Storage refreshEmptySections (Lnet/minecraft/world/level/chunk/LevelChunk;)V
+accessible method net/minecraft/client/multiplayer/ClientChunkCache$Storage inRange (II)Z
+accessible method net/minecraft/client/multiplayer/ClientChunkCache isValidChunk (Lnet/minecraft/world/level/chunk/LevelChunk;II)Z
+# Chunk streaming: the chunks a smaller storage drops lose their light data first (BedrockChunkLoader.beforeViewRadius).
+accessible field net/minecraft/client/multiplayer/ClientChunkCache$Storage viewCenterX I
+accessible field net/minecraft/client/multiplayer/ClientChunkCache$Storage viewCenterZ I
+
+# Level-loading screen completion when Bedrock says the player spawned.
+accessible field net/minecraft/client/multiplayer/ClientPacketListener levelLoadTracker Lnet/minecraft/client/multiplayer/LevelLoadTracker;
+
+# Connect screen state used by the Bedrock connector.
+accessible field net/minecraft/client/gui/screens/ConnectScreen aborted Z
+accessible field net/minecraft/client/gui/screens/ConnectScreen parent Lnet/minecraft/client/gui/screens/Screen;
+accessible method net/minecraft/client/gui/screens/ConnectScreen updateStatus (Lnet/minecraft/network/chat/Component;)V
+# A Java Edition server found by the connector: vanilla's own connect (its connection and login) runs after all.
+accessible method net/minecraft/client/gui/screens/ConnectScreen connect (Lnet/minecraft/client/Minecraft;Lnet/minecraft/client/multiplayer/resolver/ServerAddress;Lnet/minecraft/client/multiplayer/ServerData;Lnet/minecraft/client/multiplayer/TransferState;)V
+
+# Bedrock players join the Java tab list and skin lookup without Java player-info packets.
+accessible field net/minecraft/client/multiplayer/ClientPacketListener playerInfoMap Ljava/util/Map;
+accessible field net/minecraft/client/multiplayer/ClientPacketListener listedPlayers Ljava/util/Set;
+
+# The block state the server last confirmed under a Java block prediction (what a Bedrock client reports it clicked).
+accessible method net/minecraft/client/multiplayer/ClientLevel getBlockStatePredictionHandler ()Lnet/minecraft/client/multiplayer/prediction/BlockStatePredictionHandler;
+accessible field net/minecraft/client/multiplayer/prediction/BlockStatePredictionHandler serverVerifiedStates Lit/unimi/dsi/fastutil/longs/Long2ObjectOpenHashMap;
+accessible class net/minecraft/client/multiplayer/prediction/BlockStatePredictionHandler$ServerVerifiedState
+accessible field net/minecraft/client/multiplayer/prediction/BlockStatePredictionHandler$ServerVerifiedState blockState Lnet/minecraft/world/level/block/state/BlockState;
+
+# The local player's game mode in its tab list entry (Java's isSpectator/isCreative read it there).
+accessible method net/minecraft/client/multiplayer/PlayerInfo setGameMode (Lnet/minecraft/world/level/GameType;)V
+
+# Server-defined item icons: a runtime atlas stitched like Java's own, flat item geometry from Java's generator, and the
+# carrier item's model type.
+accessible method net/minecraft/client/renderer/texture/SpriteLoader stitch (Ljava/util/List;ILjava/util/concurrent/Executor;)Lnet/minecraft/client/renderer/texture/SpriteLoader$Preparations;
+accessible method net/minecraft/client/resources/model/cuboid/ItemModelGenerator bakeExtrudedSprite (Lnet/minecraft/client/resources/model/geometry/QuadCollection$Builder;Lnet/minecraft/client/resources/model/ModelBaker$Interner;Lnet/minecraft/client/renderer/block/dispatch/ModelState;Lnet/minecraft/client/resources/model/geometry/BakedQuad$MaterialInfo;)V
+accessible field net/minecraft/client/renderer/item/ItemModels ID_MAPPER Lnet/minecraft/util/ExtraCodecs$LateBoundIdMapper;
+
+# Server-defined blocks: a carrier state's light emission is set per server (Java fixes it when it builds the state).
+accessible field net/minecraft/world/level/block/state/BlockBehaviour$BlockStateBase lightEmission I
+mutable field net/minecraft/world/level/block/state/BlockBehaviour$BlockStateBase lightEmission I
+# Blank sprites reserved in the block atlas for their textures (chunk meshes sample only that atlas).
+accessible field net/minecraft/client/renderer/texture/atlas/SpriteSources ID_MAPPER Lnet/minecraft/util/ExtraCodecs$LateBoundIdMapper;
+# Custom actors are culled by their visible bounds every frame without allocating a box (model runtime, 5d).
+accessible method net/minecraft/client/renderer/culling/Frustum cubeInFrustum (DDDDDD)I
+
+# Bedrock's creative inventory replaces the creative tabs: invalidating the cached parameters makes the next creative screen rebuild them.
+accessible field net/minecraft/world/item/CreativeModeTabs CACHED_PARAMETERS Lnet/minecraft/world/item/CreativeModeTab$ItemDisplayParameters;
+
+# Eating restarts: the held use button clicks again 4 ticks after the server ended a use.
+accessible field net/minecraft/client/Minecraft rightClickDelay I
+
+# SpawnExperienceOrb gives the orb it creates its value.
+accessible method net/minecraft/world/entity/ExperienceOrb setValue (I)V
+
+# A Java biome's own climate (temperature and downfall): the nearest one stands in for a Bedrock biome we have no mapping for.
+accessible class net/minecraft/world/level/biome/Biome$ClimateSettings
+accessible field net/minecraft/world/level/biome/Biome climateSettings Lnet/minecraft/world/level/biome/Biome$ClimateSettings;
+
+# The first-person equip heights, Bedrock's variable.player_arm_height for the Bedrock first-person arm.
+accessible field net/minecraft/client/player/FirstPersonHandsAndItems mainHandHeight F
+accessible field net/minecraft/client/player/FirstPersonHandsAndItems oMainHandHeight F
+accessible field net/minecraft/client/player/FirstPersonHandsAndItems offHandHeight F
+accessible field net/minecraft/client/player/FirstPersonHandsAndItems oOffHandHeight F
+
+# JSON UI labels and images go to Java's GUI as whole batches of quads (GuiQuadBatch): its render state and the scissor on top of its stack.
+accessible field net/minecraft/client/gui/GuiGraphicsExtractor guiRenderState Lnet/minecraft/client/renderer/state/gui/GuiRenderState;
+accessible class net/minecraft/client/gui/GuiGraphicsExtractor$ScissorStack
+accessible field net/minecraft/client/gui/GuiGraphicsExtractor scissorStack Lnet/minecraft/client/gui/GuiGraphicsExtractor$ScissorStack;
+accessible method net/minecraft/client/gui/GuiGraphicsExtractor$ScissorStack peek ()Lnet/minecraft/client/gui/navigation/ScreenRectangle;

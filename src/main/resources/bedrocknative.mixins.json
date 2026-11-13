@@ -1,0 +1,9 @@
+{
+	"required": true,
+	"package": "net.bedrocknative.mixin",
+	"compatibilityLevel": "JAVA_25",
+	"mixins": [],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}

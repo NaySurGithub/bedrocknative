@@ -1,0 +1,173 @@
+import java.nio.file.*
+import java.security.MessageDigest
+import java.util.zip.*
+
+plugins {
+    id 'fabric-loom' version "${loom_version}"
+    id 'java'
+}
+
+version = project.mod_version
+group = project.maven_group
+base { archivesName = project.archives_base_name }
+
+java {
+    toolchain { languageVersion = JavaLanguageVersion.of(25) }
+    withSourcesJar()
+}
+
+repositories {
+    mavenCentral()
+    maven { name = 'Fabric'; url = 'https://maven.fabricmc.net/' }
+    maven { name = 'OpenCollab Snapshots'; url = 'https://repo.opencollab.dev/maven-snapshots/' }
+    maven { name = 'OpenCollab Releases'; url = 'https://repo.opencollab.dev/maven-releases/' }
+    maven { name = 'ViaVersion'; url = 'https://repo.viaversion.com/' }
+    maven { name = 'Lenni0451'; url = 'https://maven.lenni0451.net/releases/' }
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${minecraft_version}"
+    mappings loom.officialMojangMappings()
+    modImplementation "net.fabricmc:fabric-loader:${loader_version}"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${fabric_api_version}"
+
+    // Libraries the original jar shaded in, bundled back with include(...). Exact
+    // versions come from the jar's pom.properties where present; the cloudburstmc
+    // protocol/netty/nbt, MinecraftAuth and libdatachannel ones are the latest
+    // published and may need pinning to the exact build the mod used.
+    implementation(include("org.cloudburstmc.protocol:bedrock-codec:${cloudburst_protocol_version}"))
+    implementation(include("org.cloudburstmc.protocol:bedrock-connection:${cloudburst_protocol_version}"))
+    implementation(include("org.cloudburstmc.protocol:common:${cloudburst_protocol_version}"))
+    implementation(include("org.cloudburstmc.netty:netty-transport-raknet:${cloudburst_netty_version}"))
+    implementation(include("org.cloudburstmc:nbt:${cloudburst_nbt_version}"))
+    implementation(include("org.cloudburstmc.math:api:${cloudburst_math_version}"))
+    implementation(include("org.cloudburstmc.math:immutable:${cloudburst_math_version}"))
+    implementation(include("org.bitbucket.b_c:jose4j:${jose4j_version}"))
+    implementation(include("net.raphimc:MinecraftAuth:${minecraftauth_version}"))
+    implementation(include("tel.schich:libdatachannel-java:${libdatachannel_version}"))
+    implementation(include("io.airlift:aircompressor:${aircompressor_version}"))
+    implementation(include("com.nukkitx:natives:${nukkitx_natives_version}"))
+    implementation(include("net.jodah:expiringmap:${expiringmap_version}"))
+    implementation(include("com.fasterxml.jackson.core:jackson-databind:${jackson_version}"))
+}
+
+// ---------------------------------------------------------------------------
+// Mojang bedrock-samples are NOT stored in this repository. This task rebuilds
+// the "core + language" base archive at build time from the pinned commit of
+// Mojang/bedrock-samples on GitHub, using the index in
+// src/main/resources/bedrocknative/base/bedrock-samples.txt, then regenerates
+// the sidecar the mod validates. Skip with -PbaseBundle=off.
+// ---------------------------------------------------------------------------
+def baseTable = file('src/main/resources/bedrocknative/base/bedrock-samples.txt')
+def generatedBase = layout.buildDirectory.dir('generated/base-pack')
+
+def sha256Hex = { byte[] bytes ->
+    MessageDigest.getInstance('SHA-256').digest(bytes).collect { String.format('%02x', it) }.join('')
+}
+
+tasks.register('fetchBaseAssets') {
+    description = 'Fetches Mojang bedrock-samples from the pinned GitHub release and builds the base archive.'
+    inputs.file baseTable
+    outputs.dir generatedBase
+
+    doLast {
+        def header = [:]
+        def entries = []          // [part, size, sha1, path]
+        baseTable.eachLine('UTF-8') { line ->
+            if (line.isEmpty() || line.startsWith('#')) return
+            def f = line.split('\t', -1)
+            if (f.length == 2) header[f[0]] = f[1]
+            else if (f.length == 4) entries << f
+        }
+        def repo = header['repository'], commit = header['commit'], tag = header['tag']
+        def root = header.getOrDefault('root', ''), release = header['release']
+        assert repo && commit && tag && release : 'bedrock-samples.txt header is incomplete'
+        def shortCommit = commit.substring(0, 8)
+
+        def cache = layout.buildDirectory.dir('base-cache').get().asFile
+        cache.mkdirs()
+        def releaseZip = new File(cache, release)
+        if (!releaseZip.exists()) {
+            def url = "https://github.com/${repo}/releases/download/${tag}/${release}"
+            logger.lifecycle("fetchBaseAssets: downloading ${url}")
+            releaseZip.withOutputStream { out -> new URL(url).withInputStream { it.transferTo(out) } }
+        }
+
+        // index the release zip entries by their resource_pack-relative path
+        def wanted = entries.findAll { it[0] == 'c' || it[0] == 'l' }
+                            .collectEntries { [(it[3]): it] }
+        def out = generatedBase.get().asFile
+        out.deleteDir(); out.mkdirs()
+        def archive = new File(out, "samples-${shortCommit}.zip")
+
+        long fileBytes = 0
+        int files = 0
+        new ZipInputStream(releaseZip.newInputStream()).withCloseable { zin ->
+            new ZipOutputStream(archive.newOutputStream()).withCloseable { zout ->
+                zout.setLevel(Deflater.BEST_COMPRESSION)
+                def seen = [] as Set
+                for (def e = zin.nextEntry; e != null; e = zin.nextEntry) {
+                    if (e.directory) continue
+                    // strip a leading folder down to the root prefix (resource_pack/...)
+                    def name = e.name
+                    def idx = root ? name.indexOf(root) : 0
+                    if (root && idx < 0) continue
+                    def rel = root ? name.substring(idx + root.length()) : name
+                    def entry = wanted[rel]
+                    if (entry == null || !seen.add(rel)) continue
+                    def bytes = zin.readAllBytes()
+                    // integrity: the file must match the git-blob SHA-1 in the index
+                    def blob = "blob ${bytes.length}\0".getBytes('UTF-8') + bytes
+                    def sha1 = MessageDigest.getInstance('SHA-1').digest(blob).collect { String.format('%02x', it) }.join('')
+                    if (sha1 != entry[2]) throw new GradleException("SHA-1 mismatch for ${rel}")
+                    def ze = new ZipEntry(rel); ze.time = 0
+                    zout.putNextEntry(ze); zout.write(bytes); zout.closeEntry()
+                    fileBytes += bytes.length; files++
+                }
+            }
+        }
+        def missing = wanted.keySet().size() - files
+        if (missing != 0) throw new GradleException("${missing} base files were not found in ${release}")
+
+        def tableDigest = sha256Hex(baseTable.bytes)
+        def archiveSha = sha256Hex(archive.bytes)
+        def sidecar = new File(out, "samples-${shortCommit}.json")
+        sidecar.text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson([
+                format     : 2,
+                archive    : archive.name,
+                bytes      : archive.length(),
+                sha256     : archiveSha,
+                files      : files,
+                parts      : 'core language',
+                fileBytes  : fileBytes,
+                table      : tableDigest,
+                repository : repo, tag: tag, commit: commit,
+                license    : 'LICENSE-bedrock-samples.md',
+                note       : "Mojang's published sample files ((c) Mojang AB, Minecraft EULA). Fetched at build time; not redistributed."
+        ]))
+        logger.lifecycle("fetchBaseAssets: ${files} files, ${(archive.length()/1_000_000d).round(1)} MB -> ${archive.name}")
+    }
+}
+
+// put the generated archive into the jar, unless disabled
+if (project.findProperty('baseBundle') != 'off') {
+    sourceSets.main.resources.srcDir generatedBase
+    tasks.named('processResources') {
+        dependsOn 'fetchBaseAssets'
+        into('bedrocknative/base-pack') {
+            from(generatedBase)
+        }
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = 25
+}
+
+tasks.named('processResources') {
+    inputs.property 'version', project.version
+    filesMatching('fabric.mod.json') {
+        expand version: project.version
+    }
+}
